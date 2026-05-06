@@ -4,7 +4,7 @@ import { hashPassword } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, role } = await request.json()
+    const { email, password, role, position } = await request.json()
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 })
@@ -19,8 +19,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
     }
 
-    if (!['CUSTOMER', 'VENDOR'].includes(role)) {
+    if (!['CUSTOMER', 'VENDOR', 'ADMIN', 'SUPER_ADMIN'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    // Enforce single SUPER_ADMIN
+    if (role === 'SUPER_ADMIN') {
+      const existingSuperAdmin = await getPrisma().user.findFirst({
+        where: { role: 'SUPER_ADMIN' }
+      })
+      if (existingSuperAdmin) {
+        return NextResponse.json({ error: 'Only one SUPER_ADMIN can exist in the system' }, { status: 403 })
+      }
+    }
+
+    // Validate position for ADMIN role
+    if (role === 'ADMIN' && (!position || !position.trim())) {
+      return NextResponse.json({ error: 'Position is required for ADMIN accounts' }, { status: 400 })
     }
 
     const existingUser = await getPrisma().user.findUnique({
@@ -38,6 +53,7 @@ export async function POST(request: NextRequest) {
         email: normalizedEmail,
         password: hashedPassword,
         role,
+        position: role === 'ADMIN' ? position.trim() : null,
         profile: {
           create: {},
         },
@@ -46,6 +62,7 @@ export async function POST(request: NextRequest) {
         id: true,
         email: true,
         role: true,
+        position: true,
       },
     })
 

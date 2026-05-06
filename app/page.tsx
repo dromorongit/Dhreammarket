@@ -1,7 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
+import { EmptyState } from '@/components/EmptyState'
+import { useState, useEffect } from 'react'
 
 export default function Home() {
   return (
@@ -271,6 +275,23 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Browse Vendors by Category */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Shop by Vendor Type
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Discover trusted vendors across different categories
+            </p>
+          </div>
+
+          <VendorCategorySection />
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900"></div>
@@ -304,4 +325,143 @@ export default function Home() {
       </section>
     </div>
   )
+}
+
+function VendorCategorySection() {
+  const [categories, setCategories] = useState<VendorCategory[]>([])
+  const [vendors, setVendors] = useState<any[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  useEffect(() => {
+    fetchVendors()
+  }, [selectedCategory])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/vendor-categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data.categories)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
+  const fetchVendors = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (selectedCategory) {
+        params.append('categoryId', selectedCategory)
+      }
+      const response = await fetch(`/api/vendors?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setVendors(data.vendors)
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <>
+      {/* Category Filter Tabs */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+        <button
+          onClick={() => setSelectedCategory('')}
+          className={`px-6 py-2.5 rounded-full font-medium transition-all ${
+            selectedCategory === ''
+              ? 'bg-royal-blue text-white shadow-lg shadow-royal-blue/30'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          All Vendors
+        </button>
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`px-6 py-2.5 rounded-full font-medium transition-all ${
+              selectedCategory === category.id
+                ? 'bg-royal-blue text-white shadow-lg shadow-royal-blue/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Vendors Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <Card key={i} variant="elevated" className="p-6">
+              <div className="space-y-4">
+                <div className="w-16 h-16 rounded-full bg-slate-200 mx-auto"></div>
+                <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto"></div>
+                <div className="h-4 bg-slate-100 rounded w-full"></div>
+                <div className="h-4 bg-slate-100 rounded w-1/2 mx-auto"></div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : vendors.length === 0 ? (
+        <EmptyState
+          icon={
+            <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          }
+          title="No vendors found"
+          description={selectedCategory ? "No vendors in this category yet. Check back soon!" : "No vendors available yet."}
+        />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {vendors.map((vendor) => (
+            <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
+              <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {vendor.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
+                  {vendor.name}
+                </h3>
+                {vendor.category && (
+                  <Badge variant="default" size="sm" className="mb-3">
+                    {vendor.category.name}
+                  </Badge>
+                )}
+                <p className="text-sm text-slate-600">
+                  {vendor._count?.products || 0} products
+                </p>
+                {vendor.isVerified && (
+                  <Badge variant="verified" size="sm" className="mt-2">
+                    Verified
+                  </Badge>
+                )}
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+interface VendorCategory {
+  id: string
+  name: string
+  slug: string
 }

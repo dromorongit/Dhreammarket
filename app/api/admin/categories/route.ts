@@ -50,12 +50,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
     }
 
-    // Check for duplicate name
-    const existing = await prisma.category.findFirst({
-      where: { name: { equals: name.trim(), mode: 'insensitive' } },
+    // Check for duplicate name (case-insensitive)
+    const allCategories = await prisma.category.findMany({
+      select: { name: true }
     })
-
-    if (existing) {
+    const exists = allCategories.some(cat => 
+      cat.name.toLowerCase() === name.trim().toLowerCase()
+    )
+    if (exists) {
       return NextResponse.json({ error: 'Category with this name already exists' }, { status: 400 })
     }
 
@@ -110,15 +112,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    // Check for duplicate name (excluding current category)
-    const existing = await prisma.category.findFirst({
-      where: { 
-        name: { equals: name.trim(), mode: 'insensitive' },
-        id: { not: id },
-      },
+    // Check for duplicate name (excluding current category, case-insensitive)
+    const allCategories = await prisma.category.findMany({
+      select: { name: true, id: true }
     })
-
-    if (existing) {
+    const duplicate = allCategories.find(cat => 
+      cat.name.toLowerCase() === name.trim().toLowerCase() && cat.id !== id
+    )
+    if (duplicate) {
       return NextResponse.json({ error: 'Category with this name already exists' }, { status: 400 })
     }
 

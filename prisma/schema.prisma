@@ -10,6 +10,7 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   ADMIN
   VENDOR
   CUSTOMER
@@ -37,9 +38,10 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(CUSTOMER)
+  position  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   profile       Profile?
   store         Store?
   cart          Cart?
@@ -49,7 +51,7 @@ model User {
   notifications Notification[]
   feedbacks     Feedback[]
   vendorPayouts VendorPayout[] @relation("VendorPayoutVendor")
-
+ 
   @@map("users")
 }
 
@@ -74,14 +76,27 @@ model Store {
   name        String
   description String?
   isVerified  Boolean  @default(false)
+  categoryId  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
+ 
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   products     Product[]
   vendorPayouts VendorPayout[] @relation("VendorPayoutStore")
-
+  category     VendorCategory? @relation("StoreCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+ 
   @@map("stores")
+}
+
+model VendorCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  stores    Store[]  @relation("StoreCategory")
+ 
+  @@map("vendor_categories")
 }
 
 model Category {
@@ -90,11 +105,11 @@ model Category {
   parentId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+ 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
   products Product[]
-
+ 
   @@map("categories")
 }
 

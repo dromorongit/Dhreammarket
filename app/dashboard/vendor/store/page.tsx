@@ -10,22 +10,37 @@ interface Store {
   id: string
   name: string
   description: string | null
+  categoryId: string | null
+  category?: {
+    id: string
+    name: string
+    slug: string
+  } | null
+}
+
+interface VendorCategory {
+  id: string
+  name: string
+  slug: string
 }
 
 export default function StoreManagement() {
   const router = useRouter()
   const [store, setStore] = useState<Store | null>(null)
+  const [categories, setCategories] = useState<VendorCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    categoryId: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchStore()
+    fetchCategories()
   }, [])
 
   const fetchStore = async () => {
@@ -37,6 +52,7 @@ export default function StoreManagement() {
         setFormData({
           name: data.store.name,
           description: data.store.description || '',
+          categoryId: data.store.categoryId || '',
         })
       } else if (response.status === 404) {
         // Store doesn't exist yet
@@ -46,6 +62,18 @@ export default function StoreManagement() {
       console.error('Error fetching store:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/vendor-categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data.categories)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
     }
   }
 
@@ -83,7 +111,7 @@ export default function StoreManagement() {
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -119,9 +147,9 @@ export default function StoreManagement() {
           </h1>
           <p className="text-gray-600 mt-2">
              {store
-               ? 'Update your store information'
-               : 'Create your store profile to start selling on Dhream Market'
-             }
+                ? 'Update your store information'
+                : 'Create your store profile to start selling on Dhream Market'
+              }
           </p>
         </div>
 
@@ -144,6 +172,30 @@ export default function StoreManagement() {
                   onChange={handleChange}
                   placeholder="Enter your store name"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Vendor Category *
+                </label>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  required
+                  value={formData.categoryId}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Choose the category that best describes your business type
+                </p>
               </div>
 
               <div>

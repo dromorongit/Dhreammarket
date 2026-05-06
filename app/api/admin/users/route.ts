@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {}
     
-    if (role && ['ADMIN', 'VENDOR', 'CUSTOMER'].includes(role)) {
+    if (role && ['SUPER_ADMIN', 'ADMIN', 'VENDOR', 'CUSTOMER'].includes(role)) {
       where.role = role
     }
     

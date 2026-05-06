@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
-export type Role = 'ADMIN' | 'VENDOR' | 'CUSTOMER'
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'VENDOR' | 'CUSTOMER'
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12)

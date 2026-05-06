@@ -41,10 +41,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description } = await request.json()
+    const { name, description, categoryId } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
+    }
+
+    // Validate category if provided
+    if (categoryId) {
+      const category = await getPrisma().vendorCategory.findUnique({
+        where: { id: categoryId }
+      })
+      if (!category || !category.isActive) {
+        return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+      }
     }
 
     // Check if store already exists
@@ -61,7 +71,11 @@ export async function POST(request: NextRequest) {
         userId: payload.userId,
         name: name.trim(),
         description: description?.trim() || null,
+        categoryId: categoryId || null,
       },
+      include: {
+        category: true,
+      }
     })
 
     return NextResponse.json({ store }, { status: 201 })
@@ -83,10 +97,20 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description } = await request.json()
+    const { name, description, categoryId } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
+    }
+
+    // Validate category if provided
+    if (categoryId) {
+      const category = await getPrisma().vendorCategory.findUnique({
+        where: { id: categoryId }
+      })
+      if (!category || !category.isActive) {
+        return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+      }
     }
 
     const store = await getPrisma().store.update({
@@ -94,7 +118,11 @@ export async function PUT(request: NextRequest) {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
+        categoryId: categoryId || null,
       },
+      include: {
+        category: true,
+      }
     })
 
     return NextResponse.json({ store })

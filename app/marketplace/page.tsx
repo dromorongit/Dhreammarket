@@ -31,6 +31,7 @@ interface Product {
   store?: {
     id: string
     name: string
+    categoryId: string | null
   }
   images: Array<{
     id: string
@@ -44,19 +45,30 @@ interface Category {
   name: string
 }
 
+interface VendorCategory {
+  id: string
+  name: string
+  slug: string
+}
+
 function MarketplaceContent() {
   const searchParams = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [vendorCategories, setVendorCategories] = useState<VendorCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const categoryParam = searchParams.get('category') || ''
+    const vendorCategoryParam = searchParams.get('vendorCategory') || ''
     setSelectedCategory(categoryParam)
+    setSelectedVendorCategory(vendorCategoryParam)
     fetchProducts()
     fetchCategories()
+    fetchVendorCategories()
   }, [searchParams])
 
   const fetchProducts = async () => {
@@ -82,6 +94,18 @@ function MarketplaceContent() {
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
+    }
+  }
+
+  const fetchVendorCategories = async () => {
+    try {
+      const response = await fetch('/api/vendor-categories')
+      if (response.ok) {
+        const data = await response.json()
+        setVendorCategories(data.categories)
+      }
+    } catch (error) {
+      console.error('Error fetching vendor categories:', error)
     }
   }
 
@@ -117,9 +141,17 @@ function MarketplaceContent() {
     }
   }
 
-  const filteredProducts = selectedCategory
-    ? products.filter(product => product.category?.id === selectedCategory)
-    : products
+  const filteredProducts = products.filter(product => {
+    // Filter by product category
+    if (selectedCategory && product.category?.id !== selectedCategory) {
+      return false
+    }
+    // Filter by vendor category
+    if (selectedVendorCategory && product.store?.categoryId !== selectedVendorCategory) {
+      return false
+    }
+    return true
+  })
 
   if (loading) {
     return (
@@ -211,12 +243,49 @@ function MarketplaceContent() {
                 </Button>
               ))}
             </div>
+
+            {/* Vendor Category Filter */}
+            {vendorCategories.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-slate-700">Vendor Type:</span>
+                <Button
+                  variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
+                  size="sm"
+                  className={`rounded-full ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
+                  onClick={() => setSelectedVendorCategory('')}
+                >
+                  All
+                  {selectedVendorCategory === '' && (
+                    <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                      {products.length}
+                    </span>
+                  )}
+                </Button>
+                {vendorCategories.map((vc) => (
+                  <Button
+                    key={vc.id}
+                    variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
+                    size="sm"
+                    className={`rounded-full ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
+                    onClick={() => setSelectedVendorCategory(vc.id)}
+                  >
+                    {vc.name}
+                    {selectedVendorCategory === vc.id && (
+                      <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                        {products.filter(p => p.store?.categoryId === vc.id).length}
+                      </span>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
             <div className="flex items-center gap-2 text-sm text-slate-600">
               <span>{filteredProducts.length} products</span>
               <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
               <span>Verified sellers</span>
             </div>
-          </div>
 
           {/* Results */}
           {filteredProducts.length === 0 ? (
@@ -318,7 +387,6 @@ function MarketplaceContent() {
               ))}
             </div>
           )}
-        </div>
       </div>
     </div>
   )
