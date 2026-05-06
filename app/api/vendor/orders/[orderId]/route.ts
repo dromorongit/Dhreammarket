@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sendOrderStatusUpdateEmail } from '@/lib/email'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,12 @@ export async function GET(
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json({ error: 'Complete store setup to view order details' }, { status: 403 })
     }
 
     const orderId = params.orderId
@@ -125,6 +132,12 @@ export async function PATCH(
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json({ error: 'Complete store setup to update order status' }, { status: 403 })
     }
 
     const orderId = params.orderId

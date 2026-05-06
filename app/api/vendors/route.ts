@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {
       user: { role: 'VENDOR' },
+      categoryId: { not: null },
     }
 
     // Filter by category

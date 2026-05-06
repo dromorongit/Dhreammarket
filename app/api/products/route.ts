@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export async function GET(request: NextRequest) {
   try {
@@ -86,14 +87,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
     }
 
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId);
+    if (!isOnboarded) {
+      return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
+    }
+
     // Get vendor's store
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
-    })
-
-    if (!store) {
-      return NextResponse.json({ error: 'Store not found. Please set up your store first.' }, { status: 400 })
-    }
+    });
 
     // Verify category exists
     const category = await getPrisma().category.findUnique({
@@ -107,7 +110,7 @@ export async function POST(request: NextRequest) {
     // Create product
     const product = await getPrisma().product.create({
       data: {
-        storeId: store.id,
+        storeId: store!.id,
         categoryId,
         name: name.trim(),
         description: description?.trim() || null,

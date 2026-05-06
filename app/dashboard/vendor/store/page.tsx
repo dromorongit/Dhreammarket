@@ -80,6 +80,13 @@ export default function StoreManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
+    
+    // Validate category selection
+    if (!formData.categoryId) {
+      setErrors({ categoryId: 'Vendor category is required' })
+      return
+    }
+    
     setSaving(true)
     setSaveSuccess(false)
 
@@ -233,6 +240,9 @@ export default function StoreManagement() {
                 </div>
               )}
 
+              {errors.categoryId && (
+                <div className="text-red-600 text-sm">{errors.categoryId}</div>
+              )}
               {errors.general && (
                 <div className="text-red-600 text-sm">{errors.general}</div>
               )}
@@ -245,7 +255,7 @@ export default function StoreManagement() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || !formData.categoryId}>
                   {saving ? 'Saving...' : store ? 'Update Store' : 'Create Store'}
                 </Button>
               </div>

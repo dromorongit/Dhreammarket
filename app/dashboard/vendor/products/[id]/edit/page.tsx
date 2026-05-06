@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
+import Link from 'next/link'
 
 interface Category {
   id: string
@@ -34,6 +35,7 @@ export default function EditProduct() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -45,9 +47,25 @@ export default function EditProduct() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    checkOnboardingStatus()
     fetchCategories()
     fetchProduct()
   }, [productId])
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const response = await fetch('/api/store')
+      if (response.ok) {
+        const data = await response.json()
+        setIsOnboarded(!!data.store?.categoryId)
+      } else {
+        setIsOnboarded(false)
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error)
+      setIsOnboarded(false)
+    }
+  }
 
   const fetchCategories = async () => {
     try {
@@ -160,11 +178,36 @@ export default function EditProduct() {
     }
   }
 
-  if (loading) {
+  if (isOnboarded === null || loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">Loading product...</div>
+          <div className="text-center">Loading...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isOnboarded) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Complete Your Store Setup</h3>
+              <p className="text-gray-600 mb-6">
+                You need to set up your store and select a category before managing products.
+              </p>
+              <Link href="/dashboard/vendor/store">
+                <Button>Complete Store Setup</Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )

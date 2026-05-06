@@ -209,7 +209,33 @@ export default function VendorDashboard() {
           </div>
         </div>
       </div>
-
+   
+      {/* Onboarding Banner */}
+      {!onboardingSteps[0].completed && (
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-l-4 border-amber-500 p-6 rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-amber-800">
+                  Complete your store setup to start selling
+                </p>
+                <Link
+                  href="/dashboard/vendor/store"
+                  className="mt-1 inline-flex items-center px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700"
+                >
+                  Complete Setup
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+   
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
         {/* Onboarding Progress */}
         {!isFullyOnboarded && (

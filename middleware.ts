@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken, type Role } from './lib/auth-middleware'
+import { isVendorOnboarded } from './lib/onboarding'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +35,15 @@ export async function middleware(request: NextRequest) {
     const allowedRoles = protectedRoutes[protectedRoute as keyof typeof protectedRoutes]
     if (!allowedRoles.includes(payload.role)) {
       return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Additional onboarding check for vendor routes
+    if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
+      const isOnboarded = await isVendorOnboarded(payload.userId);
+      if (!isOnboarded) {
+        // Redirect to store setup if vendor hasn't completed onboarding
+        return NextResponse.redirect(new URL('/dashboard/vendor/store', request.url));
+      }
     }
   }
 

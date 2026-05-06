@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export async function GET(
   request: NextRequest,
@@ -54,6 +55,12 @@ export async function PUT(
 
     const { name, description, price, stock, categoryId, imageUrls } = await request.json()
 
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId);
+    if (!isOnboarded) {
+      return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
+    }
+
     // Validate required fields
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
@@ -67,7 +74,6 @@ export async function PUT(
     if (stock === undefined || stock < 0) {
       return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
     }
-
     // Get vendor's store
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
@@ -169,6 +175,12 @@ export async function DELETE(
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json({ error: 'Complete store setup before managing products' }, { status: 403 })
     }
 
     // Get vendor's store

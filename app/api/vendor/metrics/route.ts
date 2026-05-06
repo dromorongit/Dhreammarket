@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,21 @@ export async function GET(request: NextRequest) {
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json({
+        productCount: 0,
+        activeOrderCount: 0,
+        revenue: 0,
+        vendorEarnings: 0,
+        averageRating: 0,
+        totalReviews: 0,
+        bestSellers: [],
+        totalPaidOrders: 0
+      })
     }
 
     // Get vendor's store
