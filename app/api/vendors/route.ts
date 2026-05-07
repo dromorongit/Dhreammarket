@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
+    const sortBy = searchParams.get('sortBy') || 'newest' // 'newest', 'rating', 'popular'
 
     const skip = (page - 1) * limit
 
@@ -35,12 +36,20 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Determine orderBy based on sortBy parameter
+    let orderBy: any = { createdAt: 'desc' }
+    if (sortBy === 'rating') {
+      orderBy = { isFeatured: 'desc', createdAt: 'desc' } // Featured first, then by date as secondary
+    } else if (sortBy === 'popular') {
+      orderBy = { isFeatured: 'desc', createdAt: 'desc' } // Featured first, then by date as secondary
+    }
+
     const [vendors, total] = await Promise.all([
       getPrisma().store.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           user: {
             select: {
@@ -65,10 +74,78 @@ export async function GET(request: NextRequest) {
       getPrisma().store.count({ where }),
     ])
 
+    // Calculate ratings and order counts for each vendor
+    const vendorsWithMetrics = await Promise.all(
+      vendors.map(async (store) => {
+        // Get reviews for rating
+        const reviews = await getPrisma().review.findMany({
+          where: {
+            product: {
+              storeId: store.id,
+            },
+          },
+          select: {
+            rating: true,
+          },
+        })
+
+        const averageRating = reviews.length > 0
+          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+          : 0
+
+        // Get order count for popularity
+        const orderItems = await getPrisma().orderItem.findMany({
+          where: {
+            product: {
+              storeId: store.id,
+            },
+          },
+          include: {
+            order: {
+              select: {
+                status: true,
+              },
+            },
+          },
+        })
+
+        // Count completed orders only
+        const orderCount = orderItems.filter(item =>
+          item.order.status === 'COMPLETED' || item.order.status === 'DELIVERED'
+        ).length
+
+        // Check if featured status is still valid
+        const now = new Date()
+        const isCurrentlyFeatured = (store as any).isFeatured &&
+          (store as any).featuredUntil &&
+          new Date((store as any).featuredUntil) > now
+
+        return {
+          ...store,
+          isFeatured: isCurrentlyFeatured,
+          rating: Math.round(averageRating * 10) / 10,
+          orderCount,
+        }
+      })
+    )
+
+    // Apply ranking logic: Featured first, then by rating, then by order count, then by newest
+    const sortedVendors = vendorsWithMetrics.sort((a: any, b: any) => {
+      // Featured vendors first
+      if (a.isFeatured && !b.isFeatured) return -1
+      if (!a.isFeatured && b.isFeatured) return 1
+      // Then by rating (highest first)
+      if (b.rating !== a.rating) return b.rating - a.rating
+      // Then by order count (popularity)
+      if (b.orderCount !== a.orderCount) return b.orderCount - a.orderCount
+      // Then by newest
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
+
     const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
-      vendors,
+      vendors: sortedVendors,
       pagination: {
         page,
         limit,

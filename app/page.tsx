@@ -7,9 +7,93 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { useState, useEffect } from 'react'
 
+interface FeaturedVendor {
+  id: string
+  name: string
+  description: string | null
+  isVerified: boolean
+  isFeatured: boolean
+  logo: string | null
+  rating: number
+  productCount: number
+  category: { id: string; name: string; slug: string } | null
+}
+
 export default function Home() {
+  const [featuredVendors, setFeaturedVendors] = useState<FeaturedVendor[]>([])
+  const [loadingFeatured, setLoadingFeatured] = useState(true)
+
+  useEffect(() => {
+    const fetchFeaturedVendors = async () => {
+      try {
+        const response = await fetch('/api/vendors/featured')
+        if (response.ok) {
+          const data = await response.json()
+          setFeaturedVendors(data.vendors)
+        }
+      } catch (error) {
+        console.error('Error fetching featured vendors:', error)
+      } finally {
+        setLoadingFeatured(false)
+      }
+    }
+    fetchFeaturedVendors()
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Featured Vendors Section - Top */}
+      {!loadingFeatured && featuredVendors.length > 0 && (
+        <section className="relative py-12 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
+          </div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <Badge variant="premium" className="mb-4">Featured Vendors</Badge>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                Meet Our Top Vendors
+              </h2>
+              <p className="text-slate-300">
+                Discover our featured vendors with exceptional products and service
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredVendors.slice(0, 4).map((vendor) => (
+                <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+                  <Card variant="elevated" className="group bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                        {vendor.logo ? (
+                          <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-2xl font-bold text-white">
+                            {vendor.name.charAt(0)}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-premium-gold transition-colors">
+                        {vendor.name}
+                      </h3>
+                      {vendor.category && (
+                        <Badge variant="default" size="sm" className="mb-2">
+                          {vendor.category.name}
+                        </Badge>
+                      )}
+                      <div className="flex items-center justify-center gap-2 text-sm text-slate-300">
+                        <span>★ {vendor.rating}</span>
+                        <span>•</span>
+                        <span>{vendor.productCount} products</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background gradient */}
@@ -292,6 +376,57 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Top Vendors Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Top Rated</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Top Vendors
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Our highest-rated vendors with exceptional customer satisfaction
+            </p>
+          </div>
+
+          <TopVendorsSection />
+        </div>
+      </section>
+
+      {/* New Vendors Section */}
+      <section className="relative py-24 lg:py-32 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Just Joined</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              New Vendors
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Fresh faces on Dhream Market - check out the latest additions
+            </p>
+          </div>
+
+          <NewVendorsSection />
+        </div>
+      </section>
+
+      {/* Popular Categories Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Browse By</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Popular Categories
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Explore products across our most popular categories
+            </p>
+          </div>
+
+          <PopularCategoriesSection />
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900"></div>
@@ -457,6 +592,246 @@ function VendorCategorySection() {
         </div>
       )}
     </>
+  )
+}
+
+// Top Vendors Section Component
+function TopVendorsSection() {
+  const [vendors, setVendors] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchTopVendors()
+  }, [])
+
+  const fetchTopVendors = async () => {
+    try {
+      // Fetch with sortBy=rating to get highest rated vendors first (with ranking logic)
+      const response = await fetch('/api/vendors?limit=4&sortBy=rating')
+      if (response.ok) {
+        const data = await response.json()
+        setVendors(data.vendors.slice(0, 4))
+      }
+    } catch (error) {
+      console.error('Error fetching top vendors:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} variant="elevated" className="p-6">
+            <div className="space-y-4">
+              <div className="w-20 h-20 rounded-full bg-slate-200 mx-auto" />
+              <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto" />
+              <div className="h-4 bg-slate-100 rounded w-1/2 mx-auto" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {vendors.map((vendor) => (
+        <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+          <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden">
+              {vendor.logo ? (
+                <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-white">
+                  {vendor.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              <svg className="w-5 h-5 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span className="font-bold text-deep-navy">{vendor.rating.toFixed(1)}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
+              {vendor.name}
+            </h3>
+            {vendor.category && (
+              <Badge variant="default" size="sm" className="mb-2">
+                {vendor.category.name}
+              </Badge>
+            )}
+            <p className="text-sm text-slate-600">
+              {vendor._count?.products || 0} products
+            </p>
+            {vendor.isVerified && (
+              <Badge variant="verified" size="sm" className="mt-2">
+                Verified
+              </Badge>
+            )}
+          </Card>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+// New Vendors Section Component
+function NewVendorsSection() {
+  const [vendors, setVendors] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchNewVendors()
+  }, [])
+
+  const fetchNewVendors = async () => {
+    try {
+      // Fetch with sortBy=newest (default) to get newest vendors first
+      const response = await fetch('/api/vendors?limit=4')
+      if (response.ok) {
+        const data = await response.json()
+        setVendors(data.vendors)
+      }
+    } catch (error) {
+      console.error('Error fetching new vendors:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} variant="elevated" className="p-6">
+            <div className="space-y-4">
+              <div className="w-20 h-20 rounded-full bg-slate-200 mx-auto" />
+              <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto" />
+              <div className="h-4 bg-slate-100 rounded w-1/2 mx-auto" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {vendors.map((vendor) => (
+        <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+          <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden">
+              {vendor.logo ? (
+                <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-white">
+                  {vendor.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
+              {vendor.name}
+            </h3>
+            {vendor.category && (
+              <Badge variant="default" size="sm" className="mb-2">
+                {vendor.category.name}
+              </Badge>
+            )}
+            <div className="flex items-center justify-center gap-1 text-sm text-slate-500 mb-2">
+              <svg className="w-4 h-4 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span>{vendor.rating.toFixed(1)}</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Joined {new Date(vendor.createdAt).toLocaleDateString()}
+            </p>
+            {vendor.isVerified && (
+              <Badge variant="verified" size="sm" className="mt-2">
+                Verified
+              </Badge>
+            )}
+          </Card>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+// Popular Categories Section Component
+function PopularCategoriesSection() {
+  const [categories, setCategories] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        // Take first 4 categories or all if less than 4
+        setCategories(data.categories.slice(0, 4))
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} variant="elevated" className="p-6">
+            <div className="space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-200 mx-auto" />
+              <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  const categoryIcons: Record<string, string> = {
+    'Electronics': 'M9.33 4.062a3 3 0 012.64 0l7.5 4.062a3 3 0 011.53 2.594v8.124a3 3 0 01-1.53 2.594l-7.5 4.062a3 3 0 01-2.64 0l-7.5-4.062a3 3 0 01-1.53-2.594V10.718a3 3 0 011.53-2.594l7.5-4.062z',
+    'Services': 'M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z',
+    'Fashion': 'M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z',
+    'Home & Garden': 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M5.25 12v7a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5v-7m-18 0h18',
+  }
+
+  const categoryColors: Record<string, string> = {
+    'Electronics': 'from-blue-500 to-cyan-600',
+    'Services': 'from-purple-500 to-pink-600',
+    'Fashion': 'from-pink-500 to-rose-600',
+    'Home & Garden': 'from-green-500 to-emerald-600',
+  }
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {categories.map((category) => (
+        <Link key={category.id} href={`/marketplace?category=${category.id}`}>
+          <Card variant="elevated" className="group text-center p-6 hover:shadow-xl transition-all duration-300">
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${categoryColors[category.name] || 'from-gray-500 to-gray-600'} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={categoryIcons[category.name] || 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'} />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors">
+              {category.name}
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">Browse products</p>
+          </Card>
+        </Link>
+      ))}
+    </div>
   )
 }
 

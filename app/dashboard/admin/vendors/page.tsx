@@ -9,6 +9,8 @@ interface Vendor {
   name: string
   description: string | null
   isVerified: boolean
+  isFeatured: boolean
+  featuredUntil: string | null
   createdAt: string
   user: {
     id: string
@@ -152,6 +154,59 @@ export default function AdminVendorsPage() {
     }
   }
 
+  const handleFeature = async (vendorId: string, feature: boolean, duration: number) => {
+    if (actionLoading) return
+    
+    const action = feature ? 'Feature vendor' : 'Remove from featured'
+    if (!confirm(`Are you sure you want to ${action.toLowerCase()}?`)) {
+      return
+    }
+    
+    try {
+      setActionLoading(vendorId)
+      const response = await fetch(`/api/admin/vendors/${vendorId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'feature', value: feature, duration }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        alert(data.error || 'Failed to update vendor feature status')
+        return
+      }
+      
+      // Refresh the list
+      fetchVendors()
+    } catch (err) {
+      alert('Failed to update vendor feature status')
+      console.error(err)
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleFeatureWithDuration = (vendorId: string, feature: boolean) => {
+    if (!feature) {
+      // If unfeaturing, no duration needed
+      handleFeature(vendorId, false, 0)
+      return
+    }
+    
+    // Show prompt for duration
+    const duration = prompt('Enter feature duration in days (e.g., 7, 30):', '7')
+    if (duration === null) return
+    
+    const days = parseInt(duration)
+    if (isNaN(days) || days <= 0) {
+      alert('Please enter a valid number of days')
+      return
+    }
+    
+    handleFeature(vendorId, true, days)
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -257,6 +312,7 @@ export default function AdminVendorsPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
@@ -294,6 +350,15 @@ export default function AdminVendorsPage() {
                             </span>
                           )}
                         </td>
+                        <td className="px-6 py-4">
+                          {vendor.isFeatured ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                              Featured
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {new Date(vendor.createdAt).toLocaleDateString()}
                         </td>
@@ -301,38 +366,38 @@ export default function AdminVendorsPage() {
                           <div className="flex gap-2">
                             {actionLoading === vendor.id ? (
                               <span className="text-sm text-gray-500">Processing...</span>
-                            ) : vendor.isVerified ? (
-                              <>
-                                <button
-                                  onClick={() => handleVerify(vendor.id, false)}
-                                  className="text-sm text-yellow-600 hover:text-yellow-800"
-                                  title="Revoke verification"
-                                >
-                                  Revoke
-                                </button>
-                                <button
-                                  onClick={() => handleDisable(vendor.id)}
-                                  className="text-sm text-red-600 hover:text-red-800"
-                                  title="Disable vendor"
-                                >
-                                  Disable
-                                </button>
-                              </>
                             ) : (
                               <>
-                                <button
-                                  onClick={() => handleVerify(vendor.id, true)}
-                                  className="text-sm text-green-600 hover:text-green-800"
-                                  title="Verify vendor"
-                                >
-                                  Verify
-                                </button>
+                                {vendor.isVerified ? (
+                                  <button
+                                    onClick={() => handleVerify(vendor.id, false)}
+                                    className="text-sm text-yellow-600 hover:text-yellow-800"
+                                    title="Revoke verification"
+                                  >
+                                    Revoke
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleVerify(vendor.id, true)}
+                                    className="text-sm text-green-600 hover:text-green-800"
+                                    title="Verify vendor"
+                                  >
+                                    Verify
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleDisable(vendor.id)}
                                   className="text-sm text-red-600 hover:text-red-800"
                                   title="Disable vendor"
                                 >
                                   Disable
+                                </button>
+                                <button
+                                  onClick={() => handleFeatureWithDuration(vendor.id, !vendor.isFeatured)}
+                                  className={`text-sm ${vendor.isFeatured ? 'text-purple-600 hover:text-purple-800' : 'text-blue-600 hover:text-blue-800'}`}
+                                  title={vendor.isFeatured ? 'Remove from featured' : 'Feature vendor with custom duration'}
+                                >
+                                  {vendor.isFeatured ? 'Unfeature' : 'Feature'}
                                 </button>
                               </>
                             )}

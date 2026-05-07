@@ -87,7 +87,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params
     const body = await request.json()
-    const { action, value } = body
+    const { action, value, duration } = body
 
     if (!action) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 })
@@ -116,7 +116,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         // Disable vendor by setting their role to CUSTOMER (removes vendor privileges)
         updatedStore = await prisma.store.update({
           where: { id },
-          data: { isVerified: false },
+          data: { isVerified: false, isFeatured: false, featuredUntil: null },
         })
         
         // Also update the user role
@@ -137,6 +137,32 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           where: { id: store.userId },
           data: { role: 'VENDOR' },
         })
+        break
+
+      case 'feature':
+        // Feature the vendor for a specified duration
+        if (!value || value !== true) {
+          // Unfeature the vendor
+          updatedStore = await prisma.store.update({
+            where: { id },
+            data: { isFeatured: false, featuredUntil: null },
+          })
+        } else {
+          // Calculate featuredUntil date
+          let featuredUntil: Date | null = null
+          if (duration) {
+            const days = parseInt(duration)
+            if (!isNaN(days) && days > 0) {
+              featuredUntil = new Date()
+              featuredUntil.setDate(featuredUntil.getDate() + days)
+            }
+          }
+          
+          updatedStore = await prisma.store.update({
+            where: { id },
+            data: { isFeatured: true, featuredUntil },
+          })
+        }
         break
 
       default:
