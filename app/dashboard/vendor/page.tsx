@@ -8,6 +8,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface OrderItem {
   id: string
@@ -653,6 +654,15 @@ export default function VendorDashboard() {
                   <span className="text-sm font-medium text-slate-700">Store Settings</span>
                 </Button>
               </Link>
+              <div>
+                <NeedHelpButton
+                  variant="outline"
+                  size="sm"
+                  category="VENDOR"
+                  fullWidth
+                  className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

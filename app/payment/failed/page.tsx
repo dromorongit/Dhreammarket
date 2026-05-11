@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 export default function PaymentFailed() {
   return (
@@ -96,13 +97,13 @@ export default function PaymentFailed() {
             </div>
 
             {/* Support Link */}
-            <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-              <p className="text-sm text-slate-500">
-                Need help?{' '}
-                <Link href="/contact" className="text-royal-blue hover:text-royal-blue/80 font-medium">
-                  Contact our support team
-                </Link>
-              </p>
+            <div className="mt-6 pt-6 border-t border-slate-200">
+              <NeedHelpButton
+                variant="outline"
+                size="sm"
+                category="PAYMENT"
+                fullWidth
+              />
             </div>
           </CardContent>
         </Card>

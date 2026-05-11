@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import ImageUpload from '@/components/ImageUpload'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface Store {
   id: string
@@ -156,15 +157,24 @@ export default function StoreManagement() {
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {store ? 'Manage Store' : 'Set Up Your Store'}
-          </h1>
-          <p className="text-gray-600 mt-2">
-             {store
-                ? 'Update your store information'
-                : 'Create your store profile to start selling on Dhream Market'
-              }
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {store ? 'Manage Store' : 'Set Up Your Store'}
+              </h1>
+              <p className="text-gray-600 mt-2">
+                {store
+                  ? 'Update your store information'
+                  : 'Create your store profile to start selling on Dhream Market'
+                }
+              </p>
+            </div>
+            <NeedHelpButton
+              variant="outline"
+              size="sm"
+              category="VENDOR"
+            />
+          </div>
         </div>
 
         <Card>

@@ -75,13 +75,13 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-white mb-4 tracking-wider uppercase">Support</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                <Link href="/help-center" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   Help Center
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                <Link href="/faq" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
                   FAQ
                 </Link>
@@ -89,13 +89,13 @@ export function Footer() {
               <li>
                 <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Developer API
+                  Contact Us
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                <Link href="/help-center" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Status
+                  Support Tickets
                 </Link>
               </li>
             </ul>

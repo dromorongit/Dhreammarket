@@ -198,6 +198,13 @@ export function Navbar() {
               <span>Contact</span>
               <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
+            <Link
+              href="/help-center"
+              className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+            >
+              <span>Support</span>
+              <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+            </Link>
             {user && (
               <Link
                 href="/cart"
@@ -382,6 +389,9 @@ export function Navbar() {
           </Link>
           <Link href="/contact" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
             Contact
+          </Link>
+          <Link href="/help-center" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+            Support
           </Link>
           {user && (
             <Link href="/cart" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">

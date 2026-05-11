@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface OrderItem {
   id: string
@@ -381,17 +382,25 @@ export default function CustomerOrderDetailPage() {
         )}
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Link href="/dashboard/customer" className="flex-1">
-            <Button variant="outline" className="w-full">
-              View All Orders
-            </Button>
-          </Link>
-          <Link href="/marketplace" className="flex-1">
-            <Button className="w-full">
-              Continue Shopping
-            </Button>
-          </Link>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link href="/dashboard/customer" className="flex-1">
+              <Button variant="outline" className="w-full">
+                View All Orders
+              </Button>
+            </Link>
+            <Link href="/marketplace" className="flex-1">
+              <Button className="w-full">
+                Continue Shopping
+              </Button>
+            </Link>
+          </div>
+          <NeedHelpButton
+            variant="outline"
+            size="sm"
+            category="ORDER"
+            fullWidth
+          />
         </div>
       </div>
     </div>

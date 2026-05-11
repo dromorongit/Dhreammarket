@@ -41,7 +41,7 @@ model User {
   position  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
- 
+  
   profile       Profile?
   store         Store?
   cart          Cart?
@@ -51,7 +51,8 @@ model User {
   notifications Notification[]
   feedbacks     Feedback[]
   vendorPayouts VendorPayout[] @relation("VendorPayoutVendor")
- 
+  supportTickets SupportTicket[]
+  
   @@map("users")
 }
 
@@ -260,6 +261,9 @@ enum NotificationType {
   ORDER_STATUS_UPDATED
   REVIEW_SUBMITTED
   REVIEW_RECEIVED
+  SUPPORT_TICKET_CREATED
+  SUPPORT_TICKET_REPLIED
+  SUPPORT_TICKET_STATUS_UPDATED
 }
 
 model Notification {
@@ -322,4 +326,45 @@ enum PayoutStatus {
   PAID
   FAILED
   CANCELLED
+}
+
+enum SupportTicketType {
+  GENERAL
+  PAYMENT
+  ORDER
+  VENDOR
+  ACCOUNT
+  TECHNICAL
+  REPORT
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model SupportTicket {
+  id        String           @id @default(cuid())
+  userId    String
+  subject   String
+  message   String
+  type      SupportTicketType
+  status    SupportTicketStatus @default(OPEN)
+  priority  SupportTicketPriority @default(MEDIUM)
+  adminReply String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("support_tickets")
 }

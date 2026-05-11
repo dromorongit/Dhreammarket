@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface Product {
   id: string
@@ -140,11 +141,18 @@ export default function VendorProducts() {
             <h1 className="text-3xl font-bold text-gray-900">My Products</h1>
             <p className="text-gray-600 mt-2">Manage your product listings</p>
           </div>
-          <Link href="/dashboard/vendor/products/new">
-            <Button>
-              + Add New Product
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            <NeedHelpButton
+              variant="outline"
+              size="sm"
+              category="VENDOR"
+            />
+            <Link href="/dashboard/vendor/products/new">
+              <Button>
+                + Add New Product
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {products.length === 0 ? (

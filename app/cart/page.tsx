@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface CartItem {
   id: string
@@ -323,6 +324,12 @@ export default function Cart() {
                   Proceed to Checkout
                 </Button>
               </Link>
+              <NeedHelpButton
+                variant="outline"
+                size="sm"
+                category="ORDER"
+                fullWidth
+              />
               <Button variant="outline" className="w-full" onClick={() => router.push('/marketplace')}>
                 Continue Shopping
               </Button>

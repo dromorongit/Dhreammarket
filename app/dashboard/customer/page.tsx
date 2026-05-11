@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface Order {
   id: string
@@ -421,24 +422,25 @@ export default function CustomerDashboard() {
             <h3 className="text-lg font-semibold text-deep-navy mb-4">Need Help?</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 rounded-xl">
-                <h4 className="font-medium text-deep-navy mb-2">Contact Support</h4>
+                <h4 className="font-medium text-deep-navy mb-2">Get Support</h4>
                 <p className="text-sm text-slate-600 mb-3">
-                  Have questions or need assistance? Our support team is here to help.
+                  Having issues with an order? Create a support ticket and we'll assist you.
                 </p>
-                <Link href="/contact">
-                  <Button variant="outline" size="sm">
-                    Get in Touch
-                  </Button>
-                </Link>
+                <NeedHelpButton
+                  variant="outline"
+                  size="sm"
+                  category="ORDER"
+                  fullWidth
+                />
               </div>
               <div className="p-4 bg-slate-50 rounded-xl">
-                <h4 className="font-medium text-deep-navy mb-2">Submit Feedback</h4>
+                <h4 className="font-medium text-deep-navy mb-2">Browse FAQs</h4>
                 <p className="text-sm text-slate-600 mb-3">
-                  Help us improve Dhream Market by sharing your suggestions.
+                  Find instant answers to common questions about orders, payments, and more.
                 </p>
-                <Link href="/contact">
-                  <Button variant="outline" size="sm">
-                    Share Feedback
+                <Link href="/faq">
+                  <Button variant="outline" size="sm" className="w-full">
+                    View FAQs
                   </Button>
                 </Link>
               </div>

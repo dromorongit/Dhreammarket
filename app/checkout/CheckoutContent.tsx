@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface CartItem {
   id: string
@@ -355,10 +356,18 @@ export default function CheckoutContent() {
                   onClick={handleCheckout}
                   disabled={processing}
                   size="lg"
-                  className="w-full shadow-lg shadow-royal-blue/20 mb-4"
+                  className="w-full shadow-lg shadow-royal-blue/20 mb-3"
                 >
                   {processing ? 'Processing...' : 'Pay Now'}
                 </Button>
+
+                <NeedHelpButton
+                  variant="outline"
+                  size="sm"
+                  category="PAYMENT"
+                  fullWidth
+                  className="mb-4"
+                />
 
                 <div className="text-center space-y-3">
                   <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
