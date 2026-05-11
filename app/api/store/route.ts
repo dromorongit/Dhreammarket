@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId } = await request.json()
+    const { name, description, categoryId, logo, banner } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || null,
         categoryId: categoryId || null,
+        ...(logo !== undefined && { logo }),
+        ...(banner !== undefined && { banner }),
       },
       include: {
         category: true,
@@ -99,7 +101,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId } = await request.json()
+    const { name, description, categoryId, logo, banner } = await request.json()
 
    if (!name || !name.trim()) {
      return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
@@ -117,21 +119,23 @@ export async function PUT(request: NextRequest) {
      return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
    }
 
-   const store = await getPrisma().store.update({
-     where: { userId: payload.userId },
-     data: {
-       name: name.trim(),
-       description: description?.trim() || null,
-       categoryId: categoryId,
-     },
-     include: {
-       category: true,
-     }
-   })
+    const store = await getPrisma().store.update({
+      where: { userId: payload.userId },
+      data: {
+        name: name.trim(),
+        description: description?.trim() || null,
+        categoryId: categoryId,
+        ...(logo !== undefined && { logo }),
+        ...(banner !== undefined && { banner }),
+      },
+      include: {
+        category: true,
+      }
+    })
 
-    return NextResponse.json({ store })
-  } catch (error) {
-    console.error('Error updating store:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+     return NextResponse.json({ store })
+   } catch (error) {
+     console.error('Error updating store:', error)
+     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+   }
 }

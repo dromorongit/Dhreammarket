@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
+import ImageUpload from '@/components/ImageUpload'
 
 interface Store {
   id: string
   name: string
   description: string | null
   categoryId: string | null
+  logo?: string | null
+  banner?: string | null
   category?: {
     id: string
     name: string
@@ -35,6 +38,8 @@ export default function StoreManagement() {
     name: '',
     description: '',
     categoryId: '',
+    logo: '',
+    banner: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -53,6 +58,8 @@ export default function StoreManagement() {
           name: data.store.name,
           description: data.store.description || '',
           categoryId: data.store.categoryId || '',
+          logo: data.store.logo || '',
+          banner: data.store.banner || '',
         })
       } else if (response.status === 404) {
         // Store doesn't exist yet
@@ -218,6 +225,36 @@ export default function StoreManagement() {
                   placeholder="Describe your store and what you offer"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+
+              <div>
+                <ImageUpload
+                  value={formData.logo ? [formData.logo] : []}
+                 onChange={(urls) => setFormData(prev => ({
+                   ...prev,
+                   logo: urls.length > 0 ? urls[0] : ''
+                 }))}
+                 folder="logos"
+                 maxFiles={1}
+                 maxSizeMB={2}
+                 label="Store Logo"
+                 hint="Upload your store logo (recommended: square format, max 2MB)"
+               />
+              </div>
+
+              <div>
+                <ImageUpload
+                  value={formData.banner ? [formData.banner] : []}
+                 onChange={(urls) => setFormData(prev => ({
+                   ...prev,
+                   banner: urls.length > 0 ? urls[0] : ''
+                 }))}
+                 folder="banners"
+                 maxFiles={1}
+                 maxSizeMB={5}
+                 label="Store Banner"
+                 hint="Upload a banner image for your store page (recommended: 1200x400px, max 5MB)"
+               />
               </div>
 
               {saveSuccess && (

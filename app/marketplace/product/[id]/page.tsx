@@ -314,6 +314,7 @@ export default function ProductDetail() {
                   src={product.images[selectedImageIndex].url}
                   alt={product.images[selectedImageIndex].alt || product.name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

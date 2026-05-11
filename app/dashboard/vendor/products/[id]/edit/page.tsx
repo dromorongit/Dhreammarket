@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
+import ImageUpload from '@/components/ImageUpload'
 import Link from 'next/link'
 
 interface Category {
@@ -152,32 +153,6 @@ export default function EditProduct() {
     }))
   }
 
-  const handleImageUrlChange = (index: number, value: string) => {
-    const newImageUrls = [...formData.imageUrls]
-    newImageUrls[index] = value
-    setFormData(prev => ({
-      ...prev,
-      imageUrls: newImageUrls
-    }))
-  }
-
-  const addImageUrl = () => {
-    setFormData(prev => ({
-      ...prev,
-      imageUrls: [...prev.imageUrls, '']
-    }))
-  }
-
-  const removeImageUrl = (index: number) => {
-    if (formData.imageUrls.length > 1) {
-      const newImageUrls = formData.imageUrls.filter((_, i) => i !== index)
-      setFormData(prev => ({
-        ...prev,
-        imageUrls: newImageUrls
-      }))
-    }
-  }
-
   if (isOnboarded === null || loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -319,42 +294,15 @@ export default function EditProduct() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Images
-                </label>
-                <div className="space-y-2">
-                  {formData.imageUrls.map((url, index) => (
-                    <div key={index} className="flex space-x-2">
-                      <Input
-                        type="url"
-                        value={url}
-                        onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                        placeholder="Enter image URL"
-                        className="flex-1"
-                      />
-                      {formData.imageUrls.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => removeImageUrl(index)}
-                        >
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addImageUrl}
-                    className="w-full"
-                  >
-                    + Add Another Image
-                  </Button>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  Enter URLs for product images. The first image will be used as the main product image.
-                </p>
+                <ImageUpload
+                  value={formData.imageUrls}
+                  onChange={(urls) => setFormData(prev => ({ ...prev, imageUrls: urls }))}
+                  folder="products"
+                  maxFiles={10}
+                  maxSizeMB={5}
+                  label="Product Images"
+                  hint="Upload high-quality images of your product. The first image will be used as the main product image."
+                />
               </div>
 
               {errors.general && (

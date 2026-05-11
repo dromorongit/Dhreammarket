@@ -168,6 +168,7 @@ export default function VendorProducts() {
                         src={product.images[0].url}
                         alt={product.images[0].alt || product.name}
                         className="w-full h-48 object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center bg-gray-100">

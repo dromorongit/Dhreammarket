@@ -269,6 +269,7 @@ export default function CheckoutContent() {
                             src={item.product.images[0].url}
                             alt={item.product.images[0].alt || item.product.name}
                             className="w-full h-full object-cover"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
