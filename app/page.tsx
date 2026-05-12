@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { useState, useEffect } from 'react'
+import { formatPrice } from '@/lib/currency'
 
 interface FeaturedVendor {
   id: string
@@ -42,58 +43,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Featured Vendors Section - Top */}
-      {!loadingFeatured && featuredVendors.length > 0 && (
-        <section className="relative py-12 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-          <div className="absolute inset-0">
-            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
-          </div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <Badge variant="premium" className="mb-4">Featured Vendors</Badge>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                Meet Our Top Vendors
-              </h2>
-              <p className="text-slate-300">
-                Discover our featured vendors with exceptional products and service
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredVendors.slice(0, 4).map((vendor) => (
-                <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
-                  <Card variant="elevated" className="group bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-                    <CardContent className="p-6 text-center">
-                      <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
-                        {vendor.logo ? (
-                          <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-2xl font-bold text-white">
-                            {vendor.name.charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                      <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-premium-gold transition-colors">
-                        {vendor.name}
-                      </h3>
-                      {vendor.category && (
-                        <Badge variant="default" size="sm" className="mb-2">
-                          {vendor.category.name}
-                        </Badge>
-                      )}
-                      <div className="flex items-center justify-center gap-2 text-sm text-slate-300">
-                        <span>★ {vendor.rating}</span>
-                        <span>•</span>
-                        <span>{vendor.productCount} products</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background gradient */}
@@ -175,7 +124,182 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Value Proposition Section */}
+      {/* Featured Marketplace Products Section */}
+      <section className="relative py-24 lg:py-32 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Featured Products</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Explore Marketplace
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Discover premium products from our trusted vendors
+            </p>
+          </div>
+
+          <FeaturedProductsSection />
+        </div>
+      </section>
+
+      {/* Shop by Vendor Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Shop by Vendor Type
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Discover trusted vendors across different categories
+            </p>
+          </div>
+
+          <VendorCategorySection />
+        </div>
+      </section>
+
+      {/* Top Vendors Section */}
+      <section className="relative py-24 lg:py-32 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Top Rated</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Top Vendors
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Our highest-rated vendors with exceptional customer satisfaction
+            </p>
+          </div>
+
+          <TopVendorsSection />
+        </div>
+      </section>
+
+      {/* New Vendors Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Just Joined</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              New Vendors
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Fresh faces on Dhream Market - check out the latest additions
+            </p>
+          </div>
+
+          <NewVendorsSection />
+        </div>
+      </section>
+
+      {/* Popular Categories Section */}
+      <section className="relative py-24 lg:py-32 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Browse By</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Popular Categories
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Explore products across our most popular categories
+            </p>
+          </div>
+
+          <PopularCategoriesSection />
+        </div>
+      </section>
+
+      {/* Featured Vendors Preview Section - Moved from top */}
+      {!loadingFeatured && featuredVendors.length > 0 && (
+        <section className="relative py-24 lg:py-32 bg-white">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="animate-fade-in-up">
+                <Badge variant="premium" className="mb-4">Vendor Program</Badge>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                  Join Our Vendor Network
+                </h2>
+                <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                  Start selling on Dhream Market and reach thousands of active buyers. Our platform provides everything you need to build, manage, and grow your business.
+                </p>
+                <ul className="space-y-4 mb-10">
+                  {[
+                    'Zero upfront costs',
+                    'Built-in payment processing',
+                    'Marketing and promotion tools',
+                    'Dedicated seller support',
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-royal-blue/10 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-royal-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span className="text-slate-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/register">
+                  <Button size="lg" className="shadow-lg shadow-royal-blue/20">
+                    Register as Vendor
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <Card variant="elevated" className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-royal-blue to-purple-600"></div>
+                        <div>
+                          <p className="font-semibold text-deep-navy">TechGadgets Pro</p>
+                          <Badge variant="verified" size="sm">Verified</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600">"Best platform for our electronics business. Sales up 300% in 6 months!"</p>
+                    </Card>
+                    <Card variant="elevated" className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-600"></div>
+                        <div>
+                          <p className="font-semibold text-deep-navy">StyleHub Fashion</p>
+                          <Badge variant="verified" size="sm">Verified</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600">"Easy to use dashboard and great customer support. Highly recommend!"</p>
+                    </Card>
+                  </div>
+                  <div className="space-y-4 pt-8">
+                    <Card variant="elevated" className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600"></div>
+                        <div>
+                          <p className="font-semibold text-deep-navy">HomeEssentials</p>
+                          <Badge variant="verified" size="sm">Verified</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600">"Our revenue doubled after joining. The tools are incredible!"</p>
+                    </Card>
+                    <Card variant="elevated" className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600"></div>
+                        <div>
+                          <p className="font-semibold text-deep-navy">ServiceMasters</p>
+                          <Badge variant="verified" size="sm">Verified</Badge>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-600">"Professional platform with everything we need to scale."</p>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Why Choose Dhream Market Section */}
       <section className="relative py-24 lg:py-32 bg-slate-50">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmN2ZhIiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTQwIDJIMHY0MEg0MFoiIGZpbGw9IiNmMGY3ZmEiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4K')] opacity-50"></div>
         
@@ -229,204 +353,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Categories Preview */}
-      <section className="relative py-24 lg:py-32 bg-white">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-slate-50/50 to-transparent"></div>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 lg:mb-24 animate-fade-in-up">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Explore Categories
-            </h2>
-            <p className="text-lg text-slate-600">
-              Discover products and services across our growing marketplace.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[  
-              { name: 'Electronics', icon: 'M9.33 4.062a3 3 0 012.64 0l7.5 4.062a3 3 0 011.53 2.594v8.124a3 3 0 01-1.53 2.594l-7.5 4.062a3 3 0 01-2.64 0l-7.5-4.062a3 3 0 01-1.53-2.594V10.718a3 3 0 011.53-2.594l7.5-4.062z', color: 'from-blue-500 to-cyan-600' },
-              { name: 'Services', icon: 'M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z', color: 'from-purple-500 to-pink-600' },
-              { name: 'Fashion', icon: 'M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z', color: 'from-pink-500 to-rose-600' },
-              { name: 'Home & Garden', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M5.25 12v7a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5v-7m-18 0h18', color: 'from-green-500 to-emerald-600' },
-            ].map((category, i) => (
-              <Link key={category.name} href={`/marketplace`}>
-                <Card variant="elevated" className="group text-center p-6 animate-fade-in-up" style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={category.icon} />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1">Browse products</p>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Vendors Preview */}
-      <section className="relative py-24 lg:py-32 bg-slate-50">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-in-up">
-              <Badge variant="premium" className="mb-4">Vendor Program</Badge>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-                Join Our Vendor Network
-              </h2>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                Start selling on Dhream Market and reach thousands of active buyers. Our platform provides everything you need to build, manage, and grow your business.
-              </p>
-              <ul className="space-y-4 mb-10">
-                {[  
-                  'Zero upfront costs',
-                  'Built-in payment processing',
-                  'Marketing and promotion tools',
-                  'Dedicated seller support',
-                ].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-royal-blue/10 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-royal-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span className="text-slate-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link href="/register">
-                <Button size="lg" className="shadow-lg shadow-royal-blue/20">
-                  Register as Vendor
-                </Button>
-              </Link>
-            </div>
-
-            <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <Card variant="elevated" className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-royal-blue to-purple-600"></div>
-                      <div>
-                        <p className="font-semibold text-deep-navy">TechGadgets Pro</p>
-                        <Badge variant="verified" size="sm">Verified</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-600">"Best platform for our electronics business. Sales up 300% in 6 months!"</p>
-                  </Card>
-                  <Card variant="elevated" className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-600"></div>
-                      <div>
-                        <p className="font-semibold text-deep-navy">StyleHub Fashion</p>
-                        <Badge variant="verified" size="sm">Verified</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-600">"Easy to use dashboard and great customer support. Highly recommend!"</p>
-                  </Card>
-                </div>
-                <div className="space-y-4 pt-8">
-                  <Card variant="elevated" className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600"></div>
-                      <div>
-                        <p className="font-semibold text-deep-navy">HomeEssentials</p>
-                        <Badge variant="verified" size="sm">Verified</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-600">"Our revenue doubled after joining. The tools are incredible!"</p>
-                  </Card>
-                  <Card variant="elevated" className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600"></div>
-                      <div>
-                        <p className="font-semibold text-deep-navy">ServiceMasters</p>
-                        <Badge variant="verified" size="sm">Verified</Badge>
-                      </div>
-                    </div>
-                    <p className="text-sm text-slate-600">"Professional platform with everything we need to scale."</p>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Browse Vendors by Category */}
-      <section className="relative py-24 lg:py-32 bg-white">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Shop by Vendor Type
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Discover trusted vendors across different categories
-            </p>
-          </div>
-
-          <VendorCategorySection />
-        </div>
-      </section>
-
-      {/* Top Vendors Section */}
-      <section className="relative py-24 lg:py-32 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Top Rated</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Top Vendors
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Our highest-rated vendors with exceptional customer satisfaction
-            </p>
-          </div>
-
-          <TopVendorsSection />
-        </div>
-      </section>
-
-      {/* New Vendors Section */}
-      <section className="relative py-24 lg:py-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Just Joined</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              New Vendors
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Fresh faces on Dhream Market - check out the latest additions
-            </p>
-          </div>
-
-          <NewVendorsSection />
-        </div>
-      </section>
-
-      {/* Popular Categories Section */}
-      <section className="relative py-24 lg:py-32 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Browse By</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Popular Categories
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Explore products across our most popular categories
-            </p>
-          </div>
-
-          <PopularCategoriesSection />
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900"></div>
@@ -839,4 +765,189 @@ interface VendorCategory {
   id: string
   name: string
   slug: string
+}
+
+// Featured Products Section Component
+interface Product {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  stock: number
+  category?: {
+    id: string
+    name: string
+  }
+  store?: {
+    id: string
+    name: string
+  }
+  images: Array<{
+    id: string
+    url: string
+    alt: string | null
+  }>
+}
+
+function FeaturedProductsSection() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products')
+      if (response.ok) {
+        const data = await response.json()
+        // Filter products with stock > 0 and take first 8
+        const availableProducts = data.products
+          .filter((p: Product) => p.stock > 0)
+          .slice(0, 8)
+        setProducts(availableProducts)
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addToCart = async (productId: string) => {
+    setAddingToCart(prev => new Set(prev).add(productId))
+    try {
+      const response = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: 1 })
+      })
+      if (response.ok) {
+        // Could show success toast here
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error)
+    } finally {
+      setAddingToCart(prev => {
+        const next = new Set(prev)
+        next.delete(productId)
+        return next
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
+          <Card key={i} variant="elevated" className="overflow-hidden">
+            <div className="aspect-square bg-slate-200"></div>
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                <div className="h-5 bg-slate-200 rounded w-3/4"></div>
+                <div className="h-4 bg-slate-100 rounded w-full"></div>
+                <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+                <div className="flex gap-2 pt-2">
+                  <div className="h-9 bg-slate-200 rounded flex-1"></div>
+                  <div className="h-9 bg-slate-200 rounded flex-1"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  if (products.length === 0) {
+    return (
+      <EmptyState
+        icon={
+          <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        }
+        title="No products available"
+        description="Check back soon for new products from our vendors."
+      />
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {products.map((product) => (
+        <Card
+          key={product.id}
+          variant="elevated"
+          className="group overflow-hidden hover:shadow-xl transition-all duration-300"
+        >
+          <Link href={`/marketplace/product/${product.id}`} className="block">
+            <div className="relative aspect-square bg-slate-100 overflow-hidden">
+              {product.images.length > 0 ? (
+                <img
+                  src={product.images[0].url}
+                  alt={product.images[0].alt || product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                  <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
+              {product.store && (
+                <Badge variant="verified" size="sm" className="absolute top-3 left-3">
+                  {product.store.name}
+                </Badge>
+              )}
+            </div>
+          </Link>
+          <CardContent className="p-6">
+            <Link href={`/marketplace/product/${product.id}`} className="block">
+              <h3 className="text-lg font-semibold text-deep-navy mb-2 line-clamp-2 group-hover:text-royal-blue transition-colors">
+                {product.name}
+              </h3>
+            </Link>
+            <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+              {product.description || 'No description available'}
+            </p>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-2xl font-bold text-royal-blue">
+                {formatPrice(product.price)}
+              </span>
+              <span className="text-sm text-slate-500">
+                {product.stock} in stock
+              </span>
+            </div>
+            {product.category && (
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="default" size="sm">
+                  {product.category.name}
+                </Badge>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="flex-1"
+                disabled={addingToCart.has(product.id)}
+                onClick={() => addToCart(product.id)}
+              >
+                {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
+              </Button>
+              <Link href={`/marketplace/product/${product.id}`} className="flex-1">
+                <Button variant="outline" size="sm" className="w-full">
+                  View Details
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
 }

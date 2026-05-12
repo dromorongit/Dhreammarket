@@ -1,0 +1,197 @@
+      {/* CTA Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-slate-50/50 to-transparent"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 lg:mb-24 animate-fade-in-up">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Explore Categories
+            </h2>
+            <p className="text-lg text-slate-600">
+              Discover products and services across our growing marketplace.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[  
+              { name: 'Electronics', icon: 'M9.33 4.062a3 3 0 012.64 0l7.5 4.062a3 3 0 011.53 2.594v8.124a3 3 0 01-1.53 2.594l-7.5 4.062a3 3 0 01-2.64 0l-7.5-4.062a3 3 0 01-1.53-2.594V10.718a3 3 0 011.53-2.594l7.5-4.062z', color: 'from-blue-500 to-cyan-600' },
+              { name: 'Services', icon: 'M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z', color: 'from-purple-500 to-pink-600' },
+              { name: 'Fashion', icon: 'M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z', color: 'from-pink-500 to-rose-600' },
+              { name: 'Home & Garden', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M5.25 12v7a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5v-7m-18 0h18', color: 'from-green-500 to-emerald-600' },
+            ].map((category, i) => (
+              <Link key={category.name} href={`/marketplace`}>
+                <Card variant="elevated" className="group text-center p-6 animate-fade-in-up" style={{ animationDelay: `${0.2 + i * 0.1}s` }}>
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={category.icon} />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors">
+                    {category.name}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">Browse products</p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Vendors Preview */}
+      <section className="relative py-24 lg:py-32 bg-slate-50">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="animate-fade-in-up">
+              <Badge variant="premium" className="mb-4">Vendor Program</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                Join Our Vendor Network
+              </h2>
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                Start selling on Dhream Market and reach thousands of active buyers. Our platform provides everything you need to build, manage, and grow your business.
+              </p>
+              <ul className="space-y-4 mb-10">
+                {[  
+                  'Zero upfront costs',
+                  'Built-in payment processing',
+                  'Marketing and promotion tools',
+                  'Dedicated seller support',
+                ].map((feature, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-royal-blue/10 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-royal-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-slate-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/register">
+                <Button size="lg" className="shadow-lg shadow-royal-blue/20">
+                  Register as Vendor
+                </Button>
+              </Link>
+            </div>
+
+            <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <Card variant="elevated" className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-royal-blue to-purple-600"></div>
+                      <div>
+                        <p className="font-semibold text-deep-navy">TechGadgets Pro</p>
+                        <Badge variant="verified" size="sm">Verified</Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">"Best platform for our electronics business. Sales up 300% in 6 months!"</p>
+                  </Card>
+                  <Card variant="elevated" className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-rose-600"></div>
+                      <div>
+                        <p className="font-semibold text-deep-navy">StyleHub Fashion</p>
+                        <Badge variant="verified" size="sm">Verified</Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">"Easy to use dashboard and great customer support. Highly recommend!"</p>
+                  </Card>
+                </div>
+                <div className="space-y-4 pt-8">
+                  <Card variant="elevated" className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600"></div>
+                      <div>
+                        <p className="font-semibold text-deep-navy">HomeEssentials</p>
+                        <Badge variant="verified" size="sm">Verified</Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">"Our revenue doubled after joining. The tools are incredible!"</p>
+                  </Card>
+                  <Card variant="elevated" className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600"></div>
+                      <div>
+                        <p className="font-semibold text-deep-navy">ServiceMasters</p>
+                        <Badge variant="verified" size="sm">Verified</Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600">"Professional platform with everything we need to scale."</p>
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Browse Vendors by Category */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Shop by Vendor Type
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Discover trusted vendors across different categories
+            </p>
+          </div>
+
+          <VendorCategorySection />
+        </div>
+      </section>
+
+      {/* Top Vendors Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Top Rated</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Top Vendors
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Our highest-rated vendors with exceptional customer satisfaction
+            </p>
+          </div>
+
+          <TopVendorsSection />
+        </div>
+      </section>
+
+      {/* New Vendors Section */}
+      <section className="relative py-24 lg:py-32 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Just Joined</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              New Vendors
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Fresh faces on Dhream Market - check out the latest additions
+            </p>
+          </div>
+
+          <NewVendorsSection />
+        </div>
+      </section>
+
+      {/* Popular Categories Section */}
+      <section className="relative py-24 lg:py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <Badge variant="premium" className="mb-4">Browse By</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+              Popular Categories
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Explore products across our most popular categories
+            </p>
+          </div>
+
+          <PopularCategoriesSection />
+        </div>
+      </section>
+
