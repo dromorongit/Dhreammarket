@@ -274,7 +274,7 @@ export default function AdminDashboard() {
         </div>
 
          {/* Revenue Card */}
-         <Card variant="elevated" className="mb-8 overflow-hidden">
+         <Card variant="elevated" className="mb-8 overflow-hidden relative">
            <div className="absolute inset-0 bg-gradient-to-br from-royal-blue/90 to-purple-900/90"></div>
            <CardContent className="p-8 relative">
              <div className="space-y-6">
