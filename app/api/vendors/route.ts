@@ -39,9 +39,9 @@ export async function GET(request: NextRequest) {
     // Determine orderBy based on sortBy parameter
     let orderBy: any = { createdAt: 'desc' }
     if (sortBy === 'rating') {
-      orderBy = { isFeatured: 'desc', createdAt: 'desc' } // Featured first, then by date as secondary
+      orderBy = [{ isFeatured: 'desc' }, { createdAt: 'desc' }] // Featured first, then by date as secondary
     } else if (sortBy === 'popular') {
-      orderBy = { isFeatured: 'desc', createdAt: 'desc' } // Featured first, then by date as secondary
+      orderBy = [{ isFeatured: 'desc' }, { createdAt: 'desc' }] // Featured first, then by date as secondary
     }
 
     const [vendors, total] = await Promise.all([
