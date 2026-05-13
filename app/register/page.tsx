@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState<Role>('CUSTOMER')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -37,6 +38,12 @@ export default function RegisterPage() {
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
+      setLoading(false)
+      return
+    }
+
+    if (!agreedToTerms) {
+      setError('You must agree to the Terms and Conditions and Privacy Policy to create an account')
       setLoading(false)
       return
     }
@@ -133,10 +140,30 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
+              <div className="space-y-4">
+                <label className="flex items-start">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-600">
+                    I agree to the{' '}
+                    <Link href="/terms" className="text-blue-600 hover:text-blue-500 underline">
+                      Terms and Conditions
+                    </Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" className="text-blue-600 hover:text-blue-500 underline">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+              </div>
               {error && (
                 <div className="text-red-600 text-sm">{error}</div>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
                 {loading ? 'Creating account...' : 'Create account'}
               </Button>
             </form>

@@ -255,10 +255,57 @@ export async function sendReviewConfirmationEmail(
   `
   const htmlContent = getEmailTemplate(content)
   
+   return sendEmail({
+     to: customerEmail,
+     subject,
+     htmlContent,
+     textContent: `Thank you for reviewing ${productName}! Your rating: ${rating} stars. Your feedback helps other customers!`
+   })
+ }
+
+// Password reset email - professional elite design
+export async function sendPasswordResetEmail(
+  customerEmail: string,
+  customerName: string,
+  resetToken: string,
+  expiresAt: Date
+) {
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password/${resetToken}`
+  const expiryHours = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60))
+  
+  const subject = 'Reset Your Dhream Market Password'
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Reset Your Password</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">We received a request to reset your password for your Dhream Market account. Click the button below to create a new password:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+      <tr>
+        <td align="center">
+          <a href="${resetUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(26, 26, 46, 0.3);">
+            Reset Password
+          </a>
+        </td>
+      </tr>
+    </table>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-size: 14px; color: #92400e;">
+        <strong>Important:</strong> This link will expire in ${expiryHours} hour(s). For security reasons, this link can only be used once.
+      </p>
+    </div>
+    
+    <p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280;">
+      If you didn't request a password reset, please ignore this email. Your account will remain secure.
+    </p>
+  `
+  const htmlContent = getEmailTemplate(content, 'If you need assistance, contact our support team at support@dhreamarket.com')
+  
   return sendEmail({
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Thank you for reviewing ${productName}! Your rating: ${rating} stars. Your feedback helps other customers!`
+    textContent: `Reset your Dhream Market password by visiting: ${resetUrl}. This link expires in ${expiryHours} hour(s).`
   })
-}
+ }

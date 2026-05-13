@@ -4,7 +4,7 @@ import { verifyPassword, generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, rememberMe = false } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
@@ -26,12 +26,16 @@ export async function POST(request: NextRequest) {
 
     const token = generateToken({ userId: user.id, role: user.role })
 
+    // Set cookie duration based on rememberMe preference
+    // If checked: 30 days, otherwise: 7 days (default session)
+    const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7
+
     const response = NextResponse.json({ message: 'Login successful', user: { id: user.id, email: user.email, role: user.role } })
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: cookieMaxAge,
       path: '/',
     })
 

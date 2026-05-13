@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { randomBytes } from 'crypto'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
@@ -47,4 +48,19 @@ export function getUserFromToken(): { userId: string; role: Role } | null {
   const token = getTokenFromCookies()
   if (!token) return null
   return verifyToken(token)
+}
+
+// Generate a secure random token for password reset
+export function generateResetToken(): string {
+  return randomBytes(32).toString('hex')
+}
+
+// Hash a token for secure storage
+export function hashResetToken(token: string): string {
+  return bcrypt.hashSync(token, 12)
+}
+
+// Verify a token against its hash
+export function verifyResetToken(token: string, hashedToken: string): boolean {
+  return bcrypt.compareSync(token, hashedToken)
 }
