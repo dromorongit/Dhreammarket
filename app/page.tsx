@@ -49,10 +49,10 @@ export default function Home() {
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900/50"></div>
         
-        {/* Decorative elements */}
+        {/* Decorative elements - positioned below navbar to prevent bleeding */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-royal-blue/20 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-premium-gold/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-20 -right-40 w-80 h-80 bg-royal-blue/20 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-0 -left-40 w-80 h-80 bg-premium-gold/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.15),transparent_70%)]"></div>
         </div>
 
