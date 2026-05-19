@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-const prisma = getPrisma()
 import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const prisma = getPrisma()
     // Check admin authorization
     const authCheck = requireAdmin()
     if (authCheck instanceof NextResponse) {

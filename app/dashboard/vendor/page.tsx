@@ -212,7 +212,7 @@ export default function VendorDashboard() {
       </div>
    
       {/* Onboarding Banner */}
-      {!onboardingSteps[0].completed && (
+      {onboardingSteps.length > 0 && !onboardingSteps[0].completed && (
         <div className="mb-6">
           <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-l-4 border-amber-500 p-6 rounded-lg">
             <div className="flex items-center gap-4">

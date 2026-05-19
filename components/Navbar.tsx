@@ -323,7 +323,7 @@ export function Navbar() {
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors duration-200">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
-                      {user.profile?.firstName?.[0] || user.profile?.lastName?.[0] || user.email[0]}
+                      {user.profile?.firstName?.charAt(0) || user.profile?.lastName?.charAt(0) || user.email?.charAt(0) || ''}
                     </div>
                     <span className="text-sm font-medium text-slate-700 hidden sm:inline">
                       {user.profile?.firstName && user.profile?.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.email}

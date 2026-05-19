@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-const prisma = getPrisma()
 import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +7,7 @@ export const dynamic = 'force-dynamic'
 // GET all vendors with optional verification filter
 export async function GET(request: NextRequest) {
   try {
+    const prisma = getPrisma()
     const authCheck = requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const [vendors, total] = await Promise.all([
+    const [stores, total] = await Promise.all([
       prisma.store.findMany({
         where,
         skip,
@@ -60,6 +60,18 @@ export async function GET(request: NextRequest) {
     ])
 
     const totalPages = Math.ceil(total / limit)
+
+    // Transform stores to vendors format expected by frontend
+    const vendors = stores.map((store) => ({
+      id: store.user.id,
+      email: store.user.email,
+      createdAt: store.user.createdAt,
+      store: {
+        name: store.name,
+        isVerified: store.isVerified,
+        isFeatured: store.isFeatured,
+      },
+    }))
 
     return NextResponse.json({
       vendors,

@@ -2,7 +2,7 @@ import { jwtVerify } from 'jose'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
-export type Role = 'ADMIN' | 'VENDOR' | 'CUSTOMER'
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'VENDOR' | 'CUSTOMER'
 
 export async function verifyToken(token: string): Promise<{ userId: string; role: Role } | null> {
   if (!JWT_SECRET) {

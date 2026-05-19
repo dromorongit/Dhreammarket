@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-const prisma = getPrisma()
 import { requireAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +7,7 @@ export const dynamic = 'force-dynamic'
 // GET all users with pagination
 export async function GET(request: NextRequest) {
   try {
+    const prisma = getPrisma()
     const authCheck = requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck

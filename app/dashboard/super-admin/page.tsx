@@ -194,7 +194,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">Total Users</p>
-                  <p className="text-2xl font-bold text-deep-navy">{stats?.totalUsers.toLocaleString() || 0}</p>
+                  <p className="text-2xl font-bold text-deep-navy">{(stats?.totalUsers ?? 0).toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -210,10 +210,10 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">Active Vendors</p>
-                  <p className="text-2xl font-bold text-deep-navy">{stats?.totalVendors.toLocaleString() || 0}</p>
-                  <p className="text-xs text-emerald-600 font-medium">
-                    {stats?.verifiedVendors.toLocaleString() || 0} verified
-                  </p>
+                  <p className="text-2xl font-bold text-deep-navy">{(stats?.totalVendors ?? 0).toLocaleString()}</p>
+                   <p className="text-xs text-emerald-600 font-medium">
+                     {(stats?.verifiedVendors ?? 0).toLocaleString()} verified
+                   </p>
                 </div>
               </div>
             </CardContent>
@@ -229,7 +229,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">Total Products</p>
-                  <p className="text-2xl font-bold text-deep-navy">{stats?.totalProducts.toLocaleString() || 0}</p>
+                  <p className="text-2xl font-bold text-deep-navy">{(stats?.totalProducts ?? 0).toLocaleString()}</p>
                   <p className="text-xs text-slate-500">Listed items</p>
                 </div>
               </div>
@@ -246,8 +246,8 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm text-slate-500">Total Orders</p>
-                  <p className="text-2xl font-bold text-deep-navy">{stats?.totalOrders.toLocaleString() || 0}</p>
-                  <p className="text-xs text-slate-500">{stats?.paidOrderCount.toLocaleString() || 0} paid</p>
+                  <p className="text-2xl font-bold text-deep-navy">{(stats?.totalOrders ?? 0).toLocaleString()}</p>
+                   <p className="text-xs text-slate-500">{(stats?.paidOrderCount ?? 0).toLocaleString()} paid</p>
                 </div>
               </div>
             </CardContent>
@@ -264,31 +264,31 @@ export default function SuperAdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-slate-300">
                   <div>
                     <p className="text-sm font-medium">Gross Sales</p>
-                    <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalGrossAmount || 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Processor Fees</p>
-                    <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalProcessorFee || 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Platform Commission</p>
-                    <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalPlatformCommission || 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Vendor Earnings</p>
-                    <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalVendorEarnings || 0)}</p>
-                  </div>
+                    <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalGrossAmount ?? 0)}</p>
+                   </div>
+                   <div>
+                     <p className="text-sm font-medium">Processor Fees</p>
+                     <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalProcessorFee ?? 0)}</p>
+                   </div>
+                   <div>
+                     <p className="text-sm font-medium">Platform Commission</p>
+                     <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalPlatformCommission ?? 0)}</p>
+                   </div>
+                   <div>
+                     <p className="text-sm font-medium">Vendor Earnings</p>
+                     <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalVendorEarnings ?? 0)}</p>
+                   </div>
                 </div>
               </div>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-semibold text-white/90 mb-2">Total Platform Revenue</h3>
                   <p className="text-4xl sm:text-5xl font-bold text-white mb-2">
-                    {formatCurrency(stats?.totalRevenue || 0)}
-                  </p>
-                  <p className="text-slate-300">
-                    From {stats?.paidOrderCount.toLocaleString() || 0} paid orders
-                  </p>
+                     {formatCurrency(stats?.totalRevenue ?? 0)}
+                   </p>
+                   <p className="text-slate-300">
+                     From {(stats?.paidOrderCount ?? 0).toLocaleString()} paid orders
+                   </p>
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
@@ -308,28 +308,28 @@ export default function SuperAdminDashboard() {
           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
             <CardContent className="p-6">
               <p className="text-sm text-slate-500 mb-1">Categories</p>
-              <p className="text-3xl font-bold text-deep-navy">{stats?.totalCategories.toLocaleString() || 0}</p>
-              <p className="text-sm text-slate-500 mt-1">Product categories</p>
-            </CardContent>
-          </Card>
+              <p className="text-3xl font-bold text-deep-navy">{(stats?.totalCategories ?? 0).toLocaleString()}</p>
+               <p className="text-sm text-slate-500 mt-1">Product categories</p>
+             </CardContent>
+           </Card>
 
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-500 mb-1">Reviews</p>
-              <p className="text-3xl font-bold text-deep-navy">{stats?.totalReviews.toLocaleString() || 0}</p>
-              <p className="text-sm text-slate-500 mt-1">Customer reviews</p>
-            </CardContent>
-          </Card>
+           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+             <CardContent className="p-6">
+               <p className="text-sm text-slate-500 mb-1">Reviews</p>
+               <p className="text-3xl font-bold text-deep-navy">{(stats?.totalReviews ?? 0).toLocaleString()}</p>
+               <p className="text-sm text-slate-500 mt-1">Customer reviews</p>
+             </CardContent>
+           </Card>
 
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-500 mb-1">Verified Vendors</p>
-              <p className="text-3xl font-bold text-deep-navy">{stats?.verifiedVendors.toLocaleString() || 0}</p>
-              <p className="text-sm text-slate-500 mt-1">
-                {stats?.totalVendors ? Math.round((stats.verifiedVendors / stats.totalVendors) * 100) : 0}% of vendors
-              </p>
-            </CardContent>
-          </Card>
+           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+             <CardContent className="p-6">
+               <p className="text-sm text-slate-500 mb-1">Verified Vendors</p>
+               <p className="text-3xl font-bold text-deep-navy">{(stats?.verifiedVendors ?? 0).toLocaleString()}</p>
+               <p className="text-sm text-slate-500 mt-1">
+                 {stats?.totalVendors ? Math.round(((stats?.verifiedVendors ?? 0) / stats.totalVendors) * 100) : 0}% of vendors
+               </p>
+             </CardContent>
+           </Card>
         </div>
 
         {/* Employee/Admin Management & Vendor Governance */}
@@ -362,7 +362,7 @@ export default function SuperAdminDashboard() {
                       <div key={admin.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold">
-                            {admin.profile?.firstName?.[0] || admin.profile?.lastName?.[0] || admin.email[0]}
+                            {admin.profile?.firstName?.charAt(0) || admin.profile?.lastName?.charAt(0) || admin.email?.charAt(0) || ''}
                           </div>
                           <div>
                             <p className="text-sm font-medium text-slate-700">
@@ -415,7 +415,7 @@ export default function SuperAdminDashboard() {
                       <div key={vendor.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold">
-                            {vendor.store?.name?.[0] || vendor.email[0]}
+                            {vendor.store?.name?.charAt(0) || vendor.email?.charAt(0) || ''}
                           </div>
                           <div>
                             <p className="text-sm font-medium text-slate-700">
