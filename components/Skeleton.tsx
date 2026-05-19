@@ -35,11 +35,17 @@ export function Skeleton({
 // Compound components for common skeleton patterns
 export function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-      <Skeleton variant="rounded" className="h-48 w-full mb-4" />
-      <Skeleton className="h-6 w-3/4 mb-2" />
-      <Skeleton className="h-4 w-1/2 mb-4" />
-      <Skeleton className="h-10 w-full" />
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <Skeleton variant="rounded" className="aspect-[4/3] w-full" />
+      <div className="p-2.5 space-y-1.5">
+        <Skeleton className="h-3.5 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-4 w-2/5 mt-1.5" />
+        <div className="flex flex-col gap-1 mt-2">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-full" />
+        </div>
+      </div>
     </div>
   )
 }
