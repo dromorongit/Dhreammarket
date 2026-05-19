@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Button } from './Button'
 import { Badge } from './Badge'
+import { SearchDropdown } from './SearchDropdown'
 
 interface User {
   userId: string
@@ -26,6 +27,7 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null)
   const [cartItemCount, setCartItemCount] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   
   // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -133,6 +135,10 @@ export function Navbar() {
     setMobileMenuOpen(false)
   }
 
+  const closeMobileSearch = () => {
+    setMobileSearchOpen(false)
+  }
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     setUser(null)
@@ -147,8 +153,8 @@ export function Navbar() {
         <div className="flex justify-between h-16 sm:h-20 items-center">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="flex items-center gap-3 group" onClick={closeMobileMenu}>
-              <div className="relative w-20 h-20">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group" onClick={() => { closeMobileMenu(); closeMobileSearch(); }}>
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20">
                 <Image
                   src="/assets/images/dhreammarket.png"
                   alt="Dhream Market Logo"
@@ -158,57 +164,62 @@ export function Navbar() {
                 />
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-xl font-bold bg-gradient-to-r from-deep-navy to-royal-blue bg-clip-text text-transparent group-hover:from-royal-blue group-hover:to-deep-navy transition-colors duration-300">
+                <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-deep-navy to-royal-blue bg-clip-text text-transparent group-hover:from-royal-blue group-hover:to-deep-navy transition-colors duration-300">
                   Dhream Market
                 </span>
-                <span className="text-[10px] font-medium text-muted-text tracking-widest uppercase">
+                <span className="text-[9px] sm:text-[10px] font-medium text-muted-text tracking-widest uppercase hidden sm:block">
                   Smart Commerce Ecosystem
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop: Centered Global Search */}
+          <div className="hidden lg:block flex-1 max-w-2xl mx-8">
+            <SearchDropdown />
+          </div>
+
+          {/* Desktop Navigation + Auth */}
           <div className="hidden lg:flex lg:items-center lg:space-x-1">
             <Link
               href="/"
-              className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+              className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
             >
               <span>Home</span>
-              <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
             <Link
               href="/marketplace"
-              className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+              className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
             >
               <span>Marketplace</span>
-              <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
             <Link
               href="/about"
-              className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+              className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
             >
               <span>About</span>
-              <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
             <Link
               href="/contact"
-              className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+              className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
             >
               <span>Contact</span>
-              <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
             <Link
               href="/help-center"
-              className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+              className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
             >
               <span>Support</span>
-              <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
             {user && (
               <Link
                 href="/cart"
-                className="relative px-4 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+                className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
               >
                 <span className="flex items-center gap-1.5">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,14 +367,32 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden flex items-center">
+          {/* Mobile: Search Icon + Hamburger */}
+          <div className="lg:hidden flex items-center gap-1">
+            {/* Mobile Search Toggle */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => {
+                setMobileSearchOpen(!mobileSearchOpen)
+                setMobileMenuOpen(false)
+              }}
+              className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+              aria-label="Toggle search"
+            >
+              <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(!mobileMenuOpen)
+                setMobileSearchOpen(false)
+              }}
               className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
               aria-label="Toggle menu"
             >
-              <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
@@ -375,9 +404,20 @@ export function Navbar() {
         </div>
       </div>
 
+      {/* Mobile Search Bar (expandable) */}
+      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+        mobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white">
+          <SearchDropdown onNavigate={closeMobileSearch} />
+        </div>
+      </div>
+
       {/* Mobile Menu */}
-      <div className={`lg:hidden ${mobileMenuOpen ? 'block' : 'hidden'} border-t border-slate-200 bg-white`}>
-        <div className="px-4 py-4 space-y-1">
+      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+        mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white">
           <Link href="/" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
             Home
           </Link>
