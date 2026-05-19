@@ -515,14 +515,9 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
             {product.name}
           </h3>
           <div className="flex items-center justify-between gap-1">
-            <span className="text-sm font-bold text-royal-blue leading-tight">
+            <span className="text-[11px] font-bold text-royal-blue leading-tight">
               {formatPrice(product.price)}
             </span>
-            {product.brand && (
-              <Badge variant="default" size="sm" className="text-[10px] px-1.5 py-0.5 shrink-0">
-                {product.brand}
-              </Badge>
-            )}
           </div>
         </div>
       </Card>

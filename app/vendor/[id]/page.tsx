@@ -287,14 +287,9 @@ export default function VendorProfilePage() {
                       </h3>
                     </Link>
                     <div className="flex items-center justify-between gap-1">
-                      <span className="text-sm font-bold text-royal-blue leading-tight">
+                      <span className="text-[11px] font-bold text-royal-blue leading-tight">
                         {formatPrice(product.price)}
                       </span>
-                      {product.category && (
-                        <Badge variant="default" size="sm" className="text-[10px] px-1.5 py-0.5 shrink-0">
-                          {product.category.name}
-                        </Badge>
-                      )}
                     </div>
                     <div className="text-[10px] text-slate-500">
                       {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
