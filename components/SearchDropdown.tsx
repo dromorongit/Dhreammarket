@@ -232,10 +232,10 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
   return (
     <div className="relative w-full" ref={dropdownRef}>
       {/* Search Input */}
-      <div className="relative group">
+      <div className="relative overflow-hidden">
         {/* Search Icon */}
         <svg
-          className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-slate-400 group-focus-within:text-royal-blue transition-colors pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors pointer-events-none"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

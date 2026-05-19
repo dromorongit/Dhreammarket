@@ -408,7 +408,7 @@ export function Navbar() {
       <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
         mobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white">
+        <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white overflow-hidden">
           <SearchDropdown onNavigate={closeMobileSearch} />
         </div>
       </div>
