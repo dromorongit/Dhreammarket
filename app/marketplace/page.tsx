@@ -211,10 +211,10 @@ function MarketplaceContent() {
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-deep-navy to-royal-blue py-20 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-premium-gold/20 rounded-full blur-3xl"></div>
-        </div>
+         <div className="absolute inset-0">
+           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
+           <div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>
+         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white">
             <Badge variant="premium" className="mb-6">
