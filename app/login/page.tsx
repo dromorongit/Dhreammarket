@@ -38,7 +38,8 @@ export default function LoginPage() {
       if (response.ok) {
         // Redirect based on user role
         const role = data.user.role
-        const dashboardPath = role === 'ADMIN' ? '/dashboard/admin' :
+        const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
+                             role === 'ADMIN' ? '/dashboard/admin' :
                              role === 'VENDOR' ? '/dashboard/vendor' :
                              '/dashboard/customer'
         // Use window.location for full page reload to ensure auth state updates

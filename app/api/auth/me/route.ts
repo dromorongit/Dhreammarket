@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromToken } from '@/lib/auth'
+import { getPrisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromToken()
+    const userFromToken = getUserFromToken()
+    if (!userFromToken) {
+      return NextResponse.json({ user: null }, { status: 200 })
+    }
+    const user = await getPrisma().user.findUnique({
+      where: { id: userFromToken.userId },
+      include: { profile: true },
+    })
     if (!user) {
       return NextResponse.json({ user: null }, { status: 200 })
     }

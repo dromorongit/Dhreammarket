@@ -4,16 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "prisma db push && next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
-  },
+  "dev": "next dev",
+  "build": "prisma generate && next build",
+  "start": "prisma db push && next start",
+  "lint": "next lint",
+  "db:generate": "prisma generate",
+  "db:migrate": "prisma migrate dev",
+  "db:push": "prisma db push",
+  "db:seed": "tsx prisma/seed.ts",
+  "create-super-admin": "node scripts/create-super-admin.js",
+  "postinstall": "prisma generate"
+},
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },

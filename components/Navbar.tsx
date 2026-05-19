@@ -11,6 +11,11 @@ import { SearchDropdown } from './SearchDropdown'
 interface User {
   userId: string
   role: string
+  email: string
+  profile?: {
+    firstName: string
+    lastName: string
+  }
 }
 
 interface Notification {
@@ -318,14 +323,21 @@ export function Navbar() {
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors duration-200">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
-                      {user.role[0]}
+                      {user.profile?.firstName?.[0] || user.profile?.lastName?.[0] || user.email[0]}
                     </div>
-                    <span className="text-sm font-medium text-slate-700 hidden sm:inline">{user.role}</span>
+                    <span className="text-sm font-medium text-slate-700 hidden sm:inline">
+                      {user.profile?.firstName && user.profile?.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.email}
+                    </span>
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
                   <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-premium border border-slate-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    {user.role === 'SUPER_ADMIN' && (
+                      <Link href="/dashboard/super-admin" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                        Super Admin Dashboard
+                      </Link>
+                    )}
                     {user.role === 'ADMIN' && (
                       <Link href="/dashboard/admin" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         Admin Dashboard
@@ -451,24 +463,29 @@ export function Navbar() {
           <div className="border-t border-slate-200 my-2"></div>
           {user ? (
             <>
-              <div className="px-4 py-2">
-                <p className="text-sm font-medium text-slate-700">Welcome, {user.role}</p>
-              </div>
-              {user.role === 'ADMIN' && (
-                <Link href="/dashboard/admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Admin Dashboard
-                </Link>
-              )}
-              {user.role === 'VENDOR' && (
-                <Link href="/dashboard/vendor" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Vendor Dashboard
-                </Link>
-              )}
-              {user.role === 'CUSTOMER' && (
-                <Link href="/dashboard/customer" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  My Account
-                </Link>
-              )}
+               <div className="px-4 py-2">
+                 <p className="text-sm font-medium text-slate-700">Welcome, {user.profile?.firstName && user.profile?.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.email}</p>
+               </div>
+               {user.role === 'SUPER_ADMIN' && (
+                 <Link href="/dashboard/super-admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Super Admin Dashboard
+                 </Link>
+               )}
+               {user.role === 'ADMIN' && (
+                 <Link href="/dashboard/admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Admin Dashboard
+                 </Link>
+               )}
+               {user.role === 'VENDOR' && (
+                 <Link href="/dashboard/vendor" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Vendor Dashboard
+                 </Link>
+               )}
+               {user.role === 'CUSTOMER' && (
+                 <Link href="/dashboard/customer" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   My Account
+                 </Link>
+               )}
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors mt-2"

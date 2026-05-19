@@ -9,9 +9,10 @@ export async function middleware(request: NextRequest) {
 
   // Define protected routes
   const protectedRoutes = {
-    '/dashboard/admin': ['ADMIN'],
-    '/dashboard/vendor': ['VENDOR', 'ADMIN'],
-    '/dashboard/customer': ['CUSTOMER', 'VENDOR', 'ADMIN'],
+    '/dashboard/admin': ['ADMIN', 'SUPER_ADMIN'],
+    '/dashboard/super-admin': ['SUPER_ADMIN'],
+    '/dashboard/vendor': ['VENDOR', 'ADMIN', 'SUPER_ADMIN'],
+    '/dashboard/customer': ['CUSTOMER', 'VENDOR', 'ADMIN', 'SUPER_ADMIN'],
   }
 
   // Check if the current path is protected

@@ -19,19 +19,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
     }
 
-    if (!['CUSTOMER', 'VENDOR', 'ADMIN', 'SUPER_ADMIN'].includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
-    }
-
-    // Enforce single SUPER_ADMIN
-    if (role === 'SUPER_ADMIN') {
-      const existingSuperAdmin = await getPrisma().user.findFirst({
-        where: { role: 'SUPER_ADMIN' }
-      })
-      if (existingSuperAdmin) {
-        return NextResponse.json({ error: 'Only one SUPER_ADMIN can exist in the system' }, { status: 403 })
-      }
-    }
+     if (!['CUSTOMER', 'VENDOR', 'ADMIN'].includes(role)) {
+       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+     }
+ 
+     // Prevent SUPER_ADMIN creation via public registration endpoint
+     if (role === 'SUPER_ADMIN') {
+       return NextResponse.json({ error: 'SUPER_ADMIN accounts cannot be created via public registration' }, { status: 403 })
+     }
 
     // Validate position for ADMIN role
     if (role === 'ADMIN' && (!position || !position.trim())) {

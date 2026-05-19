@@ -2,4 +2,4 @@
 # It should be added in .gitignore so that it can be committed
 
 provider = "postgresql"
-checksum = "0"
+checksum = "1"
