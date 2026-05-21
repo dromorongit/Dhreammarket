@@ -60,6 +60,7 @@ enum PaymentStatus {
     feedbacks     Feedback[]
     vendorPayouts VendorPayout[] @relation("VendorPayoutVendor")
     supportTickets SupportTicket[]
+    homepageSections HomepageSectionVendor[]
     
     // Password reset fields
     resetPasswordToken String?
@@ -148,6 +149,7 @@ model Product {
   cartItems  CartItem[]
   orderItems OrderItem[]
   reviews    Review[]
+  homepageSections HomepageSectionProduct[]
 
   @@map("products")
 }
@@ -381,4 +383,55 @@ model SupportTicket {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("support_tickets")
+}
+
+enum HomepageSectionType {
+  PRODUCT_GRID
+  QUICKLINK_CARD_GRID
+  LARGE_FEATURE_CARDS
+  BRAND_GRID
+  SERVICE_GRID
+}
+
+model HomepageSection {
+  id           String              @id @default(cuid())
+  name         String
+  slug         String              @unique
+  isEnabled    Boolean             @default(true)
+  displayOrder Int                 @default(0)
+  type         HomepageSectionType
+  subtitle     String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  products HomepageSectionProduct[]
+  vendors  HomepageSectionVendor[]
+
+  @@map("homepage_sections")
+}
+
+model HomepageSectionProduct {
+  id         String   @id @default(cuid())
+  sectionId  String
+  productId  String
+  createdAt  DateTime @default(now())
+
+  section HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, productId])
+  @@map("homepage_section_products")
+}
+
+model HomepageSectionVendor {
+  id        String   @id @default(cuid())
+  sectionId String
+  vendorId  String
+  createdAt DateTime @default(now())
+
+  section HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  vendor  User            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, vendorId])
+  @@map("homepage_section_vendors")
 }

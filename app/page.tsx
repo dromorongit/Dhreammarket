@@ -8,6 +8,20 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { useState, useEffect } from 'react'
 import { formatPrice } from '@/lib/currency'
+import {
+  HomepageSectionRenderer,
+  HomepageSectionSkeleton,
+} from '@/components/homepage-sections'
+
+interface HomepageSectionData {
+  id: string
+  name: string
+  slug: string
+  type: string
+  subtitle: string | null
+  products: any[]
+  vendors: any[]
+}
 
 interface FeaturedVendor {
   id: string
@@ -24,6 +38,8 @@ interface FeaturedVendor {
 export default function Home() {
   const [featuredVendors, setFeaturedVendors] = useState<FeaturedVendor[]>([])
   const [loadingFeatured, setLoadingFeatured] = useState(true)
+  const [dynamicSections, setDynamicSections] = useState<HomepageSectionData[]>([])
+  const [loadingSections, setLoadingSections] = useState(true)
 
   useEffect(() => {
     const fetchFeaturedVendors = async () => {
@@ -42,13 +58,30 @@ export default function Home() {
     fetchFeaturedVendors()
   }, [])
 
+  useEffect(() => {
+    const fetchSections = async () => {
+      try {
+        const response = await fetch('/api/homepage/public')
+        if (response.ok) {
+          const data = await response.json()
+          setDynamicSections(data.sections || [])
+        }
+      } catch (error) {
+        console.error('Error fetching homepage sections:', error)
+      } finally {
+        setLoadingSections(false)
+      }
+    }
+    fetchSections()
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900/50"></div>
-        
+
         {/* Decorative elements - positioned below navbar to prevent bleeding */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 -right-40 w-80 h-80 bg-royal-blue/20 rounded-full blur-3xl animate-float"></div>
@@ -125,92 +158,110 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Marketplace Products Section */}
-      <section className="relative py-24 lg:py-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Featured Products</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Explore Marketplace
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Discover premium products from our trusted vendors
-            </p>
+      {/* ─── Dynamic Homepage Sections ─── */}
+      {loadingSections ? (
+        <>
+          <HomepageSectionSkeleton />
+          <HomepageSectionSkeleton />
+          <HomepageSectionSkeleton />
+        </>
+      ) : dynamicSections.length > 0 ? (
+        dynamicSections.map((section) => (
+          <HomepageSectionRenderer key={section.id} section={section} />
+        ))
+      ) : null}
+
+      {/* ─── Fallback: Featured Products (shown when no dynamic sections) ─── */}
+      {!loadingSections && dynamicSections.length === 0 && (
+        <section className="relative py-24 lg:py-32 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge variant="premium" className="mb-4">Featured Products</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                Explore Marketplace
+              </h2>
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                Discover premium products from our trusted vendors
+              </p>
+            </div>
+            <FeaturedProductsSection />
           </div>
+        </section>
+      )}
 
-          <FeaturedProductsSection />
-        </div>
-      </section>
-
-      {/* Shop by Vendor Section */}
-      <section className="relative py-24 lg:py-32 bg-white">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Shop by Vendor Type
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Discover trusted vendors across different categories
-            </p>
+      {/* ─── Fallback: Shop by Vendor ─── */}
+      {!loadingSections && dynamicSections.length === 0 && (
+        <section className="relative py-24 lg:py-32 bg-white">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                Shop by Vendor Type
+              </h2>
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                Discover trusted vendors across different categories
+              </p>
+            </div>
+            <VendorCategorySection />
           </div>
+        </section>
+      )}
 
-          <VendorCategorySection />
-        </div>
-      </section>
-
-      {/* Top Vendors Section */}
-      <section className="relative py-24 lg:py-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Top Rated</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Top Vendors
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Our highest-rated vendors with exceptional customer satisfaction
-            </p>
+      {/* ─── Fallback: Top Vendors ─── */}
+      {!loadingSections && dynamicSections.length === 0 && (
+        <section className="relative py-24 lg:py-32 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge variant="premium" className="mb-4">Top Rated</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                Top Vendors
+              </h2>
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                Our highest-rated vendors with exceptional customer satisfaction
+              </p>
+            </div>
+            <TopVendorsSection />
           </div>
+        </section>
+      )}
 
-          <TopVendorsSection />
-        </div>
-      </section>
-
-      {/* New Vendors Section */}
-      <section className="relative py-24 lg:py-32 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Just Joined</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              New Vendors
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Fresh faces on Dhream Market - check out the latest additions
-            </p>
+      {/* ─── Fallback: New Vendors ─── */}
+      {!loadingSections && dynamicSections.length === 0 && (
+        <section className="relative py-24 lg:py-32 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge variant="premium" className="mb-4">Just Joined</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                New Vendors
+              </h2>
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                Fresh faces on Dhream Market - check out the latest additions
+              </p>
+            </div>
+            <NewVendorsSection />
           </div>
+        </section>
+      )}
 
-          <NewVendorsSection />
-        </div>
-      </section>
-
-      {/* Popular Categories Section */}
-      <section className="relative py-24 lg:py-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="premium" className="mb-4">Browse By</Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Popular Categories
-            </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Explore products across our most popular categories
-            </p>
+      {/* ─── Fallback: Popular Categories ─── */}
+      {!loadingSections && dynamicSections.length === 0 && (
+        <section className="relative py-24 lg:py-32 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge variant="premium" className="mb-4">Browse By</Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+                Popular Categories
+              </h2>
+              <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+                Explore products across our most popular categories
+              </p>
+            </div>
+            <PopularCategoriesSection />
           </div>
+        </section>
+      )}
 
-          <PopularCategoriesSection />
-        </div>
-      </section>
-
-      {/* Featured Vendors Preview Section - Moved from top */}
+      {/* Featured Vendors Preview Section */}
       {!loadingFeatured && featuredVendors.length > 0 && (
         <section className="relative py-24 lg:py-32 bg-white">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -303,7 +354,7 @@ export default function Home() {
       {/* Why Choose Dhream Market Section */}
       <section className="relative py-24 lg:py-32 bg-slate-50">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmN2ZhIiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTQwIDJIMHY0MEg0MFoiIGZpbGw9IiNmMGY3ZmEiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4K')] opacity-50"></div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 lg:mb-24 animate-fade-in-up">
             <Badge variant="premium" className="mb-4">Our Promise</Badge>
@@ -358,7 +409,7 @@ export default function Home() {
       <section className="relative py-24 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900"></div>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZmVmN2ZhIiBvcGFjaXR5PSIwLjAiLz4KPHBhdGggZD0iTTYwIDJIMjZ2NTZIWDYwWiIgZmlsbD0iI2ZmZjdmZmEiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4K')] opacity-20"></div>
-        
+
         <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <Badge variant="premium" className="mb-6">Get Started Today</Badge>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
@@ -388,6 +439,8 @@ export default function Home() {
     </div>
   )
 }
+
+// ─── Existing Section Components (preserved as fallback) ───
 
 function VendorCategorySection() {
   const [categories, setCategories] = useState<VendorCategory[]>([])
@@ -533,7 +586,6 @@ function TopVendorsSection() {
 
   const fetchTopVendors = async () => {
     try {
-      // Fetch with sortBy=rating to get highest rated vendors first (with ranking logic)
       const response = await fetch('/api/vendors?limit=4&sortBy=rating')
       if (response.ok) {
         const data = await response.json()
@@ -616,7 +668,6 @@ function NewVendorsSection() {
 
   const fetchNewVendors = async () => {
     try {
-      // Fetch with sortBy=newest (default) to get newest vendors first
       const response = await fetch('/api/vendors?limit=4')
       if (response.ok) {
         const data = await response.json()
@@ -702,7 +753,6 @@ function PopularCategoriesSection() {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        // Take first 4 categories or all if less than 4
         setCategories(data.categories.slice(0, 4))
       }
     } catch (error) {
@@ -804,7 +854,6 @@ function FeaturedProductsSection() {
       const response = await fetch('/api/products')
       if (response.ok) {
         const data = await response.json()
-        // Filter products with stock > 0 and take first 8
         const availableProducts = data.products
           .filter((p: Product) => p.stock > 0)
           .slice(0, 8)
