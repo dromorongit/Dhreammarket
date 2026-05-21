@@ -591,6 +591,16 @@ export default function SuperAdminDashboard() {
                   <span className="text-sm font-medium text-slate-700">Payments & Revenue</span>
                 </Button>
               </Link>
+              <Link href="/dashboard/super-admin/homepage">
+                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">Homepage Sections</span>
+                </Button>
+              </Link>
               <Link href="/dashboard/admin/create-admin">
                 <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -689,6 +699,16 @@ export default function SuperAdminDashboard() {
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-700 transition-colors">Create Admin</span>
+                </div>
+              </Link>
+              <Link href="/dashboard/super-admin/homepage" className="group">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-violet-50 hover:border-violet-200 border border-transparent transition-all">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 group-hover:text-violet-700 transition-colors">Homepage Sections</span>
                 </div>
               </Link>
               <Link href="/dashboard/admin/categories" className="group">

@@ -360,6 +360,11 @@ export function Navbar() {
                         Super Admin Dashboard
                       </Link>
                     )}
+                    {user.role === 'SUPER_ADMIN' && (
+                      <Link href="/dashboard/super-admin/homepage" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                        Homepage Sections
+                      </Link>
+                    )}
                     {user.role === 'ADMIN' && (
                       <Link href="/dashboard/admin" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         Admin Dashboard
@@ -492,6 +497,11 @@ export function Navbar() {
                {user.role === 'SUPER_ADMIN' && (
                  <Link href="/dashboard/super-admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
                    Super Admin Dashboard
+                 </Link>
+               )}
+               {user.role === 'SUPER_ADMIN' && (
+                 <Link href="/dashboard/super-admin/homepage" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Homepage Sections
                  </Link>
                )}
                {user.role === 'ADMIN' && (
