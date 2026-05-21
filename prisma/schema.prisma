@@ -16,6 +16,13 @@ enum Role {
   CUSTOMER
 }
 
+enum UserStatus {
+  ACTIVE
+  BANNED
+  DISABLED
+  SUSPENDED
+}
+
 enum OrderStatus {
   PENDING
   PROCESSING
@@ -33,32 +40,33 @@ enum PaymentStatus {
   REFUNDED
 }
 
- model User {
-   id        String   @id @default(cuid())
-   email     String   @unique
-   password  String
-   role      Role     @default(CUSTOMER)
-   position  String?
-   createdAt DateTime @default(now())
-   updatedAt DateTime @updatedAt
-   
-   profile       Profile?
-   store         Store?
-   cart          Cart?
-   orders        Order[]
-   payments      Payment[]
-   reviews       Review[]
-   notifications Notification[]
-   feedbacks     Feedback[]
-   vendorPayouts VendorPayout[] @relation("VendorPayoutVendor")
-   supportTickets SupportTicket[]
-   
-   // Password reset fields
-   resetPasswordToken String?
-   resetPasswordExpires DateTime?
-   
-   @@map("users")
- }
+  model User {
+    id        String   @id @default(cuid())
+    email     String   @unique
+    password  String
+    role      Role     @default(CUSTOMER)
+    status    UserStatus @default(ACTIVE)
+    position  String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    
+    profile       Profile?
+    store         Store?
+    cart          Cart?
+    orders        Order[]
+    payments      Payment[]
+    reviews       Review[]
+    notifications Notification[]
+    feedbacks     Feedback[]
+    vendorPayouts VendorPayout[] @relation("VendorPayoutVendor")
+    supportTickets SupportTicket[]
+    
+    // Password reset fields
+    resetPasswordToken String?
+    resetPasswordExpires DateTime?
+    
+    @@map("users")
+  }
 
 model Profile {
   id        String   @id @default(cuid())
@@ -194,6 +202,7 @@ model Order {
   total         Float
   status        OrderStatus   @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
+  deletedAt     DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 

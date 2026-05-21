@@ -93,14 +93,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 })
     }
 
-    const store = await prisma.store.findUnique({
-      where: { id },
-    })
-
-    if (!store) {
-      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
-    }
-
+    // Update store with necessary includes to return vendor format
     let updatedStore
 
     switch (action) {
@@ -109,32 +102,72 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         updatedStore = await prisma.store.update({
           where: { id },
           data: { isVerified: value === true },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            },
+            _count: {
+              select: { products: true },
+            },
+          },
         })
         break
 
       case 'disable':
-        // Disable vendor by setting their role to CUSTOMER (removes vendor privileges)
+        // Disable vendor by setting isVerified and isFeatured to false
         updatedStore = await prisma.store.update({
           where: { id },
           data: { isVerified: false, isFeatured: false, featuredUntil: null },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            },
+            _count: {
+              select: { products: true },
+            },
+          },
         })
         
-        // Also update the user role
+        // Also update the user role to CUSTOMER
         await prisma.user.update({
-          where: { id: store.userId },
+          where: { id: updatedStore.userId },
           data: { role: 'CUSTOMER' },
         })
         break
 
       case 'enable':
-        // Re-enable vendor by restoring their role
+        // Re-enable vendor by setting isVerified to true
         updatedStore = await prisma.store.update({
           where: { id },
           data: { isVerified: true },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            },
+            _count: {
+              select: { products: true },
+            },
+          },
         })
         
+        // Also update the user role to VENDOR
         await prisma.user.update({
-          where: { id: store.userId },
+          where: { id: updatedStore.userId },
           data: { role: 'VENDOR' },
         })
         break
@@ -146,6 +179,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           updatedStore = await prisma.store.update({
             where: { id },
             data: { isFeatured: false, featuredUntil: null },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  role: true,
+                  createdAt: true,
+                },
+              },
+              _count: {
+                select: { products: true },
+              },
+            },
           })
         } else {
           // Calculate featuredUntil date
@@ -161,6 +207,19 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           updatedStore = await prisma.store.update({
             where: { id },
             data: { isFeatured: true, featuredUntil },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  role: true,
+                  createdAt: true,
+                },
+              },
+              _count: {
+                select: { products: true },
+              },
+            },
           })
         }
         break
@@ -169,9 +228,74 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    return NextResponse.json({ store: updatedStore })
+    if (!updatedStore) {
+      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+    }
+
+    // Transform store to vendor format expected by frontend
+    const vendor = {
+      id: updatedStore.id,
+      name: updatedStore.name,
+      description: updatedStore.description,
+      isVerified: updatedStore.isVerified,
+      isFeatured: updatedStore.isFeatured,
+      featuredUntil: updatedStore.featuredUntil ? updatedStore.featuredUntil.toISOString() : null,
+      createdAt: updatedStore.user.createdAt,
+      user: {
+        id: updatedStore.user.id,
+        email: updatedStore.user.email,
+        role: updatedStore.user.role,
+        createdAt: updatedStore.user.createdAt,
+      },
+      _count: {
+        products: updatedStore._count.products,
+      },
+    }
+
+    return NextResponse.json({ vendor })
   } catch (error) {
     console.error('Admin vendor patch error:', error)
     return NextResponse.json({ error: 'Failed to update vendor' }, { status: 500 })
+  }
+}
+
+// DELETE - Delete a vendor
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const authCheck = requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
+    }
+
+    const { id } = await params
+
+    // Check if store exists
+    const store = await prisma.store.findUnique({
+      where: { id },
+      include: {
+        user: true,
+      },
+    })
+
+    if (!store) {
+      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+    }
+
+    // Delete the store (this will cascade to products, etc. due to onDelete: Cascade)
+    await prisma.store.delete({
+      where: { id },
+    })
+
+    // Also update the user role to CUSTOMER (or delete the user? We'll keep the user but change role)
+    // This prevents orphaned users
+    await prisma.user.update({
+      where: { id: store.userId },
+      data: { role: 'CUSTOMER' },
+    })
+
+    return NextResponse.json({ success: true, message: 'Vendor deleted successfully' })
+  } catch (error) {
+    console.error('Admin vendor delete error:', error)
+    return NextResponse.json({ error: 'Failed to delete vendor' }, { status: 500 })
   }
 }

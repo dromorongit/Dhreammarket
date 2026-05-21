@@ -33,6 +33,7 @@ export default function AdminOrdersPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
   const [filters, setFilters] = useState({ status: '', paymentStatus: '' })
   const [summary, setSummary] = useState({ byStatus: [], byPaymentStatus: [] })
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -93,6 +94,38 @@ export default function AdminOrdersPage() {
         REFUNDED: 'bg-purple-100 text-purple-800',
       }
       return colors[status] || 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (actionLoading) return
+
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone and will remove the order from the system.')) {
+      return
+    }
+
+    try {
+      setActionLoading(orderId)
+      const response = await fetch(`/api/admin/orders?orderId=${orderId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to delete order')
+        return
+      }
+
+      // Remove the order from the list
+      setOrders(prev => prev.filter(order => order.id !== orderId))
+      // Update pagination total
+      setPagination(prev => ({ ...prev, total: prev.total - 1 }))
+    } catch (err) {
+      alert('Failed to delete order')
+      console.error(err)
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -222,6 +255,7 @@ export default function AdminOrdersPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -262,6 +296,19 @@ export default function AdminOrdersPage() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {new Date(order.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4">
+                          {actionLoading === order.id ? (
+                            <span className="text-sm text-gray-500">Processing...</span>
+                          ) : (
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              className="text-sm text-red-600 hover:text-red-800"
+                              title="Delete order"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

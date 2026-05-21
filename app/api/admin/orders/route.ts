@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = {
+      deletedAt: null, // Exclude soft-deleted orders by default
+    }
     
     if (status && ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].includes(status)) {
       where.status = status
@@ -90,5 +92,42 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Admin orders error:', error)
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
+  }
+}
+
+// DELETE - Soft delete an order
+export async function DELETE(request: NextRequest) {
+  try {
+    const authCheck = requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
+    }
+
+    const { searchParams } = new URL(request.url)
+    const orderId = searchParams.get('orderId')
+
+    if (!orderId) {
+      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 })
+    }
+
+    // Check if order exists
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+    })
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    // Soft delete by setting deletedAt
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { deletedAt: new Date() },
+    })
+
+    return NextResponse.json({ success: true, message: 'Order deleted successfully' })
+  } catch (error) {
+    console.error('Admin order delete error:', error)
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 })
   }
 }
