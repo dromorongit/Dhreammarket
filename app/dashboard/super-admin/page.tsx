@@ -280,16 +280,16 @@ export default function SuperAdminDashboard() {
                    </div>
                 </div>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-white/90 mb-2">Total Platform Revenue</h3>
                   <p className="text-4xl sm:text-5xl font-bold text-white mb-2">
                      {formatCurrency(stats?.totalRevenue ?? 0)}
-                   </p>
-                   <p className="text-slate-300">
-                     From {(stats?.paidOrderCount ?? 0).toLocaleString()} paid orders
-                   </p>
-                </div>
+                    </p>
+                    <p className="text-slate-300">
+                      From {(stats?.paidOrderCount ?? 0).toLocaleString()} paid orders
+                    </p>
+                  </div>
                 <div className="flex gap-3">
                   <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
                     Export Report
