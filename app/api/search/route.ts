@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         brand: p.brand,
         price: p.price,
         stock: p.stock,
-        image: p.images[0]?.url || null,
+        image: p.images?.[0]?.url || null,
         store: p.store,
         category: p.category,
         type: 'product',
