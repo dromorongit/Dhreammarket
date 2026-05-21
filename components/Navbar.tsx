@@ -39,6 +39,8 @@ export function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const notificationRef = useRef<HTMLDivElement>(null)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Fetch user
@@ -74,6 +76,19 @@ export function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Close user menu dropdown when clicking outside
+  useEffect(() => {
+    function handleUserMenuClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleUserMenuClickOutside)
+      return () => document.removeEventListener('mousedown', handleUserMenuClickOutside)
+    }
+  }, [userMenuOpen])
 
   const fetchNotifications = async () => {
     try {
@@ -320,19 +335,26 @@ export function Navbar() {
                 </div>
 
                 {/* User Menu */}
-                <div className="relative group">
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors duration-200">
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors duration-200"
+                    aria-expanded={userMenuOpen}
+                    aria-haspopup="true"
+                  >
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
                       {user.profile?.firstName?.charAt(0) || user.profile?.lastName?.charAt(0) || user.email?.charAt(0) || ''}
                     </div>
                     <span className="text-sm font-medium text-slate-700 hidden sm:inline">
                       {user.profile?.firstName && user.profile?.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.email}
                     </span>
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-premium border border-slate-200 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-premium border border-slate-200 py-2 z-50 animate-fade-in-up">
                     {user.role === 'SUPER_ADMIN' && (
                       <Link href="/dashboard/super-admin" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         Super Admin Dashboard
@@ -361,7 +383,8 @@ export function Navbar() {
                       Sign Out
                     </button>
                   </div>
-                </div>
+                )}
+              </div>
               </>
             ) : (
               <>
