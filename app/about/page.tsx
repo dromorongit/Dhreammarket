@@ -13,6 +13,11 @@ export default function AboutPage() {
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-deep-navy to-purple-900 relative overflow-hidden">
         <div className="absolute inset-0">
+          <img
+            src="/assets/images/market2.jpg"
+            alt=""
+            className="w-full h-full object-cover opacity-30"
+          />
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
           <div className="absolute top-20 -right-40 w-96 h-96 bg-premium-gold/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 -left-40 w-96 h-96 bg-royal-blue/10 rounded-full blur-3xl"></div>
@@ -283,12 +288,12 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-2xl bg-gradient-to-br from-royal-blue/10 to-purple-500/10 flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-royal-blue/20 to-purple-500/20 flex items-center justify-center">
-                  <svg className="w-12 h-12 text-royal-blue/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
+              <div className="aspect-square rounded-2xl overflow-hidden">
+                <img
+                  src="/assets/images/market1.jpg"
+                  alt="Our Story - Dhream Market"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/30"></div>
             </div>
