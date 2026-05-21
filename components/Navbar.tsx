@@ -168,7 +168,7 @@ export function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm overflow-hidden">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 sm:h-20 items-center">
           {/* Logo */}
@@ -354,7 +354,7 @@ export function Navbar() {
                     </svg>
                   </button>
                   {userMenuOpen && (
-                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-premium border border-slate-200 py-2 z-50 animate-fade-in-up">
+                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-premium border border-slate-200 py-2 z-[100] animate-fade-in-up">
                     {user.role === 'SUPER_ADMIN' && (
                       <Link href="/dashboard/super-admin" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         Super Admin Dashboard
