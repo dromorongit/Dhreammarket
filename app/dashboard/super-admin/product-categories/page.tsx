@@ -228,9 +228,32 @@ export default function SuperAdminProductCategoriesPage() {
     return result
   }
 
-  // Filter categories for display
+  // Get all child category IDs recursively
+  const getChildIds = (cats: Category[]): Set<string> => {
+    const ids = new Set<string>()
+    const collect = (items: Category[]) => {
+      for (const cat of items) {
+        if (cat.children && cat.children.length > 0) {
+          for (const child of cat.children) {
+            ids.add(child.id)
+            if (child.children) {
+              collect(child.children)
+            }
+          }
+        }
+      }
+    }
+    collect(cats)
+    return ids
+  }
+
+  // Filter categories for display - only show top-level categories (no parent)
   const getFilteredCategories = (cats: Category[]): Category[] => {
-    let filtered = cats
+    // First, get all child IDs to exclude them from top-level
+    const childIds = getChildIds(cats)
+
+    // Filter to only top-level categories (parentId is null)
+    let filtered = cats.filter(c => c.parentId === null)
 
     if (statusFilter === 'active') {
       filtered = filtered.filter(c => c.isActive)
@@ -644,11 +667,14 @@ export default function SuperAdminProductCategoriesPage() {
               <div className="hidden md:flex items-center px-4 sm:px-6 py-3 bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <div className="flex-1">Name</div>
                 <div className="w-20 text-center">Products</div>
-                <div className="w-24 text-center">Status</div>
+                <div className="w-28 text-center">Status</div>
                 <div className="w-28 text-center hidden lg:block">Created</div>
                 <div className="w-36 text-right">Actions</div>
               </div>
-              {displayCategories.map((category) => renderCategoryRow(category))}
+              {/* Table Body with responsive wrapper */}
+              <div className="overflow-x-auto">
+                {displayCategories.map((category) => renderCategoryRow(category))}
+              </div>
             </>
           )}
         </Card>
