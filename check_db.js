@@ -33,6 +33,32 @@ async function main() {
     indexes.rows.forEach(r => console.log(` - ${r.indexname}: ${r.indexdef}`));
   }
 
+  // Check categories table structure
+  const categoriesColumns = await pool.query(`
+    SELECT column_name, data_type, is_nullable, column_default
+    FROM information_schema.columns
+    WHERE table_name = 'categories'
+    ORDER BY ordinal_position
+  `);
+  console.log('\n=== CATEGORIES TABLE STRUCTURE ===');
+  categoriesColumns.rows.forEach(col => {
+    console.log(` - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable}, default: ${col.column_default})`);
+  });
+
+  // Check if there are any categories
+  const categoriesCount = await pool.query('SELECT COUNT(*) FROM categories');
+  console.log(`\n=== CATEGORIES COUNT ===`);
+  console.log(` - ${categoriesCount.rows[0].count} categories`);
+
+  // Fetch a few categories to see data
+  if (parseInt(categoriesCount.rows[0].count) > 0) {
+    const sampleCategories = await pool.query('SELECT id, name, slug, isActive, parentId FROM categories LIMIT 5');
+    console.log('\n=== SAMPLE CATEGORIES ===');
+    sampleCategories.rows.forEach(cat => {
+      console.log(` - ID: ${cat.id}, Name: ${cat.name}, Slug: ${cat.slug}, Active: ${cat.isActive}, ParentId: ${cat.parentId}`);
+    });
+  }
+
   await pool.end();
 }
 

@@ -1,12 +1,328 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id                   String                  @id @default(cuid())
+  email                String                  @unique
+  password             String
+  role                 Role                    @default(CUSTOMER)
+  status               UserStatus              @default(ACTIVE)
+  position             String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  cart                 Cart?
+  feedbacks            Feedback[]
+  homepageSections     HomepageSectionVendor[]
+  notifications        Notification[]
+  orders               Order[]
+  payments             Payment[]
+  profile              Profile?
+  reviews              Review[]
+  store                Store?
+  supportTickets       SupportTicket[]
+  vendorPayouts        VendorPayout[]          @relation("VendorPayoutVendor")
+
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Store {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  name          String
+  description   String?
+  isVerified    Boolean         @default(false)
+  isFeatured    Boolean         @default(false)
+  featuredUntil DateTime?
+  logo          String?
+  banner        String?
+  categoryId    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  products      Product[]
+  category      VendorCategory? @relation("StoreCategory", fields: [categoryId], references: [id])
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorPayouts VendorPayout[]  @relation("VendorPayoutStore")
+
+  @@map("stores")
+}
+
+model VendorCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  stores    Store[]  @relation("StoreCategory")
+
+  @@map("vendor_categories")
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String?    @unique @db.VarChar(255)
+  parentId  String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String                   @id @default(cuid())
+  storeId          String
+  categoryId       String
+  name             String
+  description      String?
+  brand            String?
+  price            Float
+  stock            Int                      @default(0)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  cartItems        CartItem[]
+  homepageSections HomepageSectionProduct[]
+  orderItems       OrderItem[]
+  images           ProductImage[]
+  category         Category                 @relation(fields: [categoryId], references: [id])
+  store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  reviews          Review[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id                 String        @id @default(cuid())
+  userId             String
+  grossAmount        Float?
+  processorFee       Float?
+  netAmount          Float?
+  platformCommission Float?
+  vendorEarnings     Float?
+  commissionRate     Float?
+  total              Float
+  status             OrderStatus   @default(PENDING)
+  paymentStatus      PaymentStatus @default(PENDING)
+  deletedAt          DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  items              OrderItem[]
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment            Payment?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id                 String   @id @default(cuid())
+  orderId            String
+  productId          String
+  quantity           Int
+  price              Float
+  grossAmount        Float?
+  processorFee       Float?
+  netAmount          Float?
+  platformCommission Float?
+  vendorEarnings     Float?
+  commissionRate     Float?
+  createdAt          DateTime @default(now())
+  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  orderId     String        @unique
+  amount      Float
+  currency    String        @default("GHS")
+  status      PaymentStatus @default(PENDING)
+  reference   String        @unique
+  paystackRef String?
+  message     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  order       Order         @relation(fields: [orderId], references: [id])
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String
+  rating     Int
+  comment    String?
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@map("reviews")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Feedback {
+  id        String       @id @default(cuid())
+  userId    String
+  type      FeedbackType
+  subject   String
+  message   String
+  status    String       @default("OPEN")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedbacks")
+}
+
+model VendorPayout {
+  id        String       @id @default(cuid())
+  vendorId  String
+  storeId   String
+  amount    Float
+  status    PayoutStatus
+  reference String?
+  note      String?
+  paidAt    DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  store     Store        @relation("VendorPayoutStore", fields: [storeId], references: [id])
+  vendor    User         @relation("VendorPayoutVendor", fields: [vendorId], references: [id])
+
+  @@map("vendor_payouts")
+}
+
+model SupportTicket {
+  id         String                @id @default(cuid())
+  userId     String
+  subject    String
+  message    String
+  type       SupportTicketType
+  status     SupportTicketStatus   @default(OPEN)
+  priority   SupportTicketPriority @default(MEDIUM)
+  adminReply String?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("support_tickets")
+}
+
+model HomepageSection {
+  id           String                   @id @default(cuid())
+  name         String
+  slug         String                   @unique
+  isEnabled    Boolean                  @default(true)
+  displayOrder Int                      @default(0)
+  type         HomepageSectionType
+  subtitle     String?
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  products     HomepageSectionProduct[]
+  vendors      HomepageSectionVendor[]
+
+  @@map("homepage_sections")
+}
+
+model HomepageSectionProduct {
+  id        String          @id @default(cuid())
+  sectionId String
+  productId String
+  createdAt DateTime        @default(now())
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, productId])
+  @@map("homepage_section_products")
+}
+
+model HomepageSectionVendor {
+  id        String          @id @default(cuid())
+  sectionId String
+  vendorId  String
+  createdAt DateTime        @default(now())
+  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  vendor    User            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, vendorId])
+  @@map("homepage_section_vendors")
 }
 
 enum Role {
@@ -40,239 +356,6 @@ enum PaymentStatus {
   REFUNDED
 }
 
-  model User {
-    id        String   @id @default(cuid())
-    email     String   @unique
-    password  String
-    role      Role     @default(CUSTOMER)
-    status    UserStatus @default(ACTIVE)
-    position  String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    
-    profile       Profile?
-    store         Store?
-    cart          Cart?
-    orders        Order[]
-    payments      Payment[]
-    reviews       Review[]
-    notifications Notification[]
-    feedbacks     Feedback[]
-    vendorPayouts VendorPayout[] @relation("VendorPayoutVendor")
-    supportTickets SupportTicket[]
-    homepageSections HomepageSectionVendor[]
-    
-    // Password reset fields
-    resetPasswordToken String?
-    resetPasswordExpires DateTime?
-    
-    @@map("users")
-  }
-
-model Profile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  firstName String?
-  lastName  String?
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("profiles")
-}
-
-model Store {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  name        String
-  description String?
-  isVerified  Boolean  @default(false)
-  isFeatured  Boolean  @default(false)
-  featuredUntil DateTime?
-  logo        String?
-  banner      String?
-  categoryId  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  products     Product[]
-  vendorPayouts VendorPayout[] @relation("VendorPayoutStore")
-  category     VendorCategory? @relation("StoreCategory", fields: [categoryId], references: [id], onDelete: SetNull)
-  
-  @@map("stores")
-}
-
-model VendorCategory {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  stores    Store[]  @relation("StoreCategory")
- 
-  @@map("vendor_categories")
-}
-
-model Category {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  parentId  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
- 
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryHierarchy")
-  products Product[]
- 
-  @@map("categories")
-}
-
-model Product {
-  id          String   @id @default(cuid())
-  storeId     String
-  categoryId  String
-  name        String
-  description String?
-  brand       String?
-  price       Float
-  stock       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  store      Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  category   Category       @relation(fields: [categoryId], references: [id])
-  images     ProductImage[]
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-  reviews    Review[]
-  homepageSections HomepageSectionProduct[]
-
-  @@map("products")
-}
-
-model ProductImage {
-  id        String   @id @default(cuid())
-  productId String
-  url       String
-  alt       String?
-  createdAt DateTime @default(now())
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("product_images")
-}
-
-model Cart {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items CartItem[]
-
-  @@map("carts")
-}
-
-model CartItem {
-  id        String   @id @default(cuid())
-  cartId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([cartId, productId])
-  @@map("cart_items")
-}
-
-model Order {
-  id            String        @id @default(cuid())
-  userId        String
-  grossAmount   Float?
-  processorFee  Float?
-  netAmount     Float?
-  platformCommission Float?
-  vendorEarnings Float?
-  commissionRate Float?
-  total         Float
-  status        OrderStatus   @default(PENDING)
-  paymentStatus PaymentStatus @default(PENDING)
-  deletedAt     DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items   OrderItem[]
-  payment Payment?
-
-  @@map("orders")
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-  grossAmount Float?
-  processorFee Float?
-  netAmount Float?
-  platformCommission Float?
-  vendorEarnings Float?
-  commissionRate Float?
-  createdAt DateTime @default(now())
-
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@map("order_items")
-}
-
-model Payment {
-  id          String        @id @default(cuid())
-  userId      String
-  orderId     String        @unique
-  amount      Float
-  currency    String        @default("GHS")
-  status      PaymentStatus @default(PENDING)
-  reference   String        @unique
-  paystackRef String?
-  message     String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order Order @relation(fields: [orderId], references: [id])
-
-  @@map("payments")
-}
-
-model Review {
-  id         String   @id @default(cuid())
-  productId  String
-  userId     String
-  rating     Int
-  comment    String?
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, userId])
-  @@map("reviews")
-}
-
 enum NotificationType {
   ORDER_PLACED
   PAYMENT_SUCCESSFUL
@@ -284,58 +367,11 @@ enum NotificationType {
   SUPPORT_TICKET_STATUS_UPDATED
 }
 
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
 enum FeedbackType {
   SUGGESTION
   BUG_REPORT
   GENERAL
   QUESTION
-}
-
-model Feedback {
-  id        String      @id @default(cuid())
-  userId    String
-  type      FeedbackType
-  subject   String
-  message   String
-  status    String      @default("OPEN")
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("feedbacks")
-}
-
-model VendorPayout {
-  id          String   @id @default(cuid())
-  vendorId    String
-  storeId     String
-  amount      Float
-  status      PayoutStatus
-  reference   String?
-  note        String?
-  paidAt      DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  vendor User @relation("VendorPayoutVendor", fields: [vendorId], references: [id])
-  store  Store @relation("VendorPayoutStore", fields: [storeId], references: [id])
-
-  @@map("vendor_payouts")
 }
 
 enum PayoutStatus {
@@ -370,70 +406,10 @@ enum SupportTicketPriority {
   URGENT
 }
 
-model SupportTicket {
-  id        String           @id @default(cuid())
-  userId    String
-  subject   String
-  message   String
-  type      SupportTicketType
-  status    SupportTicketStatus @default(OPEN)
-  priority  SupportTicketPriority @default(MEDIUM)
-  adminReply String?
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("support_tickets")
-}
-
 enum HomepageSectionType {
   PRODUCT_GRID
   QUICKLINK_CARD_GRID
   LARGE_FEATURE_CARDS
   BRAND_GRID
   SERVICE_GRID
-}
-
-model HomepageSection {
-  id           String              @id @default(cuid())
-  name         String
-  slug         String              @unique
-  isEnabled    Boolean             @default(true)
-  displayOrder Int                 @default(0)
-  type         HomepageSectionType
-  subtitle     String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-
-  products HomepageSectionProduct[]
-  vendors  HomepageSectionVendor[]
-
-  @@map("homepage_sections")
-}
-
-model HomepageSectionProduct {
-  id         String   @id @default(cuid())
-  sectionId  String
-  productId  String
-  createdAt  DateTime @default(now())
-
-  section HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([sectionId, productId])
-  @@map("homepage_section_products")
-}
-
-model HomepageSectionVendor {
-  id        String   @id @default(cuid())
-  sectionId String
-  vendorId  String
-  createdAt DateTime @default(now())
-
-  section HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  vendor  User            @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-
-  @@unique([sectionId, vendorId])
-  @@map("homepage_section_vendors")
 }
