@@ -120,7 +120,9 @@ model VendorCategory {
 model Category {
   id        String   @id @default(cuid())
   name      String
+  slug      String   @unique
   parentId  String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
  
