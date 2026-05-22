@@ -1,8 +1,28 @@
--- Deduplicate category slugs before adding unique constraint
--- This keeps the first occurrence of each slug and appends "-copy-N" to duplicates
+DO $$
+BEGIN
+    -- Check if slug column exists in categories table
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'categories' AND column_name = 'slug'
+    ) THEN
+        -- Add slug column if it doesn't exist
+        ALTER TABLE categories ADD COLUMN slug VARCHAR(255);
+        
+        -- Populate slug from name (lowercase, replace spaces with hyphens, remove special chars)
+        UPDATE categories
+        SET slug = LOWER(REGEXP_REPLACE(TRIM(name), '[^a-z0-9]+', '-', 'g'))
+        WHERE slug IS NULL;
+        
+        -- Ensure no empty slugs (set to id-based slug if name results in empty)
+        UPDATE categories
+        SET slug = 'category-' || id
+        WHERE slug IS NULL OR slug = '' OR slug = '-';
+    END IF;
+END $$;
 
+-- Now handle duplicates and add unique constraint
 WITH duplicates AS (
-    SELECT 
+    SELECT
         id,
         slug,
         ROW_NUMBER() OVER (PARTITION BY slug ORDER BY createdAt ASC) AS rn
