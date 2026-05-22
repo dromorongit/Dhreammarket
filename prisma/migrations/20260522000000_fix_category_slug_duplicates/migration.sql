@@ -25,7 +25,7 @@ WITH duplicates AS (
     SELECT
         id,
         slug,
-        ROW_NUMBER() OVER (PARTITION BY slug ORDER BY createdAt ASC) AS rn
+        ROW_NUMBER() OVER (PARTITION BY slug ORDER BY "createdAt" ASC) AS rn
     FROM categories
     WHERE slug IS NOT NULL
 )
