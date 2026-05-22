@@ -263,6 +263,8 @@ export default function SuperAdminProductCategoriesPage() {
   }
 
   // Filter categories for display - only show top-level categories (no parent)
+  // Status filter is applied ONLY at the top level (governance view behaviour).
+  // Search filter is applied recursively so matching children are kept with their parents.
   const getFilteredCategories = (cats: Category[]): Category[] => {
     // First, get all child IDs to exclude them from top-level
     const childIds = getChildIds(cats)
@@ -461,9 +463,12 @@ export default function SuperAdminProductCategoriesPage() {
 
   // ─── DESKTOP TABLE ROW RENDERER ─────────────────────────────────────────
   // Preserves the original executive table layout for desktop/tablet screens.
-  // Uses flexbox row with proper column widths, hover states, and action icons.
+  // Parent categories with children get an expand/collapse chevron button.
+  // Subcategories are hidden until the parent is expanded, matching mobile behaviour.
   const renderDesktopCategoryRow = (category: Category, level = 0): React.ReactNode => {
     const hasChildren = category.children && category.children.length > 0
+    const isExpanded = expandedCategories.has(category.id)
+    // Apply status filter to children so inactive subcategories are hidden when collapsed/expanded
     const filteredChildren = getFilteredCategories(category.children || [])
 
     return (
@@ -475,6 +480,29 @@ export default function SuperAdminProductCategoriesPage() {
           >
             {level > 0 && (
               <div className="w-5 h-px bg-slate-300 flex-shrink-0"></div>
+            )}
+            {/* Expand/Collapse chevron — only for parents with children */}
+            {hasChildren ? (
+              <button
+                onClick={() => toggleExpand(category.id)}
+                className="flex-shrink-0 p-0.5 rounded hover:bg-slate-100 transition-colors"
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? `Collapse ${category.name}` : `Expand ${category.name}`}
+              >
+                <svg
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ease-in-out ${
+                    isExpanded ? 'rotate-90 text-royal-blue' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ) : (
+              /* Leaf category — spacer to align name with parent rows */
+              <div className="w-4 h-4 flex-shrink-0" />
             )}
             <span className="text-sm font-medium text-slate-900 truncate">{category.name}</span>
             <span className="text-xs text-slate-400 truncate hidden sm:inline">({category.slug})</span>
@@ -541,9 +569,12 @@ export default function SuperAdminProductCategoriesPage() {
             </button>
           </div>
         </div>
-        {hasChildren && filteredChildren.length > 0 &&
-          filteredChildren.map((child) => renderDesktopCategoryRow(child, level + 1))
-        }
+        {/* Expanded subcategories — only render when parent is expanded */}
+        {hasChildren && isExpanded && filteredChildren.length > 0 && (
+          <div>
+            {filteredChildren.map((child) => renderDesktopCategoryRow(child, level + 1))}
+          </div>
+        )}
       </div>
     )
   }

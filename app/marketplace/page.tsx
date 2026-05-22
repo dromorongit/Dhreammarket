@@ -43,6 +43,7 @@ interface Product {
 interface Category {
   id: string
   name: string
+  productCount: number
 }
 
 interface VendorCategory {
@@ -276,7 +277,7 @@ function MarketplaceContent() {
                 All Categories
                 {selectedCategory === '' && (
                   <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                    {products.length}
+                    {categories.length}
                   </span>
                 )}
               </Button>
@@ -291,7 +292,7 @@ function MarketplaceContent() {
                   {category.name}
                   {selectedCategory === category.id && (
                     <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                      {filteredProducts.length}
+                      {category.productCount}
                     </span>
                   )}
                 </Button>
