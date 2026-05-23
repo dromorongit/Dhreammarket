@@ -7,24 +7,26 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 
-interface VendorCategory {
+interface Category {
   id: string
   name: string
   slug: string
   isActive: boolean
+  parentId: string | null
   createdAt: string
   _count?: {
+    products: number
     stores: number
   }
 }
 
 export default function VendorCategoriesPage() {
-  const [categories, setCategories] = useState<VendorCategory[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<VendorCategory | null>(null)
-  const [formData, setFormData] = useState({ name: '', slug: '', isActive: true })
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [formData, setFormData] = useState({ name: '', slug: '', parentId: '', isActive: true })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -36,12 +38,12 @@ export default function VendorCategoriesPage() {
       setLoading(true)
       const response = await fetch('/api/admin/vendor-categories')
       const data = await response.json()
-      
+
       if (!response.ok) {
         setError(data.error || 'Failed to fetch categories')
         return
       }
-      
+
       setCategories(data.categories)
     } catch (err) {
       setError('Failed to fetch categories')
@@ -59,9 +61,9 @@ export default function VendorCategoriesPage() {
       const url = editingCategory ? '/api/admin/vendor-categories' : '/api/admin/vendor-categories'
       const method = editingCategory ? 'PUT' : 'POST'
 
-      const payload = editingCategory 
-        ? { id: editingCategory.id, ...formData }
-        : formData
+      const payload = editingCategory
+        ? { id: editingCategory.id, ...formData, parentId: formData.parentId || null }
+        : { ...formData, parentId: formData.parentId || null }
 
       const response = await fetch(url, {
         method,
@@ -86,18 +88,19 @@ export default function VendorCategoriesPage() {
     }
   }
 
-  const handleEdit = (category: VendorCategory) => {
+  const handleEdit = (category: Category) => {
     setEditingCategory(category)
     setFormData({
       name: category.name,
       slug: category.slug,
+      parentId: category.parentId || '',
       isActive: category.isActive,
     })
     setShowModal(true)
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category? Stores assigned to this category will not be deleted but the category association will be removed.')) {
+    if (!confirm('Are you sure you want to delete this category? Products and stores assigned to this category will not be deleted but the category association will be removed.')) {
       return
     }
 
@@ -123,7 +126,7 @@ export default function VendorCategoriesPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setEditingCategory(null)
-    setFormData({ name: '', slug: '', isActive: true })
+    setFormData({ name: '', slug: '', parentId: '', isActive: true })
   }
 
   const generateSlug = (name: string) => {
@@ -184,8 +187,8 @@ export default function VendorCategoriesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-deep-navy">Vendor Categories</h1>
-            <p className="text-slate-600 mt-1">Manage vendor types and classifications</p>
+            <h1 className="text-3xl font-bold text-deep-navy">Product Categories</h1>
+            <p className="text-slate-600 mt-1">Manage product categories and classifications across the marketplace</p>
           </div>
           <Button onClick={() => setShowModal(true)} variant="primary">
             + Add Category
@@ -199,8 +202,8 @@ export default function VendorCategoriesPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             }
-            title="No vendor categories"
-            description="Create your first vendor category to help organize vendors on the platform."
+            title="No categories"
+            description="Create your first product category to help organize products on the platform."
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -211,15 +214,18 @@ export default function VendorCategoriesPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-deep-navy">{category.name}</h3>
                       <p className="text-sm text-slate-500">/{category.slug}</p>
+                      {category.parentId && (
+                        <p className="text-xs text-slate-400 mt-1">Subcategory</p>
+                      )}
                     </div>
                     <Badge variant={category.isActive ? 'verified' : 'default'}>
                       {category.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                     <span className="text-sm text-slate-600">
-                      {category._count?.stores || 0} store(s)
+                      {category._count?.products || 0} product(s)
                     </span>
                     <div className="flex gap-2">
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(category)}>
@@ -244,7 +250,7 @@ export default function VendorCategoriesPage() {
             <h2 className="text-2xl font-bold text-deep-navy mb-6">
               {editingCategory ? 'Edit Category' : 'Create Category'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -275,6 +281,27 @@ export default function VendorCategoriesPage() {
                 <p className="text-xs text-slate-500 mt-1">Used in URLs. Lowercase, no spaces.</p>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Parent Category
+                </label>
+                <select
+                  value={formData.parentId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, parentId: e.target.value }))}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-royal-blue focus:border-transparent"
+                >
+                  <option value="">None (Top-level category)</option>
+                  {categories
+                    .filter(cat => cat.id !== editingCategory?.id)
+                    .map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">Leave empty for a top-level category</p>
+              </div>
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -284,7 +311,7 @@ export default function VendorCategoriesPage() {
                   className="w-4 h-4 text-royal-blue rounded"
                 />
                 <label htmlFor="isActive" className="text-sm font-medium text-slate-700">
-                  Active (visible to vendors)
+                  Active (visible to vendors and customers)
                 </label>
               </div>
 

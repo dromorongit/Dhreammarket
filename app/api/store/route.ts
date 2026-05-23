@@ -49,14 +49,14 @@ export async function POST(request: NextRequest) {
 
     // Validate category is provided and active
     if (!categoryId) {
-      return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Store category is required' }, { status: 400 })
     }
-    
-    const category = await getPrisma().vendorCategory.findUnique({
+
+    const category = await getPrisma().category.findUnique({
       where: { id: categoryId }
     })
     if (!category || !category.isActive) {
-      return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid or inactive category' }, { status: 400 })
     }
 
     // Check if store already exists
@@ -109,17 +109,17 @@ export async function PUT(request: NextRequest) {
 
    // Validate category is provided and active
    if (!categoryId) {
-     return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
+     return NextResponse.json({ error: 'Store category is required' }, { status: 400 })
    }
-   
-   const category = await getPrisma().vendorCategory.findUnique({
+
+   const category = await getPrisma().category.findUnique({
      where: { id: categoryId }
    })
    if (!category || !category.isActive) {
-     return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+     return NextResponse.json({ error: 'Invalid or inactive category' }, { status: 400 })
    }
 
-    const store = await getPrisma().store.update({
+   const store = await getPrisma().store.update({
       where: { userId: payload.userId },
       data: {
         name: name.trim(),

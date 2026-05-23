@@ -23,6 +23,12 @@ interface HomepageSectionData {
   vendors: any[]
 }
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
+
 interface FeaturedVendor {
   id: string
   name: string
@@ -167,7 +173,7 @@ export default function Home() {
         </>
       ) : dynamicSections.length > 0 ? (
         dynamicSections.map((section) => (
-          <HomepageSectionRenderer key={section.id} section={section} />
+          <HomepageSectionRenderer key={section.id} sections={[section]} />
         ))
       ) : null}
 
@@ -443,7 +449,7 @@ export default function Home() {
 // ─── Existing Section Components (preserved as fallback) ───
 
 function VendorCategorySection() {
-  const [categories, setCategories] = useState<VendorCategory[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [vendors, setVendors] = useState<any[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -810,12 +816,6 @@ function PopularCategoriesSection() {
       ))}
     </div>
   )
-}
-
-interface VendorCategory {
-  id: string
-  name: string
-  slug: string
 }
 
 // Featured Products Section Component

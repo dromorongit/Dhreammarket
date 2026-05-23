@@ -3,7 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const categories = await getPrisma().vendorCategory.findMany({
+    const categories = await getPrisma().category.findMany({
       where: {
         isActive: true
       },

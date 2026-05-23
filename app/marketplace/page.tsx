@@ -46,12 +46,6 @@ interface Category {
   productCount: number
 }
 
-interface VendorCategory {
-  id: string
-  name: string
-  slug: string
-}
-
 interface Vendor {
   id: string
   name: string
@@ -69,7 +63,7 @@ function MarketplaceContent() {
   const [products, setProducts] = useState<Product[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [vendorCategories, setVendorCategories] = useState<VendorCategory[]>([])
+  const [vendorCategories, setVendorCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')

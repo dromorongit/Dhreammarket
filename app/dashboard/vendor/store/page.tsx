@@ -22,7 +22,7 @@ interface Store {
   } | null
 }
 
-interface VendorCategory {
+interface Category {
   id: string
   name: string
   slug: string
@@ -31,7 +31,7 @@ interface VendorCategory {
 export default function StoreManagement() {
   const router = useRouter()
   const [store, setStore] = useState<Store | null>(null)
-  const [categories, setCategories] = useState<VendorCategory[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)

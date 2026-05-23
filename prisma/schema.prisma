@@ -60,23 +60,14 @@ model Store {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   products      Product[]
-  category      VendorCategory? @relation("StoreCategory", fields: [categoryId], references: [id])
+  category      Category? @relation("StoreCategory", fields: [categoryId], references: [id])
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorPayouts VendorPayout[]  @relation("VendorPayoutStore")
 
   @@map("stores")
 }
 
-model VendorCategory {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  stores    Store[]  @relation("StoreCategory")
 
-  @@map("vendor_categories")
-}
 
 model Category {
   id        String     @id @default(cuid())
