@@ -8,11 +8,17 @@ const nextConfig = {
     // Externalize Prisma packages to prevent webpack from bundling them
     // This is critical for both server and client builds
     if (isServer) {
+      // Use function-based externals for proper handling of scoped packages
+      // Array-based externals with scoped packages like @prisma/client
+      // causes webpack to generate invalid JS: "const __WEBPACK_NAMESPACE_OBJECT__ = @prisma/client;"
       config.externals = [
         ...(config.externals || []),
-        '@prisma/client',
-        'prisma',
-        '@prisma/adapter-pg'
+        ({ context, request }, callback) => {
+          if (request === '@prisma/client' || request === 'prisma' || request === '@prisma/adapter-pg') {
+            return callback(null, `commonjs ${request}`)
+          }
+          callback()
+        }
       ]
     }
 
@@ -25,8 +31,8 @@ const nextConfig = {
       new webpack.NormalModuleReplacementPlugin(
         /^node:(.+)$/,
         (resource) => {
-          // The resource object has a 'request' property containing the matched string
-          return resource.request.replace(/^node:/, '')
+          // Mutate resource.request in place - returning a value does not work
+          resource.request = resource.request.replace(/^node:/, '')
         }
       )
     )
