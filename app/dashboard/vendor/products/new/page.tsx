@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
-import { isVendorOnboarded } from '@/lib/onboarding'
 import ImageUpload from '@/components/ImageUpload'
 import Link from 'next/link'
 
