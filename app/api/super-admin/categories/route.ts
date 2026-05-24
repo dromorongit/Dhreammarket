@@ -17,7 +17,7 @@ function generateSlug(name: string): string {
 
 export const dynamic = 'force-dynamic'
 
-// GET all categories with product counts and status
+// GET all product categories with product counts and status
 export async function GET(request: NextRequest) {
   try {
     const authCheck = requireSuperAdmin()
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       whereClause.isActive = true
     }
 
-    const categories = await prisma.category.findMany({
+    const categories = await prisma.productCategory.findMany({
       where: whereClause,
       orderBy: { name: 'asc' },
       include: {
@@ -47,12 +47,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ categories })
   } catch (error) {
-    console.error('Super Admin categories error:', error)
-    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 })
+    console.error('Super Admin product categories error:', error)
+    return NextResponse.json({ error: 'Failed to fetch product categories' }, { status: 500 })
   }
 }
 
-// POST - Create new category
+// POST - Create new product category
 export async function POST(request: NextRequest) {
   try {
     const authCheck = requireSuperAdmin()
@@ -64,20 +64,20 @@ export async function POST(request: NextRequest) {
     const { name, parentId, isActive } = body
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Product category name is required' }, { status: 400 })
     }
 
     const trimmedName = name.trim()
 
     // Check for duplicate name (case-insensitive)
     const allCategories = await prisma.$queryRaw<{ name: string; slug: string }[]>`
-      SELECT name, slug FROM categories
+      SELECT name, slug FROM product_categories
     `
     const exists = allCategories.some((cat) =>
       cat.name.toLowerCase() === trimmedName.toLowerCase()
     )
     if (exists) {
-      return NextResponse.json({ error: 'Category with this name already exists' }, { status: 400 })
+      return NextResponse.json({ error: 'Product category with this name already exists' }, { status: 400 })
     }
 
     // Generate unique slug
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // If parentId provided, verify it exists
     if (parentId) {
-      const parent = await prisma.category.findUnique({
+      const parent = await prisma.productCategory.findUnique({
         where: { id: parentId },
       })
       if (!parent) {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const category = await prisma.category.create({
+    const category = await prisma.productCategory.create({
       data: {
         name: trimmedName,
         slug,
@@ -112,12 +112,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ category })
   } catch (error) {
-    console.error('Super Admin categories create error:', error)
-    return NextResponse.json({ error: 'Failed to create category' }, { status: 500 })
+    console.error('Super Admin product categories create error:', error)
+    return NextResponse.json({ error: 'Failed to create product category' }, { status: 500 })
   }
 }
 
-// PUT - Update category
+// PUT - Update product category
 export async function PUT(request: NextRequest) {
   try {
     const authCheck = requireSuperAdmin()
@@ -129,33 +129,33 @@ export async function PUT(request: NextRequest) {
     const { id, name, parentId, isActive } = body
 
     if (!id) {
-      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Product category ID is required' }, { status: 400 })
     }
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ error: 'Category name is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Product category name is required' }, { status: 400 })
     }
 
     const trimmedName = name.trim()
 
-    const category = await prisma.category.findUnique({
+    const category = await prisma.productCategory.findUnique({
       where: { id },
       select: { id: true, name: true, slug: true, parentId: true, isActive: true, createdAt: true, updatedAt: true },
     })
 
     if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Product category not found' }, { status: 404 })
     }
 
     // Check for duplicate name (excluding current category, case-insensitive)
     const allCategories = await prisma.$queryRaw<{ name: string; id: string; slug: string }[]>`
-      SELECT name, id, slug FROM categories WHERE id != ${id}
+      SELECT name, id, slug FROM product_categories WHERE id != ${id}
     `
     const duplicate = allCategories.find((cat) =>
       cat.name.toLowerCase() === trimmedName.toLowerCase()
     )
     if (duplicate) {
-      return NextResponse.json({ error: 'Category with this name already exists' }, { status: 400 })
+      return NextResponse.json({ error: 'Product category with this name already exists' }, { status: 400 })
     }
 
     // Prevent making a category its own parent
@@ -165,7 +165,7 @@ export async function PUT(request: NextRequest) {
 
     // If parentId changed, verify new parent exists and is not a descendant
     if (parentId && parentId !== category.parentId) {
-      const parent = await prisma.category.findUnique({
+      const parent = await prisma.productCategory.findUnique({
         where: { id: parentId },
       })
       if (!parent) {
@@ -174,7 +174,7 @@ export async function PUT(request: NextRequest) {
 
       // Prevent circular hierarchy: check if the new parent is a descendant of this category
       const checkDescendant = async (parentIdToCheck: string, ancestorId: string): Promise<boolean> => {
-        const children = await prisma.category.findMany({
+        const children = await prisma.productCategory.findMany({
           where: { parentId: parentIdToCheck },
           select: { id: true },
         })
@@ -217,19 +217,19 @@ export async function PUT(request: NextRequest) {
       updateData.isActive = isActive
     }
 
-    const updated = await prisma.category.update({
+    const updated = await prisma.productCategory.update({
       where: { id },
       data: updateData,
     })
 
     return NextResponse.json({ category: updated })
   } catch (error) {
-    console.error('Super Admin categories update error:', error)
-    return NextResponse.json({ error: 'Failed to update category' }, { status: 500 })
+    console.error('Super Admin product categories update error:', error)
+    return NextResponse.json({ error: 'Failed to update product category' }, { status: 500 })
   }
 }
 
-// DELETE - Remove category
+// DELETE - Remove product category
 export async function DELETE(request: NextRequest) {
   try {
     const authCheck = requireSuperAdmin()
@@ -242,10 +242,10 @@ export async function DELETE(request: NextRequest) {
     const force = searchParams.get('force') === 'true'
 
     if (!id) {
-      return NextResponse.json({ error: 'Category ID is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Product category ID is required' }, { status: 400 })
     }
 
-    const category = await prisma.category.findUnique({
+    const category = await prisma.productCategory.findUnique({
       where: { id },
       include: {
         _count: { select: { products: true, children: true } },
@@ -253,13 +253,13 @@ export async function DELETE(request: NextRequest) {
     })
 
     if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Product category not found' }, { status: 404 })
     }
 
     // Check if category has products
     if (category._count.products > 0 && !force) {
       return NextResponse.json({
-        error: 'Cannot delete category with products. Remove or reassign products first, or use force delete.',
+        error: 'Cannot delete product category with products. Remove or reassign products first, or use force delete.',
         hasProducts: true,
         productCount: category._count.products,
       }, { status: 400 })
@@ -268,7 +268,7 @@ export async function DELETE(request: NextRequest) {
     // Check if category has children
     if (category._count.children > 0 && !force) {
       return NextResponse.json({
-        error: 'Cannot delete category with subcategories. Remove subcategories first, or use force delete.',
+        error: 'Cannot delete product category with subcategories. Remove subcategories first, or use force delete.',
         hasChildren: true,
         childCount: category._count.children,
       }, { status: 400 })
@@ -281,13 +281,13 @@ export async function DELETE(request: NextRequest) {
       `
     }
 
-    await prisma.category.delete({
+    await prisma.productCategory.delete({
       where: { id },
     })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Super Admin categories delete error:', error)
-    return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 })
+    console.error('Super Admin product categories delete error:', error)
+    return NextResponse.json({ error: 'Failed to delete product category' }, { status: 500 })
   }
 }

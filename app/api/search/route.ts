@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
     const results: Record<string, any[]> = {
       products: [],
       vendors: [],
-      categories: [],
+      productCategories: [],
+      vendorCategories: [],
       brands: [],
     }
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
         },
         include: {
           user: { select: { id: true } },
-          category: { select: { id: true, name: true, slug: true } },
+          vendor_categories: { select: { id: true, name: true, slug: true } },
           _count: { select: { products: true } },
         },
         take: LIMIT_PER_TYPE,
@@ -87,14 +88,14 @@ export async function GET(request: NextRequest) {
         isVerified: v.isVerified,
         isFeatured: v.isFeatured,
         productCount: v._count.products,
-        category: v.category,
+        category: v.vendor_categories,
         type: 'vendor',
       }))
     }
 
-    // Search Categories
-    if (!typeFilter || typeFilter === 'categories') {
-      const categories = await prisma.category.findMany({
+    // Search Product Categories
+    if (!typeFilter || typeFilter === 'categories' || typeFilter === 'product-categories') {
+      const productCategories = await prisma.productCategory.findMany({
         where: {
           name: { contains: query, mode: 'insensitive' },
         },
@@ -105,11 +106,32 @@ export async function GET(request: NextRequest) {
         orderBy: { name: 'asc' },
       })
 
-      results.categories = categories.map((c) => ({
+      results.productCategories = productCategories.map((c) => ({
         id: c.id,
         name: c.name,
         productCount: c._count.products,
-        type: 'category',
+        type: 'product-category',
+      }))
+    }
+
+    // Search Vendor Categories
+    if (!typeFilter || typeFilter === 'vendor-categories') {
+      const vendorCategories = await prisma.vendorCategory.findMany({
+        where: {
+          name: { contains: query, mode: 'insensitive' },
+        },
+        include: {
+          _count: { select: { stores: true } },
+        },
+        take: LIMIT_PER_TYPE,
+        orderBy: { name: 'asc' },
+      })
+
+      results.vendorCategories = vendorCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        storeCount: c._count.stores,
+        type: 'vendor-category',
       }))
     }
 
@@ -149,7 +171,7 @@ export async function GET(request: NextRequest) {
         }))
     }
 
-    const total = results.products.length + results.vendors.length + results.categories.length + results.brands.length
+    const total = results.products.length + results.vendors.length + results.productCategories.length + results.vendorCategories.length + results.brands.length
 
     return NextResponse.json({
       query,

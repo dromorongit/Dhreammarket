@@ -41,22 +41,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, logo, banner } = await request.json()
+    const { name, description, vendorCategoryId, logo, banner } = await request.json()
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
     }
 
-    // Validate category is provided and active
-    if (!categoryId) {
-      return NextResponse.json({ error: 'Store category is required' }, { status: 400 })
+    // Validate vendor category is provided and active
+    if (!vendorCategoryId) {
+      return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
     }
 
-    const category = await getPrisma().category.findUnique({
-      where: { id: categoryId }
+    const vendorCategory = await getPrisma().vendorCategory.findUnique({
+      where: { id: vendorCategoryId }
     })
-    if (!category || !category.isActive) {
-      return NextResponse.json({ error: 'Invalid or inactive category' }, { status: 400 })
+    if (!vendorCategory || !vendorCategory.isActive) {
+      return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
     }
 
     // Check if store already exists
@@ -73,12 +73,12 @@ export async function POST(request: NextRequest) {
         userId: payload.userId,
         name: name.trim(),
         description: description?.trim() || null,
-        categoryId: categoryId || null,
+        categoryId: vendorCategoryId || null,
         ...(logo !== undefined && { logo }),
         ...(banner !== undefined && { banner }),
       },
       include: {
-        category: true,
+        vendor_categories: true,
       }
     })
 
@@ -101,41 +101,41 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, logo, banner } = await request.json()
+    const { name, description, vendorCategoryId, logo, banner } = await request.json()
 
    if (!name || !name.trim()) {
      return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
    }
 
-   // Validate category is provided and active
-   if (!categoryId) {
-     return NextResponse.json({ error: 'Store category is required' }, { status: 400 })
+   // Validate vendor category is provided and active
+   if (!vendorCategoryId) {
+     return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
    }
 
-   const category = await getPrisma().category.findUnique({
-     where: { id: categoryId }
+   const vendorCategory = await getPrisma().vendorCategory.findUnique({
+     where: { id: vendorCategoryId }
    })
-   if (!category || !category.isActive) {
-     return NextResponse.json({ error: 'Invalid or inactive category' }, { status: 400 })
+   if (!vendorCategory || !vendorCategory.isActive) {
+     return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
    }
 
    const store = await getPrisma().store.update({
-      where: { userId: payload.userId },
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        categoryId: categoryId,
-        ...(logo !== undefined && { logo }),
-        ...(banner !== undefined && { banner }),
-      },
-      include: {
-        category: true,
-      }
-    })
+     where: { userId: payload.userId },
+     data: {
+       name: name.trim(),
+       description: description?.trim() || null,
+       categoryId: vendorCategoryId,
+       ...(logo !== undefined && { logo }),
+       ...(banner !== undefined && { banner }),
+     },
+     include: {
+       vendor_categories: true,
+     }
+   })
 
-     return NextResponse.json({ store })
-   } catch (error) {
-     console.error('Error updating store:', error)
-     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-   }
+    return NextResponse.json({ store })
+  } catch (error) {
+    console.error('Error updating store:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }

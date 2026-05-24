@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             createdAt: true,
           },
         },
-        category: {
+        vendor_categories: {
           select: {
             id: true,
             name: true,
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
     }
 
-    // Check if vendor has completed onboarding (has a category assigned)
+    // Check if vendor has completed onboarding (has a vendor category assigned)
     if (!store.categoryId) {
       return NextResponse.json({ error: 'Vendor profile not available' }, { status: 404 })
     }
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       rating: Math.round(averageRating * 10) / 10,
       totalReviews,
       createdAt: store.createdAt,
-      category: store.category,
+      category: store.vendor_categories,
       products: store.products.map((p) => ({
         id: p.id,
         name: p.name,

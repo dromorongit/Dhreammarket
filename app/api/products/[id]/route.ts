@@ -53,9 +53,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, imageUrls } = await request.json()
+    const { name, description, price, stock, productCategoryId, imageUrls } = await request.json()
 
-    // Check if vendor has completed onboarding (store and category)
+    // Check if vendor has completed onboarding (store and vendor category)
     const isOnboarded = await isVendorOnboarded(payload.userId);
     if (!isOnboarded) {
       return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
@@ -65,8 +65,8 @@ export async function PUT(
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
-    if (!categoryId) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+    if (!productCategoryId) {
+      return NextResponse.json({ error: 'Product category is required' }, { status: 400 })
     }
     if (price === undefined || price < 0) {
       return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
@@ -96,20 +96,20 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Verify category exists
-    const category = await getPrisma().category.findUnique({
-      where: { id: categoryId },
+    // Verify product category exists
+    const productCategory = await getPrisma().productCategory.findUnique({
+      where: { id: productCategoryId },
     })
 
-    if (!category) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+    if (!productCategory) {
+      return NextResponse.json({ error: 'Invalid product category' }, { status: 400 })
     }
 
     // Update product
     const product = await getPrisma().product.update({
       where: { id: params.id },
       data: {
-        categoryId,
+        categoryId: productCategoryId,
         name: name.trim(),
         description: description?.trim() || null,
         price: parseFloat(price),

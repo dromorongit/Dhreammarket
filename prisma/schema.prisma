@@ -47,41 +47,50 @@ model Profile {
 }
 
 model Store {
-  id            String          @id @default(cuid())
-  userId        String          @unique
-  name          String
-  description   String?
-  isVerified    Boolean         @default(false)
-  isFeatured    Boolean         @default(false)
-  featuredUntil DateTime?
-  logo          String?
-  banner        String?
-  categoryId    String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  products      Product[]
-  category      Category? @relation("StoreCategory", fields: [categoryId], references: [id])
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vendorPayouts VendorPayout[]  @relation("VendorPayoutStore")
+  id                String          @id @default(cuid())
+  userId            String          @unique
+  name              String
+  description       String?
+  isVerified        Boolean         @default(false)
+  isFeatured        Boolean         @default(false)
+  featuredUntil     DateTime?
+  logo              String?
+  banner            String?
+  categoryId        String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  products          Product[]
+  vendor_categories VendorCategory? @relation(fields: [categoryId], references: [id])
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorPayouts     VendorPayout[]  @relation("VendorPayoutStore")
 
   @@map("stores")
 }
 
+model VendorCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  stores    Store[]
 
+  @@map("vendor_categories")
+}
 
-model Category {
-  id        String     @id @default(cuid())
+model ProductCategory {
+  id        String            @id(map: "categories_pkey") @default(cuid())
   name      String
-  slug      String?    @unique @db.VarChar(255)
   parentId  String?
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  slug      String?           @unique(map: "categories_slug_key") @db.VarChar(255)
+  isActive  Boolean           @default(true)
+  parent    ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], map: "categories_parentId_fkey")
+  children  ProductCategory[] @relation("ProductCategoryHierarchy")
   products  Product[]
 
-  @@map("categories")
+  @@map("product_categories")
 }
 
 model Product {
@@ -99,7 +108,7 @@ model Product {
   homepageSections HomepageSectionProduct[]
   orderItems       OrderItem[]
   images           ProductImage[]
-  category         Category                 @relation(fields: [categoryId], references: [id])
+  category         ProductCategory          @relation(fields: [categoryId], references: [id])
   store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   reviews          Review[]
 

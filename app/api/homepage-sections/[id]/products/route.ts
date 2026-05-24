@@ -69,13 +69,13 @@ export async function POST(
     const updated = await prisma.homepageSectionProduct.findMany({
       where: { sectionId: id },
       include: {
-        product: {
-          include: {
-            images: true,
-            category: true,
-            store: { select: { id: true, name: true } },
-          },
-        },
+            product: {
+              include: {
+                images: true,
+                category: true,
+                store: { select: { id: true, name: true } },
+              },
+            },
       },
     })
 

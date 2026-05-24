@@ -7,7 +7,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 
-interface Category {
+interface VendorCategory {
   id: string
   name: string
   slug: string
@@ -18,14 +18,14 @@ interface Category {
   }
 }
 
-export default function VendorCategoriesPage() {
-   const [categories, setCategories] = useState<Category[]>([])
-   const [loading, setLoading] = useState(true)
-   const [error, setError] = useState<string | null>(null)
-   const [showModal, setShowModal] = useState(false)
-   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-   const [formData, setFormData] = useState({ name: '', slug: '', isActive: true })
-   const [saving, setSaving] = useState(false)
+export default function SuperAdminVendorCategoriesPage() {
+  const [categories, setCategories] = useState<VendorCategory[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<VendorCategory | null>(null)
+  const [formData, setFormData] = useState({ name: '', slug: '', isActive: true })
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchCategories()
@@ -34,7 +34,7 @@ export default function VendorCategoriesPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/vendor-categories')
+      const response = await fetch('/api/super-admin/vendor-categories')
       const data = await response.json()
 
       if (!response.ok) {
@@ -56,7 +56,7 @@ export default function VendorCategoriesPage() {
     setSaving(true)
 
     try {
-      const url = editingCategory ? '/api/admin/vendor-categories' : '/api/admin/vendor-categories'
+      const url = editingCategory ? '/api/super-admin/vendor-categories' : '/api/super-admin/vendor-categories'
       const method = editingCategory ? 'PUT' : 'POST'
 
       const payload = editingCategory
@@ -86,7 +86,7 @@ export default function VendorCategoriesPage() {
     }
   }
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: VendorCategory) => {
     setEditingCategory(category)
     setFormData({
       name: category.name,
@@ -97,12 +97,12 @@ export default function VendorCategoriesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category? Products and stores assigned to this category will not be deleted but the category association will be removed.')) {
+    if (!confirm('Are you sure you want to delete this vendor category? Stores assigned to this category will not be deleted but the category association will be removed.')) {
       return
     }
 
     try {
-      const response = await fetch(`/api/admin/vendor-categories?id=${id}`, {
+      const response = await fetch(`/api/super-admin/vendor-categories?id=${id}`, {
         method: 'DELETE',
       })
 
@@ -183,25 +183,25 @@ export default function VendorCategoriesPage() {
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-           <div>
-             <h1 className="text-3xl font-bold text-deep-navy">Vendor Categories</h1>
-             <p className="text-slate-600 mt-1">Manage vendor/store categories for marketplace organization</p>
-           </div>
-           <Button onClick={() => setShowModal(true)} variant="primary">
-             + Add Category
-           </Button>
-         </div>
+          <div>
+            <h1 className="text-3xl font-bold text-deep-navy">Vendor Categories</h1>
+            <p className="text-slate-600 mt-1">Manage vendor/store categories for marketplace organization</p>
+          </div>
+          <Button onClick={() => setShowModal(true)} variant="primary">
+            + Add Category
+          </Button>
+        </div>
 
         {categories.length === 0 ? (
-           <EmptyState
-             icon={
-               <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-               </svg>
-             }
-             title="No vendor categories"
-             description="Create your first vendor category to help organize stores on the platform."
-           />
+          <EmptyState
+            icon={
+              <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            }
+            title="No vendor categories"
+            description="Create your first vendor category to help organize stores on the platform."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((category) => (
@@ -218,18 +218,18 @@ export default function VendorCategoriesPage() {
                   </div>
 
                   <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                     <span className="text-sm text-slate-600">
-                       {category._count?.stores || 0} store(s)
-                     </span>
-                     <div className="flex gap-2">
-                       <Button size="sm" variant="ghost" onClick={() => handleEdit(category)}>
-                         Edit
-                       </Button>
-                       <Button size="sm" variant="ghost" onClick={() => handleDelete(category.id)}>
-                         Delete
-                       </Button>
-                     </div>
-                   </div>
+                    <span className="text-sm text-slate-600">
+                      {category._count?.stores || 0} store(s)
+                    </span>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(category)}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(category.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -255,7 +255,7 @@ export default function VendorCategoriesPage() {
                   value={formData.name}
                   onChange={handleNameChange}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-royal-blue focus:border-transparent"
-                  placeholder="e.g., Electronics, Fashion, Services"
+                  placeholder="e.g., Restaurants, Boutiques, Electronics Shops"
                   required
                 />
               </div>

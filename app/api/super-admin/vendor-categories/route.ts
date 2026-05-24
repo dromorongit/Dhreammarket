@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireSuperAdmin } from '@/lib/adminAuth'
 
 export const dynamic = 'force-dynamic'
 
 // GET all vendor categories
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ categories })
   } catch (error) {
-    console.error('Admin vendor categories error:', error)
+    console.error('Super Admin vendor categories error:', error)
     return NextResponse.json({ error: 'Failed to fetch vendor categories' }, { status: 500 })
   }
 }
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 // POST create vendor category
 export async function POST(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 // PUT update vendor category
 export async function PUT(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
 // DELETE vendor category
 export async function DELETE(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

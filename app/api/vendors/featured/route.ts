@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
             email: true,
           },
         },
-        category: {
+        vendor_categories: {
           select: {
             id: true,
             name: true,
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
           banner: store.banner,
           rating: Math.round(averageRating * 10) / 10,
           productCount: store._count.products,
-          category: store.category,
+          category: store.vendor_categories,
         }
       })
     )

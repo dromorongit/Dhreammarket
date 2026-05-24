@@ -110,9 +110,10 @@ export async function GET(request: NextRequest) {
     })
 
     // Count reviews and categories
-    const [totalReviews, totalCategories] = await Promise.all([
+    const [totalReviews, totalProductCategories, totalVendorCategories] = await Promise.all([
       prisma.review.count(),
-      prisma.category.count(),
+      prisma.productCategory.count(),
+      prisma.vendorCategory.count(),
     ])
 
     return NextResponse.json({
@@ -129,7 +130,8 @@ export async function GET(request: NextRequest) {
         totalVendorEarnings,
         totalRevenue, // Keep for backward compatibility
         totalReviews,
-        totalCategories,
+        totalProductCategories,
+        totalVendorCategories,
         paidOrderCount: paidOrders.length,
       },
       recentOrders,

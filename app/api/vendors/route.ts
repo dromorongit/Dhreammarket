@@ -4,7 +4,7 @@ import { getPrisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const categoryId = searchParams.get('categoryId')
+    const vendorCategoryId = searchParams.get('vendorCategoryId')
     const verified = searchParams.get('verified')
     const search = searchParams.get('search')
     const page = parseInt(searchParams.get('page') || '1')
@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
       categoryId: { not: null },
     }
 
-    // Filter by category
-    if (categoryId) {
-      where.categoryId = categoryId
+    // Filter by vendor category
+    if (vendorCategoryId) {
+      where.categoryId = vendorCategoryId
     }
 
     // Filter by verification status
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
               createdAt: true,
             },
           },
-          category: {
+          vendor_categories: {
             select: {
               id: true,
               name: true,
