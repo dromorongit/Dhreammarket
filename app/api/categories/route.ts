@@ -29,7 +29,14 @@ export async function GET() {
     const rootCategories: any[] = []
 
     for (const cat of categories) {
-      categoryMap.set(cat.id, { ...cat, children: [] })
+      categoryMap.set(cat.id, { 
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        parentId: cat.parentId,
+        productCount: cat._count?.products || 0,
+        children: [] 
+      })
     }
 
     for (const cat of categories) {

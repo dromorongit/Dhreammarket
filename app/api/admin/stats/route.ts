@@ -130,6 +130,7 @@ export async function GET(request: NextRequest) {
         totalVendorEarnings,
         totalRevenue, // Keep for backward compatibility
         totalReviews,
+        totalCategories: totalProductCategories, // Product categories count for frontend compatibility
         totalProductCategories,
         totalVendorCategories,
         paidOrderCount: paidOrders.length,

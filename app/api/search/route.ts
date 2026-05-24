@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
       vendors: [],
       productCategories: [],
       vendorCategories: [],
+      categories: [], // Alias for productCategories for backward compatibility
       brands: [],
     }
 
@@ -112,6 +113,8 @@ export async function GET(request: NextRequest) {
         productCount: c._count.products,
         type: 'product-category',
       }))
+      // Also set categories alias for backward compatibility
+      results.categories = results.productCategories
     }
 
     // Search Vendor Categories
