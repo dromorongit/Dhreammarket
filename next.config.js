@@ -5,8 +5,9 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma']
   },
   webpack: (config, { isServer }) => {
+    // Externalize Prisma packages to prevent webpack from bundling them
+    // This is critical for both server and client builds
     if (isServer) {
-      // Externalize Prisma packages to prevent webpack from bundling them
       config.externals = [
         ...(config.externals || []),
         '@prisma/client',
@@ -24,10 +25,21 @@ const nextConfig = {
       new webpack.NormalModuleReplacementPlugin(
         /^node:(.+)$/,
         (resource) => {
-          return resource.replace(/^node:/, '')
+          // The resource object has a 'request' property containing the matched string
+          return resource.request.replace(/^node:/, '')
         }
       )
     )
+
+    // Also add resolve alias for node: protocol imports
+    config.resolve = config.resolve || {}
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'node:crypto': 'crypto',
+      'node:fs': 'fs',
+      'node:os': 'os',
+      'node:path': 'path',
+    }
 
     return config
   }
