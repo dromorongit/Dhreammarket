@@ -759,7 +759,9 @@ function PopularCategoriesSection() {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        setCategories(data.categories.slice(0, 4))
+        // Shuffle categories and take 4 random ones
+        const shuffled = [...data.categories].sort(() => Math.random() - 0.5)
+        setCategories(shuffled.slice(0, 4))
       }
     } catch (error) {
       console.error('Error fetching categories:', error)

@@ -7,7 +7,7 @@ export async function GET() {
     if (process.env.NEXT_PHASE === 'phase-production-build') {
       return NextResponse.json({ categories: [] })
     }
-    // Fetch all active product categories with parentId to build tree
+    // Fetch all active product categories
     const categories = await getPrisma().productCategory.findMany({
       where: {
         isActive: true,
@@ -24,33 +24,16 @@ export async function GET() {
       },
     })
 
-    // Build tree
-    const categoryMap = new Map<string, any>()
-    const rootCategories: any[] = []
+    // Return flat list of categories for the marketplace filter
+    const flatCategories = categories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      parentId: cat.parentId,
+      productCount: cat._count?.products || 0,
+    }))
 
-    for (const cat of categories) {
-      categoryMap.set(cat.id, { 
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-        parentId: cat.parentId,
-        productCount: cat._count?.products || 0,
-        children: [] 
-      })
-    }
-
-    for (const cat of categories) {
-      if (cat.parentId) {
-        const parent = categoryMap.get(cat.parentId)
-        if (parent) {
-          parent.children.push(categoryMap.get(cat.id)!)
-        }
-      } else {
-        rootCategories.push(categoryMap.get(cat.id)!)
-      }
-    }
-
-    return NextResponse.json({ categories: rootCategories })
+    return NextResponse.json({ categories: flatCategories })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
