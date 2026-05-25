@@ -54,17 +54,19 @@ export default function StoreManagement() {
       const response = await fetch('/api/store')
       if (response.ok) {
         const data = await response.json()
-        setStore(data.store)
-        setFormData({
-          name: data.store.name,
-          description: data.store.description || '',
-          categoryId: data.store.categoryId || '',
-          logo: data.store.logo || '',
-          banner: data.store.banner || '',
-        })
-      } else if (response.status === 404) {
-        // Store doesn't exist yet
-        setStore(null)
+        if (data.store) {
+          setStore(data.store)
+          setFormData({
+            name: data.store.name,
+            description: data.store.description || '',
+            categoryId: data.store.categoryId || '',
+            logo: data.store.logo || '',
+            banner: data.store.banner || '',
+          })
+        } else {
+          // Store doesn't exist yet
+          setStore(null)
+        }
       }
     } catch (error) {
       console.error('Error fetching store:', error)

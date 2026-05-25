@@ -15,17 +15,17 @@ export async function GET(request: NextRequest) {
     }
 
     const store = await getPrisma().store.findUnique({
-      where: { userId: payload.userId },
-      include: {
-        vendor_categories: true,
-      },
-    })
-
-    if (!store) {
-      return NextResponse.json({ error: 'Store not found' }, { status: 404 })
-    }
-
-    return NextResponse.json({ store })
+        where: { userId: payload.userId },
+        include: {
+          vendor_categories: true,
+        },
+      })
+  
+      if (!store) {
+        return NextResponse.json({ store: null })
+      }
+  
+      return NextResponse.json({ store })
   } catch (error) {
     console.error('Error fetching store:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -48,19 +48,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, vendorCategoryId, logo, banner } = await request.json()
-
+    const { name, description, categoryId, logo, banner } = await request.json()
+  
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
     }
-
+  
     // Validate vendor category is provided and active
-    if (!vendorCategoryId) {
+    if (!categoryId) {
       return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
     }
-
+  
     const vendorCategory = await getPrisma().vendorCategory.findUnique({
-      where: { id: vendorCategoryId }
+      where: { id: categoryId }
     })
     if (!vendorCategory || !vendorCategory.isActive) {
       return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
@@ -76,18 +76,18 @@ export async function POST(request: NextRequest) {
     }
 
     const store = await getPrisma().store.create({
-      data: {
-        userId: payload.userId,
-        name: name.trim(),
-        description: description?.trim() || null,
-        categoryId: vendorCategoryId || null,
-        ...(logo !== undefined && { logo }),
-        ...(banner !== undefined && { banner }),
-      },
-      include: {
-        vendor_categories: true,
-      }
-    })
+        data: {
+          userId: payload.userId,
+          name: name.trim(),
+          description: description?.trim() || null,
+          categoryId: categoryId || null,
+          ...(logo !== undefined && { logo }),
+          ...(banner !== undefined && { banner }),
+        },
+        include: {
+          vendor_categories: true,
+        }
+      })
 
     return NextResponse.json({ store }, { status: 201 })
   } catch (error) {
@@ -112,37 +112,37 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, vendorCategoryId, logo, banner } = await request.json()
-
-   if (!name || !name.trim()) {
-     return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
-   }
-
-   // Validate vendor category is provided and active
-   if (!vendorCategoryId) {
-     return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
-   }
-
-   const vendorCategory = await getPrisma().vendorCategory.findUnique({
-     where: { id: vendorCategoryId }
-   })
-   if (!vendorCategory || !vendorCategory.isActive) {
-     return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
-   }
-
-   const store = await getPrisma().store.update({
-     where: { userId: payload.userId },
-     data: {
-       name: name.trim(),
-       description: description?.trim() || null,
-       categoryId: vendorCategoryId,
-       ...(logo !== undefined && { logo }),
-       ...(banner !== undefined && { banner }),
-     },
-     include: {
-       vendor_categories: true,
+    const { name, description, categoryId, logo, banner } = await request.json()
+  
+     if (!name || !name.trim()) {
+       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
      }
-   })
+  
+     // Validate vendor category is provided and active
+     if (!categoryId) {
+       return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
+     }
+  
+     const vendorCategory = await getPrisma().vendorCategory.findUnique({
+       where: { id: categoryId }
+     })
+     if (!vendorCategory || !vendorCategory.isActive) {
+       return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+     }
+  
+     const store = await getPrisma().store.update({
+       where: { userId: payload.userId },
+       data: {
+         name: name.trim(),
+         description: description?.trim() || null,
+         categoryId: categoryId,
+         ...(logo !== undefined && { logo }),
+         ...(banner !== undefined && { banner }),
+       },
+       include: {
+         vendor_categories: true,
+       }
+     })
 
     return NextResponse.json({ store })
   } catch (error) {
