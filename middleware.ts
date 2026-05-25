@@ -38,14 +38,25 @@ export async function middleware(request: NextRequest) {
     }
 
     // Additional onboarding check for vendor routes
-    if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
-      const { isVendorOnboarded } = await import('./lib/onboarding')
-      const isOnboarded = await isVendorOnboarded(payload.userId)
-      if (!isOnboarded) {
-        // Redirect to store setup if vendor hasn't completed onboarding
-        return NextResponse.redirect(new URL('/dashboard/vendor/store', request.url))
-      }
-    }
+     if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
+       // Allow access to store setup page without onboarding check
+       if (pathname === '/dashboard/vendor/store') {
+         return NextResponse.next()
+       }
+       
+       try {
+         const { isVendorOnboarded } = await import('./lib/onboarding')
+         const isOnboarded = await isVendorOnboarded(payload.userId)
+         if (!isOnboarded) {
+           // Redirect to store setup if vendor hasn't completed onboarding
+           return NextResponse.redirect(new URL('/dashboard/vendor/store', request.url))
+         }
+       } catch (error) {
+         console.error('Error checking vendor onboarding status:', error)
+         // On error, allow access to store setup page
+         return NextResponse.redirect(new URL('/dashboard/vendor/store', request.url))
+       }
+     }
   }
 
   return NextResponse.next()

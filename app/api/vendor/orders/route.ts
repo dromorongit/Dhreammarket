@@ -76,6 +76,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ orderItems })
   } catch (error) {
     console.error('Error fetching vendor orders:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+    }, { status: 500 })
   }
 }

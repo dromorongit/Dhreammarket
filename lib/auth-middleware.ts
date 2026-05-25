@@ -6,7 +6,8 @@ export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'VENDOR' | 'CUSTOMER'
 
 export async function verifyToken(token: string): Promise<{ userId: string; role: Role } | null> {
   if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required')
+    console.error('JWT_SECRET environment variable is not set')
+    return null
   }
   try {
     const secret = new TextEncoder().encode(JWT_SECRET)
@@ -15,7 +16,8 @@ export async function verifyToken(token: string): Promise<{ userId: string; role
       return { userId: payload.userId as string, role: payload.role as Role }
     }
     return null
-  } catch {
+  } catch (error) {
+    console.error('Token verification error:', error)
     return null
   }
 }
