@@ -17,16 +17,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify vendor is onboarded (has a store)
+    // Note: We allow uploads for store logos/banners even before store creation
+    // The store creation will use the uploaded URLs
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
     });
 
-    if (!store) {
-      return NextResponse.json(
-        { error: 'You must create a store before uploading images' },
-        { status: 403 }
-      );
-    }
+    // Allow uploads for store setup (logos/banners) even without existing store
+    // This enables vendors to upload images before creating their store
 
     // Parse multipart form data
     const formData = await request.formData();
