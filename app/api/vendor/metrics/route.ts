@@ -42,22 +42,33 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // If no store exists, return zero metrics
     if (!store) {
       return NextResponse.json({
         productCount: 0,
         activeOrderCount: 0,
-        revenue: 0
+        revenue: 0,
+        vendorEarnings: 0,
+        averageRating: 0,
+        totalReviews: 0,
+        bestSellers: [],
+        totalPaidOrders: 0
       })
     }
 
-    const productIds = store.products.map((p: { id: string }) => p.id)
+    const productIds = store.products?.map((p: { id: string }) => p.id) || []
     const productCount = productIds.length
 
     if (productIds.length === 0) {
       return NextResponse.json({
         productCount: 0,
         activeOrderCount: 0,
-        revenue: 0
+        revenue: 0,
+        vendorEarnings: 0,
+        averageRating: 0,
+        totalReviews: 0,
+        bestSellers: [],
+        totalPaidOrders: 0
       })
     }
 

@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ orderItems: [] })
     }
 
-    const productIds = store.products.map((p: { id: string }) => p.id)
+    const productIds = store.products?.map((p: { id: string }) => p.id) || []
+    
+    // If no products, return empty order items
+    if (productIds.length === 0) {
+      return NextResponse.json({ orderItems: [] })
+    }
 
     // Get order items for vendor's products - only paid orders
     const orderItems = await getPrisma().orderItem.findMany({

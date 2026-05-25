@@ -16,6 +16,9 @@ export async function GET(request: NextRequest) {
 
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
+      include: {
+        vendor_categories: true,
+      },
     })
 
     if (!store) {
