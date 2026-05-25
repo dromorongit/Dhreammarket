@@ -18,45 +18,36 @@ export async function uploadImage(
   file: File,
   folder: string = 'dhream-market'
 ): Promise<{ url: string; publicId: string; secureUrl: string }> {
+  // Convert File to Buffer (Node.js compatible)
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  
   return new Promise((resolve, reject) => {
-    // Convert File to Buffer
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const buffer = Buffer.from(e.target?.result as ArrayBuffer);
-      
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder,
-          resource_type: 'image',
-          allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-          transformation: [
-            { width: 1200, height: 1200, crop: 'limit' },
-            { quality: 'auto' },
-            { fetch_format: 'auto' }
-          ],
-        },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else if (result) {
-            resolve({
-              url: result.url,
-              publicId: result.public_id,
-              secureUrl: result.secure_url,
-            });
-          }
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: 'image',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' },
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ],
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else if (result) {
+          resolve({
+            url: result.url,
+            publicId: result.public_id,
+            secureUrl: result.secure_url,
+          });
         }
-      );
+      }
+    );
 
-      stream.end(buffer);
-    };
-
-    reader.onerror = (error) => {
-      reject(error);
-    };
-
-    reader.readAsArrayBuffer(file);
+    stream.end(buffer);
   });
 }
 

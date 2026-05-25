@@ -2,7 +2,7 @@
 const nextConfig = {
   // Next.js 14 has App Router enabled by default
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma']
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma', 'cloudinary']
   },
   webpack: (config, { isServer }) => {
     // Externalize Prisma packages to prevent webpack from bundling them

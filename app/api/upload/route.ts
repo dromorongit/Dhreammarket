@@ -89,10 +89,16 @@ export async function POST(request: NextRequest) {
       urls,
       message: `${files.length} image(s) uploaded successfully`,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
     return NextResponse.json(
-      { error: 'Failed to upload images. Please try again.' },
+      { 
+        error: 'Failed to upload images. Please try again.',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     );
   }
