@@ -35,6 +35,7 @@ export default function StoreManagement() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [isNewStore, setIsNewStore] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -56,6 +57,7 @@ export default function StoreManagement() {
         const data = await response.json()
         if (data.store) {
           setStore(data.store)
+          setIsNewStore(false)
           setFormData({
             name: data.store.name,
             description: data.store.description || '',
@@ -66,6 +68,7 @@ export default function StoreManagement() {
         } else {
           // Store doesn't exist yet
           setStore(null)
+          setIsNewStore(true)
         }
       }
     } catch (error) {
@@ -114,7 +117,7 @@ export default function StoreManagement() {
         setSaveSuccess(true)
         
         // Navigate to vendor dashboard after successful store creation
-        if (!store) {
+        if (isNewStore) {
           // New store created - redirect to dashboard
           setTimeout(() => {
             router.push('/dashboard/vendor')

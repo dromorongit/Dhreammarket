@@ -3,6 +3,10 @@ import { getPrisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth-middleware';
 import { uploadImage, uploadMultipleImages } from '@/lib/cloudinary';
 
+// Force Node.js runtime (required for Cloudinary stream operations)
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
@@ -93,9 +97,20 @@ export async function POST(request: NextRequest) {
     console.error('Upload error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Provide more specific error messages
+    let userMessage = 'Failed to upload images. Please try again.';
+    if (errorMessage.includes('Cloudinary configuration')) {
+      userMessage = 'Image upload service is not configured. Please contact support.';
+    } else if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+      userMessage = 'Upload timed out. Please try again with a smaller file.';
+    } else if (errorMessage.includes('network') || errorMessage.includes('ENOTFOUND')) {
+      userMessage = 'Network error during upload. Please check your connection.';
+    }
+    
     return NextResponse.json(
       { 
-        error: 'Failed to upload images. Please try again.',
+        error: userMessage,
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
         stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
       },

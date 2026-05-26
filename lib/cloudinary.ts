@@ -1,10 +1,21 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary
+// Configure Cloudinary with validation
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+if (!cloudName || !apiKey || !apiSecret) {
+  console.error('Cloudinary configuration missing. Please check environment variables:');
+  console.error('CLOUDINARY_CLOUD_NAME:', cloudName ? 'SET' : 'MISSING');
+  console.error('CLOUDINARY_API_KEY:', apiKey ? 'SET' : 'MISSING');
+  console.error('CLOUDINARY_API_SECRET:', apiSecret ? 'SET' : 'MISSING');
+}
+
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: cloudName,
+  api_key: apiKey,
+  api_secret: apiSecret,
   secure: true,
 });
 
@@ -18,6 +29,11 @@ export async function uploadImage(
   file: File,
   folder: string = 'dhream-market'
 ): Promise<{ url: string; publicId: string; secureUrl: string }> {
+  // Validate Cloudinary configuration
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error('Cloudinary configuration is incomplete. Check environment variables.');
+  }
+
   // Convert File to Buffer (Node.js compatible)
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
@@ -36,13 +52,27 @@ export async function uploadImage(
       },
       (error, result) => {
         if (error) {
-          reject(error);
+          console.error('Cloudinary upload error:', {
+            error,
+            folder,
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+          });
+          reject(new Error(`Cloudinary upload failed: ${error.message || JSON.stringify(error)}`));
         } else if (result) {
+          console.log('Cloudinary upload success:', {
+            publicId: result.public_id,
+            url: result.secure_url,
+            folder,
+          });
           resolve({
             url: result.url,
             publicId: result.public_id,
             secureUrl: result.secure_url,
           });
+        } else {
+          reject(new Error('Cloudinary upload returned no result'));
         }
       }
     );
