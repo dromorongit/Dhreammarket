@@ -55,7 +55,8 @@ export async function POST(request: NextRequest) {
     }
   
     // Validate vendor category is provided and active
-    if (!categoryId) {
+    // Check for both null/undefined AND empty string
+    if (!categoryId || categoryId === '') {
       return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
     }
   
@@ -65,22 +66,31 @@ export async function POST(request: NextRequest) {
     if (!vendorCategory || !vendorCategory.isActive) {
       return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
     }
-
+  
     // Check if store already exists
     const existingStore = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
     })
-
+  
     if (existingStore) {
       return NextResponse.json({ error: 'Store already exists' }, { status: 400 })
     }
-
+  
+    // Debug: Log the data being saved
+    console.log('[Store API] Creating store with data:', {
+      userId: payload.userId,
+      name: name.trim(),
+      categoryId,
+      hasLogo: !!logo,
+      hasBanner: !!banner,
+    })
+  
     const store = await getPrisma().store.create({
         data: {
           userId: payload.userId,
           name: name.trim(),
           description: description?.trim() || null,
-          categoryId: categoryId || null,
+          categoryId: categoryId, // Already validated above, no need for || null
           ...(logo !== undefined && { logo }),
           ...(banner !== undefined && { banner }),
         },
@@ -88,7 +98,13 @@ export async function POST(request: NextRequest) {
           vendor_categories: true,
         }
       })
-
+  
+    // Debug: Log the created store
+    console.log('[Store API] Store created successfully:', {
+      storeId: store.id,
+      categoryId: store.categoryId,
+    })
+  
     return NextResponse.json({ store }, { status: 201 })
   } catch (error) {
     console.error('Error creating store:', error)
@@ -119,7 +135,8 @@ export async function PUT(request: NextRequest) {
      }
   
      // Validate vendor category is provided and active
-     if (!categoryId) {
+     // Check for both null/undefined AND empty string
+     if (!categoryId || categoryId === '') {
        return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
      }
   
@@ -129,6 +146,15 @@ export async function PUT(request: NextRequest) {
      if (!vendorCategory || !vendorCategory.isActive) {
        return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
      }
+  
+     // Debug: Log the data being updated
+     console.log('[Store API] Updating store with data:', {
+       userId: payload.userId,
+       name: name.trim(),
+       categoryId,
+       hasLogo: !!logo,
+       hasBanner: !!banner,
+     })
   
      const store = await getPrisma().store.update({
        where: { userId: payload.userId },
@@ -143,7 +169,13 @@ export async function PUT(request: NextRequest) {
          vendor_categories: true,
        }
      })
-
+  
+    // Debug: Log the updated store
+    console.log('[Store API] Store updated successfully:', {
+      storeId: store.id,
+      categoryId: store.categoryId,
+    })
+  
     return NextResponse.json({ store })
   } catch (error) {
     console.error('Error updating store:', error)

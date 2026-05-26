@@ -40,21 +40,31 @@ export async function middleware(request: NextRequest) {
     // Additional onboarding check for vendor routes
      if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
        // Allow access to store setup page without onboarding check
-       if (pathname === '/dashboard/vendor/store') {
+       // Use startsWith to allow all store-related subpaths (e.g., /dashboard/vendor/store, /dashboard/vendor/store/edit)
+       if (pathname.startsWith('/dashboard/vendor/store')) {
          return NextResponse.next()
        }
        
        try {
          const { isVendorOnboarded } = await import('./lib/onboarding')
          const isOnboarded = await isVendorOnboarded(payload.userId)
+         
+         // Debug logging
+         console.log('[Middleware] Onboarding check for user:', payload.userId, 'isOnboarded:', isOnboarded, 'pathname:', pathname)
+         
          if (!isOnboarded) {
            // Redirect to store setup if vendor hasn't completed onboarding
-           return NextResponse.redirect(new URL('/dashboard/vendor/store', request.url))
+           // But don't redirect if already on the store setup page (prevents loop)
+           if (!pathname.startsWith('/dashboard/vendor/store')) {
+             const storeSetupUrl = '/dashboard/vendor/store'
+             const redirectUrl = new URL(storeSetupUrl, request.url)
+             return NextResponse.redirect(redirectUrl)
+           }
          }
        } catch (error) {
          console.error('Error checking vendor onboarding status:', error)
-         // On error, allow access to store setup page
-         return NextResponse.redirect(new URL('/dashboard/vendor/store', request.url))
+         // On error, allow access to prevent redirect loop
+         // Don't redirect - just allow access to the page
        }
      }
   }

@@ -9,6 +9,11 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Log environment variable status (safe - no secrets exposed)
+    console.log('[Upload] Route execution started');
+    console.log('[Upload] CLOUDINARY_CLOUD_NAME exists:', !!process.env.CLOUDINARY_CLOUD_NAME);
+    console.log('[Upload] NODE_ENV:', process.env.NODE_ENV);
+
     // Verify authentication
     const token = request.cookies.get('token')?.value;
     if (!token) {
@@ -34,6 +39,14 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
     const folder = formData.get('folder')?.toString() || 'dhream-market';
+
+    // Debug: Log received files
+    console.log('[Upload] Received files count:', files.length);
+    if (files.length > 0) {
+      console.log('[Upload] First file MIME type:', files[0]?.type);
+      console.log('[Upload] First file size:', files[0]?.size);
+    }
+    console.log('[Upload] Target folder:', folder);
 
     // Validate files
     if (!files || files.length === 0) {
@@ -78,8 +91,14 @@ export async function POST(request: NextRequest) {
       uploadFolder = 'dhream-market/banners';
     }
 
+    // Debug: Log upload start
+    console.log('[Upload] Starting Cloudinary upload...');
+
     // Upload files to Cloudinary
     const uploadedImages = await uploadMultipleImages(files, uploadFolder);
+
+    // Debug: Log upload response
+    console.log('[Upload] Upload completed, images count:', uploadedImages.length);
 
     // Extract URLs
     const urls = uploadedImages.map((img) => ({
@@ -94,7 +113,7 @@ export async function POST(request: NextRequest) {
       message: `${files.length} image(s) uploaded successfully`,
     });
   } catch (error: any) {
-    console.error('Upload error:', error);
+    console.error('[Upload] Error during upload:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorStack = error instanceof Error ? error.stack : undefined;
     

@@ -42,6 +42,8 @@ interface VendorMetrics {
     totalSold: number
   }>
   totalPaidOrders: number
+  hasStore: boolean
+  hasCategory: boolean
 }
 
 interface OnboardingStep {
@@ -63,7 +65,9 @@ export default function VendorDashboard() {
     averageRating: 0,
     totalReviews: 0,
     bestSellers: [],
-    totalPaidOrders: 0
+    totalPaidOrders: 0,
+    hasStore: false,
+    hasCategory: false
   })
   const [loading, setLoading] = useState(true)
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
@@ -153,8 +157,8 @@ export default function VendorDashboard() {
       id: 'store',
       title: 'Store Profile',
       description: 'Set up your store information to build trust with customers',
-      completed: metrics.productCount > 0,
-      action: metrics.productCount > 0 ? 'View Store' : 'Set Up',
+      completed: metrics.hasCategory,
+      action: metrics.hasCategory ? 'View Store' : 'Set Up',
       href: '/dashboard/vendor/store'
     },
     {

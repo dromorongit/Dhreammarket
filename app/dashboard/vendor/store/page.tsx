@@ -94,8 +94,8 @@ export default function StoreManagement() {
     e.preventDefault()
     setErrors({})
     
-    // Validate category selection
-    if (!formData.categoryId) {
+    // Validate category selection - check for both null/undefined AND empty string
+    if (!formData.categoryId || formData.categoryId === '') {
       setErrors({ categoryId: 'Vendor category is required' })
       return
     }
@@ -117,13 +117,14 @@ export default function StoreManagement() {
         setSaveSuccess(true)
         
         // Navigate to vendor dashboard after successful store creation
-        if (isNewStore) {
-          // New store created - redirect to dashboard
+        // Check if this was a new store (no store existed before) AND has a categoryId
+        if (!store && data.store && data.store.categoryId) {
+          // New store created with category - redirect to dashboard
           setTimeout(() => {
             router.push('/dashboard/vendor')
           }, 1500)
         } else {
-          // Store updated - just clear success message
+          // Store updated or no category - just clear success message
           setTimeout(() => setSaveSuccess(false), 5000)
         }
       } else {
@@ -254,55 +255,55 @@ export default function StoreManagement() {
               <div>
                 <ImageUpload
                   value={formData.logo ? [formData.logo] : []}
-                 onChange={(urls) => setFormData(prev => ({
-                   ...prev,
-                   logo: urls.length > 0 ? urls[0] : ''
-                 }))}
-                 folder="logos"
-                 maxFiles={1}
-                 maxSizeMB={2}
-                 label="Store Logo"
-                 hint="Upload your store logo (recommended: square format, max 2MB)"
-               />
+                  onChange={(urls) => setFormData(prev => ({
+                    ...prev,
+                    logo: urls.length > 0 ? urls[0] : ''
+                  }))}
+                  folder="logos"
+                  maxFiles={1}
+                  maxSizeMB={2}
+                  label="Store Logo"
+                  hint="Upload your store logo (recommended: square format, max 2MB)"
+                />
               </div>
 
               <div>
                 <ImageUpload
                   value={formData.banner ? [formData.banner] : []}
-                 onChange={(urls) => setFormData(prev => ({
-                   ...prev,
-                   banner: urls.length > 0 ? urls[0] : ''
-                 }))}
-                 folder="banners"
-                 maxFiles={1}
-                 maxSizeMB={5}
-                 label="Store Banner"
-                 hint="Upload a banner image for your store page (recommended: 1200x400px, max 5MB)"
-               />
+                  onChange={(urls) => setFormData(prev => ({
+                    ...prev,
+                    banner: urls.length > 0 ? urls[0] : ''
+                  }))}
+                  folder="banners"
+                  maxFiles={1}
+                  maxSizeMB={5}
+                  label="Store Banner"
+                  hint="Upload a banner image for your store page (recommended: 1200x400px, max 5MB)"
+                />
               </div>
 
               {saveSuccess && (
-                 <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                   <div className="flex">
-                     <div className="flex-shrink-0">
-                       <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                       </svg>
-                     </div>
-                     <div className="ml-3">
-                       <p className="text-sm font-medium text-green-800">
-                         Store {store ? 'updated' : 'created'} successfully!
-                       </p>
-                       <p className="text-sm text-green-700 mt-1">
-                         {store 
-                           ? 'Your changes have been saved and will persist after page refresh.'
-                           : 'Redirecting to your dashboard...'
-                         }
-                       </p>
-                     </div>
-                   </div>
-                 </div>
-               )}
+                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-800">
+                        Store {store ? 'updated' : 'created'} successfully!
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        {store 
+                          ? 'Your changes have been saved and will persist after page refresh.'
+                          : 'Redirecting to your dashboard...'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {errors.categoryId && (
                 <div className="text-red-600 text-sm">{errors.categoryId}</div>
@@ -319,7 +320,7 @@ export default function StoreManagement() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving || !formData.categoryId}>
+                <Button type="submit" disabled={saving || !formData.categoryId || formData.categoryId === ''}>
                   {saving ? 'Saving...' : store ? 'Update Store' : 'Create Store'}
                 </Button>
               </div>

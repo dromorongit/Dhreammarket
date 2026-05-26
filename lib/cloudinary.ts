@@ -1,23 +1,32 @@
 import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary with validation
-const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-const apiKey = process.env.CLOUDINARY_API_KEY;
-const apiSecret = process.env.CLOUDINARY_API_SECRET;
+// Lazy configuration - only configure when actually needed
+let isConfigured = false;
 
-if (!cloudName || !apiKey || !apiSecret) {
-  console.error('Cloudinary configuration missing. Please check environment variables:');
-  console.error('CLOUDINARY_CLOUD_NAME:', cloudName ? 'SET' : 'MISSING');
-  console.error('CLOUDINARY_API_KEY:', apiKey ? 'SET' : 'MISSING');
-  console.error('CLOUDINARY_API_SECRET:', apiSecret ? 'SET' : 'MISSING');
+function configureCloudinary() {
+  if (isConfigured) return;
+  
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    console.error('Cloudinary configuration missing. Please check environment variables:');
+    console.error('CLOUDINARY_CLOUD_NAME:', cloudName ? 'SET' : 'MISSING');
+    console.error('CLOUDINARY_API_KEY:', apiKey ? 'SET' : 'MISSING');
+    console.error('CLOUDINARY_API_SECRET:', apiSecret ? 'SET' : 'MISSING');
+    throw new Error('Cloudinary configuration is incomplete. Check environment variables.');
+  }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+  
+  isConfigured = true;
 }
-
-cloudinary.config({
-  cloud_name: cloudName,
-  api_key: apiKey,
-  api_secret: apiSecret,
-  secure: true,
-});
 
 /**
  * Upload an image file to Cloudinary
@@ -29,10 +38,8 @@ export async function uploadImage(
   file: File,
   folder: string = 'dhream-market'
 ): Promise<{ url: string; publicId: string; secureUrl: string }> {
-  // Validate Cloudinary configuration
-  if (!cloudName || !apiKey || !apiSecret) {
-    throw new Error('Cloudinary configuration is incomplete. Check environment variables.');
-  }
+  // Configure Cloudinary at runtime (not at module load time)
+  configureCloudinary();
 
   // Convert File to Buffer (Node.js compatible)
   const arrayBuffer = await file.arrayBuffer();
@@ -100,6 +107,7 @@ export async function uploadMultipleImages(
  * @param publicId - The public ID of the image to delete
  */
 export async function deleteImage(publicId: string): Promise<void> {
+  configureCloudinary();
   return new Promise((resolve, reject) => {
     cloudinary.uploader.destroy(publicId, (error, result) => {
       if (error) {
@@ -127,6 +135,7 @@ export function getOptimizedUrl(
     format?: 'auto' | 'jpg' | 'png' | 'webp';
   } = {}
 ): string {
+  configureCloudinary();
   const { width = 800, height = 800, crop = 'limit', quality = 'auto', format = 'auto' } = options;
 
   return cloudinary.url(publicId, {
