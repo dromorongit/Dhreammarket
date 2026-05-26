@@ -14,7 +14,7 @@ const nextConfig = {
       config.externals = [
         ...(config.externals || []),
         ({ context, request }, callback) => {
-          if (request === '@prisma/client' || request === 'prisma' || request === '@prisma/adapter-pg') {
+          if (request === '@prisma/client' || request === 'prisma' || request === '@prisma/adapter-pg' || request === 'cloudinary') {
             return callback(null, `commonjs ${request}`)
           }
           callback()

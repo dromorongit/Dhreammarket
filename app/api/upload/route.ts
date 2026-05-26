@@ -13,17 +13,22 @@ export async function POST(request: NextRequest) {
     console.log('[Upload] Route execution started');
     console.log('[Upload] CLOUDINARY_CLOUD_NAME exists:', !!process.env.CLOUDINARY_CLOUD_NAME);
     console.log('[Upload] NODE_ENV:', process.env.NODE_ENV);
+    console.log('[Upload] Request method:', request.method);
 
     // Verify authentication
     const token = request.cookies.get('token')?.value;
     if (!token) {
+      console.log('[Upload] No auth token found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const payload = await verifyToken(token);
     if (!payload || payload.role !== 'VENDOR') {
+      console.log('[Upload] Invalid token or non-vendor role:', payload?.role);
       return NextResponse.json({ error: 'Forbidden: Only vendors can upload images' }, { status: 403 });
     }
+
+    console.log('[Upload] Auth verified for vendor:', payload.userId);
 
     // Verify vendor is onboarded (has a store)
     // Note: We allow uploads for store logos/banners even before store creation
@@ -36,6 +41,7 @@ export async function POST(request: NextRequest) {
     // This enables vendors to upload images before creating their store
 
     // Parse multipart form data
+    console.log('[Upload] Parsing formData...');
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
     const folder = formData.get('folder')?.toString() || 'dhream-market';
@@ -45,6 +51,7 @@ export async function POST(request: NextRequest) {
     if (files.length > 0) {
       console.log('[Upload] First file MIME type:', files[0]?.type);
       console.log('[Upload] First file size:', files[0]?.size);
+      console.log('[Upload] First file name:', files[0]?.name);
     }
     console.log('[Upload] Target folder:', folder);
 
@@ -101,7 +108,7 @@ export async function POST(request: NextRequest) {
     console.log('[Upload] Upload completed, images count:', uploadedImages.length);
 
     // Extract URLs
-    const urls = uploadedImages.map((img) => ({
+    const urls = uploadedImages.map((img: { url: string; publicId: string; secureUrl: string }) => ({
       url: img.url,
       publicId: img.publicId,
       secureUrl: img.secureUrl,

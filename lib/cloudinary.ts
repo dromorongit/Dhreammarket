@@ -11,10 +11,10 @@ function configureCloudinary() {
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
   if (!cloudName || !apiKey || !apiSecret) {
-    console.error('Cloudinary configuration missing. Please check environment variables:');
-    console.error('CLOUDINARY_CLOUD_NAME:', cloudName ? 'SET' : 'MISSING');
-    console.error('CLOUDINARY_API_KEY:', apiKey ? 'SET' : 'MISSING');
-    console.error('CLOUDINARY_API_SECRET:', apiSecret ? 'SET' : 'MISSING');
+    console.error('[Cloudinary] Configuration missing. Please check environment variables:');
+    console.error('[Cloudinary] CLOUDINARY_CLOUD_NAME:', cloudName ? 'SET' : 'MISSING');
+    console.error('[Cloudinary] CLOUDINARY_API_KEY:', apiKey ? 'SET' : 'MISSING');
+    console.error('[Cloudinary] CLOUDINARY_API_SECRET:', apiSecret ? 'SET' : 'MISSING');
     throw new Error('Cloudinary configuration is incomplete. Check environment variables.');
   }
 
@@ -26,6 +26,7 @@ function configureCloudinary() {
   });
   
   isConfigured = true;
+  console.log('[Cloudinary] Configuration initialized successfully');
 }
 
 /**
@@ -59,7 +60,7 @@ export async function uploadImage(
       },
       (error, result) => {
         if (error) {
-          console.error('Cloudinary upload error:', {
+          console.error('[Cloudinary] Upload error:', {
             error,
             folder,
             fileName: file.name,
@@ -68,7 +69,7 @@ export async function uploadImage(
           });
           reject(new Error(`Cloudinary upload failed: ${error.message || JSON.stringify(error)}`));
         } else if (result) {
-          console.log('Cloudinary upload success:', {
+          console.log('[Cloudinary] Upload success:', {
             publicId: result.public_id,
             url: result.secure_url,
             folder,
