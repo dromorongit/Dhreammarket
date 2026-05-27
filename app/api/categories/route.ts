@@ -7,16 +7,23 @@ export async function GET() {
     if (process.env.NEXT_PHASE === 'phase-production-build') {
       return NextResponse.json({ categories: [] })
     }
-    // Fetch all active product categories with children for hierarchical display
+    // Fetch only top-level active product categories with children for hierarchical display
     const categories = await getPrisma().productCategory.findMany({
       where: {
         isActive: true,
+        parentId: null,
       },
       orderBy: { name: 'asc' },
       include: {
         children: {
           where: { isActive: true },
           orderBy: { name: 'asc' },
+          include: {
+            children: {
+              where: { isActive: true },
+              orderBy: { name: 'asc' },
+            },
+          },
         },
       },
     })
@@ -30,6 +37,7 @@ export async function GET() {
       children: cat.children || [],
     }))
 
+    console.log('[API Categories] Returning', hierarchicalCategories.length, 'categories')
     return NextResponse.json({ categories: hierarchicalCategories })
   } catch (error) {
     console.error('Error fetching categories:', error)

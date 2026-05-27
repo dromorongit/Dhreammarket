@@ -53,7 +53,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, productCategoryId, imageUrls } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, imageUrls } = await request.json()
+
+    // Support both categoryId and productCategoryId for backward compatibility
+    const finalCategoryId = categoryId || productCategoryId
 
     // Check if vendor has completed onboarding (store and vendor category)
     const isOnboarded = await isVendorOnboarded(payload.userId);
@@ -65,7 +68,7 @@ export async function PUT(
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
-    if (!productCategoryId) {
+    if (!finalCategoryId) {
       return NextResponse.json({ error: 'Product category is required' }, { status: 400 })
     }
     if (price === undefined || price < 0) {
@@ -98,7 +101,7 @@ export async function PUT(
 
     // Verify product category exists
     const productCategory = await getPrisma().productCategory.findUnique({
-      where: { id: productCategoryId },
+      where: { id: finalCategoryId },
     })
 
     if (!productCategory) {
@@ -109,7 +112,7 @@ export async function PUT(
     const product = await getPrisma().product.update({
       where: { id: params.id },
       data: {
-        categoryId: productCategoryId,
+        categoryId: finalCategoryId,
         name: name.trim(),
         description: description?.trim() || null,
         price: parseFloat(price),

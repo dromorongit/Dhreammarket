@@ -76,6 +76,7 @@ export default function EditProduct() {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
+        console.log('[Vendor Product Edit Form Categories]', data)
         setCategories(data.categories)
       }
     } catch (error) {

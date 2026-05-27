@@ -71,13 +71,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, productCategoryId, imageUrls } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, imageUrls } = await request.json()
+
+    // Support both categoryId and productCategoryId for backward compatibility
+    const finalCategoryId = categoryId || productCategoryId
 
     // Validate required fields
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
-    if (!productCategoryId) {
+    if (!finalCategoryId) {
       return NextResponse.json({ error: 'Product category is required' }, { status: 400 })
     }
     if (price === undefined || price < 0) {
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Verify product category exists
     const productCategory = await getPrisma().productCategory.findUnique({
-      where: { id: productCategoryId },
+      where: { id: finalCategoryId },
     })
 
     if (!productCategory) {
@@ -111,7 +114,7 @@ export async function POST(request: NextRequest) {
     const product = await getPrisma().product.create({
       data: {
         storeId: store!.id,
-        categoryId: productCategoryId,
+        categoryId: finalCategoryId,
         name: name.trim(),
         description: description?.trim() || null,
         price: parseFloat(price),

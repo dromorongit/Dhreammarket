@@ -58,6 +58,7 @@ export default function NewProduct() {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
+        console.log('[Vendor Product Form Categories]', data)
         setCategories(data.categories)
       }
     } catch (error) {
