@@ -77,6 +77,15 @@ function MarketplaceContent() {
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'products' | 'vendors'>('products')
 
+  // Clear opposite filter when switching view modes - HARD SEPARATION
+  useEffect(() => {
+    if (viewMode === 'products') {
+      setSelectedVendorCategory('')
+    } else {
+      setSelectedCategory('')
+    }
+  }, [viewMode])
+
   useEffect(() => {
     const categoryParam = searchParams.get('category') || ''
     const vendorCategoryParam = searchParams.get('vendorCategory') || ''
@@ -280,7 +289,7 @@ function MarketplaceContent() {
           key={cat.id}
           variant={selectedCategory === cat.id ? 'primary' : 'ghost'}
           size="sm"
-          className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
+          className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
           onClick={() => setSelectedCategory(cat.id)}
         >
           {cat.name}
@@ -299,7 +308,7 @@ function MarketplaceContent() {
         key={vc.id}
         variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
         size="sm"
-        className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
+        className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
         onClick={() => setSelectedVendorCategory(vc.id)}
       >
         {vc.name}
@@ -317,10 +326,6 @@ function MarketplaceContent() {
       if (!matchingIds.includes(product.category?.id || '')) {
         return false
       }
-    }
-    // Filter by vendor category
-    if (selectedVendorCategory && product.store?.categoryId !== selectedVendorCategory) {
-      return false
     }
     return true
   })
@@ -412,15 +417,15 @@ function MarketplaceContent() {
             </div>
           </div>
 
-          {/* Category Filter - Conditional based on viewMode */}
-           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
-             {/* Product Category Filter - Only shows when viewMode === 'products' */}
+          {/* Category Filter - Conditional based on viewMode - HARD SEPARATION */}
+           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+             {/* Product Category Filter - Only shows when viewMode === 'products' - NEVER mounts vendor filters */}
              {viewMode === 'products' && (
-               <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+               <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
                  <Button
                    variant={selectedCategory === '' ? 'primary' : 'ghost'}
                    size="sm"
-                   className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedCategory === '' ? '' : 'text-slate-700'}`}
+                   className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === '' ? '' : 'text-slate-700'}`}
                    onClick={() => setSelectedCategory('')}
                  >
                    All Categories
@@ -432,14 +437,14 @@ function MarketplaceContent() {
                </div>
              )}
 
-             {/* Vendor Category Filter - Only shows when viewMode === 'vendors' */}
+             {/* Vendor Category Filter - Only shows when viewMode === 'vendors' - NEVER mounts product filters */}
              {viewMode === 'vendors' && vendorCategories.length > 0 && (
-               <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+               <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
                  <span className="text-sm font-medium text-slate-700 flex-shrink-0">Vendor Type:</span>
                  <Button
                    variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
                    size="sm"
-                   className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
+                   className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
                    onClick={() => setSelectedVendorCategory('')}
                  >
                    All
