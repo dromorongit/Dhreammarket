@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
     const user = await getPrisma().user.findUnique({
       where: { id: userFromToken.userId },
-      include: { profile: true },
+      include: { profile: true, store: true },
     })
     if (!user) {
       return NextResponse.json({ user: null }, { status: 200 })

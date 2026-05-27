@@ -16,6 +16,10 @@ interface User {
     firstName: string
     lastName: string
   }
+  store?: {
+    id: string
+    name: string
+  }
 }
 
 interface Notification {
@@ -25,6 +29,46 @@ interface Notification {
   message: string
   isRead: boolean
   createdAt: string
+}
+
+// Helper function to get display name based on role
+function getDisplayName(user: User | null): string {
+  if (!user) return ''
+  
+  // VENDOR users: show store name first, then fallback to profile name, then email
+  if (user.role === 'VENDOR') {
+    if (user.store?.name) return user.store.name
+    if (user.profile?.firstName && user.profile?.lastName) {
+      return `${user.profile.firstName} ${user.profile.lastName}`
+    }
+    return user.email
+  }
+  
+  // All other roles (CUSTOMER, ADMIN, SUPER_ADMIN): show profile name, then email
+  if (user.profile?.firstName && user.profile?.lastName) {
+    return `${user.profile.firstName} ${user.profile.lastName}`
+  }
+  return user.email
+}
+
+// Helper function to get avatar initials based on role
+function getAvatarInitials(user: User | null): string {
+  if (!user) return ''
+  
+  // VENDOR users: prioritize store name initials
+  if (user.role === 'VENDOR' && user.store?.name) {
+    const words = user.store.name.trim().split(/\s+/)
+    if (words.length >= 2) {
+      return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase()
+    }
+    return user.store.name.charAt(0).toUpperCase()
+  }
+  
+  // All other roles: use profile initials or email initial
+  if (user.profile?.firstName?.charAt(0)) return user.profile.firstName.charAt(0).toUpperCase()
+  if (user.profile?.lastName?.charAt(0)) return user.profile.lastName.charAt(0).toUpperCase()
+  if (user.email?.charAt(0)) return user.email.charAt(0).toUpperCase()
+  return ''
 }
 
 export function Navbar() {
@@ -344,10 +388,10 @@ export function Navbar() {
                     aria-haspopup="true"
                   >
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
-                      {user.profile?.firstName?.charAt(0) || user.profile?.lastName?.charAt(0) || user.email?.charAt(0) || ''}
+                      {getAvatarInitials(user)}
                     </div>
                     <span className="text-sm font-medium text-slate-700 hidden sm:inline">
-                      {user.profile?.firstName && user.profile?.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.email}
+                      {getDisplayName(user)}
                     </span>
                     <svg className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -393,8 +437,8 @@ export function Navbar() {
                       Sign Out
                     </button>
                   </div>
-                )}
-              </div>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -497,38 +541,38 @@ export function Navbar() {
           {user ? (
             <>
                <div className="px-4 py-2">
-                 <p className="text-sm font-medium text-slate-700">Welcome, {user.profile?.firstName && user.profile?.lastName ? `${user.profile.firstName} ${user.profile.lastName}` : user.email}</p>
+                 <p className="text-sm font-medium text-slate-700">Welcome, {getDisplayName(user)}</p>
                </div>
-               {user.role === 'SUPER_ADMIN' && (
-                 <Link href="/dashboard/super-admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                   Super Admin Dashboard
-                 </Link>
-               )}
-               {user.role === 'SUPER_ADMIN' && (
-                 <Link href="/dashboard/super-admin/product-categories" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                   Product Categories
-                 </Link>
-               )}
-               {user.role === 'SUPER_ADMIN' && (
-                 <Link href="/dashboard/super-admin/homepage" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                   Homepage Sections
-                 </Link>
-               )}
-               {user.role === 'ADMIN' && (
-                 <Link href="/dashboard/admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                   Admin Dashboard
-                 </Link>
-               )}
-               {user.role === 'VENDOR' && (
-                 <Link href="/dashboard/vendor" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                   Vendor Dashboard
-                 </Link>
-               )}
-               {user.role === 'CUSTOMER' && (
-                 <Link href="/dashboard/customer" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                   My Account
-                 </Link>
-               )}
+              {user.role === 'SUPER_ADMIN' && (
+                <Link href="/dashboard/super-admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                  Super Admin Dashboard
+                </Link>
+              )}
+              {user.role === 'SUPER_ADMIN' && (
+                <Link href="/dashboard/super-admin/product-categories" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                  Product Categories
+                </Link>
+              )}
+              {user.role === 'SUPER_ADMIN' && (
+                <Link href="/dashboard/super-admin/homepage" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                  Homepage Sections
+                </Link>
+              )}
+              {user.role === 'ADMIN' && (
+                <Link href="/dashboard/admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                  Admin Dashboard
+                </Link>
+              )}
+              {user.role === 'VENDOR' && (
+                <Link href="/dashboard/vendor" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                  Vendor Dashboard
+                </Link>
+              )}
+              {user.role === 'CUSTOMER' && (
+                <Link href="/dashboard/customer" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                  My Account
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors mt-2"

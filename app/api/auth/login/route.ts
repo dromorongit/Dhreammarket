@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     const user = await getPrisma().user.findUnique({
       where: { email },
-      include: { profile: true },
+      include: { profile: true, store: true },
     })
 
     if (!user) {
