@@ -51,10 +51,22 @@ export default function EditProduct() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    checkOnboardingStatus()
-    fetchCategories()
-    fetchProduct()
+    const loadAllData = async () => {
+      await Promise.all([
+        checkOnboardingStatus(),
+        fetchCategories(),
+        fetchProduct()
+      ])
+      setLoading(false)
+    }
+    loadAllData()
   }, [productId])
+
+  // Debug: Verify React re-renders when categories change
+  useEffect(() => {
+    console.log('[RENDER] Categories changed:', categories)
+    console.log('[RENDER] Categories length:', categories.length)
+  }, [categories])
 
   const checkOnboardingStatus = async () => {
     try {
@@ -73,15 +85,20 @@ export default function EditProduct() {
 
   const fetchCategories = async () => {
     try {
+      console.log('[FRONTEND] Fetching categories...')
       const response = await fetch('/api/categories')
+      console.log('[FRONTEND] Response status:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('[FRONTEND] Response data:', data)
+        console.log('[FRONTEND] Categories state BEFORE set:', categories)
         setCategories(data.categories)
+        console.log('[FRONTEND] Categories state AFTER set:', data.categories)
+      } else {
+        console.error('[FRONTEND] Response not OK:', response.status, response.statusText)
       }
     } catch (error) {
-      console.error('Error fetching categories:', error)
-    } finally {
-      setLoading(false)
+      console.error('[FRONTEND] Error fetching categories:', error)
     }
   }
 
@@ -125,8 +142,6 @@ export default function EditProduct() {
       console.error('Error fetching product:', error)
       alert('Error loading product')
       router.push('/dashboard/vendor/products')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -306,7 +321,11 @@ export default function EditProduct() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Select a category</option>
-                    {renderCategoryOptions(categories)}
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
