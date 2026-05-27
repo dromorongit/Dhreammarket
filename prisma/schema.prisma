@@ -47,22 +47,25 @@ model Profile {
 }
 
 model Store {
-  id                String          @id @default(cuid())
-  userId            String          @unique
-  name              String
-  description       String?
-  isVerified        Boolean         @default(false)
-  isFeatured        Boolean         @default(false)
-  featuredUntil     DateTime?
-  logo              String?
-  banner            String?
-  categoryId        String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  products          Product[]
-  vendor_categories VendorCategory? @relation(fields: [categoryId], references: [id])
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vendorPayouts     VendorPayout[]  @relation("VendorPayoutStore")
+  id                   String          @id @default(cuid())
+  userId               String          @unique
+  name                 String
+  description          String?
+  mainPhoneNumber      String?
+  alternativePhoneNumber String?
+  whatsappNumber       String?
+  isVerified           Boolean         @default(false)
+  isFeatured           Boolean         @default(false)
+  featuredUntil        DateTime?
+  logo                 String?
+  banner               String?
+  categoryId           String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  products             Product[]
+  vendor_categories    VendorCategory? @relation(fields: [categoryId], references: [id])
+  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorPayouts        VendorPayout[]  @relation("VendorPayoutStore")
 
   @@map("stores")
 }

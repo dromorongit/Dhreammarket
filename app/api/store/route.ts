@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 
+// Helper function to sanitize phone numbers
+function sanitizePhoneNumber(phone: string | undefined | null): string | null {
+  if (!phone || typeof phone !== 'string') return null
+  // Remove spaces, dashes, and + sign
+  const sanitized = phone.trim().replace(/[\s\-+]/g, '')
+  return sanitized || null
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
@@ -48,10 +56,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, logo, banner } = await request.json()
+    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber } = await request.json()
   
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
+    }
+  
+    // Validate main phone number is required
+    if (!mainPhoneNumber || !mainPhoneNumber.trim()) {
+      return NextResponse.json({ error: 'Main phone number is required' }, { status: 400 })
     }
   
     // Validate vendor category is provided and active
@@ -83,6 +96,7 @@ export async function POST(request: NextRequest) {
       categoryId,
       hasLogo: !!logo,
       hasBanner: !!banner,
+      hasMainPhone: !!mainPhoneNumber,
     })
   
     const store = await getPrisma().store.create({
@@ -91,6 +105,9 @@ export async function POST(request: NextRequest) {
           name: name.trim(),
           description: description?.trim() || null,
           categoryId: categoryId, // Already validated above, no need for || null
+          mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
+          alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
+          whatsappNumber: sanitizePhoneNumber(whatsappNumber),
           ...(logo !== undefined && { logo }),
           ...(banner !== undefined && { banner }),
         },
@@ -128,10 +145,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, logo, banner } = await request.json()
+    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber } = await request.json()
   
      if (!name || !name.trim()) {
        return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
+     }
+  
+     // Validate main phone number is required
+     if (!mainPhoneNumber || !mainPhoneNumber.trim()) {
+       return NextResponse.json({ error: 'Main phone number is required' }, { status: 400 })
      }
   
      // Validate vendor category is provided and active
@@ -154,6 +176,7 @@ export async function PUT(request: NextRequest) {
        categoryId,
        hasLogo: !!logo,
        hasBanner: !!banner,
+       hasMainPhone: !!mainPhoneNumber,
      })
   
      const store = await getPrisma().store.update({
@@ -162,6 +185,9 @@ export async function PUT(request: NextRequest) {
          name: name.trim(),
          description: description?.trim() || null,
          categoryId: categoryId,
+         mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
+         alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
+         whatsappNumber: sanitizePhoneNumber(whatsappNumber),
          ...(logo !== undefined && { logo }),
          ...(banner !== undefined && { banner }),
        },

@@ -32,6 +32,9 @@ interface VendorData {
   id: string
   name: string
   description: string | null
+  mainPhoneNumber: string | null
+  alternativePhoneNumber: string | null
+  whatsappNumber: string | null
   isVerified: boolean
   isFeatured: boolean
   logo: string | null
@@ -46,6 +49,21 @@ interface VendorData {
   } | null
   products: VendorProduct[]
   productCount: number
+}
+
+// Helper function to format phone number for display
+function formatPhoneForDisplay(phone: string | null): string {
+  if (!phone) return ''
+  // Add + prefix if not present
+  return phone.startsWith('+') ? phone : `+${phone}`
+}
+
+// Helper function to create WhatsApp link
+function getWhatsAppLink(phone: string | null): string | null {
+  if (!phone) return null
+  // Remove spaces, dashes, and + sign
+  const sanitized = phone.replace(/[\s\-+]/g, '')
+  return `https://wa.me/${sanitized}`
 }
 
 export default function VendorProfilePage() {
@@ -210,13 +228,73 @@ export default function VendorProfilePage() {
                 <p className="text-slate-600 max-w-2xl mb-6">{vendor.description}</p>
               )}
 
+              {/* Contact Information Section */}
+              {(vendor.mainPhoneNumber || vendor.alternativePhoneNumber || vendor.whatsappNumber) && (
+                <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28c.44 0 .87.11 1.24.31l.72.41a2 2 0 01.87 1.69V9.5a2 2 0 01-.87 1.69l-.72.41A2 2 0 0110.28 11H7a2 2 0 01-2-2V5z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15h2a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2h2" />
+                    </svg>
+                    Store Contact Information
+                  </h3>
+                  <div className="space-y-2">
+                    {vendor.mainPhoneNumber && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                        <span className="text-sm text-slate-600">📞 Main Call:</span>
+                        <a 
+                          href={`tel:${vendor.mainPhoneNumber}`}
+                          className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                        >
+                          {formatPhoneForDisplay(vendor.mainPhoneNumber)}
+                        </a>
+                      </div>
+                    )}
+                    {vendor.alternativePhoneNumber && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                        <span className="text-sm text-slate-600">📞 Alternative:</span>
+                        <a 
+                          href={`tel:${vendor.alternativePhoneNumber}`}
+                          className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                        >
+                          {formatPhoneForDisplay(vendor.alternativePhoneNumber)}
+                        </a>
+                      </div>
+                    )}
+                    {vendor.whatsappNumber && (
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-sm text-slate-600">💬 WhatsApp:</span>
+                        <a 
+                          href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
+                        >
+                          {formatPhoneForDisplay(vendor.whatsappNumber)}
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-3">
-                <Button size="lg">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  Contact Vendor
-                </Button>
+                {vendor.whatsappNumber && (
+                  <a 
+                    href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 transition-colors"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                    </svg>
+                    Chat on WhatsApp
+                  </a>
+                )}
                 <Link href={`/marketplace?vendorCategory=${vendor.category?.id || ''}`}>
                   <Button variant="outline" size="lg">
                     View All Products
