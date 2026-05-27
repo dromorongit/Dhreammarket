@@ -11,6 +11,9 @@ import Link from 'next/link'
 interface Category {
   id: string
   name: string
+  slug?: string
+  parentId: string | null
+  children?: Category[]
 }
 
 interface Product {
@@ -78,6 +81,22 @@ export default function EditProduct() {
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
+  }
+
+  // Render hierarchical category options for dropdown
+  const renderCategoryOptions = (cats: Category[], level = 0): React.ReactNode[] => {
+    const options: React.ReactNode[] = []
+    cats.forEach((cat) => {
+      options.push(
+        <option key={cat.id} value={cat.id} style={{ paddingLeft: level * 16 }}>
+          {'\u00A0'.repeat(level * 4)}{level > 0 ? '↳ ' : ''}{cat.name}
+        </option>
+      )
+      if (cat.children && cat.children.length > 0) {
+        options.push(...renderCategoryOptions(cat.children, level + 1))
+      }
+    })
+    return options
   }
 
   const fetchProduct = async () => {
@@ -285,11 +304,7 @@ export default function EditProduct() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select a category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
+                  {renderCategoryOptions(categories)}
                 </select>
               </div>
 

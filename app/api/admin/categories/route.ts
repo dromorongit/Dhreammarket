@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
         name: trimmedName,
         slug,
         parentId: parentId || null,
+        isActive: true,
       },
     })
 

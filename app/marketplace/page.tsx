@@ -43,7 +43,10 @@ interface Product {
 interface Category {
   id: string
   name: string
-  productCount: number
+  slug?: string
+  productCount?: number
+  parentId?: string | null
+  children?: Category[]
 }
 
 interface Vendor {
@@ -64,6 +67,10 @@ function MarketplaceContent() {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [vendorCategories, setVendorCategories] = useState<Category[]>([])
+  const [totalProductCount, setTotalProductCount] = useState(0)
+  const [totalProductCategoryCount, setTotalProductCategoryCount] = useState(0)
+  const [totalVendorCount, setTotalVendorCount] = useState(0)
+  const [totalVendorCategoryCount, setTotalVendorCategoryCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
@@ -79,6 +86,7 @@ function MarketplaceContent() {
     fetchCategories()
     fetchVendorCategories()
     fetchVendors()
+    fetchCounts()
   }, [searchParams])
 
   const fetchProducts = async () => {
@@ -135,6 +143,47 @@ function MarketplaceContent() {
       }
     } catch (error) {
       console.error('Error fetching vendors:', error)
+    }
+  }
+
+  // Fetch total counts for display
+  const fetchCounts = async () => {
+    try {
+      // Get total product count
+      const productsResponse = await fetch('/api/products')
+      if (productsResponse.ok) {
+        const productsData = await productsResponse.json()
+        setTotalProductCount(productsData.products?.length || 0)
+      }
+
+      // Get total product category count
+      const categoriesResponse = await fetch('/api/categories')
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json()
+        // Count all categories including children
+        const countAllCategories = (cats: Category[]): number => {
+          return cats.reduce((count, cat) => {
+            return count + 1 + (cat.children ? countAllCategories(cat.children) : 0)
+          }, 0)
+        }
+        setTotalProductCategoryCount(countAllCategories(categoriesData.categories || []))
+      }
+
+      // Get total vendor count
+      const vendorsResponse = await fetch('/api/vendors?limit=1')
+      if (vendorsResponse.ok) {
+        const vendorsData = await vendorsResponse.json()
+        setTotalVendorCount(vendorsData.pagination?.total || 0)
+      }
+
+      // Get total vendor category count
+      const vendorCategoriesResponse = await fetch('/api/vendor-categories')
+      if (vendorCategoriesResponse.ok) {
+        const vendorCategoriesData = await vendorCategoriesResponse.json()
+        setTotalVendorCategoryCount(vendorCategoriesData.categories?.length || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching counts:', error)
     }
   }
 
@@ -248,6 +297,7 @@ function MarketplaceContent() {
                 onClick={() => setViewMode('products')}
               >
                 Products
+                <span className="ml-2 text-xs opacity-70">({totalProductCount})</span>
               </Button>
               <Button
                 variant={viewMode === 'vendors' ? 'primary' : 'ghost'}
@@ -255,6 +305,7 @@ function MarketplaceContent() {
                 onClick={() => setViewMode('vendors')}
               >
                 Vendors
+                <span className="ml-2 text-xs opacity-70">({totalVendorCount})</span>
               </Button>
             </div>
           </div>
@@ -269,11 +320,9 @@ function MarketplaceContent() {
                 onClick={() => setSelectedCategory('')}
               >
                 All Categories
-                {selectedCategory === '' && (
-                  <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                    {categories.length}
-                  </span>
-                )}
+                <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                  {totalProductCategoryCount}
+                </span>
               </Button>
               {categories.map((category) => (
                 <Button
@@ -284,11 +333,9 @@ function MarketplaceContent() {
                   onClick={() => setSelectedCategory(category.id)}
                 >
                   {category.name}
-                  {selectedCategory === category.id && (
-                    <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                      {category.productCount}
-                    </span>
-                  )}
+                  <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                    {products.filter(p => p.category?.id === category.id).length}
+                  </span>
                 </Button>
               ))}
             </div>
@@ -298,34 +345,30 @@ function MarketplaceContent() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-medium text-slate-700">Vendor Type:</span>
                 <Button
-                  variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
-                  size="sm"
-                  className={`rounded-full ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
-                  onClick={() => setSelectedVendorCategory('')}
-                >
-                  All
-                  {selectedVendorCategory === '' && (
-                    <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                      {products.length}
-                    </span>
-                  )}
-                </Button>
-                {vendorCategories.map((vc) => (
-                  <Button
-                    key={vc.id}
-                    variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
+                    variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
                     size="sm"
-                    className={`rounded-full ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
-                    onClick={() => setSelectedVendorCategory(vc.id)}
+                    className={`rounded-full ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
+                    onClick={() => setSelectedVendorCategory('')}
                   >
-                    {vc.name}
-                    {selectedVendorCategory === vc.id && (
-                      <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                        {products.filter(p => p.store?.categoryId === vc.id).length}
-                      </span>
-                    )}
+                    All
+                    <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                      {totalVendorCategoryCount}
+                    </span>
                   </Button>
-                ))}
+                {vendorCategories.map((vc) => (
+                    <Button
+                      key={vc.id}
+                      variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
+                      size="sm"
+                      className={`rounded-full ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
+                      onClick={() => setSelectedVendorCategory(vc.id)}
+                    >
+                      {vc.name}
+                      <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                        {vendors.filter(v => v.category?.id === vc.id).length}
+                      </span>
+                    </Button>
+                  ))}
               </div>
             )}
           </div>

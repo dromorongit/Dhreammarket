@@ -7,33 +7,30 @@ export async function GET() {
     if (process.env.NEXT_PHASE === 'phase-production-build') {
       return NextResponse.json({ categories: [] })
     }
-    // Fetch all active product categories
+    // Fetch all active product categories with children for hierarchical display
     const categories = await getPrisma().productCategory.findMany({
       where: {
         isActive: true,
       },
       orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        parentId: true,
-        _count: {
-          select: { products: true },
+      include: {
+        children: {
+          where: { isActive: true },
+          orderBy: { name: 'asc' },
         },
       },
     })
 
-    // Return flat list of categories for the marketplace filter
-    const flatCategories = categories.map(cat => ({
+    // Return hierarchical list of categories
+    const hierarchicalCategories = categories.map(cat => ({
       id: cat.id,
       name: cat.name,
       slug: cat.slug,
       parentId: cat.parentId,
-      productCount: cat._count?.products || 0,
+      children: cat.children || [],
     }))
 
-    return NextResponse.json({ categories: flatCategories })
+    return NextResponse.json({ categories: hierarchicalCategories })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
