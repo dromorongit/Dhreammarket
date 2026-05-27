@@ -450,17 +450,14 @@ export default function Home() {
 
 function VendorCategorySection() {
   const [categories, setCategories] = useState<Category[]>([])
-  const [vendors, setVendors] = useState<any[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [allVendors, setAllVendors] = useState<any[]>([])
+  const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
+  // Fetch categories and vendors once on mount
   useEffect(() => {
-    fetchCategories()
+    Promise.all([fetchCategories(), fetchVendors()])
   }, [])
-
-  useEffect(() => {
-    fetchVendors()
-  }, [selectedCategory])
 
   const fetchCategories = async () => {
     try {
@@ -477,14 +474,10 @@ function VendorCategorySection() {
   const fetchVendors = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (selectedCategory) {
-        params.append('categoryId', selectedCategory)
-      }
-      const response = await fetch(`/api/vendors?${params}`)
+      const response = await fetch('/api/vendors')
       if (response.ok) {
         const data = await response.json()
-        setVendors(data.vendors)
+        setAllVendors(data.vendors)
       }
     } catch (error) {
       console.error('Error fetching vendors:', error)
@@ -493,39 +486,49 @@ function VendorCategorySection() {
     }
   }
 
-  return (
-    <>
-      {/* Category Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+  // Client-side filtering - no refetch on category change
+  const filteredVendors = selectedVendorCategory
+    ? allVendors.filter((vendor) => vendor.vendor_categories?.[0]?.id === selectedVendorCategory)
+    : allVendors
+
+  // Helper function to render category chips
+  const renderVendorCategoryChips = () => (
+    <div className="flex items-center gap-4 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2">
+      <button
+        onClick={() => setSelectedVendorCategory('')}
+        className={`min-h-[48px] px-6 py-3 rounded-2xl font-semibold text-sm flex-shrink-0 snap-start transition-all duration-200 shadow-sm hover:shadow-md ${
+          selectedVendorCategory === ''
+            ? 'bg-royal-blue text-white'
+            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+        }`}
+      >
+        All Vendors
+      </button>
+      {categories.map((category) => (
         <button
-          onClick={() => setSelectedCategory('')}
-          className={`px-6 py-2.5 rounded-full font-medium transition-all ${
-            selectedCategory === ''
-              ? 'bg-royal-blue text-white shadow-lg shadow-royal-blue/30'
+          key={category.id}
+          onClick={() => setSelectedVendorCategory(category.id)}
+          className={`min-h-[48px] px-6 py-3 rounded-2xl font-semibold text-sm flex-shrink-0 snap-start transition-all duration-200 shadow-sm hover:shadow-md ${
+            selectedVendorCategory === category.id
+              ? 'bg-royal-blue text-white'
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
-          All Vendors
+          {category.name}
         </button>
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
-            className={`px-6 py-2.5 rounded-full font-medium transition-all ${
-              selectedCategory === category.id
-                ? 'bg-royal-blue text-white shadow-lg shadow-royal-blue/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            {category.name}
-          </button>
-        ))}
-      </div>
+      ))}
+    </div>
+  )
 
-      {/* Vendors Grid */}
+  return (
+    <>
+      {/* Category Filter Chips - Horizontal Scrollable */}
+      {renderVendorCategoryChips()}
+
+      {/* Vendors Grid - 2 Column Layout */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
+        <div className="grid grid-cols-2 gap-6">
+          {[...Array(4)].map((_, i) => (
             <Card key={i} variant="elevated" className="p-6">
               <div className="space-y-4">
                 <div className="w-16 h-16 rounded-full bg-slate-200 mx-auto"></div>
@@ -536,7 +539,7 @@ function VendorCategorySection() {
             </Card>
           ))}
         </div>
-      ) : vendors.length === 0 ? (
+      ) : filteredVendors.length === 0 ? (
         <EmptyState
           icon={
             <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,14 +547,14 @@ function VendorCategorySection() {
             </svg>
           }
           title="No vendors found"
-          description={selectedCategory ? "No vendors in this category yet. Check back soon!" : "No vendors available yet."}
+          description={selectedVendorCategory ? "No vendors in this category yet. Check back soon!" : "No vendors available yet."}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {vendors.map((vendor) => (
+        <div className="grid grid-cols-2 gap-6">
+          {filteredVendors.map((vendor) => (
             <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
-              <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center">
+              <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center h-full flex flex-col">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl font-bold text-white">
                     {vendor.name.charAt(0).toUpperCase()}
                   </span>
@@ -559,16 +562,16 @@ function VendorCategorySection() {
                 <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
                   {vendor.name}
                 </h3>
-                {vendor.category && (
+                {vendor.vendor_categories?.[0] && (
                   <Badge variant="default" size="sm" className="mb-3">
-                    {vendor.category.name}
+                    {vendor.vendor_categories[0].name}
                   </Badge>
                 )}
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-slate-600 mb-2">
                   {vendor._count?.products || 0} products
                 </p>
                 {vendor.isVerified && (
-                  <Badge variant="verified" size="sm" className="mt-2">
+                  <Badge variant="verified" size="sm" className="mt-auto">
                     Verified
                   </Badge>
                 )}
