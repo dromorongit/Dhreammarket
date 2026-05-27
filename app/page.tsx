@@ -529,9 +529,9 @@ function VendorCategorySection() {
 
       {/* Vendors Horizontal Scrollable Row */}
       {loading ? (
-        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2">
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
           {[...Array(4)].map((_, i) => (
-            <Card key={i} variant="elevated" className="flex-shrink-0 snap-start p-6 w-80">
+            <Card key={i} variant="elevated" className="flex-shrink-0 snap-start p-6 w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
               <div className="space-y-4">
                 <div className="w-16 h-16 rounded-full bg-slate-200 mx-auto"></div>
                 <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto"></div>
@@ -552,10 +552,10 @@ function VendorCategorySection() {
           description={selectedVendorCategory ? "No vendors in this category yet. Check back soon!" : "No vendors available yet."}
         />
       ) : (
-        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2">
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
           {filteredVendors.map((vendor) => (
             <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
-              <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-80 flex flex-col h-full">
+              <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl font-bold text-white">
                     {vendor.name.charAt(0).toUpperCase()}
@@ -611,9 +611,9 @@ function TopVendorsSection() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
         {[...Array(4)].map((_, i) => (
-          <Card key={i} variant="elevated" className="p-6">
+          <Card key={i} variant="elevated" className="flex-shrink-0 snap-start p-6 w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
             <div className="space-y-4">
               <div className="w-20 h-20 rounded-full bg-slate-200 mx-auto" />
               <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto" />
@@ -626,10 +626,10 @@ function TopVendorsSection() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
       {vendors.map((vendor) => (
         <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
-          <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center">
+          <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden">
               {vendor.logo ? (
                 <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
@@ -648,9 +648,9 @@ function TopVendorsSection() {
             <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
               {vendor.name}
             </h3>
-            {vendor.category && (
+            {vendor.vendor_categories && (
               <Badge variant="default" size="sm" className="mb-2">
-                {vendor.category.name}
+                {vendor.vendor_categories.name}
               </Badge>
             )}
             <p className="text-sm text-slate-600">
@@ -693,9 +693,9 @@ function NewVendorsSection() {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
         {[...Array(4)].map((_, i) => (
-          <Card key={i} variant="elevated" className="p-6">
+          <Card key={i} variant="elevated" className="flex-shrink-0 snap-start p-6 w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
             <div className="space-y-4">
               <div className="w-20 h-20 rounded-full bg-slate-200 mx-auto" />
               <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto" />
@@ -708,10 +708,10 @@ function NewVendorsSection() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
       {vendors.map((vendor) => (
         <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
-          <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center">
+          <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden">
               {vendor.logo ? (
                 <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
@@ -724,9 +724,9 @@ function NewVendorsSection() {
             <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
               {vendor.name}
             </h3>
-            {vendor.category && (
+            {vendor.vendor_categories && (
               <Badge variant="default" size="sm" className="mb-2">
-                {vendor.category.name}
+                {vendor.vendor_categories.name}
               </Badge>
             )}
             <div className="flex items-center justify-center gap-1 text-sm text-slate-500 mb-2">
