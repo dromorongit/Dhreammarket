@@ -1,24 +1,24 @@
 -- AlterEnum
-BEGIN;
-CREATE TYPE "NotificationType_new" AS ENUM ('ORDER_PLACED', 'PAYMENT_SUCCESSFUL', 'ORDER_STATUS_UPDATED', 'REVIEW_SUBMITTED', 'REVIEW_RECEIVED', 'SUPPORT_TICKET_CREATED', 'SUPPORT_TICKET_REPLIED', 'SUPPORT_TICKET_STATUS_UPDATED');
-ALTER TABLE "notifications" ALTER COLUMN "type" TYPE "NotificationType_new" USING ("type"::text::"NotificationType_new");
-ALTER TYPE "NotificationType" RENAME TO "NotificationType_old";
-ALTER TYPE "NotificationType_new" RENAME TO "NotificationType";
-DROP TYPE "NotificationType_old" CASCADE;
-COMMIT;
+-- This migration is now idempotent to handle databases that already have these types/tables
+DO $$
+BEGIN
+    -- Create new enum type if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'SupportTicketType') THEN
+        CREATE TYPE "SupportTicketType" AS ENUM ('GENERAL', 'PAYMENT', 'ORDER', 'VENDOR', 'ACCOUNT', 'TECHNICAL', 'REPORT');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'SupportTicketStatus') THEN
+        CREATE TYPE "SupportTicketStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'SupportTicketPriority') THEN
+        CREATE TYPE "SupportTicketPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
+    END IF;
+END $$;
 
--- CreateEnum
-CREATE TYPE "SupportTicketType" AS ENUM ('GENERAL', 'PAYMENT', 'ORDER', 'VENDOR', 'ACCOUNT', 'TECHNICAL', 'REPORT');
-
--- CreateEnum
-CREATE TYPE "SupportTicketStatus" AS ENUM ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED');
-
--- CreateEnum
-CREATE TYPE "SupportTicketPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
-
--- CreateTable
-CREATE TABLE "support_tickets" (
-    "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+-- CreateTable (IF NOT EXISTS)
+CREATE TABLE IF NOT EXISTS "support_tickets" (
+    "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
     "message" TEXT NOT NULL,
@@ -32,14 +32,18 @@ CREATE TABLE "support_tickets" (
     CONSTRAINT "support_tickets_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "support_tickets_userId_idx" ON "support_tickets"("userId");
+-- CreateIndex (IF NOT EXISTS)
+CREATE INDEX IF NOT EXISTS "support_tickets_userId_idx" ON "support_tickets"("userId");
+CREATE INDEX IF NOT EXISTS "support_tickets_status_idx" ON "support_tickets"("status");
+CREATE INDEX IF NOT EXISTS "support_tickets_type_idx" ON "support_tickets"("type");
 
--- CreateIndex
-CREATE INDEX "support_tickets_status_idx" ON "support_tickets"("status");
-
--- CreateIndex
-CREATE INDEX "support_tickets_type_idx" ON "support_tickets"("type");
-
--- AddForeignKey
-ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (IF NOT EXISTS)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'support_tickets_userId_fkey'
+    ) THEN
+        ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
