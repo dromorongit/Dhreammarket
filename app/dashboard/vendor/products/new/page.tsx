@@ -19,7 +19,7 @@ interface Category {
 export default function NewProduct() {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // Start with true to show loading state while fetching
   const [saving, setSaving] = useState(false)
   const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null)
   const [formData, setFormData] = useState({
@@ -58,7 +58,6 @@ export default function NewProduct() {
       const response = await fetch('/api/categories')
       if (response.ok) {
         const data = await response.json()
-        console.log('[Vendor Product Form Categories]', data)
         setCategories(data.categories)
       }
     } catch (error) {
@@ -248,21 +247,21 @@ export default function NewProduct() {
               </div>
 
               <div>
-                <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                  Category *
-                </label>
-                <select
-                  id="categoryId"
-                  name="categoryId"
-                  required
-                  value={formData.categoryId}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">Select a category</option>
-                  {renderCategoryOptions(categories)}
-                </select>
-              </div>
+                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                   Category *
+                 </label>
+                 <select
+                   id="categoryId"
+                   name="categoryId"
+                   required
+                   value={formData.categoryId}
+                   onChange={handleChange}
+                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                 >
+                   <option value="">Select a category</option>
+                   {renderCategoryOptions(categories)}
+                 </select>
+               </div>
 
               <div>
                 <ImageUpload
