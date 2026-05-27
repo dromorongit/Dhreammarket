@@ -118,17 +118,23 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/refund" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                  <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Refund Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                  <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Cookies
-                </Link>
-              </li>
+                 <Link href="/refund" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                   Refund Policy
+                 </Link>
+               </li>
+               <li>
+                 <Link href="/payment-policy" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                   Payment Policy
+                 </Link>
+               </li>
+               <li>
+                 <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                   Cookies
+                 </Link>
+               </li>
             </ul>
           </div>
         </div>

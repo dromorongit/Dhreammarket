@@ -31,8 +31,8 @@ export default function TermsAndConditionsPage() {
               Terms and Conditions
             </h1>
             <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
-              Platform usage terms and conditions. Last updated: April 2026
-            </p>
+               Platform usage terms and conditions. Last Updated: 27th May, 2025
+             </p>
           </div>
         </div>
       </div>
@@ -364,16 +364,133 @@ export default function TermsAndConditionsPage() {
               </section>
 
               <section className="mb-8">
-                <h2 className="text-2xl font-semibold text-deep-navy mb-4 flex items-center gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold">16</span>
-                  Contact Information
-                </h2>
-                <p className="text-slate-600 leading-relaxed">
-                  For questions about these Terms and Conditions, please contact us through our 
-                  Contact page or email us at support@dhreamarket.com.
-                </p>
-              </section>
-            </div>
+                 <h2 className="text-2xl font-semibold text-deep-navy mb-4 flex items-center gap-3">
+                   <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">16</span>
+                   Marketplace Payment Processing & Vendor Payout Policy
+                 </h2>
+                 <p className="text-slate-600 mb-4">
+                   This policy outlines how payments are processed and vendor payouts are handled on Dhream Market.
+                 </p>
+                 
+                 <h3 className="text-xl font-medium text-deep-navy mb-3">Payment Processing</h3>
+                 <ul className="space-y-2 mb-4">
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">All customer payments made on Dhream Market are processed through Dhream Market's centralized Paystack account.</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Vendors/store owners do NOT receive payments directly from customers at the point of checkout.</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Dhream Market will aggregate and reconcile completed sales for each vendor/store before payouts are made.</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Vendor payouts will be sent based on completed and verified sales.</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Paystack transaction charges/fees may be deducted by Paystack before payout settlement.</span>
+                   </li>
+                 </ul>
+                 
+                 <h3 className="text-xl font-medium text-deep-navy mb-3">Deductions and Adjustments</h3>
+                 <p className="text-slate-600 mb-3">Vendor payouts may also reflect:</p>
+                 <ul className="space-y-2 mb-4">
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Refunds</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Disputes</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Chargebacks</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Platform commissions</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Other authorized deductions</span>
+                   </li>
+                 </ul>
+                 
+                 <h3 className="text-xl font-medium text-deep-navy mb-3">Payout Controls and Holds</h3>
+                 <p className="text-slate-600 mb-3">Dhream Market reserves the right to:</p>
+                 <ul className="space-y-2 mb-4">
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Determine payout schedules</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Payout holding periods</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Settlement timelines</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Fraud review processes</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Compliance checks</span>
+                   </li>
+                 </ul>
+                 
+                 <h3 className="text-xl font-medium text-deep-navy mb-3">Vendor Responsibilities</h3>
+                 <ul className="space-y-2 mb-4">
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Vendors are responsible for ensuring their payout banking details are accurate.</span>
+                   </li>
+                 </ul>
+                 
+                 <h3 className="text-xl font-medium text-deep-navy mb-3">Payout Holds</h3>
+                 <p className="text-slate-600 mb-3">Dhream Market may temporarily hold payouts in cases involving:</p>
+                 <ul className="space-y-2">
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Suspicious activity</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Fraud investigation</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Disputes</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Policy violations</span>
+                   </li>
+                   <li className="flex items-start gap-3">
+                     <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
+                     <span className="text-slate-600">Compliance reviews</span>
+                   </li>
+                 </ul>
+               </section>
+               
+               <section className="mb-8">
+                 <h2 className="text-2xl font-semibold text-deep-navy mb-4 flex items-center gap-3">
+                   <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold">17</span>
+                   Contact Information
+                 </h2>
+                 <p className="text-slate-600 leading-relaxed">
+                   For questions about these Terms and Conditions, please contact us through our 
+                   Contact page or email us at support@dhreamarket.com.
+                 </p>
+               </section>
+             </div>
           </CardContent>
         </Card>
       </div>

@@ -31,8 +31,8 @@ export default function RefundPolicyPage() {
               Refund and Return Policy
             </h1>
             <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
-              Understanding our return and refund processes. Last updated: April 2026
-            </p>
+               Understanding our return and refund processes. Last Updated: 27th May, 2025
+             </p>
           </div>
         </div>
       </div>
