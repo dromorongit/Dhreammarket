@@ -487,8 +487,10 @@ function VendorCategorySection() {
   }
 
   // Client-side filtering - no refetch on category change
+  // Use categoryId (the direct foreign key) instead of vendor_categories[0].id
+  // The API returns vendor_categories as a single object, not an array
   const filteredVendors = selectedVendorCategory
-    ? allVendors.filter((vendor) => vendor.vendor_categories?.[0]?.id === selectedVendorCategory)
+    ? allVendors.filter((vendor) => vendor.categoryId === selectedVendorCategory)
     : allVendors
 
   // Helper function to render category chips
@@ -525,11 +527,11 @@ function VendorCategorySection() {
       {/* Category Filter Chips - Horizontal Scrollable */}
       {renderVendorCategoryChips()}
 
-      {/* Vendors Grid - 2 Column Layout */}
+      {/* Vendors Horizontal Scrollable Row */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} variant="elevated" className="p-6">
+            <Card key={i} variant="elevated" className="flex-shrink-0 snap-start p-6 w-80">
               <div className="space-y-4">
                 <div className="w-16 h-16 rounded-full bg-slate-200 mx-auto"></div>
                 <div className="h-5 bg-slate-200 rounded w-3/4 mx-auto"></div>
@@ -550,10 +552,10 @@ function VendorCategorySection() {
           description={selectedVendorCategory ? "No vendors in this category yet. Check back soon!" : "No vendors available yet."}
         />
       ) : (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2">
           {filteredVendors.map((vendor) => (
             <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
-              <Card variant="elevated" className="group hover:shadow-xl transition-all duration-300 p-6 text-center h-full flex flex-col">
+              <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-80 flex flex-col h-full">
                 <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-2xl font-bold text-white">
                     {vendor.name.charAt(0).toUpperCase()}
@@ -562,9 +564,9 @@ function VendorCategorySection() {
                 <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2">
                   {vendor.name}
                 </h3>
-                {vendor.vendor_categories?.[0] && (
+                {vendor.vendor_categories && (
                   <Badge variant="default" size="sm" className="mb-3">
-                    {vendor.vendor_categories[0].name}
+                    {vendor.vendor_categories.name}
                   </Badge>
                 )}
                 <p className="text-sm text-slate-600 mb-2">
