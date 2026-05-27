@@ -264,8 +264,11 @@ function MarketplaceContent() {
   }
 
   // Render only parent category buttons for filter (subcategories are used for recursive filtering only)
-  const renderCategoryButtons = (cats: Category[]): React.ReactNode[] => {
-    return cats.map((cat) => {
+  const renderProductCategoryButtons = (cats: Category[]): React.ReactNode[] => {
+    // Only render parent categories (those without a parentId)
+    const parentCategories = cats.filter(cat => cat.parentId === null)
+    
+    return parentCategories.map((cat) => {
       // Get all descendant category IDs for recursive product counting
       const matchingIds = getCategoryFilterIds(cat.id)
       const productCount = products.filter(p => 
@@ -277,16 +280,34 @@ function MarketplaceContent() {
           key={cat.id}
           variant={selectedCategory === cat.id ? 'primary' : 'ghost'}
           size="sm"
-          className={`rounded-full whitespace-nowrap px-4 ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
+          className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
           onClick={() => setSelectedCategory(cat.id)}
         >
           {cat.name}
-          <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+          <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
             {productCount}
           </span>
         </Button>
       )
     })
+  }
+
+  // Render vendor category buttons
+  const renderVendorCategoryButtons = (cats: Category[]): React.ReactNode[] => {
+    return cats.map((vc) => (
+      <Button
+        key={vc.id}
+        variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
+        size="sm"
+        className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
+        onClick={() => setSelectedVendorCategory(vc.id)}
+      >
+        {vc.name}
+        <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+          {vendors.filter(v => v.category?.id === vc.id).length}
+        </span>
+      </Button>
+    ))
   }
 
   const filteredProducts = products.filter(product => {
@@ -299,6 +320,14 @@ function MarketplaceContent() {
     }
     // Filter by vendor category
     if (selectedVendorCategory && product.store?.categoryId !== selectedVendorCategory) {
+      return false
+    }
+    return true
+  })
+
+  // Filter vendors by vendor category
+  const filteredVendors = vendors.filter(vendor => {
+    if (selectedVendorCategory && vendor.category?.id !== selectedVendorCategory) {
       return false
     }
     return true
@@ -383,61 +412,61 @@ function MarketplaceContent() {
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
-            <div className="flex overflow-x-auto flex-nowrap gap-2 sm:gap-3 pb-2 sm:pb-0 scrollbar-hide">
-              <Button
-                variant={selectedCategory === '' ? 'primary' : 'ghost'}
-                size="sm"
-                className={`rounded-full whitespace-nowrap px-4 ${selectedCategory === '' ? '' : 'text-slate-700'}`}
-                onClick={() => setSelectedCategory('')}
-              >
-                All Categories
-                <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                  {totalProductCategoryCount}
-                </span>
-              </Button>
-              {renderCategoryButtons(categories)}
-            </div>
+          {/* Category Filter - Conditional based on viewMode */}
+           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
+             {/* Product Category Filter - Only shows when viewMode === 'products' */}
+             {viewMode === 'products' && (
+               <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+                 <Button
+                   variant={selectedCategory === '' ? 'primary' : 'ghost'}
+                   size="sm"
+                   className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedCategory === '' ? '' : 'text-slate-700'}`}
+                   onClick={() => setSelectedCategory('')}
+                 >
+                   All Categories
+                   <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                     {totalProductCategoryCount}
+                   </span>
+                 </Button>
+                 {renderProductCategoryButtons(categories)}
+               </div>
+             )}
 
-            {/* Vendor Category Filter */}
-            {vendorCategories.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-slate-700">Vendor Type:</span>
-                <Button
-                    variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
-                    size="sm"
-                    className={`rounded-full ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
-                    onClick={() => setSelectedVendorCategory('')}
-                  >
-                    All
-                    <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                      {totalVendorCategoryCount}
-                    </span>
-                  </Button>
-                {vendorCategories.map((vc) => (
-                    <Button
-                      key={vc.id}
-                      variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
-                      size="sm"
-                      className={`rounded-full ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
-                      onClick={() => setSelectedVendorCategory(vc.id)}
-                    >
-                      {vc.name}
-                      <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                        {vendors.filter(v => v.category?.id === vc.id).length}
-                      </span>
-                    </Button>
-                  ))}
-              </div>
-            )}
-          </div>
+             {/* Vendor Category Filter - Only shows when viewMode === 'vendors' */}
+             {viewMode === 'vendors' && vendorCategories.length > 0 && (
+               <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
+                 <span className="text-sm font-medium text-slate-700 flex-shrink-0">Vendor Type:</span>
+                 <Button
+                   variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
+                   size="sm"
+                   className={`rounded-xl whitespace-nowrap min-h-[44px] px-5 py-2.5 font-medium flex-shrink-0 ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
+                   onClick={() => setSelectedVendorCategory('')}
+                 >
+                   All
+                   <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                     {totalVendorCategoryCount}
+                   </span>
+                 </Button>
+                 {renderVendorCategoryButtons(vendorCategories)}
+               </div>
+             )}
+           </div>
         </div>
             <div className="flex items-center gap-2 text-sm text-slate-600">
-              <span>{filteredProducts.length} products</span>
-              <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-              <span>Verified sellers</span>
-            </div>
+               {viewMode === 'products' ? (
+                 <>
+                   <span>{filteredProducts.length} products</span>
+                   <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                   <span>Verified sellers</span>
+                 </>
+               ) : (
+                 <>
+                   <span>{filteredVendors.length} vendors</span>
+                   <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                   <span>Featured stores</span>
+                 </>
+               )}
+             </div>
 
           {/* Results */}
           {viewMode === 'products' ? (
@@ -530,19 +559,21 @@ function MarketplaceContent() {
             )
           ) : (
             // Vendors View
-            vendors.length === 0 ? (
+            filteredVendors.length === 0 ? (
               <EmptyState
                 icon={
                   <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 }
-                title="No vendors available"
-                description="Check back later for new vendors joining our marketplace."
+                title={selectedVendorCategory ? 'No vendors in this category' : 'No vendors available'}
+                description={selectedVendorCategory ? 'Try selecting a different vendor category or check back later.' : 'Check back later for new vendors joining our marketplace.'}
+                actionLabel="Browse All Vendors"
+                onAction={() => setSelectedVendorCategory('')}
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {vendors.map((vendor) => (
+                {filteredVendors.map((vendor) => (
                   <Card
                     key={vendor.id}
                     variant="elevated"
