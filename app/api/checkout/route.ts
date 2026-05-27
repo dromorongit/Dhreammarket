@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { initializePaystackPayment, isPaystackConfigured } from '@/lib/paystack'
 import { sendOrderConfirmationEmail } from '@/lib/email'
 import { createNotification } from '@/lib/notifications'
+import { calculateTax, calculateGrandTotal } from '@/lib/shipping'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -31,7 +32,11 @@ export async function POST(request: NextRequest) {
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                store: true,
+              },
+            },
           },
         },
       },
@@ -50,8 +55,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate total
-    const total = cart.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => sum + (item.product.price * item.quantity), 0)
+    // Parse customer and shipping info from request
+    const { customerInfo, shippingInfo } = await request.json()
+
+    // Calculate subtotal
+    const subtotal = cart.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => sum + (item.product.price * item.quantity), 0)
+    
+    // Calculate shipping and tax
+    const shippingPrice = shippingInfo?.price || 0
+    const tax = calculateTax(subtotal)
+    const total = calculateGrandTotal(subtotal, shippingPrice, tax)
 
     // Generate unique reference for the payment
     const reference = `DHV-${crypto.randomBytes(8).toString('hex').toUpperCase()}`
@@ -66,6 +79,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Create vendor breakdown for marketplace settlement
+    const vendorBreakdown: Record<string, { items: any[], subtotal: number, earnings: number }> = {}
+    for (const item of cart.items) {
+      const storeId = item.product.storeId
+      if (!vendorBreakdown[storeId]) {
+        vendorBreakdown[storeId] = { items: [], subtotal: 0, earnings: 0 }
+      }
+      vendorBreakdown[storeId].items.push({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.product.price,
+      })
+      vendorBreakdown[storeId].subtotal += item.product.price * item.quantity
+    }
+
+    // Calculate vendor earnings (90% of item value, 10% platform commission)
+    for (const storeId in vendorBreakdown) {
+      vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * 0.9 * 100) / 100
+    }
+
     // Create order and payment record in a transaction
     const result = await getPrisma().$transaction(async (prisma: any) => {
       // Create order in PENDING payment status (stock not deducted yet)
@@ -73,8 +106,23 @@ export async function POST(request: NextRequest) {
         data: {
           userId: payload.userId,
           total,
+          subtotal,
+          shipping: shippingPrice,
+          tax,
           status: 'PENDING',
           paymentStatus: 'PENDING',
+          // Store customer info
+          customerFirstName: customerInfo?.firstName || '',
+          customerLastName: customerInfo?.lastName || '',
+          customerEmail: customerInfo?.email || user.email,
+          customerPhone: customerInfo?.phone || '',
+          customerAddress: customerInfo?.address || '',
+          customerCity: customerInfo?.city || '',
+          customerRegion: customerInfo?.region || '',
+          // Store shipping info
+          shippingZone: shippingInfo?.zone || 'Other Locations',
+          shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
+          shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
         },
       })
 
@@ -98,6 +146,7 @@ export async function POST(request: NextRequest) {
             productId: item.productId,
             quantity: item.quantity,
             price: item.product.price,
+            storeId: item.product.storeId,
           },
         })
       }
@@ -111,7 +160,7 @@ export async function POST(request: NextRequest) {
 
     // Initialize Paystack payment
     // Callback to checkout page which handles verification
-    const callbackUrl = `https://dhraverse-production.up.railway.app/checkout?reference=${reference}`
+    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://dhreamarket-production.up.railway.app'}/checkout?reference=${reference}`
     
     try {
       const paystackResponse = await initializePaystackPayment(
@@ -122,6 +171,7 @@ export async function POST(request: NextRequest) {
         {
           orderId: result.order.id,
           userId: payload.userId,
+          vendorBreakdown,
         }
       )
 
@@ -150,6 +200,13 @@ export async function POST(request: NextRequest) {
         paymentId: result.payment.id,
         reference,
         authorizationUrl: paystackResponse.data.authorization_url,
+        pricing: {
+          subtotal,
+          shipping: shippingPrice,
+          tax,
+          total,
+        },
+        vendorBreakdown,
       })
     } catch (paystackError) {
       // If Paystack initialization fails, update payment status to FAILED

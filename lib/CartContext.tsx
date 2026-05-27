@@ -40,7 +40,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Start with false to prevent hydration mismatch - will be set to true on client mount
+  const [loading, setLoading] = useState(false)
 
   const fetchCart = useCallback(async () => {
     try {

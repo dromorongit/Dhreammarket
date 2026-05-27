@@ -43,8 +43,10 @@ interface UserProfile {
   email: string
   firstName?: string | null
   lastName?: string | null
-  phone?: string | null
-  address?: string | null
+  profile?: {
+    phone?: string | null
+    address?: string | null
+  } | null
 }
 
 interface ShippingInfo {

@@ -163,11 +163,26 @@ model Order {
   vendorEarnings     Float?
   commissionRate     Float?
   total              Float
+  subtotal           Float?
+  shipping           Float?
+  tax                Float?
   status             OrderStatus   @default(PENDING)
   paymentStatus      PaymentStatus @default(PENDING)
   deletedAt          DateTime?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+  // Customer information
+  customerFirstName  String?
+  customerLastName   String?
+  customerEmail      String?
+  customerPhone      String?
+  customerAddress    String?
+  customerCity       String?
+  customerRegion     String?
+  // Shipping information
+  shippingZone       String?
+  shippingDaysMin    Int?
+  shippingDaysMax    Int?
   items              OrderItem[]
   user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment            Payment?
@@ -179,6 +194,7 @@ model OrderItem {
   id                 String   @id @default(cuid())
   orderId            String
   productId          String
+  storeId            String?
   quantity           Int
   price              Float
   grossAmount        Float?
