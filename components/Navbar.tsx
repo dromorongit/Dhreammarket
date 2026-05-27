@@ -103,6 +103,11 @@ export function Navbar() {
     }
   }, [user])
 
+  // Fetch cart on mount
+  useEffect(() => {
+    fetchCart()
+  }, [fetchCart])
+
   // Listen for cart updates to sync badge
   useEffect(() => {
     const handleCartUpdate = () => {

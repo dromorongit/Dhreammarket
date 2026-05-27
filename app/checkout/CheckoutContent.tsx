@@ -136,8 +136,8 @@ export default function CheckoutContent() {
         if (user) {
           setFormData(prev => ({
             ...prev,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
+            firstName: user.profile?.firstName || '',
+            lastName: user.profile?.lastName || '',
             email: user.email || '',
             phone: user.profile?.phone || '',
             address: user.profile?.address || ''
@@ -183,18 +183,22 @@ export default function CheckoutContent() {
 
   // Handle form field changes
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value }
+      
+      // Recalculate shipping when city or region changes
+      if (field === 'city' || field === 'region') {
+        const newCity = field === 'city' ? value : updated.city
+        const newRegion = field === 'region' ? value : updated.region
+        calculateShipping(newCity, newRegion)
+      }
+      
+      return updated
+    })
     
     // Clear error when user types
     if (formErrors[field]) {
       setFormErrors(prev => ({ ...prev, [field]: '' }))
-    }
-    
-    // Recalculate shipping when city or region changes
-    if (field === 'city' || field === 'region') {
-      const newCity = field === 'city' ? value : formData.city
-      const newRegion = field === 'region' ? value : formData.region
-      calculateShipping(newCity, newRegion)
     }
   }
 
@@ -243,12 +247,17 @@ export default function CheckoutContent() {
       if (response.ok && data.authorizationUrl) {
         window.location.href = data.authorizationUrl
       } else {
-        setError(data.error || 'Failed to initialize checkout')
+        // Provide more specific error messages
+        let errorMessage = data.error || 'Failed to initialize checkout'
+        if (data.error?.includes('not configured')) {
+          errorMessage = 'Payment system is not configured. Please contact support to set up payment processing.'
+        }
+        setError(errorMessage)
         setProcessing(false)
       }
     } catch (err) {
       console.error('Checkout error:', err)
-      setError('An error occurred during checkout')
+      setError('An error occurred during checkout. Please check your connection and try again.')
       setProcessing(false)
     }
   }
