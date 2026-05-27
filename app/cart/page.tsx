@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/Card'
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { getAvailableRegions, calculateTax, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
 interface CartItem {
   id: string
@@ -40,12 +42,37 @@ export default function Cart() {
   const [cart, setCart] = useState<CartResponse['cart'] | null>(null)
   const [loading, setLoading] = useState(true)
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
+  
+  // Use cart context for centralized state
+  const { cart: contextCart, fetchCart } = useCart()
+  
+  // Shipping state
+  const [shippingInfo, setShippingInfo] = useState<{
+    price: number
+    estimatedDays: { min: number; max: number }
+    zone: string
+  } | null>(null)
+  const [shippingLoading, setShippingLoading] = useState(false)
+  
+  // Location for shipping calculation
+  const [selectedRegion, setSelectedRegion] = useState('')
+  const [selectedCity, setSelectedCity] = useState('')
+  
+  // Get available regions
+  const availableRegions = getAvailableRegions()
 
   useEffect(() => {
-    fetchCart()
+    loadCart()
   }, [])
 
-  const fetchCart = async () => {
+  // Sync context cart to local state
+  useEffect(() => {
+    if (contextCart) {
+      setCart(contextCart)
+    }
+  }, [contextCart])
+
+  const loadCart = async () => {
     try {
       const response = await fetch('/api/cart')
       if (response.ok) {
@@ -79,6 +106,7 @@ export default function Cart() {
       if (response.ok) {
         const data: CartResponse = await response.json()
         setCart(data.cart)
+        dispatchCartUpdate()
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to update quantity')
@@ -105,6 +133,7 @@ export default function Cart() {
       if (response.ok) {
         const data: CartResponse = await response.json()
         setCart(data.cart)
+        dispatchCartUpdate()
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to remove item')
@@ -121,27 +150,37 @@ export default function Cart() {
     }
   }
 
-  const placeOrder = async () => {
-    if (!cart || cart.items.length === 0) return
-
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        alert('Order placed successfully! Order ID: ' + data.order.id)
-        setCart({ id: null, items: [], total: 0 })
+  // Calculate shipping when location changes
+  useEffect(() => {
+    if (selectedCity || selectedRegion) {
+      setShippingLoading(true)
+      const rate = getShippingRate(selectedCity, selectedRegion)
+      
+      if (rate) {
+        setShippingInfo({
+          price: rate.price,
+          estimatedDays: rate.estimatedDays,
+          zone: rate.zone.name
+        })
       } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to place order')
+        setShippingInfo({
+          price: 40.00,
+          estimatedDays: { min: 3, max: 7 },
+          zone: 'Other Locations'
+        })
       }
-    } catch (error) {
-      console.error('Error placing order:', error)
-      alert('Error placing order')
+      setShippingLoading(false)
+    } else {
+      setShippingInfo(null)
     }
-  }
+  }, [selectedCity, selectedRegion])
+
+  // Calculate totals
+  const subtotal = cart?.total || 0
+  const shipping = shippingInfo?.price || 0
+  const tax = calculateTax(subtotal)
+  const total = calculateGrandTotal(subtotal, shipping, tax)
+  const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
   if (loading) {
     return (
@@ -291,34 +330,93 @@ export default function Cart() {
           ))}
         </div>
 
+        {/* Shipping Location Selector */}
+        <Card variant="elevated" className="mb-6">
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-deep-navy">Calculate Shipping</h3>
+            <p className="text-sm text-slate-600">Select your location to calculate shipping cost</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Region/State</label>
+                <select
+                  value={selectedRegion}
+                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
+                >
+                  <option value="">Select a region</option>
+                  {availableRegions.map((region) => (
+                    <option key={region} value={region}>{region}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">City</label>
+                <input
+                  type="text"
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  placeholder="Enter your city"
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
+                />
+              </div>
+            </div>
+            
+            {shippingInfo && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-xl">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium text-deep-navy">{shippingInfo.zone}</p>
+                    <p className="text-sm text-slate-600">
+                      Estimated delivery: {shippingInfo.estimatedDays.min}-{shippingInfo.estimatedDays.max} business days
+                    </p>
+                  </div>
+                  <Badge variant="success" size="lg">
+                    {formatPrice(shippingInfo.price)}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Order Summary */}
         <Card variant="elevated" className="sticky top-24">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-deep-navy mb-4">Order Summary</h3>
-            
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-deep-navy">Order Summary</h3>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-slate-600">
-                <span>Subtotal ({cart.items.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                <span>{formatPrice(cart.total)}</span>
+                <span>Subtotal ({totalQuantity} items)</span>
+                <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Shipping</span>
-                <span className="text-emerald-600">Free</span>
+                {shippingLoading ? (
+                  <span className="text-slate-500">Calculating...</span>
+                ) : shippingInfo ? (
+                  <span className="text-emerald-600">{formatPrice(shipping)}</span>
+                ) : (
+                  <span className="text-slate-500">Enter location</span>
+                )}
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Tax</span>
-                <span>Calculated at checkout</span>
+                <span>Tax (VAT 12.5%)</span>
+                <span>{formatPrice(tax)}</span>
               </div>
             </div>
 
             <div className="border-t border-slate-200 pt-4 mb-6">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-deep-navy">Total</span>
-                <span className="text-3xl font-bold text-royal-blue">{formatPrice(cart.total)}</span>
+                <span className="text-3xl font-bold text-royal-blue">{formatPrice(total)}</span>
               </div>
             </div>
-
-            <div className="space-y-3">
+          </CardContent>
+          <CardFooter>
+            <div className="space-y-3 w-full">
               <Link href="/checkout">
                 <Button size="lg" className="w-full shadow-lg shadow-royal-blue/20">
                   Proceed to Checkout
@@ -343,7 +441,7 @@ export default function Cart() {
                 <span>Secure payment processing</span>
               </div>
             </div>
-          </CardContent>
+          </CardFooter>
         </Card>
       </div>
     </div>

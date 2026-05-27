@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { Button } from './Button'
 import { Badge } from './Badge'
 import { SearchDropdown } from './SearchDropdown'
+import { useCart } from '@/lib/CartContext'
 
 interface User {
   userId: string
@@ -74,9 +75,11 @@ function getAvatarInitials(user: User | null): string {
 export function Navbar() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
-  const [cartItemCount, setCartItemCount] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  
+  // Use cart context for centralized cart state
+  const { cartTotalQuantity, fetchCart } = useCart()
   
   // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -92,16 +95,6 @@ export function Navbar() {
       .then(res => res.json())
       .then(data => setUser(data.user))
       .catch(err => console.error('Failed to get user:', err))
-    
-    // Fetch cart item count
-    fetch('/api/cart')
-      .then(res => res.json())
-      .then(data => {
-        if (data.cart && data.cart.items) {
-          setCartItemCount(data.cart.items.length)
-        }
-      })
-      .catch(err => console.error('Failed to get cart:', err))
   }, [])
 
   useEffect(() => {
@@ -109,6 +102,19 @@ export function Navbar() {
       fetchNotifications()
     }
   }, [user])
+
+  // Listen for cart updates to sync badge
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      fetchCart()
+    }
+    
+    window.addEventListener('cart-updated', handleCartUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('cart-updated', handleCartUpdate as EventListener)
+    }
+  }, [fetchCart])
 
   // Close notifications dropdown when clicking outside
   useEffect(() => {
@@ -291,9 +297,9 @@ export function Navbar() {
                   </svg>
                   Cart
                 </span>
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-bold min-w-[18px] h-4 rounded-full flex items-center justify-center px-0.5">
-                    {cartItemCount > 9 ? '9+' : cartItemCount}
+                {cartTotalQuantity > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-bold min-w-[18px] h-4 rounded-full flex items-center justify-center px-0.5 animate-scale-in">
+                    {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
                   </span>
                 )}
               </Link>
@@ -529,9 +535,9 @@ export function Navbar() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
                 </svg>
                 Cart
-                {cartItemCount > 0 && (
-                  <span className="ml-auto bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {cartItemCount}
+                {cartTotalQuantity > 0 && (
+                  <span className="ml-auto bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-scale-in">
+                    {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
                   </span>
                 )}
               </span>

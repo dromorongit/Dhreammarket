@@ -1,15 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/Card'
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
+import { Input } from '@/components/Input'
+import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
+import { getAvailableRegions, calculateTax, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
 interface CartItem {
   id: string
@@ -35,11 +39,27 @@ interface CartResponse {
 }
 
 interface UserProfile {
+  id: string
+  email: string
   firstName?: string | null
   lastName?: string | null
   phone?: string | null
   address?: string | null
 }
+
+interface ShippingInfo {
+  price: number
+  estimatedDays: { min: number; max: number }
+  zone: string
+}
+
+// Checkout progress steps
+const CHECKOUT_STEPS = [
+  { id: 1, name: 'Cart', completed: true },
+  { id: 2, name: 'Information', active: true },
+  { id: 3, name: 'Payment', active: false },
+  { id: 4, name: 'Confirmation', active: false },
+]
 
 export default function CheckoutContent() {
   const router = useRouter()
@@ -49,17 +69,45 @@ export default function CheckoutContent() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
+  
+  // Use cart context for centralized state
+  const { cart: contextCart, fetchCart: contextFetchCart } = useCart()
+  
+  // Customer form state
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    region: '',
+    city: '',
+    address: '',
+    notes: ''
+  })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  
+  // Shipping state
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null)
+  const [shippingLoading, setShippingLoading] = useState(false)
+  
   // Payment result states from callback
   const paymentStatus = searchParams.get('status')
   const reference = searchParams.get('reference')
 
+  // Fetch cart on mount
   useEffect(() => {
-    fetchCart()
+    loadCart()
     fetchProfile()
   }, [])
 
-  const fetchCart = async () => {
+  // Sync context cart to local state
+  useEffect(() => {
+    if (contextCart) {
+      setCart(contextCart)
+    }
+  }, [contextCart])
+
+  const loadCart = async () => {
     try {
       const response = await fetch('/api/cart')
       if (response.ok) {
@@ -80,15 +128,98 @@ export default function CheckoutContent() {
       const response = await fetch('/api/auth/me')
       if (response.ok) {
         const data = await response.json()
-        setProfile(data.user?.profile || null)
+        const user = data.user
+        setProfile(user)
+        // Auto-fill form with profile data
+        if (user) {
+          setFormData(prev => ({
+            ...prev,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || '',
+            phone: user.profile?.phone || '',
+            address: user.profile?.address || ''
+          }))
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error)
     }
   }
 
+  // Calculate shipping when city/region changes
+  const calculateShipping = useCallback(async (city: string, region: string) => {
+    if (!city && !region) {
+      setShippingInfo(null)
+      return
+    }
+    
+    setShippingLoading(true)
+    try {
+      const rate = getShippingRate(city, region)
+      
+      if (rate) {
+        setShippingInfo({
+          price: rate.price,
+          estimatedDays: rate.estimatedDays,
+          zone: rate.zone.name
+        })
+      } else {
+        // Default shipping for unknown locations
+        setShippingInfo({
+          price: 40.00,
+          estimatedDays: { min: 3, max: 7 },
+          zone: 'Other Locations'
+        })
+      }
+    } catch (error) {
+      console.error('Error calculating shipping:', error)
+    } finally {
+      setShippingLoading(false)
+    }
+  }, [])
+
+  // Handle form field changes
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    
+    // Clear error when user types
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }))
+    }
+    
+    // Recalculate shipping when city or region changes
+    if (field === 'city' || field === 'region') {
+      const newCity = field === 'city' ? value : formData.city
+      const newRegion = field === 'region' ? value : formData.region
+      calculateShipping(newCity, newRegion)
+    }
+  }
+
+  // Validate form
+  const validateForm = () => {
+    const errors: Record<string, string> = {}
+    
+    if (!formData.firstName.trim()) errors.firstName = 'First name is required'
+    if (!formData.lastName.trim()) errors.lastName = 'Last name is required'
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Invalid email address'
+    }
+    if (!formData.phone.trim()) errors.phone = 'Phone number is required'
+    if (!formData.region.trim()) errors.region = 'Region is required'
+    if (!formData.city.trim()) errors.city = 'City is required'
+    if (!formData.address.trim()) errors.address = 'Delivery address is required'
+    
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleCheckout = async () => {
     if (!cart || cart.items.length === 0) return
+    
+    if (!validateForm()) return
 
     setProcessing(true)
     setError(null)
@@ -99,6 +230,10 @@ export default function CheckoutContent() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          customerInfo: formData,
+          shippingInfo: shippingInfo
+        }),
       })
 
       const data = await response.json()
@@ -136,6 +271,7 @@ export default function CheckoutContent() {
       const data = await response.json()
       
       if (data.success) {
+        dispatchCartUpdate()
         window.location.href = `/payment/success?orderId=${data.orderId}`
       } else {
         setProcessing(false)
@@ -165,18 +301,29 @@ export default function CheckoutContent() {
     }
   }, [searchParams])
 
+  // Calculate totals
+  const subtotal = cart?.total || 0
+  const shipping = shippingInfo?.price || 0
+  const tax = calculateTax(subtotal)
+  const total = calculateGrandTotal(subtotal, shipping, tax)
+  const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+  
+  // Get available regions for dropdown
+  const availableRegions = useMemo(() => getAvailableRegions(), [])
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse space-y-8">
             <Skeleton className="h-10 w-32" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
                 <Skeleton className="h-48" />
-                <Skeleton className="h-32" />
+                <Skeleton className="h-64" />
+                <Skeleton className="h-48" />
               </div>
-              <Skeleton className="h-64" />
+              <Skeleton className="h-96" />
             </div>
           </div>
         </div>
@@ -187,7 +334,7 @@ export default function CheckoutContent() {
   if (processing) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card variant="elevated" className="max-w-md mx-auto">
             <CardContent className="py-12 text-center">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center mx-auto mb-6 animate-pulse">
@@ -210,7 +357,7 @@ export default function CheckoutContent() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <EmptyState
             icon={
               <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,15 +376,40 @@ export default function CheckoutContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Badge variant="premium" className="mb-4">
-            Secure Checkout
-          </Badge>
+          <div className="flex items-center gap-3 mb-4">
+            <Badge variant="premium">Secure Checkout</Badge>
+            <div className="flex-1 h-px bg-gradient-to-r from-royal-blue/20 to-transparent"></div>
+          </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-deep-navy">
             Complete Your Order
           </h1>
+          
+          {/* Checkout Progress */}
+          <div className="mt-6 flex items-center justify-between max-w-2xl">
+            {CHECKOUT_STEPS.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold
+                  ${step.completed ? 'bg-emerald-500 text-white' : step.active ? 'bg-royal-blue text-white' : 'bg-slate-200 text-slate-500'}`}>
+                  {step.completed ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    step.id
+                  )}
+                </div>
+                <span className={`ml-2 text-sm font-medium ${step.active ? 'text-royal-blue' : step.completed ? 'text-emerald-600' : 'text-slate-500'}`}>
+                  {step.name}
+                </span>
+                {index < CHECKOUT_STEPS.length - 1 && (
+                  <div className={`w-12 h-0.5 mx-4 ${index < 1 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {error && (
@@ -252,147 +424,250 @@ export default function CheckoutContent() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Order Items & Customer Info */}
+          {/* Main Content - Customer Information */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Order Items */}
+            {/* Customer Information Form */}
             <Card variant="elevated">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-deep-navy mb-4">Order Items</h2>
+              <CardHeader>
+                <h2 className="text-xl font-semibold text-deep-navy">Customer Information</h2>
+                <p className="text-slate-600 text-sm mt-1">Please provide your delivery details</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="First Name"
+                        placeholder="Enter your first name"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                        error={formErrors.firstName}
+                        required
+                      />
+                      <Input
+                        label="Last Name"
+                        placeholder="Enter your last name"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                        error={formErrors.lastName}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <Input
+                    label="Email Address"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    error={formErrors.email}
+                    required
+                  />
+                  
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    placeholder="+233 XX XXX XXXX"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    error={formErrors.phone}
+                    required
+                  />
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Region/State</label>
+                    <select
+                      value={formData.region}
+                      onChange={(e) => handleInputChange('region', e.target.value)}
+                      className={`block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow ${formErrors.region ? 'border-rose-300 focus:ring-rose-500/50 focus:border-rose-500' : ''}`}
+                    >
+                      <option value="">Select a region</option>
+                      {availableRegions.map((region) => (
+                        <option key={region} value={region}>{region}</option>
+                      ))}
+                    </select>
+                    {formErrors.region && (
+                      <p className="text-sm text-rose-600 flex items-center gap-1 mt-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {formErrors.region}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <Input
+                    label="City"
+                    placeholder="Enter your city"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    error={formErrors.city}
+                    required
+                  />
+                  
+                  <div className="md:col-span-2">
+                    <Input
+                      label="Delivery Address"
+                      placeholder="Street address, apartment, etc."
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      error={formErrors.address}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <Textarea
+                      label="Additional Notes (optional)"
+                      placeholder="Any special instructions for delivery..."
+                      value={formData.notes}
+                      onChange={(e) => handleInputChange('notes', e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Shipping Information Display */}
+            {shippingInfo && (
+              <Card variant="elevated">
+                <CardHeader>
+                  <h2 className="text-xl font-semibold text-deep-navy">Shipping Information</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                    <div>
+                      <p className="font-medium text-deep-navy">{shippingInfo.zone}</p>
+                      <p className="text-sm text-slate-600">
+                        Estimated delivery: {shippingInfo.estimatedDays.min}-{shippingInfo.estimatedDays.max} business days
+                      </p>
+                    </div>
+                    <Badge variant="success" size="lg">
+                      {formatPrice(shippingInfo.price)}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Order Items Summary */}
+            <Card variant="elevated">
+              <CardHeader>
+                <h2 className="text-xl font-semibold text-deep-navy">Order Items ({totalQuantity} items)</h2>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-4">
                   {cart.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0"
-                    >
-                      <div className="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                    <div key={item.id} className="flex items-center gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
                         {item.product.images.length > 0 ? (
                           <img
                             src={item.product.images[0].url}
                             alt={item.product.images[0].alt || item.product.name}
                             className="w-full h-full object-cover"
-                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.516-1.516a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-deep-navy truncate">{item.product.name}</h3>
-                        <p className="text-sm text-slate-500">Quantity: {item.quantity}</p>
+                        <h4 className="font-medium text-deep-navy">{item.product.name}</h4>
+                        <p className="text-sm text-slate-500">Qty: {item.quantity}</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-semibold text-deep-navy">{formatPrice(item.product.price * item.quantity)}</p>
-                        <p className="text-sm text-slate-500">{formatPrice(item.product.price)} each</p>
-                      </div>
+                      <p className="font-semibold text-deep-navy">
+                        {formatPrice(item.product.price * item.quantity)}
+                      </p>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Customer Information */}
-            {profile && (
-              <Card variant="elevated">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold text-deep-navy mb-4">Customer Information</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    {profile.firstName && (
-                      <div className="bg-slate-50 rounded-xl p-4">
-                        <p className="text-sm text-slate-500 mb-1">Full Name</p>
-                        <p className="font-medium text-deep-navy">{profile.firstName} {profile.lastName || ''}</p>
-                      </div>
-                    )}
-                    {profile.phone && (
-                      <div className="bg-slate-50 rounded-xl p-4">
-                        <p className="text-sm text-slate-500 mb-1">Phone Number</p>
-                        <p className="font-medium text-deep-navy">{profile.phone}</p>
-                      </div>
-                    )}
-                    {profile.address && (
-                      <div className="bg-slate-50 rounded-xl p-4 col-span-2">
-                        <p className="text-sm text-slate-500 mb-1">Address</p>
-                        <p className="font-medium text-deep-navy">{profile.address}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* Payment Summary */}
+          {/* Payment Summary - Sticky on Desktop */}
           <div className="lg:col-span-1">
-            <Card variant="elevated" className="sticky top-24">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-deep-navy mb-4">Payment Summary</h2>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal ({cart.items.length} items)</span>
-                    <span className="font-medium">{formatPrice(cart.total)}</span>
+            <div className="sticky top-28">
+              <Card variant="elevated" className="shadow-premium-lg">
+                <CardHeader>
+                  <h2 className="text-xl font-semibold text-deep-navy">Payment Summary</h2>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Subtotal */}
+                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                      <span className="text-slate-600">Subtotal ({totalQuantity} items)</span>
+                      <span className="font-semibold text-deep-navy">{formatPrice(subtotal)}</span>
+                    </div>
+                    
+                    {/* Shipping */}
+                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                      <span className="text-slate-600">Shipping</span>
+                      {shippingLoading ? (
+                        <span className="text-slate-500">Calculating...</span>
+                      ) : shippingInfo ? (
+                        <span className="font-semibold text-emerald-600">{formatPrice(shipping)}</span>
+                      ) : (
+                        <span className="text-slate-500">Enter location</span>
+                      )}
+                    </div>
+                    
+                    {/* Tax */}
+                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                      <span className="text-slate-600">Tax (VAT 12.5%)</span>
+                      <span className="font-semibold text-deep-navy">{formatPrice(tax)}</span>
+                    </div>
+                    
+                    {/* Discount/Coupon (Future-ready) */}
+                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                      <span className="text-slate-600">Discount</span>
+                      <span className="font-semibold text-slate-400">—</span>
+                    </div>
+                    
+                    {/* Total */}
+                    <div className="pt-4 border-t-2 border-royal-blue/10">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-deep-navy">Total</span>
+                        <span className="text-2xl font-bold text-royal-blue">{formatPrice(total)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Shipping</span>
-                    <span className="text-emerald-600 font-medium">Free</span>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    size="lg"
+                    className="w-full shadow-lg shadow-royal-blue/20"
+                    disabled={!shippingInfo || processing}
+                    onClick={handleCheckout}
+                  >
+                    {processing ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      'Proceed to Payment'
+                    )}
+                  </Button>
+                  
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center gap-2 text-sm text-slate-500 justify-center">
+                      <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Secure payment processing</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Tax</span>
-                    <span>Calculated at checkout</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-200 pt-4 mb-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-deep-navy">Total</span>
-                    <span className="text-3xl font-bold text-royal-blue">{formatPrice(cart.total)}</span>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleCheckout}
-                  disabled={processing}
-                  size="lg"
-                  className="w-full shadow-lg shadow-royal-blue/20 mb-3"
-                >
-                  {processing ? 'Processing...' : 'Pay Now'}
-                </Button>
-
-                <NeedHelpButton
-                  variant="outline"
-                  size="sm"
-                  category="PAYMENT"
-                  fullWidth
-                  className="mb-4"
-                />
-
-                <div className="text-center space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-sm text-emerald-600">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span>Secure payment processing</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span>256-bit SSL encryption</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="text-center mt-4">
-              <Link href="/cart" className="text-sm text-slate-600 hover:text-deep-navy transition-colors inline-flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Cart
-              </Link>
+                </CardFooter>
+              </Card>
             </div>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
 interface CartResponse {
   cart: {
@@ -178,6 +179,8 @@ export default function ProductDetail() {
 
       if (response.ok) {
         const data: CartResponse = await response.json()
+        // Dispatch cart update event to sync navbar
+        dispatchCartUpdate()
         alert('Product added to cart!')
       } else {
         const error = await response.json()
