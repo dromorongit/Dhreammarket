@@ -264,24 +264,20 @@ export default function NewProduct() {
               </div>
 
               <div>
-                 <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                   Category *
-                 </label>
-                 <select
-                    id="categoryId"
-                    name="categoryId"
-                    required
-                    value={formData.categoryId}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                  <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
+                  </label>
+                  <select
+                     id="categoryId"
+                     name="categoryId"
+                     required
+                     value={formData.categoryId}
+                     onChange={handleChange}
+                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                   >
+                     <option value="">Select a category</option>
+                     {renderCategoryOptions(categories)}
+                   </select>
                </div>
 
               <div>

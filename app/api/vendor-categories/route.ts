@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ categories })
+    const response = NextResponse.json({ categories })
+    // Prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
+    return response
   } catch (error) {
     console.error('Error fetching vendor categories:', error)
     return NextResponse.json({ error: 'Failed to fetch vendor categories' }, { status: 500 })

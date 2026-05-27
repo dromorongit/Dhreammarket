@@ -3,6 +3,8 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
@@ -28,10 +30,16 @@ export async function GET(request: NextRequest) {
       })
 
       if (!store) {
-        return NextResponse.json({ products: [] })
+        const response = NextResponse.json({ products: [] })
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        response.headers.set('Pragma', 'no-cache')
+        return response
       }
 
-      return NextResponse.json({ products: store.products })
+      const response = NextResponse.json({ products: store.products })
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      response.headers.set('Pragma', 'no-cache')
+      return response
     }
 
     // For marketplace browsing (public or authenticated non-vendors), get all products
@@ -48,7 +56,11 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ products })
+    const response = NextResponse.json({ products })
+    // Prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
+    return response
   } catch (error) {
     console.error('Error fetching products:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

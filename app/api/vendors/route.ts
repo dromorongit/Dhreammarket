@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -144,7 +146,7 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       vendors: sortedVendors,
       pagination: {
         page,
@@ -153,6 +155,10 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     })
+    // Prevent caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    response.headers.set('Pragma', 'no-cache')
+    return response
   } catch (error) {
     console.error('Vendors error:', error)
     return NextResponse.json({ error: 'Failed to fetch vendors' }, { status: 500 })

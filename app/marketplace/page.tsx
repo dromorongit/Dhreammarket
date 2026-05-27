@@ -219,10 +219,88 @@ function MarketplaceContent() {
     }
   }
 
+  // Helper to get all descendant category IDs (including self)
+  const getAllDescendantIds = (cats: Category[], parentId: string | null = null): string[] => {
+    const result: string[] = []
+    const findChildren = (parentId: string | null) => {
+      const children = cats.filter(c => c.parentId === parentId)
+      children.forEach(child => {
+        result.push(child.id)
+        findChildren(child.id)
+      })
+    }
+    findChildren(parentId)
+    return result
+  }
+
+  // Get all category IDs that should match when filtering (including subcategories)
+  const getCategoryFilterIds = (categoryId: string): string[] => {
+    // Find the category in the hierarchy
+    const findCategoryAndChildren = (cats: Category[]): string[] => {
+      for (const cat of cats) {
+        if (cat.id === categoryId) {
+          // Found the category, get all its descendants
+          const allIds = [cat.id]
+          const getChildrenIds = (children: Category[] | undefined) => {
+            if (children) {
+              for (const child of children) {
+                allIds.push(child.id)
+                getChildrenIds(child.children)
+              }
+            }
+          }
+          getChildrenIds(cat.children)
+          return allIds
+        }
+        // Check in children
+        if (cat.children) {
+          const found = findCategoryAndChildren(cat.children)
+          if (found.length > 0) return found
+        }
+      }
+      return []
+    }
+    return findCategoryAndChildren(categories)
+  }
+
+  // Render hierarchical category buttons for filter
+  const renderCategoryButtons = (cats: Category[], level = 0): React.ReactNode[] => {
+    const buttons: React.ReactNode[] = []
+    cats.forEach((cat) => {
+      const productCount = products.filter(p => {
+        const matchingIds = getCategoryFilterIds(cat.id)
+        return matchingIds.includes(p.category?.id || '')
+      }).length
+      buttons.push(
+        <Button
+          key={cat.id}
+          variant={selectedCategory === cat.id ? 'primary' : 'ghost'}
+          size="sm"
+          className={`rounded-full ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
+          style={{ marginLeft: level * 8 }}
+          onClick={() => setSelectedCategory(cat.id)}
+        >
+          {level > 0 && '↳ '}
+          {cat.name}
+          <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+            {productCount}
+          </span>
+        </Button>
+      )
+      if (cat.children && cat.children.length > 0) {
+        buttons.push(...renderCategoryButtons(cat.children, level + 1))
+      }
+    })
+    return buttons
+  }
+
   const filteredProducts = products.filter(product => {
-    // Filter by product category
-    if (selectedCategory && product.category?.id !== selectedCategory) {
-      return false
+    // Filter by product category (including subcategories)
+    if (selectedCategory) {
+      const matchingIds = getCategoryFilterIds(selectedCategory)
+      if (!matchingIds.includes(product.category?.id || '')) {
+        return false
+      }
     }
     // Filter by vendor category
     if (selectedVendorCategory && product.store?.categoryId !== selectedVendorCategory) {
@@ -324,20 +402,7 @@ function MarketplaceContent() {
                   {totalProductCategoryCount}
                 </span>
               </Button>
-              {categories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? 'primary' : 'ghost'}
-                  size="sm"
-                  className={`rounded-full ${selectedCategory === category.id ? '' : 'text-slate-700'}`}
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  {category.name}
-                  <span className="ml-2 w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                    {products.filter(p => p.category?.id === category.id).length}
-                  </span>
-                </Button>
-              ))}
+              {renderCategoryButtons(categories)}
             </div>
 
             {/* Vendor Category Filter */}
