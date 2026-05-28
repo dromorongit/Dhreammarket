@@ -20,6 +20,11 @@ export async function GET(
           },
         },
         images: true,
+        productReviews: {
+          select: {
+            rating: true,
+          },
+        },
       },
     })
 
@@ -27,7 +32,19 @@ export async function GET(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ product })
+    // Calculate average rating
+    const reviews = product.productReviews || []
+    const avgRating = reviews.length > 0
+      ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length
+      : 0
+
+    const productWithRating = {
+      ...product,
+      averageRating: parseFloat(avgRating.toFixed(1)),
+      reviewCount: reviews.length,
+    }
+
+    return NextResponse.json({ product: productWithRating })
   } catch (error) {
     console.error('Error fetching product:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

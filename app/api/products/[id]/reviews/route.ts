@@ -6,12 +6,13 @@ import { syncProductRating } from '@/lib/rating-sync'
 // Valid order statuses for review eligibility
 const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
 
-// Legacy endpoint - redirects to new product reviews API
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { searchParams } = new URL(request.url)
-    const productId = searchParams.get('productId')
-    const checkEligibility = searchParams.get('checkEligibility') === 'true'
+    const productId = params.id
+    const checkEligibility = request.nextUrl.searchParams.get('checkEligibility') === 'true'
+    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
+    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '10')
+    const sortBy = request.nextUrl.searchParams.get('sortBy') || 'newest'
 
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
@@ -73,35 +74,69 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
+    // Build sorting
+    let orderBy: any = { createdAt: 'desc' }
+    if (sortBy === 'oldest') {
+      orderBy = { createdAt: 'asc' }
+    } else if (sortBy === 'highest_rating') {
+      orderBy = { rating: 'desc' }
+    } else if (sortBy === 'lowest_rating') {
+      orderBy = { rating: 'asc' }
+    }
+
     // Get reviews with pagination, only approved and not hidden
-    const reviews = await getPrisma().productReview.findMany({
-      where: {
-        productId,
-        isApproved: true,
-        isHidden: false,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            profile: {
-              select: {
-                firstName: true,
-                lastName: true,
+    const skip = (page - 1) * limit
+    const [reviews, totalReviews] = await Promise.all([
+      getPrisma().productReview.findMany({
+        where: {
+          productId,
+          isApproved: true,
+          isHidden: false,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              profile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
               },
             },
           },
-        },
-        order: {
-          select: {
-            id: true,
-            status: true,
-            paymentStatus: true,
+          order: {
+            select: {
+              id: true,
+              status: true,
+              paymentStatus: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      getPrisma().productReview.count({
+        where: {
+          productId,
+          isApproved: true,
+          isHidden: false,
+        },
+      }),
+    ])
+
+    // Calculate star distribution
+    const starDistribution = {
+      5: 0,
+      4: 0,
+      3: 0,
+      2: 0,
+      1: 0,
+    }
+    reviews.forEach((review) => {
+      starDistribution[review.rating as keyof typeof starDistribution]++
     })
 
     // Mask user identities for privacy
@@ -115,10 +150,19 @@ export async function GET(request: NextRequest) {
                 review.user.email.split('@')[0] + '***',
     }))
 
+    const totalPages = Math.ceil(totalReviews / limit)
+
     return NextResponse.json({
       reviews: maskedReviews,
       averageRating: product.averageRating,
       totalReviews: product.reviewCount,
+      starDistribution,
+      pagination: {
+        page,
+        limit,
+        total: totalReviews,
+        totalPages,
+      },
     })
   } catch (error) {
     console.error('Error fetching reviews:', error)
@@ -130,8 +174,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Legacy endpoint - redirects to new product reviews API
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -143,7 +186,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only customers can submit reviews' }, { status: 403 })
     }
 
-    const { productId, rating, comment } = await request.json()
+    const productId = params.id
+    const { rating, comment } = await request.json()
 
     // Validate rating is an integer
     if (rating === undefined || rating === null) {

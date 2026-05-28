@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
-import { Skeleton } from '@/components/Skeleton'
+import { Skeleton, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
@@ -22,9 +22,9 @@ interface Review {
   id: string
   rating: number
   comment: string | null
-  isVerified: boolean
   createdAt: string
   reviewer: string
+  isVerifiedPurchase: boolean
 }
 
 interface Product {
@@ -33,6 +33,8 @@ interface Product {
   description: string | null
   price: number
   stock: number
+  averageRating?: number
+  reviewCount?: number
   category?: {
     id: string
     name: string
@@ -69,6 +71,7 @@ export default function ProductDetail() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [averageRating, setAverageRating] = useState(0)
   const [totalReviews, setTotalReviews] = useState(0)
+  const [starDistribution, setStarDistribution] = useState({ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
   const [reviewsLoading, setReviewsLoading] = useState(true)
   
   // User state
@@ -77,6 +80,7 @@ export default function ProductDetail() {
   
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false)
+  const [editingReview, setEditingReview] = useState<Review | null>(null)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
@@ -126,12 +130,13 @@ export default function ProductDetail() {
   const fetchReviews = async () => {
     setReviewsLoading(true)
     try {
-      const response = await fetch(`/api/reviews?productId=${productId}`)
+      const response = await fetch(`/api/products/${productId}/reviews`)
       if (response.ok) {
         const data = await response.json()
         setReviews(data.reviews)
         setAverageRating(data.averageRating)
         setTotalReviews(data.totalReviews)
+        setStarDistribution(data.starDistribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
         
         // Check if user can review
         if (user && user.role === 'CUSTOMER') {
@@ -147,7 +152,7 @@ export default function ProductDetail() {
 
   const checkCanReview = async () => {
     try {
-      const response = await fetch(`/api/reviews?productId=${productId}&checkEligibility=true`, {
+      const response = await fetch(`/api/products/${productId}/reviews?checkEligibility=true`, {
         headers: {
           'Authorization': `Bearer ${document.cookie?.match(/token=([^;]+)/)?.[1]}`,
         },
@@ -199,21 +204,25 @@ export default function ProductDetail() {
 
     setSubmittingReview(true)
     try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
+      const url = editingReview 
+        ? `/api/products/${productId}/reviews/${editingReview.id}`
+        : `/api/products/${productId}/reviews`
+      
+      const response = await fetch(url, {
+        method: editingReview ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          productId,
           rating: reviewRating,
           comment: reviewComment,
         }),
       })
 
       if (response.ok) {
-        alert('Review submitted successfully!')
+        alert(editingReview ? 'Review updated successfully!' : 'Review submitted successfully!')
         setShowReviewForm(false)
+        setEditingReview(null)
         setReviewRating(5)
         setReviewComment('')
         fetchReviews()
@@ -227,6 +236,32 @@ export default function ProductDetail() {
     } finally {
       setSubmittingReview(false)
     }
+  }
+
+  const deleteReview = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return
+
+    try {
+      const response = await fetch(`/api/products/${productId}/reviews/${reviewId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        alert('Review deleted successfully!')
+        fetchReviews()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to delete review')
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      alert('Error deleting review')
+    }
+  }
+
+  const getCustomerInitials = (email: string): string => {
+    const name = email.split('@')[0]
+    return name.substring(0, 2).toUpperCase()
   }
 
   const renderStars = (rating: number, interactive = false, onChange?: (r: number) => void) => {
@@ -244,6 +279,32 @@ export default function ProductDetail() {
             ★
           </button>
         ))}
+      </div>
+    )
+  }
+
+  const renderStarDistribution = () => {
+    const total = Object.values(starDistribution).reduce((a, b) => a + b, 0)
+    if (total === 0) return null
+
+    return (
+      <div className="space-y-2">
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count = starDistribution[star as keyof typeof starDistribution]
+          const percentage = total > 0 ? (count / total) * 100 : 0
+          return (
+            <div key={star} className="flex items-center gap-2 text-sm">
+              <span className="w-3">{star}★</span>
+              <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-yellow-400 rounded-full"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+              <span className="w-8 text-right text-slate-500">{count}</span>
+            </div>
+          )
+        })}
       </div>
     )
   }
@@ -459,11 +520,23 @@ export default function ProductDetail() {
             )}
           </div>
 
+          {/* Star Distribution */}
+          {totalReviews > 0 && (
+            <Card variant="elevated" className="mb-8">
+              <CardContent className="pt-6">
+                <h3 className="text-lg font-semibold text-deep-navy mb-4">Rating Distribution</h3>
+                {renderStarDistribution()}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Review Form */}
           {showReviewForm && (
             <Card variant="elevated" className="mb-8">
               <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold text-deep-navy mb-4">Write Your Review</h3>
+                <h3 className="text-lg font-semibold text-deep-navy mb-4">
+                  {editingReview ? 'Edit Your Review' : 'Write Your Review'}
+                </h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
@@ -481,12 +554,13 @@ export default function ProductDetail() {
                   </div>
                   <div className="flex gap-3 pt-2">
                     <Button onClick={submitReview} disabled={submittingReview}>
-                      {submittingReview ? 'Submitting...' : 'Submit Review'}
+                      {submittingReview ? (editingReview ? 'Updating...' : 'Submitting...') : (editingReview ? 'Update Review' : 'Submit Review')}
                     </Button>
                     <Button
                       variant="ghost"
                       onClick={() => {
                         setShowReviewForm(false)
+                        setEditingReview(null)
                         setReviewRating(5)
                         setReviewComment('')
                       }}
@@ -501,10 +575,7 @@ export default function ProductDetail() {
 
           {/* Reviews List */}
           {reviewsLoading ? (
-            <div className="text-center py-12">
-              <Skeleton className="h-6 w-32 mx-auto mb-4" />
-              <Skeleton className="h-4 w-48 mx-auto" />
-            </div>
+            <SkeletonReviews count={3} />
           ) : reviews.length === 0 ? (
             <EmptyState
               icon={
@@ -522,22 +593,56 @@ export default function ProductDetail() {
                   <CardContent className="pt-6">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        {renderStars(review.rating)}
-                        {review.isVerified && (
-                          <Badge variant="verified" size="sm">
-                            Verified Purchase
-                          </Badge>
+                        <div className="w-10 h-10 rounded-full bg-royal-blue/10 flex items-center justify-center text-royal-blue font-semibold">
+                          {getCustomerInitials(review.reviewer)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-deep-navy">{review.reviewer}</p>
+                            {review.isVerifiedPurchase && (
+                              <Badge variant="success" size="sm" className="text-[10px] px-1.5 py-0">
+                                Verified Purchase
+                              </Badge>
+                            )}
+                          </div>
+                          {renderStars(review.rating)}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-500">
+                          {new Date(review.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                        {user && user.role === 'CUSTOMER' && canReview && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingReview(review)
+                                setReviewRating(review.rating)
+                                setReviewComment(review.comment || '')
+                                setShowReviewForm(true)
+                              }}
+                              className="text-slate-400 hover:text-royal-blue transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => deleteReview(review.id)}
+                              className="text-slate-400 hover:text-rose-600 transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v12m4-12v12M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </>
                         )}
                       </div>
-                      <span className="text-sm text-slate-500">
-                        {new Date(review.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
                     </div>
-                    <p className="text-sm text-slate-600 mb-2">By {review.reviewer}</p>
                     {review.comment && (
                       <p className="text-slate-700 leading-relaxed">{review.comment}</p>
                     )}

@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
     }, 0)
 
     // Get average product rating
-    const productReviews = await getPrisma().review.aggregate({
+    const productReviews = await getPrisma().productReview.aggregate({
       where: {
         productId: { in: productIds }
       },

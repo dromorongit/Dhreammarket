@@ -6,6 +6,9 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 
 export const dynamic = 'force-dynamic'
 
+// Valid statuses that vendors can update
+const VENDOR_VALID_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderId: string } }
@@ -144,11 +147,10 @@ export async function PATCH(
     const body = await request.json()
     const { status } = body
 
-    // Validate status
-    const validStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED']
-    if (!status || !validStatuses.includes(status)) {
+    // Validate status - vendors can only update to PROCESSING, SHIPPED, DELIVERED, or COMPLETED
+    if (!status || !VENDOR_VALID_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be one of: ' + validStatuses.join(', ') },
+        { error: 'Invalid status. Must be one of: ' + VENDOR_VALID_STATUSES.join(', ') },
         { status: 400 }
       )
     }

@@ -31,14 +31,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           },
         },
         products: {
-          take: 20,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            _count: {
-              select: { reviews: true },
-            },
-          },
-        },
+           take: 20,
+           orderBy: { createdAt: 'desc' },
+           include: {
+             _count: {
+               select: { productReviews: true },
+             },
+           },
+         },
         _count: {
           select: { products: true },
         },

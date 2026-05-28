@@ -7,8 +7,9 @@ import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
-import { Skeleton, SkeletonCard } from '@/components/Skeleton'
+import { Skeleton, SkeletonCard, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { normalizeGhanaPhoneNumber, getWhatsAppLink, getTelLink } from '@/lib/phone'
 
 interface VendorProduct {
   id: string
@@ -26,6 +27,15 @@ interface VendorProduct {
     name: string
   }
   reviewCount: number
+}
+
+interface VendorReview {
+  id: string
+  rating: number
+  comment: string | null
+  createdAt: string
+  reviewer: string
+  isVerifiedPurchase: boolean
 }
 
 interface VendorData {
@@ -51,19 +61,10 @@ interface VendorData {
   productCount: number
 }
 
-// Helper function to format phone number for display
-function formatPhoneForDisplay(phone: string | null): string {
-  if (!phone) return ''
-  // Add + prefix if not present
-  return phone.startsWith('+') ? phone : `+${phone}`
-}
-
-// Helper function to create WhatsApp link
-function getWhatsAppLink(phone: string | null): string | null {
-  if (!phone) return null
-  // Remove spaces, dashes, and + sign
-  const sanitized = phone.replace(/[\s\-+]/g, '')
-  return `https://wa.me/${sanitized}`
+interface User {
+  id: string
+  role: string
+  email: string
 }
 
 export default function VendorProfilePage() {
@@ -73,6 +74,16 @@ export default function VendorProfilePage() {
   const [vendor, setVendor] = useState<VendorData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [vendorReviews, setVendorReviews] = useState<VendorReview[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(true)
+  const [vendorRating, setVendorRating] = useState(0)
+  const [vendorReviewCount, setVendorReviewCount] = useState(0)
+  const [canReviewVendor, setCanReviewVendor] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   useEffect(() => {
     if (!vendorId) return
@@ -98,6 +109,120 @@ export default function VendorProfilePage() {
 
     fetchVendor()
   }, [vendorId])
+
+  useEffect(() => {
+    if (vendorId) {
+      fetchUser()
+      fetchVendorReviews()
+    }
+  }, [vendorId])
+
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error)
+    }
+  }
+
+  const fetchVendorReviews = async () => {
+    setReviewsLoading(true)
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/reviews`)
+      if (response.ok) {
+        const data = await response.json()
+        setVendorReviews(data.reviews)
+        setVendorRating(data.averageRating)
+        setVendorReviewCount(data.totalReviews)
+        
+        if (user && user.role === 'CUSTOMER') {
+          checkCanReviewVendor()
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching vendor reviews:', error)
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  const checkCanReviewVendor = async () => {
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/reviews?checkEligibility=true`, {
+        headers: {
+          'Authorization': `Bearer ${document.cookie?.match(/token=([^;]+)/)?.[1]}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCanReviewVendor(data.canReview)
+      }
+    } catch (error) {
+      console.error('Error checking vendor review eligibility:', error)
+    }
+  }
+
+  const submitVendorReview = async () => {
+    if (!user || submittingReview) return
+
+    setSubmittingReview(true)
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Review submitted successfully!')
+        setShowReviewForm(false)
+        setReviewRating(5)
+        setReviewComment('')
+        fetchVendorReviews()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to submit review')
+      }
+    } catch (error) {
+      console.error('Error submitting vendor review:', error)
+      alert('Error submitting review')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const getCustomerInitials = (email: string): string => {
+    const name = email.split('@')[0]
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  const renderStars = (rating: number, interactive = false, onChange?: (r: number) => void) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            disabled={!interactive}
+            onClick={() => interactive && onChange?.(star)}
+            className={`text-2xl ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : ''}
+              ${star <= rating ? 'text-yellow-400' : 'text-slate-300'}`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -240,43 +365,43 @@ export default function VendorProfilePage() {
                   </h3>
                   <div className="space-y-2">
                     {vendor.mainPhoneNumber && (
-                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                        <span className="text-sm text-slate-600">📞 Main Call:</span>
-                        <a 
-                          href={`tel:${vendor.mainPhoneNumber}`}
-                          className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                        >
-                          {formatPhoneForDisplay(vendor.mainPhoneNumber)}
-                        </a>
-                      </div>
-                    )}
-                    {vendor.alternativePhoneNumber && (
-                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                        <span className="text-sm text-slate-600">📞 Alternative:</span>
-                        <a 
-                          href={`tel:${vendor.alternativePhoneNumber}`}
-                          className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                        >
-                          {formatPhoneForDisplay(vendor.alternativePhoneNumber)}
-                        </a>
-                      </div>
-                    )}
-                    {vendor.whatsappNumber && (
-                      <div className="flex items-center justify-between py-2">
-                        <span className="text-sm text-slate-600">💬 WhatsApp:</span>
-                        <a 
-                          href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
-                        >
-                          {formatPhoneForDisplay(vendor.whatsappNumber)}
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
-                          </svg>
-                        </a>
-                      </div>
-                    )}
+                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                         <span className="text-sm text-slate-600">📞 Main Call:</span>
+                         <a 
+                           href={getTelLink(vendor.mainPhoneNumber) || '#'}
+                           className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                         >
+                           {normalizeGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
+                         </a>
+                       </div>
+                     )}
+                     {vendor.alternativePhoneNumber && (
+                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                         <span className="text-sm text-slate-600">📞 Alternative:</span>
+                         <a 
+                           href={getTelLink(vendor.alternativePhoneNumber) || '#'}
+                           className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                         >
+                           {normalizeGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
+                         </a>
+                       </div>
+                     )}
+                     {vendor.whatsappNumber && (
+                       <div className="flex items-center justify-between py-2">
+                         <span className="text-sm text-slate-600">💬 WhatsApp:</span>
+                         <a 
+                           href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
+                         >
+                           {normalizeGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
+                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                             <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                           </svg>
+                         </a>
+                       </div>
+                     )}
                   </div>
                 </div>
               )}
@@ -317,68 +442,179 @@ export default function VendorProfilePage() {
           </div>
 
           {vendor.products.length === 0 ? (
-            <Card variant="elevated" className="p-12">
-              <EmptyState
-                icon={
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
-                }
-                title="No products yet"
-                description="This vendor hasn't added any products yet. Check back soon!"
-              />
-            </Card>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {vendor.products.map((product) => (
-                <Card
-                  key={product.id}
-                  variant="elevated"
-                  className="group overflow-hidden"
-                >
-                  <Link href={`/marketplace/product/${product.id}`} className="block">
-                    <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                      {product.images.length > 0 ? (
-                        <img
-                          src={product.images[0].url}
-                          alt={product.images[0].alt || product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                          <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
+             <Card variant="elevated" className="p-12">
+               <EmptyState
+                 icon={
+                   <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                   </svg>
+                 }
+                 title="No products yet"
+                 description="This vendor hasn't added any products yet. Check back soon!"
+               />
+             </Card>
+           ) : (
+             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+               {vendor.products.map((product) => (
+                 <Card
+                   key={product.id}
+                   variant="elevated"
+                   className="group overflow-hidden"
+                 >
+                   <Link href={`/marketplace/product/${product.id}`} className="block">
+                     <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                       {product.images.length > 0 ? (
+                         <img
+                           src={product.images[0].url}
+                           alt={product.images[0].alt || product.name}
+                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                         />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                           <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                           </svg>
+                         </div>
+                       )}
+                       {product.stock === 0 && (
+                         <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                           Sold Out
+                         </div>
+                       )}
+                     </div>
+                   </Link>
+                   <div className="p-2 space-y-1">
+                     <Link href={`/marketplace/product/${product.id}`} className="block">
+                       <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                         {product.name}
+                       </h3>
+                     </Link>
+                     <div className="flex items-center justify-between gap-1">
+                       <span className="text-[11px] font-bold text-royal-blue leading-tight">
+                         {formatPrice(product.price)}
+                       </span>
+                     </div>
+                     <div className="text-[10px] text-slate-500">
+                       {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                     </div>
+                   </div>
+                 </Card>
+               ))}
+             </div>
+           )}
+         </section>
+
+         {/* Vendor Reviews Section */}
+         <section className="py-12 border-t border-slate-200">
+           <div className="flex items-center justify-between mb-8">
+             <div>
+               <h2 className="text-2xl font-bold text-deep-navy">Store Reviews</h2>
+               {vendorReviewCount > 0 && (
+                 <p className="text-slate-600 mt-1">
+                   {vendorRating.toFixed(1)} out of 5 ({vendorReviewCount} review{vendorReviewCount !== 1 ? 's' : ''})
+                 </p>
+               )}
+             </div>
+             {user && user.role === 'CUSTOMER' && canReviewVendor && !showReviewForm && (
+               <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+                 Write a Review
+               </Button>
+             )}
+           </div>
+
+           {/* Review Form */}
+           {showReviewForm && (
+             <Card variant="elevated" className="mb-8">
+               <CardContent className="pt-6">
+                 <h3 className="text-lg font-semibold text-deep-navy mb-4">Rate This Store</h3>
+                 <div className="space-y-4">
+                   <div>
+                     <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
+                     {renderStars(reviewRating, true, (r) => setReviewRating(r))}
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-slate-700 mb-3">Review (optional)</label>
+                     <textarea
+                       value={reviewComment}
+                       onChange={(e) => setReviewComment(e.target.value)}
+                       rows={4}
+                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
+                       placeholder="Share your experience with this store..."
+                     />
+                   </div>
+                   <div className="flex gap-3 pt-2">
+                     <Button onClick={submitVendorReview} disabled={submittingReview}>
+                       {submittingReview ? 'Submitting...' : 'Submit Review'}
+                     </Button>
+                     <Button
+                       variant="ghost"
+                       onClick={() => {
+                         setShowReviewForm(false)
+                         setReviewRating(5)
+                         setReviewComment('')
+                       }}
+                     >
+                       Cancel
+                     </Button>
+                   </div>
+                 </div>
+               </CardContent>
+             </Card>
+           )}
+
+           {/* Reviews List */}
+            {reviewsLoading ? (
+              <SkeletonReviews count={3} />
+            ) : vendorReviews.length === 0 ? (
+             <EmptyState
+               icon={
+                 <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                 </svg>
+               }
+               title="No reviews yet"
+               description={canReviewVendor ? 'Be the first to review this store!' : 'No reviews for this store yet.'}
+             />
+           ) : (
+             <div className="space-y-4">
+               {vendorReviews.map((review) => (
+                 <Card key={review.id} variant="elevated">
+                   <CardContent className="pt-6">
+                     <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-royal-blue/10 flex items-center justify-center text-royal-blue font-semibold">
+                            {getCustomerInitials(review.reviewer)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-deep-navy">{review.reviewer}</p>
+                              {review.isVerifiedPurchase && (
+                                <Badge variant="success" size="sm" className="text-[10px] px-1.5 py-0">
+                                  Verified Purchase
+                                </Badge>
+                              )}
+                            </div>
+                            {renderStars(review.rating)}
+                          </div>
                         </div>
-                      )}
-                      {product.stock === 0 && (
-                        <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          Sold Out
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="p-2 space-y-1">
-                    <Link href={`/marketplace/product/${product.id}`} className="block">
-                      <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                        {product.name}
-                      </h3>
-                    </Link>
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] font-bold text-royal-blue leading-tight">
-                        {formatPrice(product.price)}
-                      </span>
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  )
+                       <span className="text-sm text-slate-500">
+                         {new Date(review.createdAt).toLocaleDateString('en-US', {
+                           year: 'numeric',
+                           month: 'short',
+                           day: 'numeric',
+                         })}
+                       </span>
+                     </div>
+                     {review.comment && (
+                       <p className="text-slate-700 leading-relaxed">{review.comment}</p>
+                     )}
+                   </CardContent>
+                 </Card>
+               ))}
+             </div>
+           )}
+         </section>
+       </div>
+     </div>
+   )
 }

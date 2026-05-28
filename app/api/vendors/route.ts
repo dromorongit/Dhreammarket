@@ -76,25 +76,9 @@ export async function GET(request: NextRequest) {
       getPrisma().store.count({ where }),
     ])
 
-    // Calculate ratings and order counts for each vendor
+    // Use cached ratings from database
     const vendorsWithMetrics = await Promise.all(
       vendors.map(async (store) => {
-        // Get reviews for rating
-        const reviews = await getPrisma().review.findMany({
-          where: {
-            product: {
-              storeId: store.id,
-            },
-          },
-          select: {
-            rating: true,
-          },
-        })
-
-        const averageRating = reviews.length > 0
-          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-          : 0
-
         // Get order count for popularity
         const orderItems = await getPrisma().orderItem.findMany({
           where: {
@@ -125,7 +109,7 @@ export async function GET(request: NextRequest) {
         return {
           ...store,
           isFeatured: isCurrentlyFeatured,
-          rating: Math.round(averageRating * 10) / 10,
+          rating: store.averageRating,
           orderCount,
         }
       })

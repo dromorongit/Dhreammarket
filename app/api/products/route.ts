@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // For marketplace browsing (public or authenticated non-vendors), get all products
+    // Use cached averageRating and reviewCount from Product model
     const products = await getPrisma().product.findMany({
       include: {
         category: true,
@@ -56,7 +57,14 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const response = NextResponse.json({ products })
+    // Use cached ratings from database
+    const productsWithCachedRatings = products.map((product) => ({
+      ...product,
+      averageRating: product.averageRating,
+      reviewCount: product.reviewCount,
+    }))
+
+    const response = NextResponse.json({ products: productsWithCachedRatings })
     // Prevent caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Calculate ratings for each vendor
     const vendorsWithRatings = await Promise.all(
       featuredVendors.map(async (store) => {
-        const reviews = await getPrisma().review.findMany({
+        const reviews = await getPrisma().productReview.findMany({
           where: {
             product: {
               storeId: store.id,

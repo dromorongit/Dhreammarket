@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
         category: true,
         images: true,
-        reviews: {
+        productReviews: {
           take: 20,
           orderBy: { createdAt: 'desc' },
           include: {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           },
         },
         _count: {
-          select: { reviews: true, orderItems: true, cartItems: true },
+          select: { productReviews: true, orderItems: true, cartItems: true },
         },
       },
     })

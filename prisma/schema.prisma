@@ -24,7 +24,8 @@ model User {
   orders               Order[]
   payments             Payment[]
   profile              Profile?
-  reviews              Review[]
+  productReviews       ProductReview[]
+  vendorReviews        VendorReview[]
   store                Store?
   supportTickets       SupportTicket[]
   vendorPayouts        VendorPayout[]          @relation("VendorPayoutVendor")
@@ -60,12 +61,15 @@ model Store {
   logo                 String?
   banner               String?
   categoryId           String?
+  averageRating        Float           @default(0)
+  reviewCount          Int             @default(0)
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
   products             Product[]
   vendor_categories    VendorCategory? @relation(fields: [categoryId], references: [id])
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorPayouts        VendorPayout[]  @relation("VendorPayoutStore")
+  vendorReviews        VendorReview[]
 
   @@map("stores")
 }
@@ -105,6 +109,8 @@ model Product {
   brand            String?
   price            Float
   stock            Int                      @default(0)
+  averageRating    Float                    @default(0)
+  reviewCount      Int                      @default(0)
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   cartItems        CartItem[]
@@ -113,7 +119,7 @@ model Product {
   images           ProductImage[]
   category         ProductCategory          @relation(fields: [categoryId], references: [id])
   store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  reviews          Review[]
+  productReviews   ProductReview[]
 
   @@map("products")
 }
@@ -186,6 +192,8 @@ model Order {
   items              OrderItem[]
   user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment            Payment?
+  productReviews     ProductReview[]
+  vendorReviews      VendorReview[]
 
   @@map("orders")
 }
@@ -228,20 +236,44 @@ model Payment {
   @@map("payments")
 }
 
-model Review {
-  id         String   @id @default(cuid())
-  productId  String
-  userId     String
-  rating     Int
-  comment    String?
-  isVerified Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model ProductReview {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  userId    String
+  productId String
+  orderId   String?
+  isApproved Boolean  @default(true)
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([productId, userId])
-  @@map("reviews")
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  @@unique([userId, productId])
+  @@map("product_reviews")
+}
+
+model VendorReview {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  userId    String
+  storeId   String
+  orderId   String?
+  isApproved Boolean  @default(true)
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id])
+  store Store @relation(fields: [storeId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@unique([userId, storeId])
+  @@map("vendor_reviews")
 }
 
 model Notification {

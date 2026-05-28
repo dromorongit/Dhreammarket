@@ -25,21 +25,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           },
         },
         products: {
-          where: { stock: { gt: 0 } },
-          include: {
-            images: true,
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            _count: {
-              select: { reviews: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
+           where: { stock: { gt: 0 } },
+           include: {
+             images: true,
+             category: {
+               select: {
+                 id: true,
+                 name: true,
+               },
+             },
+             _count: {
+               select: { productReviews: true },
+             },
+           },
+           orderBy: { createdAt: 'desc' },
+         },
         _count: {
           select: { products: true },
         },
@@ -55,12 +55,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Vendor profile not available' }, { status: 404 })
     }
 
-    // Calculate average rating from products
-    const allReviews = await getPrisma().review.findMany({
+    // Calculate average rating from vendor reviews
+    const allReviews = await getPrisma().vendorReview.findMany({
       where: {
-        product: {
-          storeId: storeId,
-        },
+        storeId: storeId,
       },
       select: {
         rating: true,
@@ -68,7 +66,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     const averageRating = allReviews.length > 0
-      ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
+      ? allReviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / allReviews.length
       : 0
 
     const totalReviews = allReviews.length
@@ -94,15 +92,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       createdAt: store.createdAt,
       category: store.vendor_categories,
       products: store.products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        stock: p.stock,
-        images: p.images,
-        category: p.category,
-        reviewCount: p._count.reviews,
-      })),
+         id: p.id,
+         name: p.name,
+         description: p.description,
+         price: p.price,
+         stock: p.stock,
+         images: p.images,
+         category: p.category,
+         reviewCount: p._count.productReviews,
+       })),
       productCount: store._count.products,
     }
 

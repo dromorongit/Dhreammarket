@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
 
     // Count reviews and categories
     const [totalReviews, totalProductCategories, totalVendorCategories] = await Promise.all([
-      prisma.review.count(),
+      prisma.productReview.count(),
       prisma.productCategory.count(),
       prisma.vendorCategory.count(),
     ])
