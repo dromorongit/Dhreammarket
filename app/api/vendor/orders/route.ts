@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Check if vendor has completed onboarding (store and category)
     const isOnboarded = await isVendorOnboarded(payload.userId)
     if (!isOnboarded) {
-      return NextResponse.json({ error: 'Complete store setup to view orders' }, { status: 403 })
+      return NextResponse.json({ orders: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }, error: 'Complete store setup to view orders' }, { status: 403 })
     }
 
     // Get vendor's store
@@ -159,7 +159,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching vendor orders:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    // Return safe defaults even on error to prevent client-side crashes
     return NextResponse.json({ 
+      orders: [],
+      pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, { status: 500 })

@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 interface OrderItem {
   id: string
@@ -82,7 +83,31 @@ export default function VendorDashboard() {
       const response = await fetch('/api/vendor/orders')
       if (response.ok) {
         const data = await response.json()
-        setOrderItems(data.orderItems)
+        // API returns 'orders' not 'orderItems' - use optional chaining for safety
+        // Also handle error responses that might not have orders array
+        if (data?.error) {
+          console.warn('API returned error:', data.error)
+          setOrderItems([])
+          return
+        }
+        setOrderItems((data?.orders || []).map((order: any) => ({
+          id: order.id,
+          quantity: order.items?.[0]?.quantity || 0,
+          price: order.items?.[0]?.price || 0,
+          order: {
+            id: order.id,
+            status: order.status,
+            createdAt: order.createdAt,
+            user: {
+              id: order.user?.id || '',
+              email: order.user?.email || ''
+            }
+          },
+          product: {
+            id: order.items?.[0]?.product?.id || '',
+            name: order.items?.[0]?.product?.name || ''
+          }
+        })))
       }
     } catch (error) {
       console.error('Error fetching vendor orders:', error)
@@ -94,7 +119,19 @@ export default function VendorDashboard() {
       const response = await fetch('/api/vendor/metrics')
       if (response.ok) {
         const data = await response.json()
-        setMetrics(data)
+        // Apply null safety to all metrics with safe defaults
+        setMetrics({
+          productCount: data?.productCount ?? 0,
+          activeOrderCount: data?.activeOrderCount ?? 0,
+          revenue: data?.revenue ?? 0,
+          vendorEarnings: data?.vendorEarnings ?? 0,
+          averageRating: data?.averageRating ?? 0,
+          totalReviews: data?.totalReviews ?? 0,
+          bestSellers: Array.isArray(data?.bestSellers) ? data.bestSellers : [],
+          totalPaidOrders: data?.totalPaidOrders ?? 0,
+          hasStore: data?.hasStore ?? false,
+          hasCategory: data?.hasCategory ?? false
+        })
       }
     } catch (error) {
       console.error('Error fetching vendor metrics:', error)
@@ -191,7 +228,8 @@ export default function VendorDashboard() {
   const isFullyOnboarded = completedSteps === onboardingSteps.length
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-gradient-to-br from-deep-navy to-purple-900 py-16 lg:py-24 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
@@ -672,5 +710,6 @@ export default function VendorDashboard() {
         </Card>
       </div>
     </div>
+    </ErrorBoundary>
   )
 }

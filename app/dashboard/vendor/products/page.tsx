@@ -57,7 +57,8 @@ export default function VendorProducts() {
       const response = await fetch('/api/products')
       if (response.ok) {
         const data = await response.json()
-        setProducts(data.products)
+        // Apply null safety - use optional chaining and default to empty array
+        setProducts(Array.isArray(data?.products) ? data.products : [])
       }
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -171,10 +172,10 @@ export default function VendorProducts() {
               <Card key={product.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-0">
                   <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
-                    {product.images.length > 0 ? (
+                    {Array.isArray(product.images) && product.images.length > 0 ? (
                       <img
-                        src={product.images[0].url}
-                        alt={product.images[0].alt || product.name}
+                        src={product.images[0]?.url || ''}
+                        alt={product.images[0]?.alt || product.name}
                         className="w-full h-48 object-cover"
                         loading="lazy"
                       />

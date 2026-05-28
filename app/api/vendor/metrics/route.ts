@@ -189,7 +189,18 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching vendor metrics:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    // Return safe defaults even on error to prevent client-side crashes
     return NextResponse.json({ 
+      productCount: 0,
+      activeOrderCount: 0,
+      revenue: 0,
+      vendorEarnings: 0,
+      averageRating: 0,
+      totalReviews: 0,
+      bestSellers: [],
+      totalPaidOrders: 0,
+      hasStore: false,
+      hasCategory: false,
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, { status: 500 })
