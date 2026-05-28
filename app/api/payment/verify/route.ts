@@ -5,19 +5,28 @@ import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
 import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
 
+// PRODUCTION RUNTIME HARDENING
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
+  console.log('[Payment Verify API] Request received')
+  
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
+      console.log('[Payment Verify API] No token found - Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
+      console.log('[Payment Verify API] Invalid token - Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { reference } = await request.json()
+    console.log('[Payment Verify API] Reference received:', reference)
 
     if (!reference) {
       return NextResponse.json({ error: 'Payment reference is required' }, { status: 400 })
@@ -32,14 +41,39 @@ export async function POST(request: NextRequest) {
     })
 
     if (!payment) {
+      console.log('[Payment Verify API] Payment not found for reference:', reference)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
     // Verify the payment with Paystack
-    const paystackResponse = await verifyPaystackPayment(reference)
+    console.log('[Payment Verify API] Paystack verification started for reference:', reference)
+    
+    let paystackResponse
+    try {
+      paystackResponse = await verifyPaystackPayment(reference)
+      console.log('[Payment Verify API] Paystack response received - status:', paystackResponse.data.status)
+    } catch (verifyError) {
+      console.error('[Payment Verify API] Paystack verification error:', verifyError)
+      return NextResponse.json({ 
+        error: verifyError instanceof Error ? verifyError.message : 'Failed to verify payment with Paystack' 
+      }, { status: 500 })
+    }
 
     // Check both Paystack status and our payment status
     const paymentStatus = paystackResponse.data.status
+    
+    // CRITICAL: Early return if payment already verified (idempotency protection)
+    // This prevents double stock deduction, double order processing, and double notifications
+    if (payment.status === 'PAID' || payment.order?.status !== 'PENDING') {
+      // Payment already processed - return success without re-processing
+      console.log('[Payment Verify API] Payment already processed - returning success')
+      return NextResponse.json({
+        success: true,
+        orderId: payment.orderId,
+        message: 'Payment already verified',
+        alreadyProcessed: true,
+      })
+    }
     
     // Check if payment was abandoned, cancelled, or failed
     if (paymentStatus !== 'success') {
@@ -47,34 +81,38 @@ export async function POST(request: NextRequest) {
        const isAbandoned = paymentStatus === 'abandoned'
        const failedStatus = isAbandoned ? 'CANCELLED' : 'FAILED'
        
+       console.log('[Payment Verify API] Payment not successful - status:', paymentStatus, 'marking as:', failedStatus)
+       
        await getPrisma().$transaction(async (prisma: any) => {
          // Update payment status to FAILED or CANCELLED
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: failedStatus,
-            message: isAbandoned ? 'Payment abandoned by user' : paymentStatus || 'Payment verification failed',
-          },
-        })
+         await prisma.payment.update({
+           where: { id: payment.id },
+           data: {
+             status: failedStatus,
+             message: isAbandoned ? 'Payment abandoned by user' : paymentStatus || 'Payment verification failed',
+           },
+         })
 
-        // Update order payment status to match
-        await prisma.order.update({
-          where: { id: payment.orderId },
-          data: {
-            paymentStatus: failedStatus,
-            status: 'CANCELLED', // Also cancel the order
-          },
-        })
-      })
+         // Update order payment status to match
+         await prisma.order.update({
+           where: { id: payment.orderId },
+           data: {
+             paymentStatus: failedStatus,
+             status: 'CANCELLED', // Also cancel the order
+           },
+         })
+       })
 
-      return NextResponse.json({
-        success: false,
-        error: isAbandoned ? 'Payment was cancelled' : 'Payment verification failed',
-      }, { status: 400 })
+       return NextResponse.json({
+         success: false,
+         error: isAbandoned ? 'Payment was cancelled' : 'Payment verification failed',
+       }, { status: 400 })
     }
 
-      // Payment was successful - update payment and order status, and calculate financials
-      await getPrisma().$transaction(async (prisma: any) => {
+    // Payment was successful - update payment and order status, and calculate financials
+    console.log('[Payment Verify API] Payment successful - processing order')
+    
+    await getPrisma().$transaction(async (prisma: any) => {
         // Update payment status to PAID
         await prisma.payment.update({
           where: { id: payment.id },
@@ -204,26 +242,40 @@ export async function POST(request: NextRequest) {
         console.error('Failed to send payment confirmation email:', err)
       })
 
-       // Create in-app notification
-       await getPrisma().notification.create({
-         data: {
-           userId: user.id,
-           type: 'PAYMENT_SUCCESSFUL',
-           title: 'Payment Successful',
-           message: `Your payment of GHS ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
-         },
-       }).catch((err: any) => {
-         console.error('Failed to create notification:', err)
-       })
+       // Create in-app notification - with idempotency check to prevent duplicates
+       // Only create if one doesn't already exist for this payment
+       const existingNotification = await getPrisma().notification.findFirst({
+        where: {
+          userId: user.id,
+          type: 'PAYMENT_SUCCESSFUL',
+          message: {
+            contains: payment.orderId.slice(0, 8),
+          },
+        },
+      })
+      if (!existingNotification) {
+        await getPrisma().notification.create({
+          data: {
+            userId: user.id,
+            type: 'PAYMENT_SUCCESSFUL',
+            title: 'Payment Successful',
+            message: `Your payment of GHS ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
+          },
+        }).catch((err: any) => {
+          console.error('Failed to create notification:', err)
+        })
+      }
     }
 
+    console.log('[Payment Verify API] Payment verified successfully for order:', payment.orderId)
+    
     return NextResponse.json({
       success: true,
       orderId: payment.orderId,
       message: 'Payment verified successfully',
     })
   } catch (error) {
-    console.error('Error verifying payment:', error)
+    console.error('[Payment Verify API] Error verifying payment:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

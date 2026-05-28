@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
@@ -95,6 +95,9 @@ export default function CheckoutContent() {
   // Payment result states from callback
   const paymentStatus = searchParams.get('status')
   const reference = searchParams.get('reference')
+  
+  // Track processed references to prevent duplicate verification (idempotency)
+  const processedRefs = useRef<Set<string>>(new Set())
 
   // Fetch cart on mount
   useEffect(() => {
@@ -223,14 +226,28 @@ export default function CheckoutContent() {
   }
 
   const handleCheckout = async () => {
-    if (!cart || cart.items.length === 0) return
+    console.log('[Checkout] Proceed to payment clicked')
+    console.log('[Checkout] Paystack Public Key Exists:', !!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY)
     
-    if (!validateForm()) return
+    if (!cart || cart.items.length === 0) {
+      console.log('[Checkout] Cart is empty - aborting')
+      return
+    }
+    
+    if (!validateForm()) {
+      console.log('[Checkout] Form validation failed - aborting')
+      return
+    }
 
     setProcessing(true)
     setError(null)
 
     try {
+      console.log('[Checkout] Calling /api/checkout with payload:', {
+        customerInfo: { ...formData, email: formData.email },
+        shippingInfo
+      })
+      
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
@@ -242,21 +259,23 @@ export default function CheckoutContent() {
         }),
       })
 
+      console.log('[Checkout] API response status:', response.status)
+      
       const data = await response.json()
+      console.log('[Checkout] API response data:', data)
 
       if (response.ok && data.authorizationUrl) {
+        console.log('[Checkout] Redirecting to Paystack:', data.authorizationUrl)
         window.location.href = data.authorizationUrl
       } else {
-        // Provide more specific error messages
-        let errorMessage = data.error || 'Failed to initialize checkout'
-        if (data.error?.includes('not configured')) {
-          errorMessage = 'Payment system is not configured. Please contact support to set up payment processing.'
-        }
+        // EXPOSE FULL ERROR - do not swallow errors
+        const errorMessage = data.error || data.message || 'Failed to initialize checkout'
+        console.error('[Checkout] API error response:', { status: response.status, error: errorMessage, fullData: data })
         setError(errorMessage)
         setProcessing(false)
       }
     } catch (err) {
-      console.error('Checkout error:', err)
+      console.error('[Checkout] Fetch error:', err)
       setError('An error occurred during checkout. Please check your connection and try again.')
       setProcessing(false)
     }
@@ -282,6 +301,15 @@ export default function CheckoutContent() {
       const data = await response.json()
       
       if (data.success) {
+        // Handle already processed payments (idempotency protection)
+        if (data.alreadyProcessed) {
+          // Payment was already verified - just redirect to success page
+          // This prevents duplicate processing on page refresh
+          dispatchCartUpdate()
+          window.location.href = `/payment/success?orderId=${data.orderId}`
+          return
+        }
+        
         dispatchCartUpdate()
         window.location.href = `/payment/success?orderId=${data.orderId}`
       } else {
@@ -299,7 +327,15 @@ export default function CheckoutContent() {
     const status = searchParams.get('status')
     const ref = searchParams.get('reference') || searchParams.get('trxref')
     
+    // CRITICAL: Idempotency protection - prevent duplicate verification calls
+    // This prevents re-triggering on page refresh or Paystack retries
     if (ref && (status === 'success' || !status)) {
+      // Skip if this reference was already processed
+      if (processedRefs.current.has(ref)) {
+        return
+      }
+      // Mark as processed to prevent duplicate calls
+      processedRefs.current.add(ref)
       verifyPayment(ref)
     } else if (status === 'cancelled' || status === 'failed') {
       setProcessing(false)

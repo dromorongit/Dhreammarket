@@ -30,6 +30,13 @@ export async function POST(request: NextRequest) {
     const paystackResponse = await verifyPaystackPayment(reference)
     const paymentStatus = paystackResponse.data.status
 
+    // CRITICAL: Early return if payment already verified (idempotency protection)
+    // This prevents double stock deduction, double order processing, and double notifications
+    if (payment.status === 'PAID' || payment.order?.status !== 'PENDING') {
+      // Payment already processed - acknowledge without re-processing
+      return NextResponse.json({ received: true, alreadyProcessed: true })
+    }
+
     // Check if payment was abandoned, cancelled, or failed
     if (paymentStatus !== 'success') {
       // Payment failed, abandoned, or cancelled

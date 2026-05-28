@@ -7,20 +7,29 @@ import { createNotification } from '@/lib/notifications'
 import { calculateTax, calculateGrandTotal } from '@/lib/shipping'
 import crypto from 'crypto'
 
+// PRODUCTION RUNTIME HARDENING
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
+  console.log('[Checkout API] Request received')
+  
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
+      console.log('[Checkout API] No token found - Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
+      console.log('[Checkout API] Invalid token - Unauthorized')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if Paystack is configured
     if (!isPaystackConfigured()) {
+      console.error('[Checkout API] CRITICAL: Paystack not configured - PAYSTACK_SECRET_KEY missing or placeholder')
       return NextResponse.json({ 
         error: 'Payment system not configured. Please contact support.' 
       }, { status: 500 })
@@ -43,12 +52,14 @@ export async function POST(request: NextRequest) {
     })
 
     if (!cart || cart.items.length === 0) {
+      console.log('[Checkout API] Cart is empty for user:', payload.userId)
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
     }
 
     // Validate stock for all items
     for (const item of cart.items) {
       if (item.product.stock < item.quantity) {
+        console.log('[Checkout API] Insufficient stock for:', item.product.name)
         return NextResponse.json({
           error: `Insufficient stock for ${item.product.name}. Available: ${item.product.stock}`
         }, { status: 400 })
@@ -57,6 +68,10 @@ export async function POST(request: NextRequest) {
 
     // Parse customer and shipping info from request
     const { customerInfo, shippingInfo } = await request.json()
+    console.log('[Checkout API] Payload received - customerInfo:', { 
+      email: customerInfo?.email, 
+      hasShippingInfo: !!shippingInfo 
+    })
 
     // Calculate subtotal
     const subtotal = cart.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => sum + (item.product.price * item.quantity), 0)
@@ -76,6 +91,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
+      console.log('[Checkout API] User not found:', payload.userId)
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
@@ -161,6 +177,7 @@ export async function POST(request: NextRequest) {
     // Initialize Paystack payment
     // Callback to checkout page which handles verification
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://dhreamarket-production.up.railway.app'}/checkout?reference=${reference}`
+    console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
     
     try {
       const paystackResponse = await initializePaystackPayment(
@@ -174,6 +191,8 @@ export async function POST(request: NextRequest) {
           vendorBreakdown,
         }
       )
+
+      console.log('[Checkout API] Paystack response received - authorization_url:', paystackResponse.data.authorization_url)
 
       // Update payment with Paystack reference
       await getPrisma().payment.update({
@@ -210,6 +229,8 @@ export async function POST(request: NextRequest) {
       })
     } catch (paystackError) {
       // If Paystack initialization fails, update payment status to FAILED
+      console.error('[Checkout API] Paystack initialization error:', paystackError)
+      
       await getPrisma().payment.update({
         where: { id: result.payment.id },
         data: { 
@@ -224,12 +245,14 @@ export async function POST(request: NextRequest) {
         data: { paymentStatus: 'FAILED' },
       })
 
+      // EXPOSE FULL ERROR MESSAGE - do not swallow errors
+      const errorMessage = paystackError instanceof Error ? paystackError.message : 'Failed to initialize payment'
       return NextResponse.json({ 
-        error: 'Failed to initialize payment. Please try again.' 
+        error: `Failed to initialize payment: ${errorMessage}` 
       }, { status: 500 })
     }
   } catch (error) {
-    console.error('Error initializing checkout:', error)
+    console.error('[Checkout API] Error initializing checkout:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
