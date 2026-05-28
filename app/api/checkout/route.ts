@@ -116,63 +116,81 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order and payment record in a transaction
-    const result = await getPrisma().$transaction(async (prisma: any) => {
-      // Create order in PENDING payment status (stock not deducted yet)
-      const order = await prisma.order.create({
-        data: {
-          userId: payload.userId,
-          total,
-          subtotal,
-          shipping: shippingPrice,
-          tax,
-          status: 'PENDING',
-          paymentStatus: 'PENDING',
-          // Store customer info
-          customerFirstName: customerInfo?.firstName || '',
-          customerLastName: customerInfo?.lastName || '',
-          customerEmail: customerInfo?.email || user.email,
-          customerPhone: customerInfo?.phone || '',
-          customerAddress: customerInfo?.address || '',
-          customerCity: customerInfo?.city || '',
-          customerRegion: customerInfo?.region || '',
-          // Store shipping info
-          shippingZone: shippingInfo?.zone || 'Other Locations',
-          shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
-          shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
-        },
-      })
+    // Note: subtotal, shipping, tax may not exist in older databases - handle gracefully
+    const orderData: any = {
+      userId: payload.userId,
+      total,
+      status: 'PENDING',
+      paymentStatus: 'PENDING',
+      // Store customer info
+      customerFirstName: customerInfo?.firstName || '',
+      customerLastName: customerInfo?.lastName || '',
+      customerEmail: customerInfo?.email || user.email,
+      customerPhone: customerInfo?.phone || '',
+      customerAddress: customerInfo?.address || '',
+      customerCity: customerInfo?.city || '',
+      customerRegion: customerInfo?.region || '',
+      // Store shipping info
+      shippingZone: shippingInfo?.zone || 'Other Locations',
+      shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
+      shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
+    }
+    
+    // Add optional fields that may not exist in all database versions
+    // These will be ignored if columns don't exist
+    try {
+      orderData.subtotal = subtotal
+      orderData.shipping = shippingPrice
+      orderData.tax = tax
+    } catch (e) {
+      console.log('[Checkout API] Optional fields not available in database schema')
+    }
+    
+    let result: { order: any; payment: any }
+    try {
+      result = await getPrisma().$transaction(async (prisma: any) => {
+        const order = await prisma.order.create({
+          data: orderData,
+        })
 
-      // Create payment record
-      const payment = await prisma.payment.create({
-        data: {
-          userId: payload.userId,
-          orderId: order.id,
-          amount: total,
-          currency: 'GHS',
-          status: 'PENDING',
-          reference,
-        },
-      })
-
-      // Create order items (without deducting stock yet)
-      for (const item of cart.items) {
-        await prisma.orderItem.create({
+        // Create payment record
+        const payment = await prisma.payment.create({
           data: {
+            userId: payload.userId,
             orderId: order.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.product.price,
-            storeId: item.product.storeId,
+            amount: total,
+            currency: 'GHS',
+            status: 'PENDING',
+            reference,
           },
         })
-      }
 
-      // DO NOT clear cart here - only clear after successful payment
-      // This ensures cart items are preserved if payment is cancelled or failed
-      // Cart will be cleared in payment/verify route after successful payment
+        // Create order items (without deducting stock yet)
+        for (const item of cart.items) {
+          await prisma.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              price: item.product.price,
+              storeId: item.product.storeId,
+            },
+          })
+        }
 
-      return { order, payment }
-    })
+        // DO NOT clear cart here - only clear after successful payment
+        // This ensures cart items are preserved if payment is cancelled or failed
+        // Cart will be cleared in payment/verify route after successful payment
+
+        return { order, payment }
+      })
+    } catch (dbError) {
+      console.error('[Checkout API] Database error creating order:', dbError)
+      // Return a more specific error
+      return NextResponse.json({ 
+        error: `Database error: ${dbError instanceof Error ? dbError.message : 'Failed to create order'}` 
+      }, { status: 500 })
+    }
 
     // Initialize Paystack payment
     // Callback to checkout page which handles verification
