@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
-
-// Helper function to sanitize phone numbers
-function sanitizePhoneNumber(phone: string | undefined | null): string | null {
-  if (!phone || typeof phone !== 'string') return null
-  // Remove spaces, dashes, and + sign
-  const sanitized = phone.trim().replace(/[\s\-+]/g, '')
-  return sanitized || null
-}
+import { sanitizePhoneNumber } from '@/lib/phone'
 
 export async function GET(request: NextRequest) {
   try {

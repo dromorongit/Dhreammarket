@@ -925,10 +925,10 @@ function FeaturedProductsSection() {
         <Card
           key={product.id}
           variant="elevated"
-          className="group overflow-hidden hover:shadow-xl transition-all duration-300"
+          className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
         >
           <Link href={`/marketplace/product/${product.id}`} className="block">
-            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
               {product.images.length > 0 ? (
                 <img
                   src={product.images[0].url}
@@ -943,24 +943,27 @@ function FeaturedProductsSection() {
                   </svg>
                 </div>
               )}
-              {product.store && (
-                <Badge variant="verified" size="sm" className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5">
-                  {product.store.name}
-                </Badge>
+              {product.stock === 0 && (
+                <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  Sold Out
+                </div>
               )}
             </div>
           </Link>
-          <div className="p-2 space-y-1">
+          <div className="p-2 space-y-1 flex-1 flex flex-col">
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                 {product.name}
               </h3>
             </Link>
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[11px] font-bold text-royal-blue leading-tight">
-                {formatPrice(product.price)}
-              </span>
-            </div>
+            <span className="text-[11px] font-bold text-royal-blue">
+              {formatPrice(product.price)}
+            </span>
+            {product.store && (
+              <p className="text-[10px] text-slate-500 mt-auto line-clamp-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                {product.store.name}
+              </p>
+            )}
             <div className="flex flex-col gap-1 pt-0.5">
               <Button
                 size="sm"

@@ -483,7 +483,7 @@ function SearchPageSkeleton() {
 function CompactProductCard({ product }: { product: SearchProduct }) {
   return (
     <Link href={`/marketplace/product/${product.id}`} className="block">
-      <Card variant="elevated" className="group overflow-hidden">
+      <Card variant="elevated" className="group flex flex-col overflow-hidden h-full">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
           {product.image ? (
             <img
@@ -506,19 +506,22 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
           )}
           {product.store?.isVerified && (
             <Badge variant="verified" size="sm" className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5">
-              {product.store.name}
+              Verified
             </Badge>
           )}
         </div>
-        <div className="p-2 space-y-1">
-          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+        <div className="p-2 space-y-1 flex-1 flex flex-col">
+          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 leading-tight">
             {product.name}
           </h3>
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-[11px] font-bold text-royal-blue leading-tight">
-              {formatPrice(product.price)}
-            </span>
-          </div>
+          <span className="text-[11px] font-bold text-royal-blue">
+            {formatPrice(product.price)}
+          </span>
+          {product.store && (
+            <p className="text-[10px] text-slate-500 mt-auto line-clamp-1 overflow-hidden text-ellipsis whitespace-nowrap">
+              {product.store.name}
+            </p>
+          )}
         </div>
       </Card>
     </Link>

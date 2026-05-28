@@ -9,7 +9,7 @@ import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
-import { normalizeGhanaPhoneNumber, getWhatsAppLink, getTelLink } from '@/lib/phone'
+import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink } from '@/lib/phone'
 
 interface VendorProduct {
   id: string
@@ -364,45 +364,45 @@ export default function VendorProfilePage() {
                     Store Contact Information
                   </h3>
                   <div className="space-y-2">
-                    {vendor.mainPhoneNumber && (
-                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                         <span className="text-sm text-slate-600">📞 Main Call:</span>
-                         <a 
-                           href={getTelLink(vendor.mainPhoneNumber) || '#'}
-                           className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                         >
-                           {normalizeGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
-                         </a>
-                       </div>
-                     )}
-                     {vendor.alternativePhoneNumber && (
-                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                         <span className="text-sm text-slate-600">📞 Alternative:</span>
-                         <a 
-                           href={getTelLink(vendor.alternativePhoneNumber) || '#'}
-                           className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                         >
-                           {normalizeGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
-                         </a>
-                       </div>
-                     )}
-                     {vendor.whatsappNumber && (
-                       <div className="flex items-center justify-between py-2">
-                         <span className="text-sm text-slate-600">💬 WhatsApp:</span>
-                         <a 
-                           href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
-                         >
-                           {normalizeGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
-                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                             <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
-                           </svg>
-                         </a>
-                       </div>
-                     )}
-                  </div>
+                      {vendor.mainPhoneNumber && (
+                         <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                          <span className="text-sm text-slate-600">📞 Main Call:</span>
+                          <a 
+                            href={getTelLink(vendor.mainPhoneNumber) || '#'}
+                            className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                          >
+                            {formatGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
+                          </a>
+                        </div>
+                      )}
+                      {vendor.alternativePhoneNumber && (
+                        <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                          <span className="text-sm text-slate-600">📞 Alternative:</span>
+                          <a 
+                            href={getTelLink(vendor.alternativePhoneNumber) || '#'}
+                            className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                          >
+                            {formatGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
+                          </a>
+                        </div>
+                      )}
+                      {vendor.whatsappNumber && (
+                        <div className="flex items-center justify-between py-2">
+                          <span className="text-sm text-slate-600">💬 WhatsApp:</span>
+                          <a 
+                            href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
+                          >
+                            {formatGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                            </svg>
+                          </a>
+                        </div>
+                      )}
+                    </div>
                 </div>
               )}
 
@@ -454,54 +454,52 @@ export default function VendorProfilePage() {
                />
              </Card>
            ) : (
-             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-               {vendor.products.map((product) => (
-                 <Card
-                   key={product.id}
-                   variant="elevated"
-                   className="group overflow-hidden"
-                 >
-                   <Link href={`/marketplace/product/${product.id}`} className="block">
-                     <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                       {product.images.length > 0 ? (
-                         <img
-                           src={product.images[0].url}
-                           alt={product.images[0].alt || product.name}
-                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                         />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                           <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                           </svg>
-                         </div>
-                       )}
-                       {product.stock === 0 && (
-                         <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                           Sold Out
-                         </div>
-                       )}
-                     </div>
-                   </Link>
-                   <div className="p-2 space-y-1">
-                     <Link href={`/marketplace/product/${product.id}`} className="block">
-                       <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                         {product.name}
-                       </h3>
-                     </Link>
-                     <div className="flex items-center justify-between gap-1">
-                       <span className="text-[11px] font-bold text-royal-blue leading-tight">
-                         {formatPrice(product.price)}
-                       </span>
-                     </div>
-                     <div className="text-[10px] text-slate-500">
-                       {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                     </div>
-                   </div>
-                 </Card>
-               ))}
-             </div>
-           )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {vendor.products.map((product) => (
+                  <Card
+                    key={product.id}
+                    variant="elevated"
+                    className="group flex flex-col overflow-hidden h-full p-0"
+                  >
+                    <Link href={`/marketplace/product/${product.id}`} className="block">
+                      <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                        {product.images.length > 0 ? (
+                          <img
+                            src={product.images[0].url}
+                            alt={product.images[0].alt || product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        )}
+                        {product.stock === 0 && (
+                          <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Sold Out
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                    <div className="p-2 space-y-1 flex-1 flex flex-col">
+                      <Link href={`/marketplace/product/${product.id}`} className="block">
+                        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                          {product.name}
+                        </h3>
+                      </Link>
+                      <span className="text-[11px] font-bold text-royal-blue">
+                        {formatPrice(product.price)}
+                      </span>
+                      <p className="text-[10px] text-slate-500 mt-auto line-clamp-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {vendor.name}
+                      </p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
          </section>
 
          {/* Vendor Reviews Section */}

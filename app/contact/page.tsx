@@ -425,11 +425,51 @@ export default function ContactPage() {
               </div>
             </div>
             <p className="mt-4 text-sm text-slate-500 text-center">
-              Our support team operates Monday to Friday, 9:00 AM - 6:00 PM (GMT)
-            </p>
-          </CardContent>
-        </Card>
+               Our support team operates Monday to Friday, 9:00 AM - 6:00 PM (GMT)
+             </p>
+            </CardContent>
+          </Card>
+
+          {/* Social Media Links */}
+          <div className="mt-12 text-center">
+            <h3 className="text-lg font-semibold text-deep-navy mb-6">Connect With Us</h3>
+            <div className="flex items-center justify-center gap-6">
+              <a
+                href="https://www.instagram.com/dhreamarket"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Instagram"
+                className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.266.058 2.095.526 2.684 1.115.589.589 1.057 1.418 1.115 2.684.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.058 1.266-.526 2.095-1.115 2.684-.589.589-1.418 1.057-2.684 1.115-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.266-.058-2.095-.526-2.684-1.115-.589-.589-1.057-1.418-1.115-2.684C2.175 15.747 2.163 15.367 2.163 12s.012-3.584.07-4.85c.058-1.266.526-2.095 1.115-2.684.589-.589 1.418-1.057 2.684-1.115C8.416 2.175 8.796 2.163 12 2.163zm0-2C10.741 0 9.053.21 7.5.606v4.788C9.053 4.21 10.71 4 12.5 4s2.447.21 4 .394V0C14.947 0 13.29 0 12.5 0z"/>
+                </svg>
+              </a>
+              <a
+                href="https://www.tiktok.com/@dhreamarket"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on TikTok"
+                className="w-12 h-12 rounded-full bg-black flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.5 2.5c.833 0 1.604.052 2.363.156a2.5 2.5 0 0 0 1.063-.156v3.063a2.5 2.5 0 0 0-1.063.156c-.759.104-1.53.156-2.363.156s-1.604-.052-2.363-.156a2.5 2.5 0 0 0-1.063.156V2.69a2.5 2.5 0 0 0 1.063-.156C10.896 2.552 11.667 2.5 12.5 2.5zm0-2C10.71 0 9.053.21 7.5.606v4.788C9.053 4.21 10.71 4 12.5 4s2.447.21 4 .394V0C14.947 0 13.29 0 12.5 0z"/>
+                </svg>
+              </a>
+              <a
+                href="https://www.x.com/dhreamarket"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on X"
+                className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-black hover:scale-110 transition-all duration-300 shadow-lg"
+              >
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L9v-2.828l8.586-8.586z"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }

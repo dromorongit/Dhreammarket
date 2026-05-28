@@ -9,21 +9,38 @@
  * +233242222222 -> +233242222222 (already normalized)
  */
 
-// Ghana mobile network prefixes
+// All valid Ghana mobile prefixes (the 2-digit prefix after the leading 0)
 const GHANA_MOBILE_PREFIXES = [
-  '23', '50', '54', '55', '59', '20', '24', '26', '27', '28', '29'
+  '20', '23', '24', '25', '26', '27', '28', '29',  // Major networks
+  '50', '53', '54', '55', '59'  // Other networks
 ]
+
+/**
+ * Sanitizes a phone number by removing spaces, dashes, brackets, and leading/trailing whitespace
+ * @param phone - The phone number to sanitize
+ * @returns The sanitized phone number
+ */
+export function sanitizePhoneNumber(phone: string | null | undefined): string | null {
+  if (!phone || typeof phone !== 'string') return null
+  return phone
+    .replace(/\s+/g, '')  // Remove all spaces
+    .replace(/-/g, '')    // Remove dashes
+    .replace(/\(/g, '')    // Remove opening brackets
+    .replace(/\)/g, '')   // Remove closing brackets
+    .trim()
+}
 
 /**
  * Normalizes a Ghanaian phone number to international format
  * @param phone - The phone number to normalize
- * @returns The normalized phone number in +233 format, or the original if not a valid Ghana number
+ * @returns The normalized phone number in +233 format, or null if invalid
  */
 export function normalizeGhanaPhoneNumber(phone: string | null | undefined): string | null {
   if (!phone) return null
 
-  // Remove all non-digit characters except leading +
-  let cleaned = phone.replace(/[^\d+]/g, '')
+  // Sanitize the phone number first
+  const cleaned = sanitizePhoneNumber(phone)
+  if (!cleaned) return null
 
   // If already in +233 format, return as-is
   if (cleaned.startsWith('+233') && cleaned.length === 13) {
@@ -35,16 +52,16 @@ export function normalizeGhanaPhoneNumber(phone: string | null | undefined): str
     return `+${cleaned}`
   }
 
-  // If starts with 0, convert to +233
+  // If starts with 0, convert to +233 (remove the leading 0, then add 233)
   if (cleaned.startsWith('0') && cleaned.length === 10) {
-    const prefix = cleaned.substring(0, 3) // Get first 3 digits (e.g., 024, 054)
-    if (GHANA_MOBILE_PREFIXES.includes(prefix.substring(1))) { // Check if it's a valid Ghana mobile prefix
-      return `+233${cleaned.substring(1)}`
+    const prefix = cleaned.substring(1, 3) // Get the 2-digit prefix (e.g., 24, 54)
+    if (GHANA_MOBILE_PREFIXES.includes(prefix)) {
+      return `+233${cleaned.substring(1)}`  // Remove leading 0, add 233
     }
   }
 
-  // Return original if no transformation applied
-  return phone
+  // Return null for invalid numbers
+  return null
 }
 
 /**
@@ -73,7 +90,7 @@ export function getWhatsAppLink(phone: string | null | undefined): string | null
   const normalized = normalizeGhanaPhoneNumber(phone)
   if (!normalized) return null
   
-  // Remove the + for WhatsApp link
+  // Remove the + for WhatsApp link - always return 233XXXXXXXXX format
   const waNumber = normalized.replace('+', '')
   return `https://wa.me/${waNumber}`
 }
