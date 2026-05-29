@@ -774,6 +774,31 @@ const sectionRenderers: Record<string, React.FC<HomepageSectionProps>> = {
   promo_banner: PromoBannerSection,
 }
 
+// Map Prisma enum values (and legacy snake_case) to renderers
+const SECTION_TYPE_ALIASES: Record<string, keyof typeof sectionRenderers> = {
+  PRODUCT_GRID: 'product_grid',
+  QUICKLINK_CARD_GRID: 'quicklinks',
+  LARGE_FEATURE_CARDS: 'gadget_display',
+  BRAND_GRID: 'product_grid',
+  SERVICE_GRID: 'promo_banner',
+  FLASH_SALES: 'product_grid',
+  SPONSORED_PRODUCTS: 'product_grid',
+  TOP_SELLING: 'product_grid',
+  BIG_DEALS: 'product_grid',
+  product_grid: 'product_grid',
+  featured_vendors: 'featured_vendors',
+  quicklinks: 'quicklinks',
+  gadget_display: 'gadget_display',
+  hero_banner: 'hero_banner',
+  category_showcase: 'category_showcase',
+  promo_banner: 'promo_banner',
+}
+
+function resolveSectionRenderer(type: string): React.FC<HomepageSectionProps> | undefined {
+  const key = SECTION_TYPE_ALIASES[type] ?? type
+  return sectionRenderers[key]
+}
+
 export function HomepageSectionRenderer({ sections }: { sections: HomepageSectionData[] }) {
   if (!sections || sections.length === 0) {
     return null
@@ -782,7 +807,7 @@ export function HomepageSectionRenderer({ sections }: { sections: HomepageSectio
   return (
     <>
       {sections.map((section) => {
-        const SectionComponent = sectionRenderers[section.type]
+        const SectionComponent = resolveSectionRenderer(section.type)
         if (!SectionComponent) return null
         return <SectionComponent key={section.id} section={section} />
       })}

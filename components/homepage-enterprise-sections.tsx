@@ -28,8 +28,8 @@ export function useEnterpriseHomepageData() {
     const fetchData = async () => {
       try {
         const response = await fetch('/api/homepage/enterprise', { cache: 'no-store' })
-        if (response.ok) {
-          const json = await response.json()
+        const json = await response.json()
+        if (json && typeof json === 'object') {
           setData({
             flashSales: Array.isArray(json.flashSales) ? json.flashSales : [],
             sponsoredProducts: Array.isArray(json.sponsoredProducts) ? json.sponsoredProducts : [],
@@ -625,18 +625,20 @@ export function BrandStoreSection({
 
 export function buildEnterpriseSections(data: EnterpriseHomepageData) {
   const flashSales = dedupeProducts(data.flashSales, new Set())
-  const shownIds = collectProductIds(flashSales)
+  const excludeFromFeaturedIds = collectProductIds(flashSales)
 
-  const sponsoredProducts = dedupeProducts(data.sponsoredProducts, shownIds)
-  sponsoredProducts.forEach((p) => shownIds.add(p.id))
+  const sponsoredProducts = dedupeProducts(data.sponsoredProducts, excludeFromFeaturedIds)
+  sponsoredProducts.forEach((p) => excludeFromFeaturedIds.add(p.id))
 
-  const gadgetProducts = dedupeProducts(data.gadgetProducts, shownIds)
-  gadgetProducts.forEach((p) => shownIds.add(p.id))
+  // Dedupe later sections separately; only flash/sponsored sit above Featured Products
+  const gadgetSeen = new Set(excludeFromFeaturedIds)
+  const gadgetProducts = dedupeProducts(data.gadgetProducts, gadgetSeen)
+  gadgetProducts.forEach((p) => gadgetSeen.add(p.id))
 
-  const topSelling = dedupeProducts(data.topSelling, shownIds)
-  topSelling.forEach((p) => shownIds.add(p.id))
+  const topSelling = dedupeProducts(data.topSelling, gadgetSeen)
+  topSelling.forEach((p) => gadgetSeen.add(p.id))
 
-  const bigDeals = dedupeProducts(data.bigDeals, shownIds)
+  const bigDeals = dedupeProducts(data.bigDeals, gadgetSeen)
 
   return {
     flashSales,
@@ -645,6 +647,6 @@ export function buildEnterpriseSections(data: EnterpriseHomepageData) {
     topSelling,
     bigDeals,
     brands: (data.brands || []).slice(0, 20),
-    excludeFromFeaturedIds: shownIds,
+    excludeFromFeaturedIds,
   }
 }

@@ -198,8 +198,8 @@ export default function Home() {
         ))
       ) : null}
 
-      {/* ─── Fallback: Featured Products (shown when no dynamic sections) ─── */}
-      {!loadingSections && dynamicSections.length === 0 && (
+      {/* ─── Fallback: Featured Products (always shown for reliable product display) ─── */}
+      {!loadingSections && (
         <section className="relative py-24 lg:py-32 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
