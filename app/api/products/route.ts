@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
 
     // For marketplace browsing (public or authenticated non-vendors), get all products
     // Use cached averageRating and reviewCount from Product model
+    // Sort by newest first
     const products = await getPrisma().product.findMany({
       include: {
         category: true,
@@ -55,6 +56,9 @@ export async function GET(request: NextRequest) {
           },
         },
         images: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     })
 

@@ -868,21 +868,21 @@ function FeaturedProductsSection() {
   }, [])
 
   const fetchProducts = async () => {
-    try {
-      const response = await fetch('/api/products')
-      if (response.ok) {
-        const data = await response.json()
-        const availableProducts = data.products
-          .filter((p: Product) => p.stock > 0)
-          .slice(0, 8)
-        setProducts(availableProducts)
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+     try {
+       const response = await fetch('/api/products')
+       if (response.ok) {
+         const data = await response.json()
+         const availableProducts = data.products
+           .filter((p: Product) => p.stock > 0)
+           .slice(0, 20)
+         setProducts(availableProducts)
+       }
+     } catch (error) {
+       console.error('Error fetching products:', error)
+     } finally {
+       setLoading(false)
+     }
+   }
 
   const addToCart = async (productId: string) => {
     setAddingToCart(prev => new Set(prev).add(productId))
@@ -907,14 +907,14 @@ function FeaturedProductsSection() {
   }
 
   if (loading) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[...Array(12)].map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
-    )
-  }
+     return (
+       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
+         {[...Array(10)].map((_, i) => (
+           <SkeletonCard key={i} />
+         ))}
+       </div>
+     )
+   }
 
   if (products.length === 0) {
     return (
@@ -931,73 +931,83 @@ function FeaturedProductsSection() {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      {products.map((product) => (
-        <Card
-          key={product.id}
-          variant="elevated"
-          className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
-        >
-          <Link href={`/marketplace/product/${product.id}`} className="block">
-            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-              {product.images.length > 0 ? (
-                <img
-                  src={product.images[0].url}
-                  alt={product.images[0].alt || product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              )}
-              {product.stock === 0 && (
-                <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  Sold Out
-                </div>
-              )}
-            </div>
-          </Link>
-          <div className="p-2 space-y-1 flex-1 flex flex-col">
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
+        {products.map((product) => (
+          <Card
+            key={product.id}
+            variant="elevated"
+            className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+          >
             <Link href={`/marketplace/product/${product.id}`} className="block">
-              <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                {product.name}
-              </h3>
-            </Link>
-            <span className="text-[11px] font-bold text-royal-blue">
-              {formatPrice(product.price)}
-            </span>
-            {product.store && (
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="text-[10px] text-slate-500 truncate">
-                  {product.store.name}
-                </p>
-                {product.store.isVerified && (
-                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+              <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                {product.images.length > 0 ? (
+                  <img
+                    src={product.images[0].url}
+                    alt={product.images[0].alt || product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                    <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+                {product.stock === 0 && (
+                  <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Sold Out
+                  </div>
                 )}
               </div>
-            )}
-            <div className="flex flex-col gap-1 pt-0.5">
-              <Button
-                size="sm"
-                className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-                disabled={addingToCart.has(product.id)}
-                onClick={() => addToCart(product.id)}
-              >
-                {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
-              </Button>
-              <Link href={`/marketplace/product/${product.id}`} className="w-full">
-                <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                  View Details
-                </Button>
+            </Link>
+            <div className="p-2 space-y-1 flex-1 flex flex-col">
+              <Link href={`/marketplace/product/${product.id}`} className="block">
+                <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                  {product.name}
+                </h3>
               </Link>
+              <span className="text-[11px] font-bold text-royal-blue">
+                {formatPrice(product.price)}
+              </span>
+              {product.store && (
+                <div className="flex items-center gap-1 min-w-0">
+                  <p className="text-[10px] text-slate-500 truncate">
+                    {product.store.name}
+                  </p>
+                  {product.store.isVerified && (
+                    <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                  )}
+                </div>
+              )}
+              <div className="flex flex-col gap-1 pt-0.5">
+                <Button
+                  size="sm"
+                  className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
+                  disabled={addingToCart.has(product.id)}
+                  onClick={() => addToCart(product.id)}
+                >
+                  {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
+                </Button>
+                <Link href={`/marketplace/product/${product.id}`} className="w-full">
+                  <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                    View Details
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+          </Card>
+        ))}
+      </div>
+      {/* See More button - always visible */}
+      <div className="mt-8 text-center">
+        <Link href="/marketplace">
+          <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+            See More
+          </Button>
+        </Link>
+      </div>
+    </>
   )
 }
