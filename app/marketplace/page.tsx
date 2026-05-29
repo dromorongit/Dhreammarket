@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { truncateVendorName } from '@/lib/utils'
 
 interface CartResponse {
   cart: {
@@ -615,10 +616,10 @@ function MarketplaceContent() {
                         </div>
                       </div>
                       <CardContent className="p-4 min-w-0">
-                        <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                          {vendor.name}
-                        </h3>
-                        {vendor.category && (
+                         <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                           {truncateVendorName(vendor.name)}
+                         </h3>
+                         {vendor.category && (
                           <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                             {vendor.category.name}
                           </p>

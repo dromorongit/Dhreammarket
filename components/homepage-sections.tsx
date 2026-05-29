@@ -8,6 +8,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { truncateVendorName } from '@/lib/utils'
 
 // Skeleton loader for homepage sections while data is loading
 export function HomepageSectionSkeleton() {
@@ -164,14 +165,14 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
         </div>
 
         {section.products.length > 8 && (
-          <div className="mt-8 text-center">
-            <Link href="/marketplace">
-              <Button variant="outline" size="lg">
-                View All Products
-              </Button>
-            </Link>
-          </div>
-        )}
+           <div className="mt-8 text-center">
+             <Link href="/marketplace">
+               <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold hover:scale-105 transition-transform duration-300">
+                 See More
+               </Button>
+             </Link>
+           </div>
+         )}
       </div>
     </section>
   )
@@ -248,8 +249,8 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
                 </div>
                 <CardContent className="p-4 min-w-0">
                    <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                     {vendor.name}
-                   </h3>
+                      {truncateVendorName(vendor.name)}
+                    </h3>
                   {vendor.category && (
                     <p className="text-sm text-slate-500 mb-2">{vendor.category.name}</p>
                   )}
