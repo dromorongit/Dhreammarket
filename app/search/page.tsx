@@ -9,6 +9,7 @@ import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { MdVerified } from 'react-icons/md'
 
 type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands'
 
@@ -504,11 +505,6 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
               Sold Out
             </div>
           )}
-          {product.store?.isVerified && (
-            <Badge variant="verified" size="sm" className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5">
-              Verified
-            </Badge>
-          )}
         </div>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
           <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 leading-tight">
@@ -518,9 +514,14 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
             {formatPrice(product.price)}
           </span>
           {product.store && (
-            <p className="text-[10px] text-slate-500 mt-auto line-clamp-1 overflow-hidden text-ellipsis whitespace-nowrap">
-              {product.store.name}
-            </p>
+            <div className="flex items-center gap-1 min-w-0">
+              <p className="text-[10px] text-slate-500 truncate">
+                {product.store.name}
+              </p>
+              {product.store.isVerified && (
+                <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+              )}
+            </div>
           )}
         </div>
       </Card>

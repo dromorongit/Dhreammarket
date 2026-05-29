@@ -26,7 +26,7 @@ export async function GET(
                 images: true,
                 category: true,
                 store: {
-                  select: { id: true, name: true },
+                  select: { id: true, name: true, isVerified: true },
                 },
               },
             },

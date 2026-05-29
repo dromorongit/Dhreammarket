@@ -519,9 +519,6 @@ function MarketplaceContent() {
                              Sold Out
                            </div>
                          )}
-                         {product.store?.isVerified && (
-                            <MdVerified className="absolute top-2 left-2 w-4 h-4 text-sky-500" />
-                          )}
                        </div>
                      </Link>
                      <div className="p-2 space-y-1 flex-1 flex flex-col">
@@ -532,9 +529,14 @@ function MarketplaceContent() {
                          {formatPrice(product.price)}
                        </span>
                        {product.store && (
-                         <p className="text-[10px] text-slate-500 mt-auto line-clamp-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                           {product.store.name}
-                         </p>
+                         <div className="flex items-center gap-1 min-w-0">
+                           <p className="text-[10px] text-slate-500 truncate">
+                             {product.store.name}
+                           </p>
+                           {product.store.isVerified && (
+                             <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                           )}
+                         </div>
                        )}
                        <div className="flex flex-col gap-1 pt-0.5">
                          <Button

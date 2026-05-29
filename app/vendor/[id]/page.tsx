@@ -296,15 +296,15 @@ export default function VendorProfilePage() {
         <div className={`bg-white rounded-lg shadow-sm p-8 mb-8 ${vendor.banner ? '-mt-20 relative z-10' : ''}`}>
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
              {/* Logo */}
-             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg">
-               {vendor.logo ? (
-                 <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
-               ) : (
-                 <span className="text-4xl font-bold text-white">
-                   {vendor.name.charAt(0).toUpperCase()}
-                 </span>
-               )}
-             </div>
+              <div className="relative w-32 h-32 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg">
+                {vendor.logo ? (
+                  <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
+                ) : (
+                  <span className="text-4xl font-bold text-slate-700">
+                    {vendor.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
 
              {/* Vendor Info */}
              <div className="flex-1 text-center md:text-left">
