@@ -109,6 +109,11 @@ model Product {
   description      String?
   brand            String?
   price            Float
+  flashSalePrice   Float?                   // Discounted price for flash sales
+  flashSaleStart   DateTime?                // When flash sale starts
+  flashSaleEnd     DateTime?                // When flash sale ends
+  salesCount       Int                      @default(0) // Total units sold
+  isSponsored      Boolean                  @default(false) // Sponsored/promoted products
   stock            Int                      @default(0)
   averageRating    Float                    @default(0)
   reviewCount      Int                      @default(0)
@@ -478,4 +483,8 @@ enum HomepageSectionType {
   LARGE_FEATURE_CARDS
   BRAND_GRID
   SERVICE_GRID
+  FLASH_SALES
+  SPONSORED_PRODUCTS
+  TOP_SELLING
+  BIG_DEALS
 }

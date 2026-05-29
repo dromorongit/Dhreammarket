@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
@@ -14,6 +14,16 @@ import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
 } from '@/components/homepage-sections'
+import {
+  useEnterpriseHomepageData,
+  FlashSalesSection,
+  SponsoredProductsSection,
+  EnterpriseGadgetDisplaySection,
+  TopSellingSection,
+  BigTopDealsSection,
+  BrandStoreSection,
+  buildEnterpriseSections,
+} from '@/components/homepage-enterprise-sections'
 
 interface HomepageSectionData {
   id: string
@@ -48,6 +58,11 @@ export default function Home() {
   const [loadingFeatured, setLoadingFeatured] = useState(true)
   const [dynamicSections, setDynamicSections] = useState<HomepageSectionData[]>([])
   const [loadingSections, setLoadingSections] = useState(true)
+  const { data: enterpriseData, loading: loadingEnterprise } = useEnterpriseHomepageData()
+  const enterpriseSections = useMemo(
+    () => buildEnterpriseSections(enterpriseData),
+    [enterpriseData]
+  )
 
   useEffect(() => {
     const fetchFeaturedVendors = async () => {
@@ -166,6 +181,10 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── Enterprise: Flash Sales & Sponsored (before Featured Products) ─── */}
+      <FlashSalesSection products={enterpriseSections.flashSales} loading={loadingEnterprise} />
+      <SponsoredProductsSection products={enterpriseSections.sponsoredProducts} loading={loadingEnterprise} />
+
       {/* ─── Dynamic Homepage Sections ─── */}
       {loadingSections ? (
         <>
@@ -192,10 +211,16 @@ export default function Home() {
                 Discover premium products from our trusted vendors
               </p>
             </div>
-            <FeaturedProductsSection />
+            <FeaturedProductsSection excludeIds={enterpriseSections.excludeFromFeaturedIds} />
           </div>
         </section>
       )}
+
+      {/* ─── Enterprise: Gadget, Top Selling, Big Deals, Brand Store ─── */}
+      <EnterpriseGadgetDisplaySection products={enterpriseSections.gadgetProducts} loading={loadingEnterprise} />
+      <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
+      <BigTopDealsSection products={enterpriseSections.bigDeals} loading={loadingEnterprise} />
+      <BrandStoreSection brands={enterpriseSections.brands} loading={loadingEnterprise} />
 
       {/* ─── Fallback: Shop by Vendor ─── */}
       {!loadingSections && dynamicSections.length === 0 && (
@@ -858,22 +883,23 @@ interface Product {
   }>
 }
 
-function FeaturedProductsSection() {
+function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
+  const excludeKey = excludeIds ? Array.from(excludeIds).sort().join(',') : ''
 
   useEffect(() => {
     fetchProducts()
-  }, [])
+  }, [excludeKey])
 
   const fetchProducts = async () => {
      try {
        const response = await fetch('/api/products')
        if (response.ok) {
          const data = await response.json()
-         const availableProducts = data.products
-           .filter((p: Product) => p.stock > 0)
+         const availableProducts = (data.products || [])
+           .filter((p: Product) => p.stock > 0 && !excludeIds?.has(p.id))
            .slice(0, 20)
          setProducts(availableProducts)
        }
