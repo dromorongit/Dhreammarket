@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -9,7 +10,9 @@ import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
-import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink } from '@/lib/phone'
+import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink, getWhatsAppLinks } from '@/lib/phone'
+import { truncateVendorName } from '@/lib/utils'
+import { MdVerified } from 'react-icons/md'
 
 interface VendorProduct {
   id: string
@@ -292,38 +295,33 @@ export default function VendorProfilePage() {
         {/* Profile Header */}
         <div className={`bg-white rounded-lg shadow-sm p-8 mb-8 ${vendor.banner ? '-mt-20 relative z-10' : ''}`}>
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-            {/* Logo */}
-            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
-              {vendor.logo ? (
-                <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-4xl font-bold text-white">
-                  {vendor.name.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
+             {/* Logo */}
+             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg">
+               {vendor.logo ? (
+                 <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
+               ) : (
+                 <span className="text-4xl font-bold text-white">
+                   {vendor.name.charAt(0).toUpperCase()}
+                 </span>
+               )}
+             </div>
 
-            {/* Vendor Info */}
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
-                <h1 className="text-3xl font-bold text-deep-navy">{vendor.name}</h1>
-                {vendor.isVerified && (
-                  <Badge variant="verified" size="md">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Verified
-                  </Badge>
-                )}
-                {vendor.isFeatured && (
-                  <Badge variant="premium" size="md">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    Featured
-                  </Badge>
-                )}
-              </div>
+             {/* Vendor Info */}
+             <div className="flex-1 text-center md:text-left">
+               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
+                 <h1 className="text-3xl font-bold text-deep-navy">{truncateVendorName(vendor.name)}</h1>
+                 {vendor.isVerified && (
+                   <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                 )}
+                 {vendor.isFeatured && (
+                   <Badge variant="premium" size="md">
+                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                     </svg>
+                     Featured
+                   </Badge>
+                 )}
+               </div>
 
               {vendor.category && (
                 <p className="text-slate-600 mb-2">
@@ -355,77 +353,78 @@ export default function VendorProfilePage() {
 
               {/* Contact Information Section */}
               {(vendor.mainPhoneNumber || vendor.alternativePhoneNumber || vendor.whatsappNumber) && (
-                <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28c.44 0 .87.11 1.24.31l.72.41a2 2 0 01.87 1.69V9.5a2 2 0 01-.87 1.69l-.72.41A2 2 0 0110.28 11H7a2 2 0 01-2-2V5z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15h2a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2h2" />
-                    </svg>
-                    Store Contact Information
-                  </h3>
-                  <div className="space-y-2">
-                      {vendor.mainPhoneNumber && (
+                 <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                   <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28c.44 0 .87.11 1.24.31l.72.41a2 2 0 01.87 1.69V9.5a2 2 0 01-.87 1.69l-.72.41A2 2 0 0110.28 11H7a2 2 0 01-2-2V5z" />
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15h2a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2h2" />
+                     </svg>
+                     Store Contact Information
+                   </h3>
+                   <div className="space-y-2">
+                       {vendor.mainPhoneNumber && (
+                          <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                           <span className="text-sm text-slate-600">📞 Main Call:</span>
+                           <a 
+                             href={getTelLink(vendor.mainPhoneNumber) || '#'}
+                             className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                           >
+                             {formatGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
+                           </a>
+                         </div>
+                       )}
+                       {vendor.alternativePhoneNumber && (
                          <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                          <span className="text-sm text-slate-600">📞 Main Call:</span>
-                          <a 
-                            href={getTelLink(vendor.mainPhoneNumber) || '#'}
-                            className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                          >
-                            {formatGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
-                          </a>
-                        </div>
-                      )}
-                      {vendor.alternativePhoneNumber && (
-                        <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                          <span className="text-sm text-slate-600">📞 Alternative:</span>
-                          <a 
-                            href={getTelLink(vendor.alternativePhoneNumber) || '#'}
-                            className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                          >
-                            {formatGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
-                          </a>
-                        </div>
-                      )}
-                      {vendor.whatsappNumber && (
-                        <div className="flex items-center justify-between py-2">
-                          <span className="text-sm text-slate-600">💬 WhatsApp:</span>
-                          <a 
-                            href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
-                          >
-                            {formatGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
-                            </svg>
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                </div>
-              )}
+                           <span className="text-sm text-slate-600">📞 Alternative:</span>
+                           <a 
+                             href={getTelLink(vendor.alternativePhoneNumber) || '#'}
+                             className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                           >
+                             {formatGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
+                           </a>
+                         </div>
+                       )}
+                       {vendor.whatsappNumber && (
+                         <div className="flex items-center justify-between py-2">
+                           <span className="text-sm text-slate-600">💬 WhatsApp:</span>
+                           <a 
+                             href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
+                           >
+                             {formatGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
+                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                               <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                             </svg>
+                           </a>
+                         </div>
+                       )}
+                     </div>
+                 </div>
+               )}
 
-              <div className="flex flex-wrap gap-3">
-                {vendor.whatsappNumber && (
-                  <a 
-                    href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-md hover:bg-green-600 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
-                    </svg>
-                    Chat on WhatsApp
-                  </a>
-                )}
-                <Link href={`/marketplace?vendorCategory=${vendor.category?.id || ''}`}>
-                  <Button variant="outline" size="lg">
-                    View All Products
-                  </Button>
-                </Link>
-              </div>
+               <div className="flex flex-wrap gap-3">
+                 {vendor.whatsappNumber && getWhatsAppLinks(vendor.whatsappNumber).map((link, index) => (
+                   <a 
+                     key={index}
+                     href={link}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="inline-flex items-center gap-2 rounded-xl bg-green-500 hover:bg-green-600 text-white px-4 py-2 text-sm font-medium transition-colors"
+                   >
+                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                       <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                     </svg>
+                     Chat on WhatsApp{getWhatsAppLinks(vendor.whatsappNumber).length > 1 ? ` ${index + 1}` : ''}
+                   </a>
+                 ))}
+                 <Link href={`/marketplace?vendorCategory=${vendor.category?.id || ''}`}>
+                   <Button variant="outline" size="lg">
+                     View All Products
+                   </Button>
+                 </Link>
+               </div>
             </div>
           </div>
         </div>

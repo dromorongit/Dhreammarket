@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
+import { MdVerified } from 'react-icons/md'
 
 interface CartResponse {
   cart: {
@@ -519,14 +520,8 @@ function MarketplaceContent() {
                            </div>
                          )}
                          {product.store?.isVerified && (
-                           <Badge
-                             variant="verified"
-                             size="sm"
-                             className="absolute top-2 left-2 text-[10px] px-1.5 py-0.5"
-                           >
-                             Verified
-                           </Badge>
-                         )}
+                            <MdVerified className="absolute top-2 left-2 w-4 h-4 text-sky-500" />
+                          )}
                        </div>
                      </Link>
                      <div className="p-2 space-y-1 flex-1 flex flex-col">
@@ -581,63 +576,61 @@ function MarketplaceContent() {
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredVendors.map((vendor) => (
-                  <Card
-                    key={vendor.id}
-                    variant="elevated"
-                    className="group overflow-hidden cursor-pointer"
-                  >
-                    <Link href={`/vendor/${vendor.id}`} className="block">
-                      <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-                        {vendor.logo ? (
-                          <img
-                            src={vendor.logo}
-                            alt={`${vendor.name} logo`}
-                            className="absolute inset-0 w-full h-full object-cover opacity-50"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-4xl font-bold text-white opacity-30">
-                              {vendor.name.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                        <div className="absolute top-3 left-3 flex gap-1">
-                          {vendor.isFeatured && (
-                            <Badge variant="premium" size="sm">
-                              Featured
-                            </Badge>
-                          )}
-                          {vendor.isVerified && (
-                            <Badge variant="verified" size="sm">
-                              Verified
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <CardContent className="p-4 min-w-0">
-                         <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                           {truncateVendorName(vendor.name)}
-                         </h3>
-                         {vendor.category && (
-                          <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                            {vendor.category.name}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-400">★</span>
-                            <span className="font-medium">{vendor.rating}</span>
-                          </div>
-                          <span className="text-slate-500">
-                            {vendor.productCount} products
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Link>
-                  </Card>
-                ))}
-              </div>
+                 {filteredVendors.map((vendor) => (
+                   <Card
+                     key={vendor.id}
+                     variant="elevated"
+                     className="group overflow-hidden cursor-pointer"
+                   >
+                     <Link href={`/vendor/${vendor.id}`} className="block">
+                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+                         {vendor.logo ? (
+                           <img
+                             src={vendor.logo}
+                             alt={`${vendor.name} logo`}
+                             className="absolute inset-0 w-full h-full object-cover opacity-50"
+                           />
+                         ) : (
+                           <div className="absolute inset-0 flex items-center justify-center">
+                             <span className="text-4xl font-bold text-white opacity-30">
+                               {vendor.name.charAt(0)}
+                             </span>
+                           </div>
+                         )}
+                         <div className="absolute top-3 left-3 flex gap-1">
+                           {vendor.isFeatured && (
+                             <Badge variant="premium" size="sm">
+                               Featured
+                             </Badge>
+                           )}
+                           {vendor.isVerified && (
+                             <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                           )}
+                         </div>
+                       </div>
+                       <CardContent className="p-4 min-w-0">
+                          <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                            {truncateVendorName(vendor.name)}
+                          </h3>
+                          {vendor.category && (
+                           <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                             {vendor.category.name}
+                           </p>
+                         )}
+                         <div className="flex items-center justify-between text-sm">
+                           <div className="flex items-center gap-1">
+                             <span className="text-yellow-400">★</span>
+                             <span className="font-medium">{vendor.rating}</span>
+                           </div>
+                           <span className="text-slate-500">
+                             {vendor.productCount} products
+                           </span>
+                         </div>
+                       </CardContent>
+                     </Link>
+                   </Card>
+                 ))}
+               </div>
             )
           )}
       </div>

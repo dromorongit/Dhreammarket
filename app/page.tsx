@@ -9,6 +9,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { useState, useEffect } from 'react'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
+import { MdVerified } from 'react-icons/md'
 import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
@@ -554,13 +555,21 @@ function VendorCategorySection() {
         />
       ) : (
         <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-          {filteredVendors.map((vendor) => (
-            <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
-              <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center flex-shrink-0">
-                   <span className="text-2xl font-bold text-white">
-                     {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
-                   </span>
+           {filteredVendors.map((vendor) => (
+             <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
+               <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
+                 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                   {vendor.logo ? (
+                     <img
+                       src={vendor.logo}
+                       alt={vendor.name}
+                       className="object-cover w-full h-full"
+                     />
+                   ) : (
+                     <span className="text-2xl font-bold text-white">
+                       {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
+                     </span>
+                   )}
                  </div>
                  <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                    {truncateVendorName(vendor.name)}
@@ -574,9 +583,7 @@ function VendorCategorySection() {
                    {vendor._count?.products || 0} products
                  </p>
                  {vendor.isVerified && (
-                   <Badge variant="verified" size="sm" className="mt-auto">
-                     Verified
-                   </Badge>
+                   <MdVerified className="w-4 h-4 text-sky-500 inline-block" />
                  )}
                </Card>
              </Link>
@@ -627,47 +634,45 @@ function TopVendorsSection() {
   }
 
   return (
-    <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-      {vendors.map((vendor) => (
-        <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
-          <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden">
-               {vendor.logo ? (
-                 <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
-               ) : (
-                 <span className="text-2xl font-bold text-white">
-                   {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
-                 </span>
-               )}
-             </div>
-             <div className="flex items-center justify-center gap-1 mb-2">
-               <svg className="w-5 h-5 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
-                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-               </svg>
-               <span className="font-bold text-deep-navy">{vendor.rating.toFixed(1)}</span>
-             </div>
-             <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-               {truncateVendorName(vendor.name)}
-             </h3>
-             {vendor.vendor_categories && (
-               <Badge variant="default" size="sm" className="mb-2">
-                 {vendor.vendor_categories.name}
-               </Badge>
-             )}
-             <p className="text-sm text-slate-600">
-               {vendor._count?.products || 0} products
-             </p>
-             {vendor.isVerified && (
-               <Badge variant="verified" size="sm" className="mt-2">
-                 Verified
-               </Badge>
-             )}
-           </Card>
-         </Link>
-       ))}
-     </div>
-   )
- }
+     <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+       {vendors.map((vendor) => (
+         <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+           <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
+             <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                {vendor.logo ? (
+                  <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
+                ) : (
+                  <span className="text-2xl font-bold text-white">
+                    {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center justify-center gap-1 mb-2">
+                <svg className="w-5 h-5 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <span className="font-bold text-deep-navy">{vendor.rating.toFixed(1)}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                {truncateVendorName(vendor.name)}
+              </h3>
+              {vendor.vendor_categories && (
+                <Badge variant="default" size="sm" className="mb-2">
+                  {vendor.vendor_categories.name}
+                </Badge>
+              )}
+              <p className="text-sm text-slate-600">
+                {vendor._count?.products || 0} products
+              </p>
+              {vendor.isVerified && (
+                <MdVerified className="w-4 h-4 text-sky-500 inline-block" />
+              )}
+            </Card>
+          </Link>
+        ))}
+      </div>
+    )
+  }
 
 // New Vendors Section Component
 function NewVendorsSection() {
@@ -709,46 +714,44 @@ function NewVendorsSection() {
   }
 
   return (
-    <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-      {vendors.map((vendor) => (
-        <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
-          <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center overflow-hidden">
-               {vendor.logo ? (
-                 <img src={vendor.logo} alt={vendor.name} className="w-full h-full object-cover" />
-               ) : (
-                 <span className="text-2xl font-bold text-white">
-                   {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
-                 </span>
-               )}
-             </div>
-             <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-               {truncateVendorName(vendor.name)}
-             </h3>
-             {vendor.vendor_categories && (
-               <Badge variant="default" size="sm" className="mb-2">
-                 {vendor.vendor_categories.name}
-               </Badge>
-             )}
-             <div className="flex items-center justify-center gap-1 text-sm text-slate-500 mb-2">
-               <svg className="w-4 h-4 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
-                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-               </svg>
-               <span>{vendor.rating.toFixed(1)}</span>
-             </div>
-             <p className="text-xs text-slate-400">
-               Joined {new Date(vendor.createdAt).toLocaleDateString()}
-             </p>
-             {vendor.isVerified && (
-               <Badge variant="verified" size="sm" className="mt-2">
-                 Verified
-               </Badge>
-             )}
-           </Card>
-         </Link>
-       ))}
-     </div>
-  )
+     <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+       {vendors.map((vendor) => (
+         <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+           <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
+             <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                {vendor.logo ? (
+                  <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
+                ) : (
+                  <span className="text-2xl font-bold text-white">
+                    {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                {truncateVendorName(vendor.name)}
+              </h3>
+              {vendor.vendor_categories && (
+                <Badge variant="default" size="sm" className="mb-2">
+                  {vendor.vendor_categories.name}
+                </Badge>
+              )}
+              <div className="flex items-center justify-center gap-1 text-sm text-slate-500 mb-2">
+                <svg className="w-4 h-4 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <span>{vendor.rating.toFixed(1)}</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Joined {new Date(vendor.createdAt).toLocaleDateString()}
+              </p>
+              {vendor.isVerified && (
+                <MdVerified className="w-4 h-4 text-sky-500 inline-block" />
+              )}
+            </Card>
+          </Link>
+        ))}
+      </div>
+   )
 }
 
 // Popular Categories Section Component

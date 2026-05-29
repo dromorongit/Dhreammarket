@@ -27,6 +27,7 @@ export function sanitizePhoneNumber(phone: string | null | undefined): string | 
     .replace(/-/g, '')    // Remove dashes
     .replace(/\(/g, '')    // Remove opening brackets
     .replace(/\)/g, '')   // Remove closing brackets
+    .replace(/\+/g, '')   // Remove leading + for normalization
     .trim()
 }
 
@@ -38,16 +39,11 @@ export function sanitizePhoneNumber(phone: string | null | undefined): string | 
 export function normalizeGhanaPhoneNumber(phone: string | null | undefined): string | null {
   if (!phone) return null
 
-  // Sanitize the phone number first
+  // Sanitize the phone number first (removes spaces, dashes, brackets, +)
   const cleaned = sanitizePhoneNumber(phone)
   if (!cleaned) return null
 
-  // If already in +233 format, return as-is
-  if (cleaned.startsWith('+233') && cleaned.length === 13) {
-    return cleaned
-  }
-
-  // If starts with 233 (without +), add the +
+  // If already in 233 format (12 digits), add the +
   if (cleaned.startsWith('233') && cleaned.length === 12) {
     return `+${cleaned}`
   }
@@ -93,6 +89,25 @@ export function getWhatsAppLink(phone: string | null | undefined): string | null
   // Remove the + for WhatsApp link - always return 233XXXXXXXXX format
   const waNumber = normalized.replace('+', '')
   return `https://wa.me/${waNumber}`
+}
+
+/**
+ * Generates WhatsApp links from comma-separated phone numbers
+ * @param phoneNumbers - Comma-separated phone numbers
+ * @returns Array of valid WhatsApp links
+ */
+export function getWhatsAppLinks(phoneNumbers: string | null | undefined): string[] {
+  if (!phoneNumbers) return []
+  
+  // Split by comma and normalize each number
+  const numbers = phoneNumbers
+    .split(',')
+    .map(n => n.trim())
+    .filter(n => n.length > 0)
+  
+  return numbers
+    .map(number => getWhatsAppLink(number))
+    .filter((link): link is string => link !== null)
 }
 
 /**
