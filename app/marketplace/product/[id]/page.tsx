@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
+import { MdVerified } from 'react-icons/md'
 
 interface CartResponse {
   cart: {
@@ -415,14 +416,17 @@ export default function ProductDetail() {
                   {product.name}
                 </h1>
                 {product.store?.isVerified && (
-                  <Badge variant="verified" size="md">
-                    Verified Store
-                  </Badge>
+                  <MdVerified className="w-6 h-6 text-sky-500 flex-shrink-0" />
                 )}
               </div>
               <p className="text-slate-600 mb-4 flex items-center gap-2">
                 <span className="text-slate-400">by</span>
-                <span className="font-medium text-deep-navy">{product.store?.name || 'Unknown Store'}</span>
+                <span className="font-medium text-deep-navy flex items-center gap-1">
+                  {product.store?.name || 'Unknown Store'}
+                  {product.store?.isVerified && (
+                    <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                  )}
+                </span>
               </p>
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center gap-2">
@@ -464,10 +468,10 @@ export default function ProductDetail() {
                 <div className="space-y-3">
                   <div className="flex justify-between py-2 border-b border-slate-100">
                     <span className="text-slate-600">Store</span>
-                    <span className="font-medium text-deep-navy flex items-center gap-2">
+                    <span className="font-medium text-deep-navy flex items-center gap-1">
                       {product.store?.name || 'Unknown Store'}
                       {product.store?.isVerified && (
-                        <Badge variant="verified" size="sm">Verified</Badge>
+                        <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
                       )}
                     </span>
                   </div>
