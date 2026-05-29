@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         logo: v.logo,
         isVerified: v.isVerified,
         isFeatured: v.isFeatured,
-        productCount: v._count.products,
+        productCount: v._count?.products || 0,
         category: v.vendor_categories,
         type: 'vendor',
       }))
@@ -98,7 +98,10 @@ export async function GET(request: NextRequest) {
     if (!typeFilter || typeFilter === 'categories' || typeFilter === 'product-categories') {
       const productCategories = await prisma.productCategory.findMany({
         where: {
-          name: { contains: query, mode: 'insensitive' },
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { slug: { contains: query, mode: 'insensitive' } },
+          ],
         },
         include: {
           _count: { select: { products: true } },
@@ -110,7 +113,8 @@ export async function GET(request: NextRequest) {
       results.productCategories = productCategories.map((c) => ({
         id: c.id,
         name: c.name,
-        productCount: c._count.products,
+        slug: c.slug,
+        productCount: c._count?.products || 0,
         type: 'product-category',
       }))
       // Also set categories alias for backward compatibility
@@ -121,7 +125,10 @@ export async function GET(request: NextRequest) {
     if (!typeFilter || typeFilter === 'vendor-categories') {
       const vendorCategories = await prisma.vendorCategory.findMany({
         where: {
-          name: { contains: query, mode: 'insensitive' },
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { slug: { contains: query, mode: 'insensitive' } },
+          ],
         },
         include: {
           _count: { select: { stores: true } },
@@ -133,7 +140,8 @@ export async function GET(request: NextRequest) {
       results.vendorCategories = vendorCategories.map((c) => ({
         id: c.id,
         name: c.name,
-        storeCount: c._count.stores,
+        slug: c.slug,
+        storeCount: c._count?.stores || 0,
         type: 'vendor-category',
       }))
     }

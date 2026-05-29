@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { MdVerified } from 'react-icons/md'
 
 interface SearchProduct {
   id: string
@@ -365,7 +366,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                             <span className="text-[10px] text-slate-400">· {highlightMatch(product.brand, query)}</span>
                           )}
                           {product.store?.isVerified && (
-                            <span className="text-[10px] text-emerald-600 font-medium">✓ Verified</span>
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
                           )}
                         </div>
                       </div>
@@ -410,12 +411,12 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           <p className="text-sm font-medium text-slate-800 truncate">
                             {highlightMatch(vendor.name, query)}
                           </p>
                           {vendor.isVerified && (
-                            <span className="text-[10px] text-emerald-600 font-medium flex-shrink-0">✓</span>
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
                           )}
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">

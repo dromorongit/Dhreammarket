@@ -571,20 +571,22 @@ function VendorCategorySection() {
                      </span>
                    )}
                  </div>
-                 <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                   {truncateVendorName(vendor.name)}
-                 </h3>
-                 {vendor.vendor_categories && (
-                   <Badge variant="default" size="sm" className="mb-3">
-                     {vendor.vendor_categories.name}
-                   </Badge>
-                 )}
-                 <p className="text-sm text-slate-600 mb-2">
-                   {vendor._count?.products || 0} products
-                 </p>
-                 {vendor.isVerified && (
-                   <MdVerified className="w-4 h-4 text-sky-500 inline-block" />
-                 )}
+                 <div className="flex items-center gap-1 min-w-0 mb-2">
+                    <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                      {truncateVendorName(vendor.name)}
+                    </h3>
+                    {vendor.isVerified && (
+                      <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                    )}
+                  </div>
+                  {vendor.vendor_categories && (
+                    <Badge variant="default" size="sm" className="mb-3">
+                      {vendor.vendor_categories.name}
+                    </Badge>
+                  )}
+                  <p className="text-sm text-slate-600">
+                    {vendor._count?.products || 0} products
+                  </p>
                </Card>
              </Link>
            ))}
@@ -653,9 +655,14 @@ function TopVendorsSection() {
                 </svg>
                 <span className="font-bold text-deep-navy">{vendor.rating.toFixed(1)}</span>
               </div>
-              <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                {truncateVendorName(vendor.name)}
-              </h3>
+              <div className="flex items-center justify-center gap-1 min-w-0 mb-2">
+                <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                  {truncateVendorName(vendor.name)}
+                </h3>
+                {vendor.isVerified && (
+                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                )}
+              </div>
               {vendor.vendor_categories && (
                 <Badge variant="default" size="sm" className="mb-2">
                   {vendor.vendor_categories.name}
@@ -664,9 +671,6 @@ function TopVendorsSection() {
               <p className="text-sm text-slate-600">
                 {vendor._count?.products || 0} products
               </p>
-              {vendor.isVerified && (
-                <MdVerified className="w-4 h-4 text-sky-500 inline-block" />
-              )}
             </Card>
           </Link>
         ))}
@@ -727,9 +731,14 @@ function NewVendorsSection() {
                   </span>
                 )}
               </div>
-              <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                {truncateVendorName(vendor.name)}
-              </h3>
+              <div className="flex items-center justify-center gap-1 min-w-0 mb-2">
+                <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                  {truncateVendorName(vendor.name)}
+                </h3>
+                {vendor.isVerified && (
+                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                )}
+              </div>
               {vendor.vendor_categories && (
                 <Badge variant="default" size="sm" className="mb-2">
                   {vendor.vendor_categories.name}
@@ -744,9 +753,6 @@ function NewVendorsSection() {
               <p className="text-xs text-slate-400">
                 Joined {new Date(vendor.createdAt).toLocaleDateString()}
               </p>
-              {vendor.isVerified && (
-                <MdVerified className="w-4 h-4 text-sky-500 inline-block" />
-              )}
             </Card>
           </Link>
         ))}
