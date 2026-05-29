@@ -586,39 +586,41 @@ function MarketplaceContent() {
                    >
                      <Link href={`/vendor/${vendor.id}`} className="block">
                        <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-                         {vendor.logo ? (
-                           <img
-                             src={vendor.logo}
-                             alt={`${vendor.name} logo`}
-                             className="absolute inset-0 w-full h-full object-cover opacity-50"
-                           />
-                         ) : (
-                           <div className="absolute inset-0 flex items-center justify-center">
-                             <span className="text-4xl font-bold text-white opacity-30">
-                               {vendor.name.charAt(0)}
-                             </span>
+                          {vendor.logo ? (
+                            <img
+                              src={vendor.logo}
+                              alt={`${vendor.name} logo`}
+                              className="absolute inset-0 w-full h-full object-cover opacity-50"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-4xl font-bold text-white opacity-30">
+                                {vendor.name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          {vendor.isFeatured && (
+                            <div className="absolute top-3 left-3">
+                              <Badge variant="premium" size="sm">
+                                Featured
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-4 min-w-0">
+                           <div className="flex items-center gap-1 min-w-0">
+                             <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                               {truncateVendorName(vendor.name)}
+                             </h3>
+                             {vendor.isVerified && (
+                               <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                             )}
                            </div>
-                         )}
-                         <div className="absolute top-3 left-3 flex gap-1">
-                           {vendor.isFeatured && (
-                             <Badge variant="premium" size="sm">
-                               Featured
-                             </Badge>
-                           )}
-                           {vendor.isVerified && (
-                             <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-                           )}
-                         </div>
-                       </div>
-                       <CardContent className="p-4 min-w-0">
-                          <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                            {truncateVendorName(vendor.name)}
-                          </h3>
-                          {vendor.category && (
-                           <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                             {vendor.category.name}
-                           </p>
-                         )}
+                           {vendor.category && (
+                            <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                              {vendor.category.name}
+                            </p>
+                          )}
                          <div className="flex items-center justify-between text-sm">
                            <div className="flex items-center gap-1">
                              <span className="text-yellow-400">★</span>

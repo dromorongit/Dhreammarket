@@ -489,11 +489,16 @@ export default function VendorProfilePage() {
                         </h3>
                       </Link>
                       <span className="text-[11px] font-bold text-royal-blue">
-                        {formatPrice(product.price)}
-                      </span>
-                      <p className="text-[10px] text-slate-500 mt-auto line-clamp-1 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {vendor.name}
-                      </p>
+                         {formatPrice(product.price)}
+                       </span>
+                       <div className="flex items-center gap-1 min-w-0">
+                         <p className="text-[10px] text-slate-500 truncate">
+                           {vendor.name}
+                         </p>
+                         {vendor.isVerified && (
+                           <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                         )}
+                       </div>
                     </div>
                   </Card>
                 ))}
