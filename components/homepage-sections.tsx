@@ -20,9 +20,9 @@ export function HomepageSectionSkeleton() {
           <Skeleton className="h-8 w-48 mb-3" />
           <Skeleton className="h-4 w-64" />
         </div>
-        {/* Mobile skeleton: 2 columns, 5 rows (10 products) */}
+        {/* Mobile skeleton: 2 columns, 6 rows (12 products) */}
         <div className="grid grid-cols-2 gap-4 lg:gap-6 sm:hidden">
-          {[...Array(10)].map((_, i) => (
+          {[...Array(12)].map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
@@ -122,7 +122,7 @@ function CompactProductCard({ product }: { product: Product }) {
 export function ProductGridSection({ section }: HomepageSectionProps) {
   // Safe array access with fallback
   const products = section.products || []
-  // Show max 20 products (5 rows on mobile with 2 cols, 5 rows on tablet with 3 cols, 4 rows on desktop with 5 cols)
+  // Show max 20 products (6 rows on mobile with 2 cols, 5 rows on tablet with 3 cols, 4 rows on desktop with 5 cols)
   const displayProducts = products.slice(0, 20)
 
   if (displayProducts.length === 0) {
@@ -163,16 +163,16 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        {/* Mobile: 2 columns, up to 5 rows (10 products) */}
+        {/* Mobile: 2 columns, up to 6 rows (12 products) */}
         <div className="grid grid-cols-2 gap-4 lg:gap-6 sm:hidden">
-          {displayProducts.map((product) => (
+          {displayProducts.slice(0, 12).map((product) => (
             <CompactProductCard key={product.id} product={product} />
           ))}
         </div>
 
         {/* Tablet: 3 columns, up to 5 rows (15 products) */}
         <div className="hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6">
-          {displayProducts.map((product) => (
+          {displayProducts.slice(0, 15).map((product) => (
             <CompactProductCard key={product.id} product={product} />
           ))}
         </div>
