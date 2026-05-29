@@ -92,17 +92,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, imageUrls } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
-    const finalCategoryId = categoryId || productCategoryId
+    // Also support categoryIds array for multi-category selection
+    const MAX_CATEGORIES = 3
+    
+    // Normalize categoryIds to array
+    let finalCategoryIds: string[]
+    if (Array.isArray(categoryIds)) {
+      finalCategoryIds = categoryIds
+    } else if (categoryId || productCategoryId) {
+      finalCategoryIds = [categoryId || productCategoryId]
+    } else {
+      finalCategoryIds = []
+    }
 
     // Validate required fields
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
-    if (!finalCategoryId) {
-      return NextResponse.json({ error: 'Product category is required' }, { status: 400 })
+    if (finalCategoryIds.length === 0) {
+      return NextResponse.json({ error: 'At least one product category is required' }, { status: 400 })
+    }
+    
+    // Validate max categories
+    if (finalCategoryIds.length > MAX_CATEGORIES) {
+      return NextResponse.json({ error: `Maximum of ${MAX_CATEGORIES} categories allowed` }, { status: 400 })
+    }
+    
+    // Validate no duplicate category IDs
+    const uniqueCategoryIds = Array.from(new Set(finalCategoryIds))
+    if (uniqueCategoryIds.length !== finalCategoryIds.length) {
+      return NextResponse.json({ error: 'Duplicate category IDs are not allowed' }, { status: 400 })
+    }
+    
+    // Validate all category IDs exist
+    const validCategories = await getPrisma().productCategory.findMany({
+      where: { id: { in: uniqueCategoryIds } },
+    })
+    
+    if (validCategories.length !== uniqueCategoryIds.length) {
+      return NextResponse.json({ error: 'One or more invalid category IDs provided' }, { status: 400 })
     }
     if (price === undefined || price < 0) {
       return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
@@ -122,20 +153,16 @@ export async function POST(request: NextRequest) {
       where: { userId: payload.userId },
     });
 
-    // Verify product category exists
-    const productCategory = await getPrisma().productCategory.findUnique({
-      where: { id: finalCategoryId },
-    })
-
-    if (!productCategory) {
-      return NextResponse.json({ error: 'Invalid product category' }, { status: 400 })
+    if (!store) {
+      return NextResponse.json({ error: 'Store not found' }, { status: 400 })
     }
 
-    // Create product
+    // Create product - use first category as primary, rest will be linked via junction table
+    const primaryCategoryId = uniqueCategoryIds[0]
     const product = await getPrisma().product.create({
       data: {
-        storeId: store!.id,
-        categoryId: finalCategoryId,
+        storeId: store.id,
+        categoryId: primaryCategoryId,
         name: name.trim(),
         description: description?.trim() || null,
         price: parseFloat(price),
@@ -146,6 +173,27 @@ export async function POST(request: NextRequest) {
         images: true,
       },
     })
+
+    // Create category assignments for all selected categories
+    if (uniqueCategoryIds.length > 1) {
+      await getPrisma().productCategoryAssignment.createMany({
+        data: uniqueCategoryIds.map((catId, index) => ({
+          productId: product.id,
+          productCategoryId: catId,
+          isPrimary: index === 0,
+        })),
+        skipDuplicates: true,
+      })
+    } else {
+      // For single category, create the assignment record too for consistency
+      await getPrisma().productCategoryAssignment.create({
+        data: {
+          productId: product.id,
+          productCategoryId: primaryCategoryId,
+          isPrimary: true,
+        },
+      })
+    }
 
     // Add images if provided
     if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {

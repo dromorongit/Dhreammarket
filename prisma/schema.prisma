@@ -96,6 +96,7 @@ model ProductCategory {
   parent    ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], map: "categories_parentId_fkey")
   children  ProductCategory[] @relation("ProductCategoryHierarchy")
   products  Product[]
+  productAssignments ProductCategoryAssignment[]
 
   @@map("product_categories")
 }
@@ -120,6 +121,7 @@ model Product {
   category         ProductCategory          @relation(fields: [categoryId], references: [id])
   store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   productReviews   ProductReview[]
+  categoryAssignments ProductCategoryAssignment[]
 
   @@map("products")
 }
@@ -133,6 +135,19 @@ model ProductImage {
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_images")
+}
+
+model ProductCategoryAssignment {
+  id               String         @id @default(cuid())
+  productId        String
+  productCategoryId String
+  isPrimary        Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productCategory  ProductCategory @relation(fields: [productCategoryId], references: [id])
+
+  @@unique([productId, productCategoryId])
+  @@map("product_category_assignments")
 }
 
 model Cart {

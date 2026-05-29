@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import ImageUpload from '@/components/ImageUpload'
+import { SearchableCategorySelector } from '@/components/SearchableCategorySelector'
 import Link from 'next/link'
 
 interface Category {
@@ -27,7 +28,7 @@ export default function NewProduct() {
     description: '',
     price: '',
     stock: '',
-    categoryId: '',
+    categoryIds: [] as string[],
     imageUrls: [''],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -105,6 +106,13 @@ export default function NewProduct() {
     setErrors({})
     setSaving(true)
 
+    // Validate at least one category is selected
+    if ((formData.categoryIds || []).length === 0) {
+      setErrors({ general: 'Please select at least one category' })
+      setSaving(false)
+      return
+    }
+
     try {
       const productData = {
         ...formData,
@@ -135,6 +143,13 @@ export default function NewProduct() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleCategoryChange = (categoryIds: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      categoryIds,
+    }))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -264,21 +279,17 @@ export default function NewProduct() {
               </div>
 
               <div>
-                  <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                    Category *
-                  </label>
-                  <select
-                     id="categoryId"
-                     name="categoryId"
-                     required
-                     value={formData.categoryId}
-                     onChange={handleChange}
-                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                   >
-                     <option value="">Select a category</option>
-                     {renderCategoryOptions(categories)}
-                   </select>
-               </div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     Product Categories * (Max 3)
+                   </label>
+                   <SearchableCategorySelector
+                     categories={categories || []}
+                     selectedCategoryIds={formData.categoryIds || []}
+                     onChange={handleCategoryChange}
+                     maxCategories={3}
+                     placeholder="Search product categories..."
+                   />
+                </div>
 
               <div>
                 <ImageUpload

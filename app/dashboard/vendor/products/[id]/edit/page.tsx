@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import ImageUpload from '@/components/ImageUpload'
+import { SearchableCategorySelector } from '@/components/SearchableCategorySelector'
 import Link from 'next/link'
 
 interface Category {
@@ -28,6 +29,13 @@ interface Product {
     url: string
     alt: string | null
   }>
+  categoryAssignments?: Array<{
+    productCategoryId: string
+    productCategory: {
+      id: string
+      name: string
+    }
+  }>
 }
 
 export default function EditProduct() {
@@ -45,7 +53,7 @@ export default function EditProduct() {
     description: '',
     price: '',
     stock: '',
-    categoryId: '',
+    categoryIds: [] as string[],
     imageUrls: [''],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -124,12 +132,18 @@ export default function EditProduct() {
       if (response.ok) {
         const data = await response.json()
         setProduct(data.product)
+        
+        // Extract category IDs from categoryAssignments or use the primary categoryId
+        const categoryIds = (data.product.categoryAssignments || [])
+          .map((assignment: any) => assignment.productCategoryId)
+          .filter((id: string) => id)
+        
         setFormData({
           name: data.product.name,
           description: data.product.description || '',
           price: data.product.price.toString(),
           stock: data.product.stock.toString(),
-          categoryId: data.product.categoryId,
+          categoryIds: categoryIds.length > 0 ? categoryIds : [data.product.categoryId],
           imageUrls: data.product.images.length > 0
             ? data.product.images.map((img: any) => img.url)
             : [''],
@@ -149,6 +163,13 @@ export default function EditProduct() {
     e.preventDefault()
     setErrors({})
     setSaving(true)
+
+    // Validate at least one category is selected
+    if ((formData.categoryIds || []).length === 0) {
+      setErrors({ general: 'Please select at least one category' })
+      setSaving(false)
+      return
+    }
 
     try {
       const productData = {
@@ -180,6 +201,13 @@ export default function EditProduct() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleCategoryChange = (categoryIds: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      categoryIds,
+    }))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -309,20 +337,16 @@ export default function EditProduct() {
               </div>
 
               <div>
-                   <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                     Category *
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     Product Categories * (Max 3)
                    </label>
-                   <select
-                     id="categoryId"
-                     name="categoryId"
-                     required
-                     value={formData.categoryId}
-                     onChange={handleChange}
-                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                   >
-                     <option value="">Select a category</option>
-                     {renderCategoryOptions(categories)}
-                   </select>
+                   <SearchableCategorySelector
+                     categories={categories || []}
+                     selectedCategoryIds={formData.categoryIds || []}
+                     onChange={handleCategoryChange}
+                     maxCategories={3}
+                     placeholder="Search product categories..."
+                   />
                  </div>
 
               <div>
