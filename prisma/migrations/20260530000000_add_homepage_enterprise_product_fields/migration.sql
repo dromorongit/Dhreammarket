@@ -15,6 +15,9 @@ UPDATE "products" SET "salesCount" = 0 WHERE "salesCount" IS NULL;
 ALTER TABLE "products" ALTER COLUMN "isSponsored" SET DEFAULT false;
 UPDATE "products" SET "isSponsored" = false WHERE "isSponsored" IS NULL;
 
+ALTER TABLE "products" ALTER COLUMN "salesCount" SET NOT NULL;
+ALTER TABLE "products" ALTER COLUMN "isSponsored" SET NOT NULL;
+
 -- HomepageSectionType enum values for enterprise sections
 DO $$
 BEGIN
