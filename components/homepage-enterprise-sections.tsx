@@ -17,6 +17,7 @@ import {
   getEffectivePrice,
   dedupeProducts,
   collectProductIds,
+  normalizeBrand,
   EMPTY_ENTERPRISE_DATA,
 } from '@/lib/homepage-product-utils'
 
@@ -31,12 +32,7 @@ export function useEnterpriseHomepageData() {
         const json = await response.json()
         if (json && typeof json === 'object') {
           setData({
-            flashSales: Array.isArray(json.flashSales) ? json.flashSales : [],
-            sponsoredProducts: Array.isArray(json.sponsoredProducts) ? json.sponsoredProducts : [],
-            gadgetProducts: Array.isArray(json.gadgetProducts) ? json.gadgetProducts : [],
             topSelling: Array.isArray(json.topSelling) ? json.topSelling : [],
-            bigDeals: Array.isArray(json.bigDeals) ? json.bigDeals : [],
-            brands: Array.isArray(json.brands) ? json.brands : [],
           })
         }
       } catch (error) {
@@ -353,22 +349,35 @@ function StandardCard({ product, badge }: { product: EnterpriseProduct; badge?: 
 }
 
 export function FlashSalesSection({
-  products,
+  section,
   loading,
 }: {
-  products: EnterpriseProduct[]
+  section: {
+    name: string
+    subtitle: string | null
+    type: string
+  }
   loading?: boolean
 }) {
   if (loading) return <EnterpriseSectionSkeleton />
+  const products = section.products ?? []
   if (!products.length) return null
+
+  const defaultSubtitles: Record<string, string> = {
+    FLASH_SALES: 'Limited time offers',
+    SPONSORED_PRODUCTS: 'Featured by vendors',
+    LARGE_FEATURE_CARDS: 'Premium tech deals',
+    BIG_DEALS: 'Biggest savings on premium products',
+    BRAND_GRID: 'Explore products from your favorite brands',
+  }
 
   return (
     <section className="relative py-16 lg:py-24 bg-gradient-to-b from-rose-50 to-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           badge="Limited Time"
-          title="Flash Sales"
-          subtitle="Grab these deals before time runs out"
+          title={section.name}
+          subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
         />
         <ResponsiveProductGrid
           products={products}
@@ -381,22 +390,35 @@ export function FlashSalesSection({
 }
 
 export function SponsoredProductsSection({
-  products,
+  section,
   loading,
 }: {
-  products: EnterpriseProduct[]
+  section: {
+    name: string
+    subtitle: string | null
+    type: string
+  }
   loading?: boolean
 }) {
   if (loading) return <EnterpriseSectionSkeleton />
+  const products = section.products ?? []
   if (!products.length) return null
+
+  const defaultSubtitles: Record<string, string> = {
+    FLASH_SALES: 'Limited time offers',
+    SPONSORED_PRODUCTS: 'Featured by vendors',
+    LARGE_FEATURE_CARDS: 'Premium tech deals',
+    BIG_DEALS: 'Biggest savings on premium products',
+    BRAND_GRID: 'Explore products from your favorite brands',
+  }
 
   return (
     <section className="relative py-16 lg:py-24 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           badge="Promoted"
-          title="Sponsored Products"
-          subtitle="Hand-picked products from our top vendors"
+          title={section.name}
+          subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
         />
         <ResponsiveProductGrid
           products={products}
@@ -550,25 +572,23 @@ export function BigTopDealsSection({
 }
 
 function BrandCard({ brand }: { brand: EnterpriseBrand }) {
-  const logo = brand.store?.logo
+  const normalized = normalizeBrand(brand)
+  const logo = normalized.logo
 
   return (
-    <Link href={`/marketplace?brand=${encodeURIComponent(brand.brand)}`}>
+    <Link href={`/marketplace?brand=${encodeURIComponent(normalized.slug)}`}>
       <Card variant="elevated" className="group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full">
         <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
           {logo ? (
-            <img src={logo} alt={brand.brand} className="w-full h-full object-cover" />
+            <img src={logo} alt={normalized.name} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-2xl font-bold text-royal-blue">{brand.brand.charAt(0).toUpperCase()}</span>
+            <span className="text-2xl font-bold text-royal-blue">{normalized.name.charAt(0).toUpperCase()}</span>
           )}
         </div>
         <h3 className="text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors line-clamp-1">
-          {brand.brand}
+          {normalized.name}
         </h3>
-        <p className="text-xs text-slate-500 mt-1">{brand.productCount} products</p>
-        {brand.store && (
-          <p className="text-[10px] text-slate-400 mt-0.5 truncate">{truncateVendorName(brand.store.name)}</p>
-        )}
+        <p className="text-xs text-slate-500 mt-1">{normalized.productCount} products</p>
       </Card>
     </Link>
   )
@@ -596,18 +616,21 @@ export function BrandStoreSection({
         {/* Mobile horizontal scroll */}
         <div className="md:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-            {brands.map((brand) => (
-              <div key={brand.brand} className="w-36 flex-shrink-0">
-                <BrandCard brand={brand} />
-              </div>
-            ))}
+            {brands.map((brand) => {
+              const normalized = normalizeBrand(brand)
+              return (
+                <div key={normalized.id || normalized.slug} className="w-36 flex-shrink-0">
+                  <BrandCard brand={brand} />
+                </div>
+              )
+            })}
           </div>
         </div>
 
         {/* Desktop grid */}
         <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {brands.map((brand) => (
-            <BrandCard key={brand.brand} brand={brand} />
+            <BrandCard key={normalizeBrand(brand).id || normalizeBrand(brand).slug} brand={brand} />
           ))}
         </div>
 
@@ -624,29 +647,11 @@ export function BrandStoreSection({
 }
 
 export function buildEnterpriseSections(data: EnterpriseHomepageData) {
-  const flashSales = dedupeProducts(data.flashSales, new Set())
-  const excludeFromFeaturedIds = collectProductIds(flashSales)
-
-  const sponsoredProducts = dedupeProducts(data.sponsoredProducts, excludeFromFeaturedIds)
-  sponsoredProducts.forEach((p) => excludeFromFeaturedIds.add(p.id))
-
-  // Dedupe later sections separately; only flash/sponsored sit above Featured Products
-  const gadgetSeen = new Set(excludeFromFeaturedIds)
-  const gadgetProducts = dedupeProducts(data.gadgetProducts, gadgetSeen)
-  gadgetProducts.forEach((p) => gadgetSeen.add(p.id))
-
-  const topSelling = dedupeProducts(data.topSelling, gadgetSeen)
-  topSelling.forEach((p) => gadgetSeen.add(p.id))
-
-  const bigDeals = dedupeProducts(data.bigDeals, gadgetSeen)
+  const topSelling = dedupeProducts(data.topSelling, new Set())
+  const excludeFromFeaturedIds = collectProductIds(topSelling)
 
   return {
-    flashSales,
-    sponsoredProducts,
-    gadgetProducts,
     topSelling,
-    bigDeals,
-    brands: (data.brands || []).slice(0, 20),
     excludeFromFeaturedIds,
   }
 }

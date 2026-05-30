@@ -24,16 +24,9 @@ import {
   BrandStoreSection,
   buildEnterpriseSections,
 } from '@/components/homepage-enterprise-sections'
-
-interface HomepageSectionData {
-  id: string
-  name: string
-  slug: string
-  type: string
-  subtitle: string | null
-  products: any[]
-  vendors: any[]
-}
+import { useManagedHomepageData } from '@/components/homepage-managed-data'
+import { collectProductIds } from '@/lib/homepage-product-utils'
+import { isManagedSectionSlug } from '@/lib/homepage-constants'
 
 interface Category {
   id: string
@@ -56,12 +49,25 @@ interface FeaturedVendor {
 export default function Home() {
   const [featuredVendors, setFeaturedVendors] = useState<FeaturedVendor[]>([])
   const [loadingFeatured, setLoadingFeatured] = useState(true)
-  const [dynamicSections, setDynamicSections] = useState<HomepageSectionData[]>([])
-  const [loadingSections, setLoadingSections] = useState(true)
   const { data: enterpriseData, loading: loadingEnterprise } = useEnterpriseHomepageData()
+  const { sectionsBySlug, data: managedData, loading: loadingManaged } = useManagedHomepageData()
   const enterpriseSections = useMemo(
     () => buildEnterpriseSections(enterpriseData),
     [enterpriseData]
+  )
+
+  const excludeFromFeaturedIds = useMemo(() => {
+    const ids = new Set(enterpriseSections.excludeFromFeaturedIds)
+    const flash = sectionsBySlug['flash-sales']?.products ?? []
+    const sponsored = sectionsBySlug['sponsored-products']?.products ?? []
+    collectProductIds(flash).forEach((id) => ids.add(id))
+    collectProductIds(sponsored).forEach((id) => ids.add(id))
+    return ids
+  }, [enterpriseSections.excludeFromFeaturedIds, sectionsBySlug])
+
+  const extraSections = useMemo(
+    () => managedData.sections.filter((s) => !isManagedSectionSlug(s.slug)),
+    [managedData.sections]
   )
 
   useEffect(() => {
@@ -79,23 +85,6 @@ export default function Home() {
       }
     }
     fetchFeaturedVendors()
-  }, [])
-
-  useEffect(() => {
-    const fetchSections = async () => {
-      try {
-        const response = await fetch('/api/homepage/public')
-        if (response.ok) {
-          const data = await response.json()
-          setDynamicSections(data.sections || [])
-        }
-      } catch (error) {
-        console.error('Error fetching homepage sections:', error)
-      } finally {
-        setLoadingSections(false)
-      }
-    }
-    fetchSections()
   }, [])
 
   return (
@@ -181,25 +170,18 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Enterprise: Flash Sales & Sponsored (before Featured Products) ─── */}
-      <FlashSalesSection products={enterpriseSections.flashSales} loading={loadingEnterprise} />
-      <SponsoredProductsSection products={enterpriseSections.sponsoredProducts} loading={loadingEnterprise} />
+       {/* ─── Super Admin managed: Flash Sales & Sponsored ─── */}
+       <FlashSalesSection
+         section={sectionsBySlug['flash-sales']}
+         loading={loadingManaged}
+       />
+       <SponsoredProductsSection
+         section={sectionsBySlug['sponsored-products']}
+         loading={loadingManaged}
+       />
 
-      {/* ─── Dynamic Homepage Sections ─── */}
-      {loadingSections ? (
-        <>
-          <HomepageSectionSkeleton />
-          <HomepageSectionSkeleton />
-          <HomepageSectionSkeleton />
-        </>
-      ) : dynamicSections.length > 0 ? (
-        dynamicSections.map((section) => (
-          <HomepageSectionRenderer key={section.id} sections={[section]} />
-        ))
-      ) : null}
-
-      {/* ─── Fallback: Featured Products (always shown for reliable product display) ─── */}
-      {!loadingSections && (
+      {/* ─── Featured Products (always shown) ─── */}
+      {!loadingManaged && (
         <section className="relative py-24 lg:py-32 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -211,19 +193,46 @@ export default function Home() {
                 Discover premium products from our trusted vendors
               </p>
             </div>
-            <FeaturedProductsSection excludeIds={enterpriseSections.excludeFromFeaturedIds} />
+            <FeaturedProductsSection excludeIds={excludeFromFeaturedIds} />
           </div>
         </section>
       )}
 
-      {/* ─── Enterprise: Gadget, Top Selling, Big Deals, Brand Store ─── */}
-      <EnterpriseGadgetDisplaySection products={enterpriseSections.gadgetProducts} loading={loadingEnterprise} />
-      <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
-      <BigTopDealsSection products={enterpriseSections.bigDeals} loading={loadingEnterprise} />
-      <BrandStoreSection brands={enterpriseSections.brands} loading={loadingEnterprise} />
+       {/* ─── Super Admin managed: Gadget Display ─── */}
+       <EnterpriseGadgetDisplaySection
+         section={sectionsBySlug['gadget-display']}
+         loading={loadingManaged}
+       />
 
-      {/* ─── Fallback: Shop by Vendor ─── */}
-      {!loadingSections && dynamicSections.length === 0 && (
+      {/* ─── Automatic: Top Selling (real sales data) ─── */}
+      <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
+
+       {/* ─── Super Admin managed: Big Top Deals ─── */}
+       <BigTopDealsSection
+         section={sectionsBySlug['big-top-deals']}
+         loading={loadingManaged}
+       />
+
+       {/* ─── Super Admin managed: Brand Store ─── */}
+       <BrandStoreSection
+         section={sectionsBySlug['brand-store']}
+         brands={managedData.brands}
+         loading={loadingManaged}
+       />
+
+      {/* ─── Optional extra custom sections (non-core) ─── */}
+      {loadingManaged ? (
+        <>
+          <HomepageSectionSkeleton />
+        </>
+      ) : extraSections.length > 0 ? (
+        extraSections.map((section) => (
+          <HomepageSectionRenderer key={section.id} sections={[section]} />
+        ))
+      ) : null}
+
+      {/* ─── Shop by Vendor Type ─── */}
+      {!loadingManaged && (
         <section className="relative py-24 lg:py-32 bg-white">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -240,8 +249,8 @@ export default function Home() {
         </section>
       )}
 
-      {/* ─── Fallback: Top Vendors ─── */}
-      {!loadingSections && dynamicSections.length === 0 && (
+      {/* ─── Fallback: Top Vendors (only when no extra sections) ─── */}
+      {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-24 lg:py-32 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -258,8 +267,8 @@ export default function Home() {
         </section>
       )}
 
-      {/* ─── Fallback: New Vendors ─── */}
-      {!loadingSections && dynamicSections.length === 0 && (
+      {/* ─── Fallback: New Vendors (only when no extra sections) ─── */}
+      {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-24 lg:py-32 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
@@ -276,8 +285,8 @@ export default function Home() {
         </section>
       )}
 
-      {/* ─── Fallback: Popular Categories ─── */}
-      {!loadingSections && dynamicSections.length === 0 && (
+      {/* ─── Fallback: Popular Categories (only when no extra sections) ─── */}
+      {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-24 lg:py-32 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">

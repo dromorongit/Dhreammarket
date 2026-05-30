@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/adminAuth'
+import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 
 // GET /api/homepage-sections - List all homepage sections (SUPER_ADMIN only)
 export async function GET(request: NextRequest) {
@@ -11,6 +12,8 @@ export async function GET(request: NextRequest) {
     }
 
     const prisma = getPrisma()
+    await ensureDefaultHomepageSections(prisma)
+
     const sections = await prisma.homepageSection.findMany({
       orderBy: { displayOrder: 'asc' },
       include: {

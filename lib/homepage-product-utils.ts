@@ -15,17 +15,32 @@ export interface EnterpriseProduct {
 }
 
 export interface EnterpriseBrand {
-  brand: string
+  id?: string
+  name: string
+  slug: string
+  logo?: string | null
+  brand?: string
   productCount: number
   store?: { id: string; name: string; logo: string | null } | null
 }
 
 export interface EnterpriseHomepageData {
-  flashSales: EnterpriseProduct[]
-  sponsoredProducts: EnterpriseProduct[]
-  gadgetProducts: EnterpriseProduct[]
   topSelling: EnterpriseProduct[]
-  bigDeals: EnterpriseProduct[]
+}
+
+export interface ManagedHomepageSection {
+  id: string
+  name: string
+  slug: string
+  type: string
+  subtitle: string | null
+  displayOrder: number
+  products: EnterpriseProduct[]
+  vendors: unknown[]
+}
+
+export interface ManagedHomepageData {
+  sections: ManagedHomepageSection[]
   brands: EnterpriseBrand[]
 }
 
@@ -53,10 +68,37 @@ export function collectProductIds(products: EnterpriseProduct[]): Set<string> {
 }
 
 export const EMPTY_ENTERPRISE_DATA: EnterpriseHomepageData = {
-  flashSales: [],
-  sponsoredProducts: [],
-  gadgetProducts: [],
   topSelling: [],
-  bigDeals: [],
+}
+
+export const EMPTY_MANAGED_DATA: ManagedHomepageData = {
+  sections: [],
   brands: [],
+}
+
+export function sectionsBySlug(sections: ManagedHomepageSection[]): Record<string, ManagedHomepageSection> {
+  return sections.reduce<Record<string, ManagedHomepageSection>>((acc, section) => {
+    acc[section.slug] = section
+    return acc
+  }, {})
+}
+
+export function normalizeBrand(brand: {
+  id?: string
+  name?: string
+  slug?: string
+  logo?: string | null
+  brand?: string
+  productCount: number
+  store?: { id: string; name: string; logo: string | null } | null
+}): EnterpriseBrand {
+  const name = brand.name || brand.brand || 'Brand'
+  return {
+    id: brand.id,
+    name,
+    slug: brand.slug || encodeURIComponent(name),
+    logo: brand.logo ?? brand.store?.logo ?? null,
+    productCount: brand.productCount,
+    store: brand.store ?? null,
+  }
 }

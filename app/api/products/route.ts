@@ -48,6 +48,14 @@ export async function GET(request: NextRequest) {
     const products = await getPrisma().product.findMany({
       include: {
         category: true,
+        brandRelation: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+          },
+        },
         store: {
           select: {
             id: true,

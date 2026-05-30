@@ -1,56 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 
-// Force dynamic rendering to prevent caching
 export const dynamic = 'force-dynamic'
 
-// GET /api/homepage/public - Get all enabled homepage sections with their products/vendors (public)
-export async function GET(request: NextRequest) {
+const productInclude = {
+  images: true,
+  category: true,
+  store: {
+    select: { id: true, name: true, isVerified: true, logo: true },
+  },
+} as const
+
+// GET /api/homepage/public - Managed homepage sections + brands (public)
+export async function GET(_request: NextRequest) {
   try {
     const prisma = getPrisma()
+    await ensureDefaultHomepageSections(prisma)
 
-    const sections = await prisma.homepageSection.findMany({
-      where: { isEnabled: true },
-      orderBy: { displayOrder: 'asc' },
-      include: {
-        products: {
-          include: {
-            product: {
-              include: {
-                images: true,
-                category: true,
-                store: {
-                  select: { id: true, name: true, isVerified: true },
-                },
+    const [sections, brands] = await Promise.all([
+      prisma.homepageSection.findMany({
+        where: { isEnabled: true },
+        orderBy: { displayOrder: 'asc' },
+        include: {
+          products: {
+            orderBy: { displayOrder: 'asc' },
+            include: {
+              product: {
+                include: productInclude,
               },
             },
           },
-          take: 20,
-        },
-        vendors: {
-          include: {
-            vendor: {
-              include: {
-                profile: true,
-                store: {
-                  select: { id: true, name: true, isVerified: true, isFeatured: true, logo: true },
+          vendors: {
+            include: {
+              vendor: {
+                include: {
+                  profile: true,
+                  store: {
+                    select: {
+                      id: true,
+                      name: true,
+                      isVerified: true,
+                      isFeatured: true,
+                      logo: true,
+                    },
+                  },
                 },
               },
             },
+            take: 10,
           },
-          take: 10,
         },
-      },
-    })
+      }),
+      prisma.brand.findMany({
+        where: { isActive: true },
+        orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+        include: {
+          _count: {
+            select: {
+              products: {
+                where: { stock: { gt: 0 } },
+              },
+            },
+          },
+        },
+      }),
+    ])
 
-    // Format response - sort by newest
     const formatted = sections.map((section) => {
-      // Sort products by newest first
       const sortedProducts = (section.products || [])
         .map((sp) => sp.product)
-        .filter(Boolean)
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      
+        .filter((p) => p && p.stock > 0)
+
       return {
         id: section.id,
         name: section.name,
@@ -63,16 +84,24 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const response = NextResponse.json({ sections: formatted })
-    // Prevent caching to ensure fresh products appear
+    const formattedBrands = brands.map((brand) => ({
+      id: brand.id,
+      name: brand.name,
+      slug: brand.slug,
+      logo: brand.logo,
+      description: brand.description,
+      productCount: brand._count.products,
+    }))
+
+    const response = NextResponse.json({
+      sections: formatted,
+      brands: formattedBrands,
+    })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
     return response
   } catch (error) {
     console.error('Error fetching public homepage sections:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

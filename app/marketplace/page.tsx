@@ -26,6 +26,14 @@ interface Product {
   description: string | null
   price: number
   stock: number
+  brand?: string | null
+  brandId?: string | null
+  brandRelation?: {
+    id: string
+    name: string
+    slug: string
+    logo?: string | null
+  } | null
   category?: {
     id: string
     name: string
@@ -77,6 +85,7 @@ function MarketplaceContent() {
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
+  const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'products' | 'vendors'>('products')
 
@@ -92,8 +101,10 @@ function MarketplaceContent() {
   useEffect(() => {
     const categoryParam = searchParams.get('category') || ''
     const vendorCategoryParam = searchParams.get('vendorCategory') || ''
+    const brandParam = searchParams.get('brand') || ''
     setSelectedCategory(categoryParam)
     setSelectedVendorCategory(vendorCategoryParam)
+    setSelectedBrand(brandParam)
     fetchProducts()
     fetchCategories()
     fetchVendorCategories()
@@ -323,6 +334,14 @@ function MarketplaceContent() {
   }
 
   const filteredProducts = products.filter(product => {
+    if (selectedBrand) {
+      const filter = decodeURIComponent(selectedBrand).toLowerCase()
+      const brandSlug = product.brandRelation?.slug?.toLowerCase()
+      const brandName = product.brand?.toLowerCase()
+      if (brandSlug !== filter && brandName !== filter) {
+        return false
+      }
+    }
     // Filter by product category (including subcategories)
     if (selectedCategory) {
       const matchingIds = getCategoryFilterIds(selectedCategory)

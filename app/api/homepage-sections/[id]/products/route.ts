@@ -51,16 +51,18 @@ export async function POST(
     // Create associations (skip duplicates)
     const existing = await prisma.homepageSectionProduct.findMany({
       where: { sectionId: id },
-      select: { productId: true },
+      select: { productId: true, displayOrder: true },
     })
     const existingIds = new Set(existing.map((e) => e.productId))
     const newProductIds = productIds.filter((pid: string) => !existingIds.has(pid))
 
     if (newProductIds.length > 0) {
+      const maxOrder = existing.reduce((max, row) => Math.max(max, row.displayOrder), -1)
       await prisma.homepageSectionProduct.createMany({
-        data: newProductIds.map((productId: string) => ({
+        data: newProductIds.map((productId: string, index: number) => ({
           sectionId: id,
           productId,
+          displayOrder: maxOrder + 1 + index,
         })),
         skipDuplicates: true,
       })
@@ -68,6 +70,7 @@ export async function POST(
 
     const updated = await prisma.homepageSectionProduct.findMany({
       where: { sectionId: id },
+      orderBy: { displayOrder: 'asc' },
       include: {
             product: {
               include: {

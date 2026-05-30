@@ -101,6 +101,20 @@ model ProductCategory {
   @@map("product_categories")
 }
 
+model Brand {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  slug         String    @unique
+  logo         String?
+  description  String?
+  isActive     Boolean   @default(true)
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  products     Product[]
+  homepageSections HomepageSectionBrand[]
+}
+
 model Product {
   id               String                   @id @default(cuid())
   storeId          String
@@ -108,6 +122,7 @@ model Product {
   name             String
   description      String?
   brand            String?
+  brandId          String?
   price            Float
   flashSalePrice   Float?                   // Discounted price for flash sales
   flashSaleStart   DateTime?                // When flash sale starts
@@ -125,6 +140,7 @@ model Product {
   images           ProductImage[]
   category         ProductCategory          @relation(fields: [categoryId], references: [id])
   store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  brandRelation    Brand?                   @relation(fields: [brandId], references: [id], onDelete: SetNull)
   productReviews   ProductReview[]
   categoryAssignments ProductCategoryAssignment[]
 
@@ -368,17 +384,17 @@ model HomepageSection {
   updatedAt    DateTime                 @updatedAt
   products     HomepageSectionProduct[]
   vendors      HomepageSectionVendor[]
-
-  @@map("homepage_sections")
+  brands       HomepageSectionBrand[]
 }
 
 model HomepageSectionProduct {
-  id        String          @id @default(cuid())
-  sectionId String
-  productId String
-  createdAt DateTime        @default(now())
-  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  id           String          @id @default(cuid())
+  sectionId    String
+  productId    String
+  displayOrder Int             @default(0)
+  createdAt    DateTime        @default(now())
+  product      Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  section      HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([sectionId, productId])
   @@map("homepage_section_products")
@@ -394,6 +410,18 @@ model HomepageSectionVendor {
 
   @@unique([sectionId, vendorId])
   @@map("homepage_section_vendors")
+}
+
+model HomepageSectionBrand {
+  id        String          @id @default(cuid())
+  sectionId String
+  brandId   String
+  createdAt DateTime        @default(now())
+  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, brandId])
+  @@map("homepage_section_brands")
 }
 
 enum Role {
