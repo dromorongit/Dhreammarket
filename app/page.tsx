@@ -885,7 +885,7 @@ interface Product {
     name: string
     isVerified?: boolean
   }
-  images: Array<{
+  images?: Array<{
     id: string
     url: string
     alt: string | null
@@ -977,10 +977,10 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
           >
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                {product.images.length > 0 ? (
+                {product.images?.length > 0 ? (
                   <img
-                    src={product.images[0].url}
-                    alt={product.images[0].alt || product.name}
+                    src={product.images?.[0]?.url}
+                    alt={product.images?.[0]?.alt || product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
@@ -1047,10 +1047,10 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
           >
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                {product.images.length > 0 ? (
+                {product.images?.length > 0 ? (
                   <img
-                    src={product.images[0].url}
-                    alt={product.images[0].alt || product.name}
+                    src={product.images?.[0]?.url}
+                    alt={product.images?.[0]?.alt || product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
@@ -1117,10 +1117,10 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
           >
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                {product.images.length > 0 ? (
+                {product.images?.length > 0 ? (
                   <img
-                    src={product.images[0].url}
-                    alt={product.images[0].alt || product.name}
+                    src={product.images?.[0]?.url}
+                    alt={product.images?.[0]?.alt || product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
