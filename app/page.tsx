@@ -977,7 +977,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
           >
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                {product.images?.length > 0 ? (
+                {(product.images?.length ?? 0) > 0 ? (
                   <img
                     src={product.images?.[0]?.url}
                     alt={product.images?.[0]?.alt || product.name}
@@ -1047,7 +1047,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
           >
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                {product.images?.length > 0 ? (
+                {(product.images?.length ?? 0) > 0 ? (
                   <img
                     src={product.images?.[0]?.url}
                     alt={product.images?.[0]?.alt || product.name}
@@ -1117,7 +1117,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
           >
             <Link href={`/marketplace/product/${product.id}`} className="block">
               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                {product.images?.length > 0 ? (
+                {(product.images?.length ?? 0) > 0 ? (
                   <img
                     src={product.images?.[0]?.url}
                     alt={product.images?.[0]?.alt || product.name}

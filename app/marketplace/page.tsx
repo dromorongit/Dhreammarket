@@ -518,11 +518,11 @@ function MarketplaceContent() {
                      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
                    >
                      <Link href={`/marketplace/product/${product.id}`} className="block">
-                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-{product.images?.length > 0 ? (
+<div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+                          {(product.images?.length ?? 0) > 0 ? (
                             <img
-                              src={product.images[0].url}
-                              alt={product.images[0].alt || product.name}
+                              src={product.images![0].url}
+                              alt={product.images![0].alt || product.name}
                               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               loading="lazy"
                             />
