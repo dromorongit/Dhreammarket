@@ -14,12 +14,21 @@ const productInclude = {
 
 // GET /api/homepage/public - Managed homepage sections + brands (public)
 export async function GET(_request: NextRequest) {
+  let sections: any[] = []
+  let brands: any[] = []
+
   try {
     const prisma = getPrisma()
-    await ensureDefaultHomepageSections(prisma)
+    try {
+      await ensureDefaultHomepageSections(prisma)
+      console.log('[homepage/public] ensureDefaultHomepageSections completed')
+    } catch (e) {
+      console.error('[homepage/public] ensureDefaultHomepageSections failed:', e)
+    }
 
-    const [sections, brands] = await Promise.all([
-      prisma.homepageSection.findMany({
+    // Fetch sections with individual try/catch
+    try {
+      sections = await prisma.homepageSection.findMany({
         where: { isEnabled: true },
         orderBy: { displayOrder: 'asc' },
         include: {
@@ -51,8 +60,16 @@ export async function GET(_request: NextRequest) {
             take: 10,
           },
         },
-      }),
-      prisma.brand.findMany({
+      })
+      console.log('[homepage/public] homepageSection.findMany succeeded, count:', sections.length)
+    } catch (e) {
+      console.error('[homepage/public] homepageSection.findMany FAILED:', e)
+      sections = []
+    }
+
+    // Fetch brands with individual try/catch
+    try {
+      brands = await prisma.brand.findMany({
         where: { isActive: true },
         orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
         include: {
@@ -64,44 +81,47 @@ export async function GET(_request: NextRequest) {
             },
           },
         },
-      }),
-    ])
-
-    const formatted = sections.map((section) => {
-      const sortedProducts = (section.products || [])
-        .map((sp) => sp.product)
-        .filter((p) => p && p.stock > 0)
-
-      return {
-        id: section.id,
-        name: section.name,
-        slug: section.slug,
-        type: section.type,
-        subtitle: section.subtitle,
-        displayOrder: section.displayOrder,
-        products: sortedProducts,
-        vendors: (section.vendors || []).map((sv) => sv.vendor).filter(Boolean),
-      }
-    })
-
-    const formattedBrands = brands.map((brand) => ({
-      id: brand.id,
-      name: brand.name,
-      slug: brand.slug,
-      logo: brand.logo,
-      description: brand.description,
-      productCount: brand._count.products,
-    }))
-
-    const response = NextResponse.json({
-      sections: formatted,
-      brands: formattedBrands,
-    })
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-    response.headers.set('Pragma', 'no-cache')
-    return response
+      })
+      console.log('[homepage/public] brand.findMany succeeded, count:', brands.length)
+    } catch (e) {
+      console.error('[homepage/public] brand.findMany FAILED:', e)
+      brands = []
+    }
   } catch (error) {
-    console.error('Error fetching public homepage sections:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error fetching public homepage sections (outer):', error)
   }
+
+  const formatted = (sections || []).map((section) => {
+    const sortedProducts = (section.products || [])
+      .map((sp: any) => sp.product)
+      .filter((p: any) => p && p.stock > 0)
+
+    return {
+      id: section.id,
+      name: section.name,
+      slug: section.slug,
+      type: section.type,
+      subtitle: section.subtitle,
+      displayOrder: section.displayOrder,
+      products: sortedProducts,
+      vendors: (section.vendors || []).map((sv: any) => sv.vendor).filter(Boolean),
+    }
+  })
+
+  const formattedBrands = (brands || []).map((brand) => ({
+    id: brand.id,
+    name: brand.name,
+    slug: brand.slug,
+    logo: brand.logo,
+    description: brand.description,
+    productCount: brand._count?.products ?? 0,
+  }))
+
+  const response = NextResponse.json({
+    sections: formatted,
+    brands: formattedBrands,
+  })
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+  response.headers.set('Pragma', 'no-cache')
+  return response
 }

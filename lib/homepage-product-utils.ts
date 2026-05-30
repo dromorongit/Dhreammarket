@@ -63,7 +63,8 @@ export function dedupeProducts(
   return list.filter((p) => p?.id && !excludeIds.has(p.id)).slice(0, 20)
 }
 
-export function collectProductIds(products: EnterpriseProduct[]): Set<string> {
+export function collectProductIds(products: EnterpriseProduct[] | undefined | null): Set<string> {
+  if (!Array.isArray(products)) return new Set()
   return new Set(products.map((p) => p.id))
 }
 

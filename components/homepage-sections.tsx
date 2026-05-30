@@ -199,9 +199,9 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
 
 // ─── Featured Vendors Section ───
 export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
-  const displayVendors = section.vendors.slice(0, 4)
+   const displayVendors = (section.vendors || []).slice(0, 4)
 
-  if (displayVendors.length === 0) {
+   if (displayVendors.length === 0) {
     return (
       <section className="relative py-16 lg:py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -425,24 +425,25 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
 }
 
 // ─── Gadget Display Section ───
-export function GadgetDisplaySection({ section }: HomepageSectionProps) {
-  return (
-    <section className="relative py-16 lg:py-24 bg-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
-          <Badge variant="premium" className="mb-3">Premium Tech</Badge>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
-            {section.name}
-          </h2>
-          {section.subtitle && (
-            <p className="text-slate-600 mt-2">{section.subtitle}</p>
-          )}
-        </div>
+ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
+   const products = (section.products || [])
+   return (
+     <section className="relative py-16 lg:py-24 bg-white overflow-hidden">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+         <div className="mb-10">
+           <Badge variant="premium" className="mb-3">Premium Tech</Badge>
+           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
+             {section.name}
+           </h2>
+           {section.subtitle && (
+             <p className="text-slate-600 mt-2">{section.subtitle}</p>
+           )}
+         </div>
 
-        {/* Desktop: 2-column large cards */}
-        <div className="hidden lg:grid grid-cols-2 gap-6">
-          {section.products.slice(0, 4).map((product) => (
-            <Link key={product.id} href={`/marketplace/product/${product.id}`}>
+         {/* Desktop: 2-column large cards */}
+         <div className="hidden lg:grid grid-cols-2 gap-6">
+           {products.slice(0, 4).map((product) => (
+             <Link key={product.id} href={`/marketplace/product/${product.id}`}>
               <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
                 <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
                   {product.images?.[0] ? (
@@ -474,8 +475,8 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
         {/* Mobile: horizontal scroll */}
         <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-            {section.products.slice(0, 6).map((product) => (
-              <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
+{products.slice(0, 6).map((product) => (
+               <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
                 <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
                   <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
                     {product.images?.[0] ? (
@@ -508,10 +509,10 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
 }
 
 // ─── Hero Banner Section ───
-export function HeroBannerSection({ section }: HomepageSectionProps) {
-  const heroProduct = section.products[0]
+ export function HeroBannerSection({ section }: HomepageSectionProps) {
+   const heroProduct = (section.products || [])[0]
 
-  if (!heroProduct) {
+   if (!heroProduct) {
     return (
       <section className="relative py-16 lg:py-24 bg-gradient-to-br from-deep-navy to-royal-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
