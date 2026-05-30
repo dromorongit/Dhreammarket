@@ -387,6 +387,8 @@ model HomepageSection {
   products     HomepageSectionProduct[]
   vendors      HomepageSectionVendor[]
   brands       HomepageSectionBrand[]
+
+  @@map("homepage_sections")
 }
 
 model HomepageSectionProduct {
