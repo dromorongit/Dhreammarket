@@ -113,6 +113,8 @@ model Brand {
   updatedAt    DateTime  @updatedAt
   products     Product[]
   homepageSections HomepageSectionBrand[]
+
+  @@map("brands")
 }
 
 model Product {
