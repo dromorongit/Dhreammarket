@@ -66,9 +66,6 @@ export async function GET(request: NextRequest) {
           },
           images: true,
           variants: true,
-          flashSalePrice: true,
-          salesPrice: true,
-          dealsPrice: true,
         },
         orderBy: {
           createdAt: 'desc',

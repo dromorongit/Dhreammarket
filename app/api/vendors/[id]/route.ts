@@ -28,16 +28,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           where: { stock: { gt: 0 } },
           include: {
             images: true,
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            flashSalePrice: true,
-            salesPrice: true,
-            dealsPrice: true,
-            _count: {
+category: {
+               select: {
+                 id: true,
+                 name: true,
+               },
+             },
+             _count: {
               select: { productReviews: true },
             },
           },
