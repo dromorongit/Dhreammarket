@@ -43,34 +43,37 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-     // For marketplace browsing (public or authenticated non-vendors), get all products
-     // Use cached averageRating and reviewCount from Product model
-     // Sort by newest first
-     const products = await getPrisma().product.findMany({
-       include: {
-         category: true,
-         brandRelation: {
-           select: {
-             id: true,
-             name: true,
-             slug: true,
-             logo: true,
-           },
-         },
-         store: {
-           select: {
-             id: true,
-             name: true,
-             isVerified: true,
-           },
-         },
-         images: true,
-         variants: true,
-       },
-       orderBy: {
-         createdAt: 'desc',
-       },
-     })
+// For marketplace browsing (public or authenticated non-vendors), get all products
+      // Use cached averageRating and reviewCount from Product model
+      // Sort by newest first
+      const products = await getPrisma().product.findMany({
+        include: {
+          category: true,
+          brandRelation: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logo: true,
+            },
+          },
+          store: {
+            select: {
+              id: true,
+              name: true,
+              isVerified: true,
+            },
+          },
+          images: true,
+          variants: true,
+          flashSalePrice: true,
+          salesPrice: true,
+          dealsPrice: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
 
     // Use cached ratings from database
     const productsWithCachedRatings = products.map((product) => ({

@@ -43,6 +43,7 @@ interface Product {
   id: string
   name: string
   price: number
+  flashSalePrice?: number | null
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
@@ -66,8 +67,8 @@ interface HomepageSectionProps {
 }
 
 function CompactProductCard({ product }: { product: Product }) {
-  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-  const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+  const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null
   const discountPercentage = hasDiscount && product.price > effectivePrice
     ? Math.round(((product.price - effectivePrice) / product.price) * 100)
     : 0
@@ -111,11 +112,11 @@ function CompactProductCard({ product }: { product: Product }) {
             <span className="text-[11px] font-bold text-royal-blue">
               {formatPrice(effectivePrice)}
             </span>
-            {hasDiscount && (
-              <span className="text-[10px] text-slate-400 line-through">
-                {formatPrice(product.price)}
-              </span>
-            )}
+{discountPercentage > 0 && (
+               <span className="text-[10px] text-slate-400 line-through">
+                 {formatPrice(product.price)}
+               </span>
+             )}
           </div>
           {product.store && (
             <div className="flex items-center gap-1 min-w-0">
@@ -442,8 +443,8 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
 
         <div className="hidden lg:grid grid-cols-2 gap-6">
           {products.slice(0, 4).map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+            const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
             const discountPercentage = hasDiscount && product.price > effectivePrice
               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
             return (
@@ -492,8 +493,8 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
         <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
             {products.slice(0, 6).map((product) => {
-              const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-              const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+              const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+              const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
               const discountPercentage = hasDiscount && product.price > effectivePrice
                 ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
               return (
@@ -560,8 +561,8 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
     )
   }
 
-  const effectivePrice = heroProduct.dealsPrice ?? heroProduct.salesPrice ?? heroProduct.price
-  const hasDiscount = (heroProduct.dealsPrice ?? heroProduct.salesPrice) != null
+  const effectivePrice = heroProduct.dealsPrice ?? heroProduct.salesPrice ?? heroProduct.flashSalePrice ?? heroProduct.price
+  const hasDiscount = (heroProduct.dealsPrice ?? heroProduct.salesPrice ?? heroProduct.flashSalePrice) != null
 
   return (
     <section className="relative py-16 lg:py-24 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
@@ -669,8 +670,8 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="grid grid-cols-4 gap-2 sm:hidden">
           {displayProducts.map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+            const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
             const discountPercentage = hasDiscount && product.price > effectivePrice
               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
             return (
@@ -717,8 +718,8 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="hidden sm:grid lg:hidden grid-cols-4 gap-3">
           {displayProducts.map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+            const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
             const discountPercentage = hasDiscount && product.price > effectivePrice
               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
             return (
@@ -765,8 +766,8 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="hidden lg:grid grid-cols-5 gap-4">
           {displayProducts.map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+            const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
             const discountPercentage = hasDiscount && product.price > effectivePrice
               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
             return (

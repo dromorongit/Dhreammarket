@@ -19,6 +19,7 @@ interface VendorProduct {
   name: string
   description: string | null
   price: number
+  flashSalePrice?: number | null
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
@@ -550,11 +551,11 @@ fetchVendor()
              </Card>
 ) : (
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                 {vendor.products.map((product) => {
-                   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-                   const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
-                   const discountPercentage = hasDiscount && product.price > effectivePrice
-                     ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+{vendor.products.map((product) => {
+                    const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+                    const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null
+                    const discountPercentage = hasDiscount && product.price > effectivePrice
+                      ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
                    return (
                    <Card
                      key={product.id}
@@ -598,11 +599,11 @@ fetchVendor()
                          <span className="text-[11px] font-bold text-royal-blue">
                            {formatPrice(effectivePrice)}
                          </span>
-                         {hasDiscount && (
-                           <span className="text-[10px] text-slate-400 line-through">
-                             {formatPrice(product.price)}
-                           </span>
-                         )}
+{discountPercentage > 0 && (
+                            <span className="text-[10px] text-slate-400 line-through">
+                              {formatPrice(product.price)}
+                            </span>
+                          )}
                        </div>
                        <div className="flex items-center gap-1 min-w-0">
                          <p className="text-[10px] text-slate-500 truncate">
