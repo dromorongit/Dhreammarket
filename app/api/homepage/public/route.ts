@@ -4,11 +4,21 @@ import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 
 export const dynamic = 'force-dynamic'
 
-const productInclude = {
-  images: true,
-  category: true,
+const productSelect = {
+  id: true,
+  name: true,
+  price: true,
+  flashSalePrice: true,
+  flashSaleStart: true,
+  flashSaleEnd: true,
   salesPrice: true,
   dealsPrice: true,
+  stock: true,
+  salesCount: true,
+  isSponsored: true,
+  brand: true,
+  images: { select: { id: true, url: true, alt: true } },
+  category: { select: { id: true, name: true, slug: true } },
   store: {
     select: { id: true, name: true, isVerified: true, logo: true },
   },
@@ -34,14 +44,14 @@ export async function GET(_request: NextRequest) {
         where: { isEnabled: true },
         orderBy: { displayOrder: 'asc' },
         include: {
-          products: {
-            orderBy: { displayOrder: 'asc' },
-            include: {
-              product: {
-                include: productInclude,
-              },
-            },
-          },
+products: {
+             orderBy: { displayOrder: 'asc' },
+             select: {
+               product: {
+                 select: productSelect,
+               },
+             },
+           },
           vendors: {
             include: {
               vendor: {

@@ -1,14 +1,24 @@
 import type { PrismaClient } from '@prisma/client'
 
-const productInclude = {
-  images: true,
-  category: true,
+const productSelect = {
+  id: true,
+  name: true,
+  price: true,
+  flashSalePrice: true,
+  flashSaleStart: true,
+  flashSaleEnd: true,
   salesPrice: true,
   dealsPrice: true,
+  stock: true,
+  salesCount: true,
+  isSponsored: true,
+  brand: true,
+  images: { select: { id: true, url: true, alt: true } },
+  category: { select: { id: true, name: true, slug: true } },
   store: {
     select: { id: true, name: true, isVerified: true, logo: true },
   },
-} as const
+}
 
 const VALID_ORDER_STATUSES = ['COMPLETED', 'DELIVERED'] as const
 
@@ -52,7 +62,7 @@ export async function getTopSellingProducts(prisma: PrismaClient, limit = 20) {
           id: { in: productIds },
           stock: { gt: 0 },
         },
-        include: productInclude,
+        select: productSelect,
       })
       console.log('[getTopSellingProducts] product.findMany succeeded, count:', products.length)
     } catch (e) {
