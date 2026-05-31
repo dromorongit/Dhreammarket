@@ -182,7 +182,6 @@ export async function POST(request: NextRequest) {
               color: item.color || null,
               size: item.size || null,
               age: item.age || null,
-              storeId: item.product.storeId,
             },
           })
         }
