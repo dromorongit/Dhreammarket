@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { normalizeGhanaPhoneNumber } from '@/lib/phone'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, role, position } = await request.json()
+    const { email, password, role, position, mobileNumber, name } = await request.json()
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 })
@@ -19,14 +20,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
     }
 
-     if (!['CUSTOMER', 'VENDOR', 'ADMIN'].includes(role)) {
-       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
-     }
- 
-     // Prevent SUPER_ADMIN creation via public registration endpoint
-     if (role === 'SUPER_ADMIN') {
-       return NextResponse.json({ error: 'SUPER_ADMIN accounts cannot be created via public registration' }, { status: 403 })
-     }
+    if (!['CUSTOMER', 'VENDOR', 'ADMIN'].includes(role)) {
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+
+    // Prevent SUPER_ADMIN creation via public registration endpoint
+    if (role === 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'SUPER_ADMIN accounts cannot be created via public registration' }, { status: 403 })
+    }
+
+    // Validate mobile number for CUSTOMER and VENDOR roles
+    let normalizedPhone: string | null = null
+    if (mobileNumber) {
+      normalizedPhone = normalizeGhanaPhoneNumber(mobileNumber)
+      if (!normalizedPhone) {
+        return NextResponse.json({ error: 'Invalid Ghana mobile number format' }, { status: 400 })
+      }
+    }
+
+    // Validate name for CUSTOMER role
+    if (role === 'CUSTOMER' && !name) {
+      return NextResponse.json({ error: 'Name is required for customer registration' }, { status: 400 })
+    }
 
     // Validate position for ADMIN role
     if (role === 'ADMIN' && (!position || !position.trim())) {
@@ -50,7 +65,10 @@ export async function POST(request: NextRequest) {
         role,
         position: role === 'ADMIN' ? position.trim() : null,
         profile: {
-          create: {},
+          create: {
+            phone: normalizedPhone,
+            firstName: role === 'CUSTOMER' ? name?.trim() : undefined,
+          },
         },
       },
       select: {
@@ -58,6 +76,12 @@ export async function POST(request: NextRequest) {
         email: true,
         role: true,
         position: true,
+        profile: {
+          select: {
+            phone: true,
+            firstName: true,
+          },
+        },
       },
     })
 

@@ -95,6 +95,11 @@ function CompactProductCard({ product }: { product: Product }) {
                 </svg>
               </div>
             )}
+            {discountPercentage > 0 && (
+              <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                -{discountPercentage}%
+              </div>
+            )}
             {product.stock === 0 && (
               <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                 Sold Out
@@ -439,7 +444,7 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
 }
 
 // ─── Gadget Display Section ───
- export function GadgetDisplaySection({ section }: HomepageSectionProps) {
+  export function GadgetDisplaySection({ section }: HomepageSectionProps) {
    const products = (section.products || [])
    return (
      <section className="relative py-16 lg:py-24 bg-white overflow-hidden">
@@ -459,6 +464,8 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
            {products.slice(0, 4).map((product) => {
              const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
              const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+             const discountPercentage = hasDiscount && product.price > effectivePrice
+               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
              return (
                <Link key={product.id} href={`/marketplace/product/${product.id}`}>
                  <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
@@ -474,6 +481,11 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
                          <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
                          </svg>
+                       </div>
+                     )}
+                     {discountPercentage > 0 && (
+                       <div className="absolute top-2 left-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                         -{discountPercentage}%
                        </div>
                      )}
                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -500,36 +512,44 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
          {/* Mobile: horizontal scroll */}
          <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
            <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
- {products.slice(0, 6).map((product) => {
+  {products.slice(0, 6).map((product) => {
                const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
                const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+               const discountPercentage = hasDiscount && product.price > effectivePrice
+                 ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
                return (
-                 <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
-                   <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                     <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                       {product.images?.[0] ? (
-                         <img
-                           src={product.images[0].url}
-                           alt={product.images[0].alt || product.name}
-                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                         />
-                       ) : (
-                         <div className="w-full h-full flex items-center justify-center">
-                           <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
-                           </svg>
-                         </div>
-                       )}
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                       <div className="absolute bottom-0 left-0 right-0 p-4">
-                         <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
-                         <div className="flex items-baseline gap-1">
-                           {hasDiscount && (
-                             <span className="text-xs text-white/60 line-through">
-                               {formatPrice(product.price)}
-                             </span>
-                           )}
-                           <span className="text-lg font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                   <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
+                     <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+                       <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                         {product.images?.[0] ? (
+                           <img
+                             src={product.images[0].url}
+                             alt={product.images[0].alt || product.name}
+                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                           />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center">
+                             <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
+                             </svg>
+                           </div>
+                         )}
+                         {discountPercentage > 0 && (
+                           <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                             -{discountPercentage}%
+                           </div>
+                         )}
+                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                         <div className="absolute bottom-0 left-0 right-0 p-4">
+                           <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
+                           <div className="flex items-baseline gap-1">
+                             {hasDiscount && (
+                               <span className="text-xs text-white/60 line-through">
+                                 {formatPrice(product.price)}
+                               </span>
+                             )}
+                             <span className="text-lg font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                           </div>
                          </div>
                        </div>
                      </div>
@@ -539,10 +559,10 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
              })}
            </div>
          </div>
-      </div>
-    </section>
-  )
-}
+       </div>
+     </section>
+   )
+ }
 
 // ─── Hero Banner Section ───
  export function HeroBannerSection({ section }: HomepageSectionProps) {
@@ -671,131 +691,152 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        {/* Mobile: 4 columns, up to 5 rows (20 products) */}
-        <div className="grid grid-cols-4 gap-2 sm:hidden">
-          {displayProducts.map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
-            return (
-              <Link key={product.id} href={`/marketplace/product/${product.id}`}>
-                <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.images[0].alt || product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                      <div className="flex items-baseline gap-1">
-                        {hasDiscount && (
-                          <span className="text-xs text-white/60 line-through">
-                            {formatPrice(product.price)}
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
+{/* Mobile: 4 columns, up to 5 rows (20 products) */}
+         <div className="grid grid-cols-4 gap-2 sm:hidden">
+           {displayProducts.map((product) => {
+             const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+             const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+             const discountPercentage = hasDiscount && product.price > effectivePrice
+               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+             return (
+               <Link key={product.id} href={`/marketplace/product/${product.id}`}>
+                 <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                     {product.images?.[0] ? (
+                       <img
+                         src={product.images[0].url}
+                         alt={product.images[0].alt || product.name}
+                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                         loading="lazy"
+                       />
+                     ) : (
+                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                         </svg>
+                       </div>
+                     )}
+                     {discountPercentage > 0 && (
+                       <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                         -{discountPercentage}%
+                       </div>
+                     )}
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                     <div className="absolute bottom-0 left-0 right-0 p-3">
+                       <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                       <div className="flex items-baseline gap-1">
+                         {hasDiscount && (
+                           <span className="text-xs text-white/60 line-through">
+                             {formatPrice(product.price)}
+                           </span>
+                         )}
+                         <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </Card>
+               </Link>
+             )
+           })}
         </div>
 
-        {/* Tablet: 4 columns, up to 5 rows (20 products) */}
-        <div className="hidden sm:grid lg:hidden grid-cols-4 gap-3">
-          {displayProducts.map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
-            return (
-              <Link key={product.id} href={`/marketplace/product/${product.id}`}>
-                <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.images[0].alt || product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                      <div className="flex items-baseline gap-1">
-                        {hasDiscount && (
-                          <span className="text-xs text-white/60 line-through">
-                            {formatPrice(product.price)}
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
+{/* Tablet: 4 columns, up to 5 rows (20 products) */}
+         <div className="hidden sm:grid lg:hidden grid-cols-4 gap-3">
+           {displayProducts.map((product) => {
+             const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+             const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+             const discountPercentage = hasDiscount && product.price > effectivePrice
+               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+             return (
+               <Link key={product.id} href={`/marketplace/product/${product.id}`}>
+                 <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                     {product.images?.[0] ? (
+                       <img
+                         src={product.images[0].url}
+                         alt={product.images[0].alt || product.name}
+                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                         loading="lazy"
+                       />
+                     ) : (
+                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                         </svg>
+                       </div>
+                     )}
+                     {discountPercentage > 0 && (
+                       <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                         -{discountPercentage}%
+                       </div>
+                     )}
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                     <div className="absolute bottom-0 left-0 right-0 p-3">
+                       <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                       <div className="flex items-baseline gap-1">
+                         {hasDiscount && (
+                           <span className="text-xs text-white/60 line-through">
+                             {formatPrice(product.price)}
+                           </span>
+                         )}
+                         <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </Card>
+               </Link>
+             )
+           })}
+         </div>
 
-        {/* Desktop: 5 columns, up to 4 rows (20 products) */}
-        <div className="hidden lg:grid grid-cols-5 gap-4">
-          {displayProducts.map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
-            return (
-              <Link key={product.id} href={`/marketplace/product/${product.id}`}>
-                <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.images[0].alt || product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                      <div className="flex items-baseline gap-1">
-                        {hasDiscount && (
-                          <span className="text-xs text-white/60 line-through">
-                            {formatPrice(product.price)}
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            )
-          })}
-        </div>
+         {/* Desktop: 5 columns, up to 4 rows (20 products) */}
+         <div className="hidden lg:grid grid-cols-5 gap-4">
+           {displayProducts.map((product) => {
+             const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+             const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+             const discountPercentage = hasDiscount && product.price > effectivePrice
+               ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+             return (
+               <Link key={product.id} href={`/marketplace/product/${product.id}`}>
+                 <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                     {product.images?.[0] ? (
+                       <img
+                         src={product.images[0].url}
+                         alt={product.images[0].alt || product.name}
+                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                         loading="lazy"
+                       />
+                     ) : (
+                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                         </svg>
+                       </div>
+                     )}
+                     {discountPercentage > 0 && (
+                       <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                         -{discountPercentage}%
+                       </div>
+                     )}
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                     <div className="absolute bottom-0 left-0 right-0 p-3">
+                       <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                       <div className="flex items-baseline gap-1">
+                         {hasDiscount && (
+                           <span className="text-xs text-white/60 line-through">
+                             {formatPrice(product.price)}
+                           </span>
+                         )}
+                         <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </Card>
+               </Link>
+             )
+           })}
+         </div>
 
         {/* See More button - always visible */}
         <div className="mt-8 text-center">

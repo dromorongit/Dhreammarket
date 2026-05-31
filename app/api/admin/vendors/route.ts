@@ -64,12 +64,14 @@ export async function GET(request: NextRequest) {
     // Transform stores to vendors format expected by frontend
     const vendors = stores.map((store) => ({
       id: store.id,
+      storeName: store.name,
       name: store.name,
       description: store.description,
       isVerified: store.isVerified,
       isFeatured: store.isFeatured,
       featuredUntil: store.featuredUntil ? store.featuredUntil.toISOString() : null,
       createdAt: store.user.createdAt,
+      mobileNumber: store.mainPhoneNumber,
       user: {
         id: store.user.id,
         email: store.user.email,

@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 type Role = 'CUSTOMER' | 'VENDOR'
 
 export default function RegisterPage() {
+  const [name, setName] = useState('')
+  const [mobileNumber, setMobileNumber] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,6 +28,25 @@ export default function RegisterPage() {
 
     if (!email || !password || !confirmPassword) {
       setError('Please fill in all fields')
+      setLoading(false)
+      return
+    }
+
+    if (role === 'CUSTOMER' && !name) {
+      setError('Name is required for customer registration')
+      setLoading(false)
+      return
+    }
+
+    if (!mobileNumber) {
+      setError('Mobile number is required')
+      setLoading(false)
+      return
+    }
+
+    const ghanaPhoneRegex = /^0[23-9]\d{8}$|^233[2-9]\d{8}$|^\+233[2-9]\d{8}$/
+    if (!ghanaPhoneRegex.test(mobileNumber.replace(/\s+/g, ''))) {
+      setError('Please enter a valid Ghana mobile number (e.g., 0242222222 or +233242222222)')
       setLoading(false)
       return
     }
@@ -52,7 +73,7 @@ export default function RegisterPage() {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role }),
+        body: JSON.stringify({ email, password, role, mobileNumber, name }),
       })
 
       const data = await response.json()
@@ -97,6 +118,14 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+              <Input
+                label="Mobile Number"
+                type="tel"
+                value={mobileNumber}
+                onChange={(e) => setMobileNumber(e.target.value)}
+                placeholder="0242222222 or +233242222222"
+                required
+              />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Account Type
@@ -126,6 +155,15 @@ export default function RegisterPage() {
                   </label>
                 </div>
               </div>
+              {role === 'CUSTOMER' && (
+                <Input
+                  label="Full Name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              )}
               <Input
                 label="Password"
                 type="password"

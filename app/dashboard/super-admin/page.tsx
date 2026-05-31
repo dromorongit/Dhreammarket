@@ -26,26 +26,31 @@ interface PlatformStats {
 }
 
 interface AdminUser {
-  id: string
-  email: string
-  role: string
-  createdAt: string
-  profile?: {
-    firstName: string
-    lastName: string
-  }
-}
+   id: string
+   email: string
+   role: string
+   createdAt: string
+   mobileNumber?: string | null
+   profile?: {
+     firstName?: string
+     lastName?: string
+     phone: string | null
+   }
+ }
 
 interface Vendor {
-  id: string
-  email: string
-  createdAt: string
-  store: {
-    name: string
-    isVerified: boolean
-    isFeatured: boolean
-  } | null
-}
+   id: string
+   storeName?: string | null
+   name?: string | null
+   email: string
+   mobileNumber?: string | null
+   createdAt: string
+   store?: {
+     name: string
+     isVerified: boolean
+     isFeatured: boolean
+   } | null
+ }
 
 interface SupportTicket {
   id: string
@@ -357,26 +362,29 @@ export default function SuperAdminDashboard() {
                     className="py-6"
                   />
                 ) : (
-                  <div className="space-y-2">
-                    {admins.slice(0, 5).map((admin) => (
-                      <div key={admin.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold">
-                            {admin.profile?.firstName?.charAt(0) || admin.profile?.lastName?.charAt(0) || admin.email?.charAt(0) || ''}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-700">
-                              {admin.profile?.firstName && admin.profile?.lastName 
-                                ? `${admin.profile.firstName} ${admin.profile.lastName}` 
-                                : admin.email}
-                            </p>
-                            <p className="text-xs text-slate-500">{admin.email}</p>
-                          </div>
-                        </div>
-                        <Badge variant="info">ADMIN</Badge>
-                      </div>
-                    ))}
-                  </div>
+<div className="space-y-2">
+                     {admins.slice(0, 5).map((admin) => (
+                       <div key={admin.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                         <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold">
+                             {admin.profile?.firstName?.charAt(0) || admin.profile?.lastName?.charAt(0) || admin.email?.charAt(0) || ''}
+                           </div>
+                           <div>
+                             <p className="text-sm font-medium text-slate-700">
+                               {admin.profile?.firstName && admin.profile?.lastName 
+                                 ? `${admin.profile.firstName} ${admin.profile.lastName}` 
+                                 : admin.email}
+                             </p>
+                             <p className="text-xs text-slate-500">{admin.email}</p>
+                             {admin.mobileNumber && (
+                               <p className="text-xs text-slate-400">{admin.mobileNumber}</p>
+                             )}
+                           </div>
+                         </div>
+                         <Badge variant="info">ADMIN</Badge>
+                       </div>
+                     ))}
+                   </div>
                 )}
                 <Link href="/dashboard/admin/users">
                   <Button variant="ghost" className="w-full mt-2">
@@ -410,31 +418,34 @@ export default function SuperAdminDashboard() {
                     className="py-6"
                   />
                 ) : (
-                  <div className="space-y-2">
-                    {vendors.slice(0, 5).map((vendor) => (
-                      <div key={vendor.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold">
-                            {vendor.store?.name?.charAt(0) || vendor.email?.charAt(0) || ''}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-700">
-                              {vendor.store?.name || 'Unnamed Store'}
-                            </p>
-                            <p className="text-xs text-slate-500">{vendor.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-1">
-                          {vendor.store?.isVerified && (
-                            <Badge variant="success">Verified</Badge>
-                          )}
-                          {vendor.store?.isFeatured && (
-                            <Badge variant="premium">Featured</Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+<div className="space-y-2">
+                     {vendors.slice(0, 5).map((vendor) => (
+                       <div key={vendor.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                         <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold">
+                             {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
+                           </div>
+                           <div>
+                             <p className="text-sm font-medium text-slate-700">
+                               {vendor.storeName || vendor.name || 'Unnamed Store'}
+                             </p>
+                             <p className="text-xs text-slate-500">{vendor.email}</p>
+                             {vendor.mobileNumber && (
+                               <p className="text-xs text-slate-400">{vendor.mobileNumber}</p>
+                             )}
+                           </div>
+                         </div>
+                         <div className="flex gap-1">
+                           {vendor.isVerified && (
+                             <Badge variant="success">Verified</Badge>
+                           )}
+                           {vendor.store?.isFeatured && (
+                             <Badge variant="premium">Featured</Badge>
+                           )}
+                         </div>
+                       </div>
+                     ))}
+                   </div>
                 )}
                 <Link href="/dashboard/admin/vendors">
                   <Button variant="ghost" className="w-full mt-2">

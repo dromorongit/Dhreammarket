@@ -484,6 +484,11 @@ function SearchPageSkeleton() {
 
 /* ─── Compact Product Card (inline for search page) ─── */
 function CompactProductCard({ product }: { product: SearchProduct }) {
+  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+  const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+  const discountPercentage = hasDiscount && product.price > effectivePrice
+    ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+
   return (
     <Link href={`/marketplace/product/${product.id}`} className="block">
       <Card variant="elevated" className="group flex flex-col overflow-hidden h-full">
@@ -502,6 +507,11 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
               </svg>
             </div>
           )}
+          {discountPercentage > 0 && (
+            <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+              -{discountPercentage}%
+            </div>
+          )}
           {product.stock === 0 && (
             <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
               Sold Out
@@ -514,7 +524,7 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
           </h3>
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-royal-blue">
-              {formatPrice(product.dealsPrice ?? product.salesPrice ?? product.price)}
+              {formatPrice(effectivePrice)}
             </span>
             {(product.dealsPrice ?? product.salesPrice) && (
               <span className="text-[10px] text-slate-400 line-through">

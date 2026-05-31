@@ -42,7 +42,13 @@ export async function GET(request: NextRequest) {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          profile: true,
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
+          },
           store: {
             select: {
               id: true,
@@ -57,8 +63,22 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
+    const transformedUsers = users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt.toISOString(),
+      mobileNumber: user.profile?.phone || null,
+      profile: {
+        firstName: user.profile?.firstName,
+        lastName: user.profile?.lastName,
+        phone: user.profile?.phone,
+      },
+      store: user.store,
+    }))
+
     return NextResponse.json({
-      users,
+      users: transformedUsers,
       pagination: {
         page,
         limit,
