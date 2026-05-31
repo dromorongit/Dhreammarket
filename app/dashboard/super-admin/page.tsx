@@ -435,10 +435,10 @@ export default function SuperAdminDashboard() {
                              )}
                            </div>
                          </div>
-                         <div className="flex gap-1">
-                           {vendor.isVerified && (
-                             <Badge variant="success">Verified</Badge>
-                           )}
+<div className="flex gap-1">
+                            {vendor.store?.isVerified && (
+                              <Badge variant="success">Verified</Badge>
+                            )}
                            {vendor.store?.isFeatured && (
                              <Badge variant="premium">Featured</Badge>
                            )}
