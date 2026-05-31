@@ -22,6 +22,7 @@ interface CartItem {
     id: string
     name: string
     price: number
+    stock: number
     images: Array<{
       id: string
       url: string
@@ -33,7 +34,7 @@ interface CartItem {
     color?: string | null
     size?: string | null
     age?: string | null
-    stock: number
+    stock?: number
   } | null
   color?: string | null
   size?: string | null
