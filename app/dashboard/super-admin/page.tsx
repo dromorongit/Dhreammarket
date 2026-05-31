@@ -361,9 +361,9 @@ export default function SuperAdminDashboard() {
                     description="Admin accounts will appear here."
                     className="py-6"
                   />
-                ) : (
-<div className="space-y-2">
-                     {admins.slice(0, 5).map((admin) => (
+) : (
+                  <div className="space-y-2">
+                    {admins.slice(0, 5).map((admin) => (
                        <div key={admin.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                          <div className="flex items-center gap-3">
                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold">
@@ -417,35 +417,35 @@ export default function SuperAdminDashboard() {
                     description="Vendors will appear here."
                     className="py-6"
                   />
-                ) : (
-<div className="space-y-2">
-                     {vendors.slice(0, 5).map((vendor) => (
-                       <div key={vendor.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold">
-                             {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
-                           </div>
-                           <div>
-                             <p className="text-sm font-medium text-slate-700">
-                               {vendor.storeName || vendor.name || 'Unnamed Store'}
-                             </p>
-                             <p className="text-xs text-slate-500">{vendor.email}</p>
-                             {vendor.mobileNumber && (
-                               <p className="text-xs text-slate-400">{vendor.mobileNumber}</p>
-                             )}
-                           </div>
-                         </div>
-<div className="flex gap-1">
-                            {vendor.store?.isVerified && (
-                              <Badge variant="success">Verified</Badge>
+) : (
+                  <div className="space-y-2">
+                    {vendors.slice(0, 5).map((vendor) => (
+                      <div key={vendor.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold">
+                            {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-700">
+                              {vendor.storeName || vendor.name || 'Unnamed Store'}
+                            </p>
+                            <p className="text-xs text-slate-500">{vendor.email}</p>
+                            {vendor.mobileNumber && (
+                              <p className="text-xs text-slate-400">{vendor.mobileNumber}</p>
                             )}
-                           {vendor.store?.isFeatured && (
-                             <Badge variant="premium">Featured</Badge>
-                           )}
-                         </div>
-                       </div>
-                     ))}
-                   </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {vendor.store?.isVerified && (
+                            <Badge variant="success">Verified</Badge>
+                          )}
+                          {vendor.store?.isFeatured && (
+                            <Badge variant="premium">Featured</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
                 <Link href="/dashboard/admin/vendors">
                   <Button variant="ghost" className="w-full mt-2">
