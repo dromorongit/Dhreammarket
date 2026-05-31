@@ -91,7 +91,6 @@ function MarketplaceContent() {
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'products' | 'vendors'>('products')
 
-  // Clear opposite filter when switching view modes - HARD SEPARATION
   useEffect(() => {
     if (viewMode === 'products') {
       setSelectedVendorCategory('')
@@ -157,7 +156,6 @@ function MarketplaceContent() {
       const response = await fetch('/api/vendors')
       if (response.ok) {
         const data = await response.json()
-        // Sort by featured first, then by rating, then by product count
         const sortedVendors = data.vendors.sort((a: Vendor, b: Vendor) => {
           if (a.isFeatured && !b.isFeatured) return -1
           if (!a.isFeatured && b.isFeatured) return 1
@@ -171,21 +169,17 @@ function MarketplaceContent() {
     }
   }
 
-  // Fetch total counts for display
   const fetchCounts = async () => {
     try {
-      // Get total product count
       const productsResponse = await fetch('/api/products')
       if (productsResponse.ok) {
         const productsData = await productsResponse.json()
         setTotalProductCount(productsData.products?.length || 0)
       }
 
-      // Get total product category count
       const categoriesResponse = await fetch('/api/categories')
       if (categoriesResponse.ok) {
         const categoriesData = await categoriesResponse.json()
-        // Count all categories including children
         const countAllCategories = (cats: Category[]): number => {
           return cats.reduce((count, cat) => {
             return count + 1 + (cat.children ? countAllCategories(cat.children) : 0)
@@ -194,14 +188,12 @@ function MarketplaceContent() {
         setTotalProductCategoryCount(countAllCategories(categoriesData.categories || []))
       }
 
-      // Get total vendor count
       const vendorsResponse = await fetch('/api/vendors?limit=1')
       if (vendorsResponse.ok) {
         const vendorsData = await vendorsResponse.json()
         setTotalVendorCount(vendorsData.pagination?.total || 0)
       }
 
-      // Get total vendor category count
       const vendorCategoriesResponse = await fetch('/api/vendor-categories')
       if (vendorCategoriesResponse.ok) {
         const vendorCategoriesData = await vendorCategoriesResponse.json()
@@ -244,7 +236,6 @@ function MarketplaceContent() {
     }
   }
 
-  // Helper to get all descendant category IDs (including self)
   const getAllDescendantIds = (cats: Category[], parentId: string | null = null): string[] => {
     const result: string[] = []
     const findChildren = (parentId: string | null) => {
@@ -258,13 +249,10 @@ function MarketplaceContent() {
     return result
   }
 
-  // Get all category IDs that should match when filtering (including subcategories)
   const getCategoryFilterIds = (categoryId: string): string[] => {
-    // Find the category in the hierarchy
     const findCategoryAndChildren = (cats: Category[]): string[] => {
       for (const cat of cats) {
         if (cat.id === categoryId) {
-          // Found the category, get all its descendants
           const allIds = [cat.id]
           const getChildrenIds = (children: Category[] | undefined) => {
             if (children) {
@@ -277,7 +265,6 @@ function MarketplaceContent() {
           getChildrenIds(cat.children)
           return allIds
         }
-        // Check in children
         if (cat.children) {
           const found = findCategoryAndChildren(cat.children)
           if (found.length > 0) return found
@@ -288,18 +275,15 @@ function MarketplaceContent() {
     return findCategoryAndChildren(categories)
   }
 
-  // Render only parent category buttons for filter (subcategories are used for recursive filtering only)
   const renderProductCategoryButtons = (cats: Category[]): React.ReactNode[] => {
-    // Only render parent categories (those without a parentId)
     const parentCategories = cats.filter(cat => cat.parentId === null)
-    
+
     return parentCategories.map((cat) => {
-      // Get all descendant category IDs for recursive product counting
       const matchingIds = getCategoryFilterIds(cat.id)
-      const productCount = products.filter(p => 
+      const productCount = products.filter(p =>
         matchingIds.includes(p.category?.id || '')
       ).length
-      
+
       return (
         <Button
           key={cat.id}
@@ -317,7 +301,6 @@ function MarketplaceContent() {
     })
   }
 
-  // Render vendor category buttons
   const renderVendorCategoryButtons = (cats: Category[]): React.ReactNode[] => {
     return cats.map((vc) => (
       <Button
@@ -344,7 +327,6 @@ function MarketplaceContent() {
         return false
       }
     }
-    // Filter by product category (including subcategories)
     if (selectedCategory) {
       const matchingIds = getCategoryFilterIds(selectedCategory)
       if (!matchingIds.includes(product.category?.id || '')) {
@@ -354,7 +336,6 @@ function MarketplaceContent() {
     return true
   })
 
-  // Filter vendors by vendor category
   const filteredVendors = vendors.filter(vendor => {
     if (selectedVendorCategory && vendor.category?.id !== selectedVendorCategory) {
       return false
@@ -384,12 +365,11 @@ function MarketplaceContent() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-deep-navy to-royal-blue py-20 overflow-hidden">
-         <div className="absolute inset-0">
-           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
-           <div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>
-         </div>
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
+          <div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>
+        </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white">
             <Badge variant="premium" className="mb-6">
@@ -419,7 +399,6 @@ function MarketplaceContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">
-          {/* View Toggle */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
@@ -441,63 +420,59 @@ function MarketplaceContent() {
             </div>
           </div>
 
-          {/* Category Filter - Conditional based on viewMode - HARD SEPARATION */}
-           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-             {/* Product Category Filter - Only shows when viewMode === 'products' - NEVER mounts vendor filters */}
-             {viewMode === 'products' && (
-               <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
-                 <Button
-                   variant={selectedCategory === '' ? 'primary' : 'ghost'}
-                   size="sm"
-                   className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === '' ? '' : 'text-slate-700'}`}
-                   onClick={() => setSelectedCategory('')}
-                 >
-                   All Categories
-                   <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                     {totalProductCategoryCount}
-                   </span>
-                 </Button>
-                 {renderProductCategoryButtons(categories)}
-               </div>
-             )}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {viewMode === 'products' && (
+              <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                <Button
+                  variant={selectedCategory === '' ? 'primary' : 'ghost'}
+                  size="sm"
+                  className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === '' ? '' : 'text-slate-700'}`}
+                  onClick={() => setSelectedCategory('')}
+                >
+                  All Categories
+                  <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                    {totalProductCategoryCount}
+                  </span>
+                </Button>
+                {renderProductCategoryButtons(categories)}
+              </div>
+            )}
 
-             {/* Vendor Category Filter - Only shows when viewMode === 'vendors' - NEVER mounts product filters */}
-             {viewMode === 'vendors' && vendorCategories.length > 0 && (
-               <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
-                 <span className="text-sm font-medium text-slate-700 flex-shrink-0">Vendor Type:</span>
-                 <Button
-                   variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
-                   size="sm"
-                   className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
-                   onClick={() => setSelectedVendorCategory('')}
-                 >
-                   All
-                   <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                     {totalVendorCategoryCount}
-                   </span>
-                 </Button>
-                 {renderVendorCategoryButtons(vendorCategories)}
-               </div>
-             )}
-           </div>
-        </div>
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-               {viewMode === 'products' ? (
-                 <>
-                   <span>{filteredProducts.length} products</span>
-                   <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                   <span>Verified sellers</span>
-                 </>
-               ) : (
-                 <>
-                   <span>{filteredVendors.length} vendors</span>
-                   <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                   <span>Featured stores</span>
-                 </>
-               )}
-             </div>
+            {viewMode === 'vendors' && vendorCategories.length > 0 && (
+              <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                <span className="text-sm font-medium text-slate-700 flex-shrink-0">Vendor Type:</span>
+                <Button
+                  variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
+                  size="sm"
+                  className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
+                  onClick={() => setSelectedVendorCategory('')}
+                >
+                  All
+                  <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                    {totalVendorCategoryCount}
+                  </span>
+                </Button>
+                {renderVendorCategoryButtons(vendorCategories)}
+              </div>
+            )}
+          </div>
 
-          {/* Results */}
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            {viewMode === 'products' ? (
+              <>
+                <span>{filteredProducts.length} products</span>
+                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                <span>Verified sellers</span>
+              </>
+            ) : (
+              <>
+                <span>{filteredVendors.length} vendors</span>
+                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                <span>Featured stores</span>
+              </>
+            )}
+          </div>
+
           {viewMode === 'products' ? (
             filteredProducts.length === 0 ? (
               <EmptyState
@@ -511,29 +486,29 @@ function MarketplaceContent() {
                 actionLabel="Browse All Products"
                 onAction={() => setSelectedCategory('')}
               />
-) : (
-               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                 {filteredProducts.map((product) => {
-                   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-                   const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
-                   const discountPercentage = hasDiscount && product.price > effectivePrice
-                     ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-                   return (
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {filteredProducts.map((product) => {
+                  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+                  const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
+                  const discountPercentage = hasDiscount && product.price > effectivePrice
+                    ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+                  return (
                     <Card
                       key={product.id}
                       variant="elevated"
                       className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
                     >
                       <Link href={`/marketplace/product/${product.id}`} className="block">
-<div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-                           {(product.images?.length ?? 0) > 0 ? (
-                             <img
-                               src={product.images![0].url}
-                               alt={product.images![0].alt || product.name}
-                               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                               loading="lazy"
-                             />
-                           ) : (
+                        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+                          {(product.images?.length ?? 0) > 0 ? (
+                            <img
+                              src={product.images![0].url}
+                              alt={product.images![0].alt || product.name}
+                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              loading="lazy"
+                            />
+                          ) : (
                             <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -552,7 +527,7 @@ function MarketplaceContent() {
                           )}
                         </div>
                       </Link>
-<div className="p-2 space-y-1 flex-1 flex flex-col">
+                      <div className="p-2 space-y-1 flex-1 flex flex-col">
                         <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                           {product.name}
                         </h3>
@@ -596,12 +571,12 @@ function MarketplaceContent() {
                           </Link>
                         </div>
                       </div>
-                   </Card>
-                  ))}
-               </div>
-             )
+                    </Card>
+                  )
+                })}
+              </div>
+            )
           ) : (
-            // Vendors View
             filteredVendors.length === 0 ? (
               <EmptyState
                 icon={
@@ -616,65 +591,66 @@ function MarketplaceContent() {
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                 {filteredVendors.map((vendor) => (
-                   <Card
-                     key={vendor.id}
-                     variant="elevated"
-                     className="group overflow-hidden cursor-pointer"
-                   >
-                     <Link href={`/vendor/${vendor.id}`} className="block">
-                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-                          {vendor.logo ? (
-                            <img
-                              src={vendor.logo}
-                              alt={`${vendor.name} logo`}
-                              className="absolute inset-0 w-full h-full object-cover opacity-50"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-4xl font-bold text-white opacity-30">
-                                {vendor.name.charAt(0)}
-                              </span>
-                            </div>
-                          )}
-                          {vendor.isFeatured && (
-                            <div className="absolute top-3 left-3">
-                              <Badge variant="premium" size="sm">
-                                Featured
-                              </Badge>
-                            </div>
+                {filteredVendors.map((vendor) => (
+                  <Card
+                    key={vendor.id}
+                    variant="elevated"
+                    className="group overflow-hidden cursor-pointer"
+                  >
+                    <Link href={`/vendor/${vendor.id}`} className="block">
+                      <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+                        {vendor.logo ? (
+                          <img
+                            src={vendor.logo}
+                            alt={`${vendor.name} logo`}
+                            className="absolute inset-0 w-full h-full object-cover opacity-50"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-4xl font-bold text-white opacity-30">
+                              {vendor.name.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                        {vendor.isFeatured && (
+                          <div className="absolute top-3 left-3">
+                            <Badge variant="premium" size="sm">
+                              Featured
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-4 min-w-0">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                            {truncateVendorName(vendor.name)}
+                          </h3>
+                          {vendor.isVerified && (
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
                           )}
                         </div>
-                        <CardContent className="p-4 min-w-0">
-                           <div className="flex items-center gap-1 min-w-0">
-                             <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                               {truncateVendorName(vendor.name)}
-                             </h3>
-                             {vendor.isVerified && (
-                               <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                             )}
-                           </div>
-                           {vendor.category && (
-                            <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                              {vendor.category.name}
-                            </p>
-                          )}
-                         <div className="flex items-center justify-between text-sm">
-                           <div className="flex items-center gap-1">
-                             <span className="text-yellow-400">★</span>
-                             <span className="font-medium">{vendor.rating}</span>
-                           </div>
-                           <span className="text-slate-500">
-                             {vendor.productCount} products
-                           </span>
-                         </div>
-                       </CardContent>
-                     </Link>
-                   </Card>
-                 ))}
-               </div>
+                        {vendor.category && (
+                          <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                            {vendor.category.name}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-400">★</span>
+                            <span className="font-medium">{vendor.rating}</span>
+                          </div>
+                          <span className="text-slate-500">
+                            {vendor.productCount} products
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Link>
+                  </Card>
+                ))}
+              </div>
             )
           )}
+        </div>
       </div>
     </div>
   )
