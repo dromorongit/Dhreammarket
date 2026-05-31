@@ -165,8 +165,8 @@ export default function SuperAdminBrandsPage() {
 
   const filteredBrands = brands.filter(
     (b) =>
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.slug.toLowerCase().includes(searchQuery.toLowerCase())
+      (b.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.slug ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   if (loading) {

@@ -540,17 +540,17 @@ export default function SuperAdminHomepagePage() {
 
   const filteredVendors = vendors.filter(
     (v) =>
-      v.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.profile?.firstName?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (v.profile?.lastName?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (v.store?.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
+      (v.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.profile?.firstName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.profile?.lastName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.store?.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredBrands = brands.filter(
     (b) =>
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (b.slug?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (b.description?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
+      (b.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.slug ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (b.description ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (loading) {
@@ -1421,9 +1421,9 @@ function ManageSectionModal({
 function filteredVendors(vendors: Vendor[], searchQuery: string) {
   return vendors.filter(
     (v) =>
-      v.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.profile?.firstName?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (v.profile?.lastName?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()) ||
-      (v.store?.name?.toLowerCase() ?? "").includes(searchQuery.toLowerCase()),
+      (v.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.profile?.firstName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.profile?.lastName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.store?.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 }

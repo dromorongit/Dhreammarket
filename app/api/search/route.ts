@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
       })
 
       const brandCountMap = new Map(
-        brandCounts.map((b) => [b.brand!.toLowerCase(), b._count.id])
+        brandCounts.map((b) => [b.brand?.toLowerCase() ?? '', b._count.id])
       )
 
       results.brands = allProducts
