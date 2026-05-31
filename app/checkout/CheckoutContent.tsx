@@ -28,6 +28,16 @@ interface CartItem {
       alt: string | null
     }>
   }
+  productVariant?: {
+    id: string
+    color?: string | null
+    size?: string | null
+    age?: string | null
+    stock: number
+  } | null
+  color?: string | null
+  size?: string | null
+  age?: string | null
 }
 
 interface CartResponse {
@@ -232,6 +242,16 @@ export default function CheckoutContent() {
     if (!cart || cart.items.length === 0) {
       console.log('[Checkout] Cart is empty - aborting')
       return
+    }
+
+    // Revalidate stock before checkout
+    for (const item of cart.items) {
+      const availableStock = item.productVariant?.stock ?? item.product.stock
+      if (availableStock < item.quantity) {
+        setError(`Insufficient stock for ${item.product.name}. Available: ${availableStock}`)
+        setProcessing(false)
+        return
+      }
     }
     
     if (!validateForm()) {
@@ -606,36 +626,49 @@ export default function CheckoutContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {cart.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                      <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
-                        {item.product.images.length > 0 ? (
-                          <img
-                            src={item.product.images[0].url}
-                            alt={item.product.images[0].alt || item.product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.516-1.516a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-deep-navy">{item.product.name}</h4>
-                        <p className="text-sm text-slate-500">Qty: {item.quantity}</p>
-                      </div>
-                      <p className="font-semibold text-deep-navy">
-                        {formatPrice(item.product.price * item.quantity)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+{cart.items.map((item) => (
+                     <div key={item.id} className="flex items-center gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                       <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                         {item.product.images.length > 0 ? (
+                           <img
+                             src={item.product.images[0].url}
+                             alt={item.product.images[0].alt || item.product.name}
+                             className="w-full h-full object-cover"
+                           />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center">
+                             <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.516-1.516a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                             </svg>
+                           </div>
+                         )}
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <h4 className="font-medium text-deep-navy">{item.product.name}</h4>
+                         {item.productVariant && (
+                           <div className="flex flex-wrap gap-1 mt-1">
+                             {item.productVariant.color && (
+                               <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Color: {item.productVariant.color}</span>
+                             )}
+                             {item.productVariant.size && (
+                               <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Size: {item.productVariant.size}</span>
+                             )}
+                             {item.productVariant.age && (
+                               <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Age: {item.productVariant.age}</span>
+                             )}
+                           </div>
+                         )}
+                         <p className="text-sm text-slate-500 mt-1">Qty: {item.quantity}</p>
+                       </div>
+                       <p className="font-semibold text-deep-navy">
+                         {formatPrice(item.product.price * item.quantity)}
+                       </p>
+                     </div>
+                   ))}
+                 </div>
+               </CardContent>
+             </Card>
+           </div>
 
           {/* Payment Summary - Sticky on Desktop */}
           <div className="lg:col-span-1">

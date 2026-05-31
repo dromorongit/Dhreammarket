@@ -172,18 +172,22 @@ export async function POST(request: NextRequest) {
       console.error('[cart/POST] cartItem.findFirst FAILED:', e)
     }
 
-    if (existingItem) {
-      // Update quantity
-      try {
-        await getPrisma().cartItem.update({
-          where: { id: existingItem.id },
-          data: { quantity: existingItem.quantity + quantity },
-        })
-        console.log('[cart/POST] cartItem.update succeeded')
-      } catch (e) {
-        console.error('[cart/POST] cartItem.update FAILED:', e)
-      }
-    } else {
+if (existingItem) {
+       // Update quantity - validate against stock again
+       const newTotalQuantity = existingItem.quantity + quantity
+       if (availableStock < newTotalQuantity) {
+         return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
+       }
+       try {
+         await getPrisma().cartItem.update({
+           where: { id: existingItem.id },
+           data: { quantity: newTotalQuantity },
+         })
+         console.log('[cart/POST] cartItem.update succeeded')
+       } catch (e) {
+         console.error('[cart/POST] cartItem.update FAILED:', e)
+       }
+     } else {
       // Create new item
       try {
         await getPrisma().cartItem.create({

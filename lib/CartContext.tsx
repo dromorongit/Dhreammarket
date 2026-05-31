@@ -29,6 +29,7 @@ interface CartItem {
       alt: string | null
     }>
   }
+  productVariant?: ProductVariant | null
 }
 
 interface Cart {

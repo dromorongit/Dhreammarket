@@ -27,6 +27,16 @@ interface CartItem {
       alt: string | null
     }>
   }
+  productVariant?: {
+    id: string
+    color?: string | null
+    size?: string | null
+    age?: string | null
+    stock: number
+  } | null
+  color?: string | null
+  size?: string | null
+  age?: string | null
 }
 
 interface CartResponse {
@@ -266,11 +276,24 @@ export default function Cart() {
                     <h3 className="text-lg font-semibold text-deep-navy mb-1">
                       {item.product.name}
                     </h3>
+                    {item.productVariant && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {item.productVariant.color && (
+                          <Badge variant="default" size="sm">Color: {item.productVariant.color}</Badge>
+                        )}
+                        {item.productVariant.size && (
+                          <Badge variant="default" size="sm">Size: {item.productVariant.size}</Badge>
+                        )}
+                        {item.productVariant.age && (
+                          <Badge variant="default" size="sm">Age: {item.productVariant.age}</Badge>
+                        )}
+                      </div>
+                    )}
                     <p className="text-royal-blue font-semibold text-lg">
                       {formatPrice(item.product.price)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      Stock available: {item.product.stock}
+                      Stock available: {item.productVariant ? item.productVariant.stock : item.product.stock}
                     </p>
                   </div>
 
@@ -298,7 +321,7 @@ export default function Cart() {
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        disabled={updatingItems.has(item.id) || item.quantity >= item.product.stock}
+                        disabled={updatingItems.has(item.id) || item.quantity >= (item.productVariant ? item.productVariant.stock : item.product.stock)}
                         className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -93,6 +93,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [quantity, setQuantity] = useState(1)
   
   // Variant selection state
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
@@ -230,20 +231,22 @@ export default function ProductDetail() {
   }, [product?.variants])
 
   // Find selected variant when options change
-  useEffect(() => {
-    if (!product?.variants?.length) {
-      setSelectedVariant(null)
-      return
-    }
+useEffect(() => {
+     if (!product?.variants?.length) {
+       setSelectedVariant(null)
+       return
+     }
 
-    const found = product.variants.find(v => 
-      v.active &&
-      (selectedColor ? v.color === selectedColor : true) &&
-      (selectedSize ? v.size === selectedSize : true) &&
-      (selectedAge ? v.age === selectedAge : true)
-    )
-    setSelectedVariant(found || null)
-  }, [selectedColor, selectedSize, selectedAge, product?.variants])
+     const found = product.variants.find(v => 
+       v.active &&
+       (selectedColor ? v.color === selectedColor : true) &&
+       (selectedSize ? v.size === selectedSize : true) &&
+       (selectedAge ? v.age === selectedAge : true)
+     )
+     setSelectedVariant(found || null)
+     // Reset quantity when variant changes
+     setQuantity(1)
+   }, [selectedColor, selectedSize, selectedAge, product?.variants])
 
   // Calculate display price with discount logic
   const displayPrice = useMemo(() => {
@@ -270,31 +273,37 @@ export default function ProductDetail() {
     return product?.stock || 0
   }, [selectedVariant, product?.stock])
 
-  const addToCart = async () => {
-    if (!product || addingToCart) return
+const addToCart = async () => {
+     if (!product || addingToCart) return
 
-    const hasVariants = product.variants && product.variants.length > 0
-    if (hasVariants && !selectedVariant) {
-      alert('Please select a product variant')
-      return
-    }
+     const hasVariants = product.variants && product.variants.length > 0
+     if (hasVariants && !selectedVariant) {
+       alert('Please select a product variant')
+       return
+     }
 
-    setAddingToCart(true)
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: product.id,
-          quantity: 1,
-          productVariantId: selectedVariant?.id || null,
-          color: selectedVariant?.color || null,
-          size: selectedVariant?.size || null,
-          age: selectedVariant?.age || null,
-        }),
-      })
+     // Validate quantity against stock
+     if (quantity > availableStock) {
+       alert(`Cannot add more than ${availableStock} to cart`)
+       return
+     }
+
+     setAddingToCart(true)
+     try {
+       const response = await fetch('/api/cart', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({
+           productId: product.id,
+           quantity,
+           productVariantId: selectedVariant?.id || null,
+           color: selectedVariant?.color || null,
+           size: selectedVariant?.size || null,
+           age: selectedVariant?.age || null,
+         }),
+       })
 
       if (response.ok) {
         const data: CartResponse = await response.json()
@@ -734,11 +743,95 @@ export default function ProductDetail() {
               </CardContent>
             </Card>
 
+            {hasVariants && selectedVariant && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Quantity</label>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={availableStock}
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1
+                        setQuantity(Math.min(Math.max(1, val), availableStock))
+                      }}
+                      className="w-12 text-center font-semibold text-deep-navy bg-transparent focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+                      disabled={quantity >= availableStock}
+                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                  <span className="text-sm text-slate-600">Max: {availableStock}</span>
+                </div>
+              </div>
+            )}
+
+            {!hasVariants && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">Quantity</label>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                      </svg>
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      max={availableStock}
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1
+                        setQuantity(Math.min(Math.max(1, val), availableStock))
+                      }}
+                      className="w-12 text-center font-semibold text-deep-navy bg-transparent focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+                      disabled={quantity >= availableStock}
+                      className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  </div>
+                  <span className="text-sm text-slate-600">Max: {availableStock}</span>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               <Button
                 size="lg"
                 className="w-full shadow-lg shadow-royal-blue/20"
-                disabled={availableStock === 0 || addingToCart}
+                disabled={availableStock === 0 || addingToCart || (hasVariants && !selectedVariant)}
                 onClick={addToCart}
               >
                 {addingToCart
