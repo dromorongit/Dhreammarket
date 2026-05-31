@@ -83,10 +83,15 @@ export default function VendorProfilePage() {
   const [vendorRating, setVendorRating] = useState(0)
   const [vendorReviewCount, setVendorReviewCount] = useState(0)
   const [canReviewVendor, setCanReviewVendor] = useState(false)
+  const [eligibilityReason, setEligibilityReason] = useState<string | null>(null)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [userReview, setUserReview] = useState<VendorReview | null>(null)
+  const [editingReview, setEditingReview] = useState<VendorReview | null>(null)
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!vendorId) return
@@ -110,8 +115,8 @@ export default function VendorProfilePage() {
       }
     }
 
-    fetchVendor()
-  }, [vendorId])
+fetchVendor()
+   }, [vendorId])
 
   useEffect(() => {
     if (vendorId) {
@@ -119,6 +124,15 @@ export default function VendorProfilePage() {
       fetchVendorReviews()
     }
   }, [vendorId])
+
+  useEffect(() => {
+    if (user && user.role === 'CUSTOMER' && vendorId) {
+      checkCanReviewVendor()
+    } else {
+      setCanReviewVendor(false)
+      setEligibilityReason(null)
+    }
+  }, [user, vendorId])
 
   const fetchUser = async () => {
     try {
@@ -141,10 +155,6 @@ export default function VendorProfilePage() {
         setVendorReviews(data.reviews)
         setVendorRating(data.averageRating)
         setVendorReviewCount(data.totalReviews)
-        
-        if (user && user.role === 'CUSTOMER') {
-          checkCanReviewVendor()
-        }
       }
     } catch (error) {
       console.error('Error fetching vendor reviews:', error)
@@ -156,13 +166,15 @@ export default function VendorProfilePage() {
   const checkCanReviewVendor = async () => {
     try {
       const response = await fetch(`/api/vendors/${vendorId}/reviews?checkEligibility=true`, {
-        headers: {
-          'Authorization': `Bearer ${document.cookie?.match(/token=([^;]+)/)?.[1]}`,
-        },
+        credentials: 'include',
       })
       if (response.ok) {
         const data = await response.json()
         setCanReviewVendor(data.canReview)
+        setEligibilityReason(data.reason || null)
+        if (data.userReview) {
+          setUserReview(data.userReview)
+        }
       }
     } catch (error) {
       console.error('Error checking vendor review eligibility:', error)
@@ -172,10 +184,17 @@ export default function VendorProfilePage() {
   const submitVendorReview = async () => {
     if (!user || submittingReview) return
 
+    if (!reviewComment || reviewComment.trim().length < 5) {
+      setReviewError('Comment must be at least 5 characters')
+      return
+    }
+
     setSubmittingReview(true)
+    setReviewError(null)
     try {
       const response = await fetch(`/api/vendors/${vendorId}/reviews`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -190,16 +209,91 @@ export default function VendorProfilePage() {
         setShowReviewForm(false)
         setReviewRating(5)
         setReviewComment('')
+        setEditingReview(null)
         fetchVendorReviews()
+        checkCanReviewVendor()
       } else {
         const error = await response.json()
+        setReviewError(error.error || 'Failed to submit review')
         alert(error.error || 'Failed to submit review')
       }
     } catch (error) {
       console.error('Error submitting vendor review:', error)
+      setReviewError('Error submitting review')
       alert('Error submitting review')
     } finally {
       setSubmittingReview(false)
+    }
+  }
+
+  const updateVendorReview = async () => {
+    if (!editingReview || submittingReview) return
+
+    if (!reviewComment || reviewComment.trim().length < 5) {
+      setReviewError('Comment must be at least 5 characters')
+      return
+    }
+
+    setSubmittingReview(true)
+    setReviewError(null)
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/reviews/${editingReview.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Review updated successfully!')
+        setShowReviewForm(false)
+        setReviewRating(5)
+        setReviewComment('')
+        setEditingReview(null)
+        fetchVendorReviews()
+        checkCanReviewVendor()
+      } else {
+        const error = await response.json()
+        setReviewError(error.error || 'Failed to update review')
+        alert(error.error || 'Failed to update review')
+      }
+    } catch (error) {
+      console.error('Error updating vendor review:', error)
+      setReviewError('Error updating review')
+      alert('Error updating review')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const deleteVendorReview = async (reviewId: string) => {
+    if (!confirm('Are you sure you want to delete this review?')) return
+
+    setDeletingReviewId(reviewId)
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/reviews/${reviewId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        alert('Review deleted successfully!')
+        fetchVendorReviews()
+        checkCanReviewVendor()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to delete review')
+      }
+    } catch (error) {
+      console.error('Error deleting vendor review:', error)
+      alert('Error deleting review')
+    } finally {
+      setDeletingReviewId(null)
     }
   }
 
@@ -506,83 +600,114 @@ export default function VendorProfilePage() {
             )}
          </section>
 
-         {/* Vendor Reviews Section */}
-         <section className="py-12 border-t border-slate-200">
-           <div className="flex items-center justify-between mb-8">
-             <div>
-               <h2 className="text-2xl font-bold text-deep-navy">Store Reviews</h2>
-               {vendorReviewCount > 0 && (
-                 <p className="text-slate-600 mt-1">
-                   {vendorRating.toFixed(1)} out of 5 ({vendorReviewCount} review{vendorReviewCount !== 1 ? 's' : ''})
-                 </p>
-               )}
-             </div>
-             {user && user.role === 'CUSTOMER' && canReviewVendor && !showReviewForm && (
-               <Button variant="outline" onClick={() => setShowReviewForm(true)}>
-                 Write a Review
-               </Button>
-             )}
-           </div>
+{/* Vendor Reviews Section */}
+          <section className="py-12 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-deep-navy">Store Reviews</h2>
+                {vendorReviewCount > 0 && (
+                  <p className="text-slate-600 mt-1">
+                    {vendorRating.toFixed(1)} out of 5 ({vendorReviewCount} review{vendorReviewCount !== 1 ? 's' : ''})
+                  </p>
+                )}
+              </div>
+              {user && user.role === 'CUSTOMER' && canReviewVendor && !showReviewForm && (
+                <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+                  Write a Review
+                </Button>
+              )}
+            </div>
 
-           {/* Review Form */}
-           {showReviewForm && (
-             <Card variant="elevated" className="mb-8">
-               <CardContent className="pt-6">
-                 <h3 className="text-lg font-semibold text-deep-navy mb-4">Rate This Store</h3>
-                 <div className="space-y-4">
-                   <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
-                     {renderStars(reviewRating, true, (r) => setReviewRating(r))}
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-3">Review (optional)</label>
-                     <textarea
-                       value={reviewComment}
-                       onChange={(e) => setReviewComment(e.target.value)}
-                       rows={4}
-                       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
-                       placeholder="Share your experience with this store..."
-                     />
-                   </div>
-                   <div className="flex gap-3 pt-2">
-                     <Button onClick={submitVendorReview} disabled={submittingReview}>
-                       {submittingReview ? 'Submitting...' : 'Submit Review'}
-                     </Button>
-                     <Button
-                       variant="ghost"
-                       onClick={() => {
-                         setShowReviewForm(false)
-                         setReviewRating(5)
-                         setReviewComment('')
-                       }}
-                     >
-                       Cancel
-                     </Button>
-                   </div>
-                 </div>
-               </CardContent>
-             </Card>
-           )}
+            {/* Eligibility Message */}
+            {user && user.role === 'CUSTOMER' && !canReviewVendor && !showReviewForm && eligibilityReason && (
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-700 text-sm">
+                  {eligibilityReason === 'already_reviewed'
+                    ? 'You have already reviewed this store. Thank you for your feedback!'
+                    : 'You can only review this store after your order is PROCESSING, SHIPPED, DELIVERED, or COMPLETED.'}
+                </p>
+              </div>
+            )}
 
-           {/* Reviews List */}
+            {/* Not Logged In Prompt */}
+            {!user && (
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-700 text-sm">
+                  Please <Link href="/login" className="text-royal-blue hover:underline">log in</Link> as a customer to review this store.
+                </p>
+              </div>
+            )}
+
+            {/* Review Form */}
+            {showReviewForm && (
+              <Card variant="elevated" className="mb-8">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-semibold text-deep-navy mb-4">
+                    {editingReview ? 'Edit Your Review' : 'Rate This Store'}
+                  </h3>
+                  {reviewError && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                      {reviewError}
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
+                      {renderStars(reviewRating, true, (r) => setReviewRating(r))}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-3">
+                        Your Comment <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        rows={4}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
+                        placeholder="Share your experience with this store..."
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <Button onClick={editingReview ? updateVendorReview : submitVendorReview} disabled={submittingReview}>
+                        {submittingReview ? (editingReview ? 'Updating...' : 'Submitting...') : (editingReview ? 'Update Review' : 'Submit Review')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setShowReviewForm(false)
+                          setReviewRating(5)
+                          setReviewComment('')
+                          setEditingReview(null)
+                          setReviewError(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Reviews List */}
             {reviewsLoading ? (
               <SkeletonReviews count={3} />
             ) : vendorReviews.length === 0 ? (
-             <EmptyState
-               icon={
-                 <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                 </svg>
-               }
-               title="No reviews yet"
-               description={canReviewVendor ? 'Be the first to review this store!' : 'No reviews for this store yet.'}
-             />
-           ) : (
-             <div className="space-y-4">
-               {vendorReviews.map((review) => (
-                 <Card key={review.id} variant="elevated">
-                   <CardContent className="pt-6">
-                     <div className="flex items-start justify-between mb-3">
+              <EmptyState
+                icon={
+                  <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                }
+                title="No reviews yet"
+                description={canReviewVendor ? 'Be the first to review this store!' : 'No reviews for this store yet.'}
+              />
+            ) : (
+              <div className="space-y-4">
+                {vendorReviews.map((review) => (
+                  <Card key={review.id} variant="elevated">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-royal-blue/10 flex items-center justify-center text-royal-blue font-semibold">
                             {getCustomerInitials(review.reviewer)}
@@ -599,24 +724,52 @@ export default function VendorProfilePage() {
                             {renderStars(review.rating)}
                           </div>
                         </div>
-                       <span className="text-sm text-slate-500">
-                         {new Date(review.createdAt).toLocaleDateString('en-US', {
-                           year: 'numeric',
-                           month: 'short',
-                           day: 'numeric',
-                         })}
-                       </span>
-                     </div>
-                     {review.comment && (
-                       <p className="text-slate-700 leading-relaxed">{review.comment}</p>
-                     )}
-                   </CardContent>
-                 </Card>
-               ))}
-             </div>
-           )}
-         </section>
-       </div>
-     </div>
-   )
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-500">
+                            {new Date(review.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                          {userReview && userReview.id === review.id && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingReview(review)
+                                  setReviewRating(review.rating)
+                                  setReviewComment(review.comment || '')
+                                  setShowReviewForm(true)
+                                }}
+                                className="text-xs"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteVendorReview(review.id)}
+                                disabled={deletingReviewId === review.id}
+                                className="text-xs text-red-600 hover:text-red-700"
+                              >
+                                {deletingReviewId === review.id ? 'Deleting...' : 'Delete'}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="text-slate-700 leading-relaxed">{review.comment}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    )
 }

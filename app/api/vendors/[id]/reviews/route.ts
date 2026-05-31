@@ -38,10 +38,38 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             userId: payload.userId,
           },
         },
+        include: {
+          user: {
+            select: {
+              email: true,
+            },
+          },
+          order: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
+        },
       })
 
       if (existingReview) {
-        return NextResponse.json({ canReview: false, reason: 'already_reviewed' }, { status: 200 })
+        const user = await getPrisma().user.findUnique({
+          where: { id: payload.userId },
+          select: { email: true },
+        })
+        return NextResponse.json({
+          canReview: false,
+          reason: 'already_reviewed',
+          userReview: {
+            id: existingReview.id,
+            rating: existingReview.rating,
+            comment: existingReview.comment,
+            createdAt: existingReview.createdAt,
+            isVerifiedPurchase: existingReview.order !== null,
+            reviewer: user?.email?.split('@')[0] + '***' || 'Anonymous',
+          }
+        }, { status: 200 })
       }
 
       // Check if user has purchased from this vendor in a valid order
@@ -60,7 +88,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         },
       })
 
-      return NextResponse.json({ canReview: !!validOrder }, { status: 200 })
+      return NextResponse.json({ canReview: !!validOrder, reason: validOrder ? null : 'no_valid_order' }, { status: 200 })
     }
 
     // Get store with cached ratings
@@ -202,6 +230,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'Rating must be between 1 and 5' }, { status: 400 })
+    }
+
+    // Validate comment (required, minimum 5 characters)
+    if (!comment || !comment.trim() || comment.trim().length < 5) {
+      return NextResponse.json({ error: 'Comment is required and must be at least 5 characters' }, { status: 400 })
     }
 
     // Verify store exists
