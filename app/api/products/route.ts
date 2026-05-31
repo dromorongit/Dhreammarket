@@ -15,19 +15,20 @@ export async function GET(request: NextRequest) {
       payload = await verifyToken(token)
     }
 
-    // For authenticated vendors, get only their products
-    if (payload && payload.role === 'VENDOR') {
-      const store = await getPrisma().store.findUnique({
-        where: { userId: payload.userId },
-        include: {
-          products: {
-            include: {
-              category: true,
-              images: true,
-            },
-          },
-        },
-      })
+     // For authenticated vendors, get only their products
+     if (payload && payload.role === 'VENDOR') {
+       const store = await getPrisma().store.findUnique({
+         where: { userId: payload.userId },
+         include: {
+           products: {
+             include: {
+               category: true,
+               images: true,
+               variants: true,
+             },
+           },
+         },
+       })
 
       if (!store) {
         const response = NextResponse.json({ products: [] })
@@ -42,33 +43,34 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-    // For marketplace browsing (public or authenticated non-vendors), get all products
-    // Use cached averageRating and reviewCount from Product model
-    // Sort by newest first
-    const products = await getPrisma().product.findMany({
-      include: {
-        category: true,
-        brandRelation: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            logo: true,
-          },
-        },
-        store: {
-          select: {
-            id: true,
-            name: true,
-            isVerified: true,
-          },
-        },
-        images: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+     // For marketplace browsing (public or authenticated non-vendors), get all products
+     // Use cached averageRating and reviewCount from Product model
+     // Sort by newest first
+     const products = await getPrisma().product.findMany({
+       include: {
+         category: true,
+         brandRelation: {
+           select: {
+             id: true,
+             name: true,
+             slug: true,
+             logo: true,
+           },
+         },
+         store: {
+           select: {
+             id: true,
+             name: true,
+             isVerified: true,
+           },
+         },
+         images: true,
+         variants: true,
+       },
+       orderBy: {
+         createdAt: 'desc',
+       },
+     })
 
     // Use cached ratings from database
     const productsWithCachedRatings = products.map((product) => ({
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -147,12 +149,26 @@ export async function POST(request: NextRequest) {
     if (validCategories.length !== uniqueCategoryIds.length) {
       return NextResponse.json({ error: 'One or more invalid category IDs provided' }, { status: 400 })
     }
-    if (price === undefined || price < 0) {
-      return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
-    }
-    if (stock === undefined || stock < 0) {
-      return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
-    }
+     if (price === undefined || price < 0) {
+       return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
+     }
+     if (stock === undefined || stock < 0) {
+       return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
+     }
+     
+     // Validate salesPrice and dealsPrice if provided
+     if (salesPrice !== undefined && salesPrice !== null) {
+       const salesPriceNum = parseFloat(salesPrice)
+       if (isNaN(salesPriceNum) || salesPriceNum < 0) {
+         return NextResponse.json({ error: 'Invalid sales price' }, { status: 400 })
+       }
+     }
+     if (dealsPrice !== undefined && dealsPrice !== null) {
+       const dealsPriceNum = parseFloat(dealsPrice)
+       if (isNaN(dealsPriceNum) || dealsPriceNum < 0) {
+         return NextResponse.json({ error: 'Invalid deals price' }, { status: 400 })
+       }
+     }
 
     // Check if vendor has completed onboarding (store and vendor category)
     const isOnboarded = await isVendorOnboarded(payload.userId);
@@ -169,24 +185,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Store not found' }, { status: 400 })
     }
 
-    // Create product - use first category as primary, rest will be linked via junction table
-    const primaryCategoryId = uniqueCategoryIds[0]
-    const product = await getPrisma().product.create({
-      data: {
-        storeId: store.id,
-        categoryId: primaryCategoryId,
-        name: name.trim(),
-        description: description?.trim() || null,
-        price: parseFloat(price),
-        stock: parseInt(stock),
-      },
-      include: {
-        category: true,
-        images: true,
-      },
-    })
+     // Create product - use first category as primary, rest will be linked via junction table
+     const primaryCategoryId = uniqueCategoryIds[0]
+     const product = await getPrisma().product.create({
+       data: {
+         storeId: store.id,
+         categoryId: primaryCategoryId,
+         name: name.trim(),
+         description: description?.trim() || null,
+         price: parseFloat(price),
+         stock: parseInt(stock),
+         brandId: brandId || null,
+         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
+         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+       },
+       include: {
+         category: true,
+         images: true,
+       },
+     })
 
-    // Create category assignments for all selected categories
+     // Create variants if provided
+     if (variants && Array.isArray(variants) && variants.length > 0) {
+       await getPrisma().productVariant.createMany({
+         data: variants.map((variant: any) => ({
+           productId: product.id,
+           color: variant.color || null,
+           size: variant.size || null,
+           age: variant.age || null,
+           sku: variant.sku || null,
+           stock: variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock) : 0,
+           active: variant.active !== undefined ? variant.active : true,
+         })),
+       });
+     }
+
+     // Create category assignments for all selected categories
     if (uniqueCategoryIds.length > 1) {
       await getPrisma().productCategoryAssignment.createMany({
         data: uniqueCategoryIds.map((catId, index) => ({

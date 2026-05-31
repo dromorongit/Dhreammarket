@@ -12,6 +12,9 @@ interface OrderItem {
   id: string
   quantity: number
   price: number
+  color?: string | null
+  size?: string | null
+  age?: string | null
   product: {
     id: string
     name: string
@@ -304,6 +307,14 @@ export default function VendorOrderDetailPage() {
     minute: '2-digit',
   })
 
+  const renderVariantInfo = (item: OrderItem) => {
+    const parts = []
+    if (item.color) parts.push(`Color: ${item.color}`)
+    if (item.size) parts.push(`Size: ${item.size}`)
+    if (item.age) parts.push(`Age: ${item.age}`)
+    return parts.length > 0 ? ` (${parts.join(', ')})` : ''
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -381,7 +392,9 @@ export default function VendorOrderDetailPage() {
                   <div key={item.id} className="py-4 first:pt-0 last:pb-0">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{item.product.name}</p>
+                        <p className="font-medium text-gray-900">
+                          {item.product.name}{renderVariantInfo(item)}
+                        </p>
                         <p className="text-sm text-gray-600">
                           Quantity: {item.quantity} × {formatPrice(item.price)}
                         </p>

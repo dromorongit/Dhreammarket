@@ -17,10 +17,28 @@ interface Category {
   children?: Category[]
 }
 
+interface Brand {
+  id: string
+  name: string
+  slug: string
+  logo?: string | null
+}
+
+interface ProductVariant {
+  id?: string
+  color?: string
+  size?: string
+  age?: string
+  sku?: string
+  stock?: number
+  active?: boolean
+}
+
 export default function NewProduct() {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true) // Start with true to show loading state while fetching
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null)
   const [formData, setFormData] = useState({
@@ -28,34 +46,35 @@ export default function NewProduct() {
     description: '',
     price: '',
     stock: '',
+    salesPrice: '',
+    dealsPrice: '',
+    brandId: '',
     categoryIds: [] as string[],
     imageUrls: [''],
+    variants: [] as ProductVariant[],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
+  const AGE_OPTIONS = ['0-6 Months', '6-12 Months', '1-2 Years', '2-3 Years', '4-5 Years', '6-7 Years', '8-10 Years', '12-14 Years']
 
   useEffect(() => {
     const loadAllData = async () => {
       await Promise.all([
         checkOnboardingStatus(),
-        fetchCategories()
+        fetchCategories(),
+        fetchBrands()
       ])
       setLoading(false)
     }
     loadAllData()
   }, [])
 
-  // Debug: Verify React re-renders when categories change
-  useEffect(() => {
-    console.log('[RENDER] Categories changed:', categories)
-    console.log('[RENDER] Categories length:', categories.length)
-  }, [categories])
-
   const checkOnboardingStatus = async () => {
     try {
       const response = await fetch('/api/store')
       if (response.ok) {
         const data = await response.json()
-        // If store exists and has categoryId, vendor is onboarded
         setIsOnboarded(!!data.store?.categoryId)
       } else {
         setIsOnboarded(false)
@@ -68,37 +87,48 @@ export default function NewProduct() {
 
   const fetchCategories = async () => {
     try {
-      console.log('[FRONTEND] Fetching categories...')
       const response = await fetch('/api/categories')
-      console.log('[FRONTEND] Response status:', response.status)
       if (response.ok) {
         const data = await response.json()
-        console.log('[FRONTEND] Response data:', data)
-        console.log('[FRONTEND] Categories state BEFORE set:', categories)
         setCategories(data.categories)
-        console.log('[FRONTEND] Categories state AFTER set:', data.categories)
-      } else {
-        console.error('[FRONTEND] Response not OK:', response.status, response.statusText)
       }
     } catch (error) {
-      console.error('[FRONTEND] Error fetching categories:', error)
+      console.error('Error fetching categories:', error)
     }
   }
 
-  // Render hierarchical category options for dropdown
-  const renderCategoryOptions = (cats: Category[], level = 0): React.ReactNode[] => {
-    const options: React.ReactNode[] = []
-    cats.forEach((cat) => {
-      options.push(
-        <option key={cat.id} value={cat.id} style={{ paddingLeft: level * 16 }}>
-          {'\u00A0'.repeat(level * 4)}{level > 0 ? '↳ ' : ''}{cat.name}
-        </option>
-      )
-      if (cat.children && cat.children.length > 0) {
-        options.push(...renderCategoryOptions(cat.children, level + 1))
+  const fetchBrands = async () => {
+    try {
+      const response = await fetch('/api/brands')
+      if (response.ok) {
+        const data = await response.json()
+        setBrands(data.brands || [])
       }
+    } catch (error) {
+      console.error('Error fetching brands:', error)
+    }
+  }
+
+  const addVariant = () => {
+    setFormData(prev => ({
+      ...prev,
+      variants: [...prev.variants, { color: '', size: '', age: '', sku: '', stock: 0, active: true }]
+    }))
+  }
+
+  const removeVariant = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index)
+    }))
+  }
+
+  const updateVariant = (index: number, field: keyof ProductVariant, value: any) => {
+    setFormData(prev => {
+      const newVariants = [...prev.variants]
+      newVariants[index] = { ...newVariants[index], [field]: value }
+      return { ...prev, variants: newVariants }
     })
-    return options
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,7 +136,6 @@ export default function NewProduct() {
     setErrors({})
     setSaving(true)
 
-    // Validate at least one category is selected
     if ((formData.categoryIds || []).length === 0) {
       setErrors({ general: 'Please select at least one category' })
       setSaving(false)
@@ -118,7 +147,11 @@ export default function NewProduct() {
         ...formData,
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
+        salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
+        dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
+        brandId: formData.brandId || null,
         imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
+        variants: formData.variants.filter(v => v.color || v.size || v.age),
       }
 
       const response = await fetch('/api/products', {
@@ -128,7 +161,6 @@ export default function NewProduct() {
       })
 
       if (response.ok) {
-        const data = await response.json()
         alert('Product created successfully!')
         router.push('/dashboard/vendor/products')
       } else {
@@ -146,17 +178,11 @@ export default function NewProduct() {
   }
 
   const handleCategoryChange = (categoryIds: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      categoryIds,
-    }))
+    setFormData(prev => ({ ...prev, categoryIds }))
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   if (isOnboarded === null || loading) {
@@ -278,29 +304,159 @@ export default function NewProduct() {
                 </div>
               </div>
 
-              <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                     Product Categories * (Max 3)
-                   </label>
-                   <SearchableCategorySelector
-                     categories={categories || []}
-                     selectedCategoryIds={formData.categoryIds || []}
-                     onChange={handleCategoryChange}
-                     maxCategories={3}
-                     placeholder="Search product categories..."
-                   />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                    Sales Price (Optional)
+                  </label>
+                  <Input
+                    id="salesPrice"
+                    name="salesPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.salesPrice}
+                    onChange={handleChange}
+                    placeholder="Discounted price"
+                  />
                 </div>
+                <div>
+                  <label htmlFor="dealsPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                    Deals Price (Optional)
+                  </label>
+                  <Input
+                    id="dealsPrice"
+                    name="dealsPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.dealsPrice}
+                    onChange={handleChange}
+                    placeholder="Promotional price"
+                  />
+                </div>
+              </div>
 
               <div>
-                <ImageUpload
-                  value={formData.imageUrls}
-                  onChange={(urls) => setFormData(prev => ({ ...prev, imageUrls: urls }))}
-                  folder="products"
-                  maxFiles={10}
-                  maxSizeMB={5}
-                  label="Product Images"
-                  hint="Upload high-quality images of your product. The first image will be used as the main product image."
+                <label htmlFor="brandId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Brand (Optional)
+                </label>
+                <select
+                  id="brandId"
+                  name="brandId"
+                  value={formData.brandId}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select a brand (optional)</option>
+                  {brands.map(brand => (
+                    <option key={brand.id} value={brand.id}>{brand.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Product Categories * (Max 3)
+                </label>
+                <SearchableCategorySelector
+                  categories={categories || []}
+                  selectedCategoryIds={formData.categoryIds || []}
+                  onChange={handleCategoryChange}
+                  maxCategories={3}
+                  placeholder="Search product categories..."
                 />
+              </div>
+
+              <ImageUpload
+                value={formData.imageUrls}
+                onChange={(urls) => setFormData(prev => ({ ...prev, imageUrls: urls }))}
+                folder="products"
+                maxFiles={10}
+                maxSizeMB={5}
+                label="Product Images"
+                hint="Upload high-quality images of your product. The first image will be used as the main product image."
+              />
+
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Product Variants (Optional)
+                  </label>
+                  <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                    + Add Variant
+                  </Button>
+                </div>
+                {formData.variants.length > 0 && (
+                  <div className="space-y-3">
+                    {formData.variants.map((variant, index) => (
+                      <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-700">Variant {index + 1}</span>
+                          <Button type="button" variant="danger" size="sm" onClick={() => removeVariant(index)}>
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Color</label>
+<Input
+                               type="text"
+                               value={variant.color || ''}
+                               onChange={(e) => updateVariant(index, 'color', e.target.value)}
+                               placeholder="e.g., Red, Blue"
+                             />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Size</label>
+                            <select
+                              value={variant.size || ''}
+                              onChange={(e) => updateVariant(index, 'size', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                            >
+                              <option value="">Select size</option>
+                              {SIZE_OPTIONS.map(size => (
+                                <option key={size} value={size}>{size}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Age</label>
+                            <select
+                              value={variant.age || ''}
+                              onChange={(e) => updateVariant(index, 'age', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                            >
+                              <option value="">Select age range</option>
+                              {AGE_OPTIONS.map(age => (
+                                <option key={age} value={age}>{age}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">SKU</label>
+<Input
+                               type="text"
+                               value={variant.sku || ''}
+                               onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                               placeholder="Stock keeping unit"
+                             />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Stock</label>
+<Input
+                               type="number"
+                               min="0"
+                               value={variant.stock !== undefined ? variant.stock : ''}
+                               onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                               placeholder="0"
+                             />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {errors.general && (

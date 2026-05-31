@@ -12,6 +12,9 @@ interface OrderItem {
   id: string
   quantity: number
   price: number
+  color?: string | null
+  size?: string | null
+  age?: string | null
   product: {
     id: string
     name: string
@@ -149,6 +152,14 @@ export default function CustomerOrderDetailPage() {
         </div>
       </div>
     )
+  }
+
+  const renderVariantInfo = (item: OrderItem) => {
+    const parts = []
+    if (item.color) parts.push(`Color: ${item.color}`)
+    if (item.size) parts.push(`Size: ${item.size}`)
+    if (item.age) parts.push(`Age: ${item.age}`)
+    return parts.length > 0 ? ` (${parts.join(', ')})` : ''
   }
 
   if (loading) {
@@ -293,7 +304,9 @@ export default function CustomerOrderDetailPage() {
                   <div key={item.id} className="py-4 first:pt-0 last:pb-0">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{item.product.name}</p>
+                        <p className="font-medium text-gray-900">
+                          {item.product.name}{renderVariantInfo(item)}
+                        </p>
                         <p className="text-sm text-gray-600">
                           Quantity: {item.quantity} × {formatPrice(item.price)}
                         </p>
@@ -319,7 +332,7 @@ export default function CustomerOrderDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {order.user.profile?.firstName || order.user.profile?.lastName ? (
+                {(order.user.profile?.firstName || order.user.profile?.lastName) ? (
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
                     <p className="text-gray-900">

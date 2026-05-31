@@ -2,9 +2,22 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 
+interface ProductVariant {
+  id: string
+  color?: string
+  size?: string
+  age?: string
+  sku?: string
+  stock?: number
+}
+
 interface CartItem {
   id: string
   quantity: number
+  productVariantId?: string | null
+  color?: string | null
+  size?: string | null
+  age?: string | null
   product: {
     id: string
     name: string
@@ -30,7 +43,12 @@ interface CartContextType {
   cartTotalQuantity: number
   loading: boolean
   fetchCart: () => Promise<void>
-  addToCart: (productId: string, quantity?: number) => Promise<boolean>
+  addToCart: (productId: string, quantity?: number, options?: {
+    productVariantId?: string
+    color?: string
+    size?: string
+    age?: string
+  }) => Promise<boolean>
   updateQuantity: (itemId: string, quantity: number) => Promise<boolean>
   removeItem: (itemId: string) => Promise<boolean>
   clearCart: () => void
@@ -66,12 +84,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Calculate item count (number of unique products)
   const cartItemCount = cart?.items?.length || 0
 
-  const addToCart = useCallback(async (productId: string, quantity = 1): Promise<boolean> => {
+  const addToCart = useCallback(async (
+    productId: string, 
+    quantity = 1, 
+    options?: {
+      productVariantId?: string
+      color?: string
+      size?: string
+      age?: string
+    }
+  ): Promise<boolean> => {
     try {
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity }),
+        body: JSON.stringify({ 
+          productId, 
+          quantity,
+          productVariantId: options?.productVariantId,
+          color: options?.color,
+          size: options?.size,
+          age: options?.age,
+        }),
       })
 
       if (response.ok) {
@@ -144,7 +178,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         fetchCart()
       }
     }
-
+    
     window.addEventListener('storage', handleStorageChange)
     
     // Also listen for custom events for same-tab updates

@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
                   images: true,
                 },
               },
+              productVariant: true,
             },
           },
         },
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { productId, quantity = 1 } = await request.json()
+    const { productId, quantity = 1, productVariantId, color, size, age } = await request.json()
 
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
@@ -89,11 +90,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Quantity must be positive' }, { status: 400 })
     }
 
-    // Verify product exists and has stock
+    // Verify product exists
     let product: any = null
     try {
       product = await getPrisma().product.findUnique({
         where: { id: productId },
+        include: {
+          variants: true,
+        },
       })
       console.log('[cart/POST] product.findUnique succeeded, productId:', productId)
     } catch (e) {
@@ -104,8 +108,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    if (product.stock < quantity) {
-      return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 })
+    // Determine stock to check (variant stock or product stock)
+    let availableStock = product.stock
+    if (productVariantId) {
+      const variant = product.variants?.find((v: any) => v.id === productVariantId)
+      if (variant) {
+        availableStock = variant.stock
+      }
+    }
+
+    if (availableStock < quantity) {
+      return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
     }
 
     // Get or create cart
@@ -131,20 +144,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Build composite unique key for cart item
+    const cartItemWhere: any = {
+      cartId_productId: {
+        cartId: cart.id,
+        productId,
+      },
+    }
+    
+    // If variant is provided, use variant ID for uniqueness
+    if (productVariantId) {
+      cartItemWhere.productVariantId = productVariantId
+    }
+
     // Check if item already in cart
     let existingItem: any = null
     try {
-      existingItem = await getPrisma().cartItem.findUnique({
+      existingItem = await getPrisma().cartItem.findFirst({
         where: {
-          cartId_productId: {
-            cartId: cart.id,
-            productId,
-          },
+          cartId: cart.id,
+          productId,
+          productVariantId: productVariantId || null,
         },
       })
-      console.log('[cart/POST] cartItem.findUnique succeeded')
+      console.log('[cart/POST] cartItem.findFirst succeeded')
     } catch (e) {
-      console.error('[cart/POST] cartItem.findUnique FAILED:', e)
+      console.error('[cart/POST] cartItem.findFirst FAILED:', e)
     }
 
     if (existingItem) {
@@ -165,7 +190,11 @@ export async function POST(request: NextRequest) {
           data: {
             cartId: cart.id,
             productId,
+            productVariantId: productVariantId || null,
             quantity,
+            color: color || null,
+            size: size || null,
+            age: age || null,
           },
         })
         console.log('[cart/POST] cartItem.create succeeded')
@@ -187,6 +216,7 @@ export async function POST(request: NextRequest) {
                   images: true,
                 },
               },
+              productVariant: true,
             },
           },
         },

@@ -27,6 +27,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       include: {
         cart: true,
         product: true,
+        productVariant: true,
       },
     })
 
@@ -38,9 +39,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Check stock
-    if (cartItem.product.stock < quantity) {
-      return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 })
+    // Check stock (variant stock takes precedence)
+    const stockToCheck = cartItem.productVariant?.stock ?? cartItem.product.stock
+    if (stockToCheck < quantity) {
+      return NextResponse.json({ error: `Insufficient stock. Available: ${stockToCheck}` }, { status: 400 })
     }
 
     // Update quantity
@@ -60,12 +62,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 images: true,
               },
             },
+            productVariant: true,
           },
         },
       },
     })
 
-    const total = updatedCart?.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => sum + (item.product.price * item.quantity), 0) || 0
+    const total = updatedCart?.items.reduce((sum: number, item: any) => sum + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)), 0) || 0
 
     return NextResponse.json({
       cart: {
@@ -126,12 +129,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
                 images: true,
               },
             },
+            productVariant: true,
           },
         },
       },
     })
 
-    const total = updatedCart?.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => sum + (item.product.price * item.quantity), 0) || 0
+    const total = updatedCart?.items.reduce((sum: number, item: any) => sum + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)), 0) || 0
 
     return NextResponse.json({
       cart: {

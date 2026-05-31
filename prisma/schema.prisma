@@ -126,7 +126,9 @@ model Product {
   brand            String?
   brandId          String?
   price            Float
-  flashSalePrice   Float?                   // Discounted price for flash sales
+  flashSalePrice   Float?                   // Discounted price for flash sales (kept for backward compatibility)
+  salesPrice       Float?                   // Temporary discounted selling price
+  dealsPrice       Float?                   // Deep-discount promotional price
   flashSaleStart   DateTime?                // When flash sale starts
   flashSaleEnd     DateTime?                // When flash sale ends
   salesCount       Int                      @default(0) // Total units sold
@@ -140,13 +142,33 @@ model Product {
   homepageSections HomepageSectionProduct[]
   orderItems       OrderItem[]
   images           ProductImage[]
+  variants         ProductVariant[]         @relation("ProductVariants")
   category         ProductCategory          @relation(fields: [categoryId], references: [id])
   store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   brandRelation    Brand?                   @relation(fields: [brandId], references: [id], onDelete: SetNull)
   productReviews   ProductReview[]
   categoryAssignments ProductCategoryAssignment[]
-
+  
   @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  color     String?
+  size      String?
+  age       String?
+  sku       String?
+  stock     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  product Product @relation("ProductVariants", fields: [productId], references: [id], onDelete: Cascade)
+  cartItems CartItem[]
+  orderItems OrderItem[]
+  
+  @@map("product_variants")
 }
 
 model ProductImage {
@@ -185,15 +207,20 @@ model Cart {
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
-  cartId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  cartId           String
+  productId        String
+  productVariantId String?
+  quantity         Int      @default(1)
+  color            String?
+  size             String?
+  age              String?
+  createdAt        DateTime @default(now())
+  cart             Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, productVariantId])
   @@map("cart_items")
 }
 
@@ -237,21 +264,25 @@ model Order {
 }
 
 model OrderItem {
-  id                 String   @id @default(cuid())
-  orderId            String
-  productId          String
-  storeId            String?
-  quantity           Int
-  price              Float
-  grossAmount        Float?
-  processorFee       Float?
-  netAmount          Float?
+  id               String   @id @default(cuid())
+  orderId          String
+  productId        String
+  productVariantId String?
+  quantity         Int
+  price            Float
+  color            String?
+  size             String?
+  age              String?
+  grossAmount      Float?
+  processorFee     Float?
+  netAmount        Float?
   platformCommission Float?
-  vendorEarnings     Float?
-  commissionRate     Float?
-  createdAt          DateTime @default(now())
-  order              Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vendorEarnings   Float?
+  commissionRate   Float?
+  createdAt        DateTime @default(now())
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
 
   @@map("order_items")
 }

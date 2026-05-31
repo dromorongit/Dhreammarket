@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -28,14 +28,32 @@ interface Review {
   isVerifiedPurchase: boolean
 }
 
+interface ProductVariant {
+  id: string
+  color?: string
+  size?: string
+  age?: string
+  sku?: string
+  stock: number
+  active: boolean
+}
+
 interface Product {
   id: string
   name: string
   description: string | null
   price: number
+  salesPrice?: number | null
+  dealsPrice?: number | null
   stock: number
   averageRating?: number
   reviewCount?: number
+  brand?: {
+    id: string
+    name: string
+    slug: string
+    logo?: string | null
+  }
   category?: {
     id: string
     name: string
@@ -49,6 +67,14 @@ interface Product {
     id: string
     url: string
     alt: string | null
+  }>
+  variants: ProductVariant[]
+  categoryAssignments?: Array<{
+    productCategoryId: string
+    productCategory: {
+      id: string
+      name: string
+    }
   }>
 }
 
@@ -67,6 +93,12 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [addingToCart, setAddingToCart] = useState(false)
+  
+  // Variant selection state
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [selectedColor, setSelectedColor] = useState<string>('')
+  const [selectedSize, setSelectedSize] = useState<string>('')
+  const [selectedAge, setSelectedAge] = useState<string>('')
   
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([])
@@ -115,6 +147,14 @@ export default function ProductDetail() {
       if (response.ok) {
         const data = await response.json()
         setProduct(data.product)
+        // Set default variant if only one exists
+        const p = data.product as Product
+        if (p.variants && p.variants.length > 0 && p.variants[0].active) {
+          setSelectedVariant(p.variants[0])
+          if (p.variants[0].color) setSelectedColor(p.variants[0].color)
+          if (p.variants[0].size) setSelectedSize(p.variants[0].size)
+          if (p.variants[0].age) setSelectedAge(p.variants[0].age)
+        }
       } else {
         alert('Product not found')
         router.push('/marketplace')
@@ -167,8 +207,77 @@ export default function ProductDetail() {
     }
   }
 
+  // Get available options for variant selection
+  const availableColors = useMemo(() => {
+    return product?.variants?.filter(v => v.active).reduce((acc: string[], v) => {
+      if (v.color && !acc.includes(v.color)) acc.push(v.color)
+      return acc
+    }, []) || []
+  }, [product?.variants])
+
+  const availableSizes = useMemo(() => {
+    return product?.variants?.filter(v => v.active).reduce((acc: string[], v) => {
+      if (v.size && !acc.includes(v.size)) acc.push(v.size)
+      return acc
+    }, []) || []
+  }, [product?.variants])
+
+  const availableAges = useMemo(() => {
+    return product?.variants?.filter(v => v.active).reduce((acc: string[], v) => {
+      if (v.age && !acc.includes(v.age)) acc.push(v.age)
+      return acc
+    }, []) || []
+  }, [product?.variants])
+
+  // Find selected variant when options change
+  useEffect(() => {
+    if (!product?.variants?.length) {
+      setSelectedVariant(null)
+      return
+    }
+
+    const found = product.variants.find(v => 
+      v.active &&
+      (selectedColor ? v.color === selectedColor : true) &&
+      (selectedSize ? v.size === selectedSize : true) &&
+      (selectedAge ? v.age === selectedAge : true)
+    )
+    setSelectedVariant(found || null)
+  }, [selectedColor, selectedSize, selectedAge, product?.variants])
+
+  // Calculate display price with discount logic
+  const displayPrice = useMemo(() => {
+    if (!product) return 0
+    if (product.dealsPrice) return product.dealsPrice
+    if (product.salesPrice) return product.salesPrice
+    return product.price
+  }, [product])
+
+  const hasDiscount = useMemo(() => {
+    return !!(product?.dealsPrice || product?.salesPrice)
+  }, [product?.dealsPrice, product?.salesPrice])
+
+  const discountPercentage = useMemo(() => {
+    if (!product || !hasDiscount) return 0
+    const discountedPrice = displayPrice
+    if (product.price <= discountedPrice) return 0
+    return Math.round(((product.price - discountedPrice) / product.price) * 100)
+  }, [product, displayPrice, hasDiscount])
+
+  // Get available stock (variant stock or product stock)
+  const availableStock = useMemo(() => {
+    if (selectedVariant) return selectedVariant.stock
+    return product?.stock || 0
+  }, [selectedVariant, product?.stock])
+
   const addToCart = async () => {
     if (!product || addingToCart) return
+
+    const hasVariants = product.variants && product.variants.length > 0
+    if (hasVariants && !selectedVariant) {
+      alert('Please select a product variant')
+      return
+    }
 
     setAddingToCart(true)
     try {
@@ -180,12 +289,15 @@ export default function ProductDetail() {
         body: JSON.stringify({
           productId: product.id,
           quantity: 1,
+          productVariantId: selectedVariant?.id || null,
+          color: selectedVariant?.color || null,
+          size: selectedVariant?.size || null,
+          age: selectedVariant?.age || null,
         }),
       })
 
       if (response.ok) {
         const data: CartResponse = await response.json()
-        // Dispatch cart update event to sync navbar
         dispatchCartUpdate()
         alert('Product added to cart!')
       } else {
@@ -309,6 +421,8 @@ export default function ProductDetail() {
       </div>
     )
   }
+
+  const hasVariants = product?.variants && product.variants.length > 0
 
   if (loading) {
     return (
@@ -437,11 +551,21 @@ export default function ProductDetail() {
                 </div>
               </div>
               <div className="flex items-baseline gap-3 mb-6">
+                {hasDiscount && (
+                  <>
+                    <span className="text-lg text-slate-400 line-through">
+                      {formatPrice(product.price)}
+                    </span>
+                    <Badge variant="success" size="sm" className="text-xs">
+                      -{discountPercentage}%
+                    </Badge>
+                  </>
+                )}
                 <span className="text-4xl sm:text-5xl font-bold text-royal-blue">
-                  {formatPrice(product.price)}
+                  {formatPrice(displayPrice)}
                 </span>
-                <Badge variant={product.stock > 0 ? 'success' : 'danger'}>
-                  {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                <Badge variant={availableStock > 0 ? 'success' : 'danger'}>
+                  {availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}
                 </Badge>
               </div>
               {product.category && (
@@ -462,10 +586,125 @@ export default function ProductDetail() {
               </Card>
             )}
 
+            {/* Variant Selection */}
+            {hasVariants && (
+              <Card variant="elevated">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-semibold text-deep-navy mb-4">Select Variant</h3>
+                  
+                  {availableColors.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Color</label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableColors.map((color) => {
+                          const isActive = product.variants?.some(v => v.color === color && v.active)
+                          const isInStock = selectedColor === color ? availableStock > 0 : false
+                          return (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => {
+                                setSelectedColor(color)
+                                setSelectedSize('')
+                                setSelectedAge('')
+                              }}
+                              disabled={!isActive}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                selectedColor === color
+                                  ? 'bg-royal-blue text-white'
+                                  : isActive
+                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  : 'bg-slate-50 text-slate-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {color}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {availableSizes.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Size</label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSizes.map((size) => {
+                          const isAvailable = product.variants?.some(v => 
+                            v.size === size && v.active && 
+                            (selectedColor ? v.color === selectedColor : true)
+                          )
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => setSelectedSize(size)}
+                              disabled={!isAvailable}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                selectedSize === size
+                                  ? 'bg-royal-blue text-white'
+                                  : isAvailable
+                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  : 'bg-slate-50 text-slate-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {availableAges.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Age</label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableAges.map((age) => {
+                          const isAvailable = product.variants?.some(v => 
+                            v.age === age && v.active && 
+                            (selectedColor ? v.color === selectedColor : true) &&
+                            (selectedSize ? v.size === selectedSize : true)
+                          )
+                          return (
+                            <button
+                              key={age}
+                              type="button"
+                              onClick={() => setSelectedAge(age)}
+                              disabled={!isAvailable}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                selectedAge === age
+                                  ? 'bg-royal-blue text-white'
+                                  : isAvailable
+                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                  : 'bg-slate-50 text-slate-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {age}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {!selectedVariant && (
+                    <p className="text-sm text-rose-600 mt-2">Please select a variant to add to cart</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <Card variant="elevated">
               <CardContent className="pt-6">
                 <h3 className="text-lg font-semibold text-deep-navy mb-4">Product Details</h3>
                 <div className="space-y-3">
+                  {product.brand && (
+                    <div className="flex justify-between py-2 border-b border-slate-100">
+                      <span className="text-slate-600">Brand</span>
+                      <span className="font-medium text-deep-navy">{product.brand.name}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-2 border-b border-slate-100">
                     <span className="text-slate-600">Store</span>
                     <span className="font-medium text-deep-navy flex items-center gap-1">
@@ -481,10 +720,16 @@ export default function ProductDetail() {
                   </div>
                   <div className="flex justify-between py-2 border-b border-slate-100">
                     <span className="text-slate-600">Stock Status</span>
-                    <span className={`font-medium ${product.stock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {product.stock > 0 ? `${product.stock} units available` : 'Out of stock'}
+                    <span className={`font-medium ${availableStock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {availableStock > 0 ? `${availableStock} units available` : 'Out of stock'}
                     </span>
                   </div>
+                  {hasVariants && (
+                    <div className="flex justify-between py-2 border-b border-slate-100">
+                      <span className="text-slate-600">Variants</span>
+                      <span className="font-medium text-deep-navy">{product.variants.length} option{product.variants.length !== 1 ? 's' : ''}</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -493,12 +738,12 @@ export default function ProductDetail() {
               <Button
                 size="lg"
                 className="w-full shadow-lg shadow-royal-blue/20"
-                disabled={product.stock === 0 || addingToCart}
+                disabled={availableStock === 0 || addingToCart}
                 onClick={addToCart}
               >
                 {addingToCart
                   ? 'Adding to Cart...'
-                  : product.stock > 0
+                  : availableStock > 0
                   ? 'Add to Cart'
                   : 'Out of Stock'}
               </Button>

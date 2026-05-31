@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Get user's cart
+    // Get user's cart with variants
     const cart = await getPrisma().cart.findUnique({
       where: { userId: payload.userId },
       include: {
@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
                 store: true,
               },
             },
+            productVariant: true,
           },
         },
       },
@@ -56,12 +57,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
     }
 
-    // Validate stock for all items
+    // Validate stock for all items (variant stock takes precedence)
     for (const item of cart.items) {
-      if (item.product.stock < item.quantity) {
+      const availableStock = item.productVariant?.stock ?? item.product.stock
+      if (availableStock < item.quantity) {
         console.log('[Checkout API] Insufficient stock for:', item.product.name)
         return NextResponse.json({
-          error: `Insufficient stock for ${item.product.name}. Available: ${item.product.stock}`
+          error: `Insufficient stock for ${item.product.name}. Available: ${availableStock}`
         }, { status: 400 })
       }
     }
@@ -74,7 +76,10 @@ export async function POST(request: NextRequest) {
     })
 
     // Calculate subtotal
-    const subtotal = cart.items.reduce((sum: number, item: { product: { price: number }; quantity: number }) => sum + (item.product.price * item.quantity), 0)
+    const subtotal = cart.items.reduce(
+      (sum: number, item: any) => sum + (item.product.price * item.quantity), 
+      0
+    )
     
     // Calculate shipping and tax
     const shippingPrice = shippingInfo?.price || 0
@@ -106,6 +111,9 @@ export async function POST(request: NextRequest) {
         productId: item.productId,
         quantity: item.quantity,
         price: item.product.price,
+        color: item.color,
+        size: item.size,
+        age: item.age,
       })
       vendorBreakdown[storeId].subtotal += item.product.price * item.quantity
     }
@@ -116,7 +124,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order and payment record in a transaction
-    // Note: subtotal, shipping, tax may not exist in older databases - handle gracefully
     const orderData: any = {
       userId: payload.userId,
       total,
@@ -136,8 +143,6 @@ export async function POST(request: NextRequest) {
       shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
     }
     
-    // Add optional fields that may not exist in all database versions
-    // These will be ignored if columns don't exist
     try {
       orderData.subtotal = subtotal
       orderData.shipping = shippingPrice
@@ -165,35 +170,33 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        // Create order items (without deducting stock yet)
+        // Create order items with variant information
         for (const item of cart.items) {
           await prisma.orderItem.create({
             data: {
               orderId: order.id,
               productId: item.productId,
+              productVariantId: item.productVariantId || null,
               quantity: item.quantity,
               price: item.product.price,
+              color: item.color || null,
+              size: item.size || null,
+              age: item.age || null,
               storeId: item.product.storeId,
             },
           })
         }
 
-        // DO NOT clear cart here - only clear after successful payment
-        // This ensures cart items are preserved if payment is cancelled or failed
-        // Cart will be cleared in payment/verify route after successful payment
-
         return { order, payment }
       })
     } catch (dbError) {
       console.error('[Checkout API] Database error creating order:', dbError)
-      // Return a more specific error
       return NextResponse.json({ 
         error: `Database error: ${dbError instanceof Error ? dbError.message : 'Failed to create order'}` 
       }, { status: 500 })
     }
 
     // Initialize Paystack payment
-    // Callback to checkout page which handles verification
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://dhreamarket-production.up.railway.app'}/checkout?reference=${reference}`
     console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
     
@@ -263,7 +266,6 @@ export async function POST(request: NextRequest) {
         data: { paymentStatus: 'FAILED' },
       })
 
-      // EXPOSE FULL ERROR MESSAGE - do not swallow errors
       const errorMessage = paystackError instanceof Error ? paystackError.message : 'Failed to initialize payment'
       return NextResponse.json({ 
         error: `Failed to initialize payment: ${errorMessage}` 
