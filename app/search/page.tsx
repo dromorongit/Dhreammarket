@@ -18,6 +18,8 @@ interface SearchProduct {
   name: string
   brand: string | null
   price: number
+  salesPrice?: number | null
+  dealsPrice?: number | null
   stock: number
   image: string | null
   store: { id: string; name: string; isVerified: boolean } | null
@@ -510,9 +512,16 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
           <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 leading-tight">
             {product.name}
           </h3>
-          <span className="text-[11px] font-bold text-royal-blue">
-            {formatPrice(product.price)}
-          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-royal-blue">
+              {formatPrice(product.dealsPrice ?? product.salesPrice ?? product.price)}
+            </span>
+            {(product.dealsPrice ?? product.salesPrice) && (
+              <span className="text-[10px] text-slate-400 line-through">
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
           {product.store && (
             <div className="flex items-center gap-1 min-w-0">
               <p className="text-[10px] text-slate-500 truncate">

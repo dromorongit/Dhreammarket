@@ -7,6 +7,8 @@ export const dynamic = 'force-dynamic'
 const productInclude = {
   images: true,
   category: true,
+  salesPrice: true,
+  dealsPrice: true,
   store: {
     select: { id: true, name: true, isVerified: true, logo: true },
   },

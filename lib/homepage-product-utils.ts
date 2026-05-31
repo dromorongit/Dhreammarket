@@ -5,6 +5,8 @@ export interface EnterpriseProduct {
   flashSalePrice?: number | null
   flashSaleStart?: string | null
   flashSaleEnd?: string | null
+  salesPrice?: number | null
+  dealsPrice?: number | null
   stock: number
   salesCount?: number
   isSponsored?: boolean
@@ -50,9 +52,17 @@ export function getDiscountPercent(price: number, salePrice: number | null | und
 }
 
 export function getEffectivePrice(product: EnterpriseProduct): number {
-  return product.flashSalePrice != null && product.flashSalePrice < product.price
-    ? product.flashSalePrice
-    : product.price
+  if (product.dealsPrice != null && product.dealsPrice < product.price) return product.dealsPrice
+  if (product.salesPrice != null && product.salesPrice < product.price) return product.salesPrice
+  if (product.flashSalePrice != null && product.flashSalePrice < product.price) return product.flashSalePrice
+  return product.price
+}
+
+export function getDiscountedPrice(product: EnterpriseProduct): number | null {
+  if (product.dealsPrice != null && product.dealsPrice < product.price) return product.dealsPrice
+  if (product.salesPrice != null && product.salesPrice < product.price) return product.salesPrice
+  if (product.flashSalePrice != null && product.flashSalePrice < product.price) return product.flashSalePrice
+  return null
 }
 
 export function dedupeProducts(

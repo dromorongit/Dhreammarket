@@ -19,6 +19,8 @@ interface VendorProduct {
   name: string
   description: string | null
   price: number
+  salesPrice?: number | null
+  dealsPrice?: number | null
   stock: number
   images: Array<{
     id: string
@@ -576,23 +578,30 @@ fetchVendor()
                         )}
                       </div>
                     </Link>
-                    <div className="p-2 space-y-1 flex-1 flex flex-col">
+<div className="p-2 space-y-1 flex-1 flex flex-col">
                       <Link href={`/marketplace/product/${product.id}`} className="block">
                         <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                           {product.name}
                         </h3>
                       </Link>
-                      <span className="text-[11px] font-bold text-royal-blue">
-                         {formatPrice(product.price)}
-                       </span>
-                       <div className="flex items-center gap-1 min-w-0">
-                         <p className="text-[10px] text-slate-500 truncate">
-                           {vendor.name}
-                         </p>
-                         {vendor.isVerified && (
-                           <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                         )}
-                       </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[11px] font-bold text-royal-blue">
+                          {formatPrice(product.dealsPrice ?? product.salesPrice ?? product.price)}
+                        </span>
+                        {(product.dealsPrice ?? product.salesPrice) && (
+                          <span className="text-[10px] text-slate-400 line-through">
+                            {formatPrice(product.price)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <p className="text-[10px] text-slate-500 truncate">
+                          {vendor.name}
+                        </p>
+                        {vendor.isVerified && (
+                          <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                        )}
+                      </div>
                     </div>
                   </Card>
                 ))}

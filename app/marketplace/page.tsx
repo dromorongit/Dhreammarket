@@ -25,6 +25,8 @@ interface Product {
   name: string
   description: string | null
   price: number
+  salesPrice?: number | null
+  dealsPrice?: number | null
   stock: number
   brand?: string | null
   brandId?: string | null
@@ -540,43 +542,50 @@ function MarketplaceContent() {
                          )}
                        </div>
                      </Link>
-                     <div className="p-2 space-y-1 flex-1 flex flex-col">
-                       <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                         {product.name}
-                       </h3>
-                       <span className="text-[11px] font-bold text-royal-blue">
-                         {formatPrice(product.price)}
-                       </span>
-                       {product.store && (
-                         <div className="flex items-center gap-1 min-w-0">
-                           <p className="text-[10px] text-slate-500 truncate">
-                             {product.store.name}
-                           </p>
-                           {product.store.isVerified && (
-                             <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-                           )}
-                         </div>
-                       )}
-                       <div className="flex flex-col gap-1 pt-0.5">
-                         <Button
-                           size="sm"
-                           className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-                           disabled={product.stock === 0 || addingToCart.has(product.id)}
-                           onClick={() => addToCart(product.id)}
-                         >
-                           {addingToCart.has(product.id)
-                             ? '...'
-                             : product.stock > 0
-                             ? 'Add to Cart'
-                             : 'Out of Stock'}
-                         </Button>
-                         <Link href={`/marketplace/product/${product.id}`} className="w-full">
-                           <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                             View Details
-                           </Button>
-                         </Link>
-                       </div>
-                     </div>
+<div className="p-2 space-y-1 flex-1 flex flex-col">
+                        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[11px] font-bold text-royal-blue">
+                            {formatPrice(product.dealsPrice ?? product.salesPrice ?? product.price)}
+                          </span>
+                          {(product.dealsPrice ?? product.salesPrice) && (
+                            <span className="text-[10px] text-slate-400 line-through">
+                              {formatPrice(product.price)}
+                            </span>
+                          )}
+                        </div>
+                        {product.store && (
+                          <div className="flex items-center gap-1 min-w-0">
+                            <p className="text-[10px] text-slate-500 truncate">
+                              {product.store.name}
+                            </p>
+                            {product.store.isVerified && (
+                              <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-1 pt-0.5">
+                          <Button
+                            size="sm"
+                            className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
+                            disabled={product.stock === 0 || addingToCart.has(product.id)}
+                            onClick={() => addToCart(product.id)}
+                          >
+                            {addingToCart.has(product.id)
+                              ? '...'
+                              : product.stock > 0
+                              ? 'Add to Cart'
+                              : 'Out of Stock'}
+                          </Button>
+                          <Link href={`/marketplace/product/${product.id}`} className="w-full">
+                            <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                              View Details
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
                    </Card>
                  ))}
               </div>

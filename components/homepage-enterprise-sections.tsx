@@ -15,6 +15,7 @@ import {
   type EnterpriseHomepageData,
   getDiscountPercent,
   getEffectivePrice,
+  getDiscountedPrice,
   dedupeProducts,
   collectProductIds,
   normalizeBrand,
@@ -215,8 +216,9 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
 }
 
 function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
-  const discount = getDiscountPercent(product.price, product.flashSalePrice);
-  const salePrice = product.flashSalePrice ?? product.price;
+  const discountedPrice = getDiscountedPrice(product)
+  const salePrice = discountedPrice ?? product.price
+  const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
     <Card
@@ -281,10 +283,13 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
         )}
       </div>
     </Card>
-  );
+  )
 }
 
 function SponsoredCard({ product }: { product: EnterpriseProduct }) {
+  const discountedPrice = getDiscountedPrice(product)
+  const hasDiscount = discountedPrice != null && discountedPrice < product.price
+
   return (
     <Card
       key={product.id}
@@ -306,9 +311,16 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
         <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
           {product.name}
         </h3>
-        <span className='text-[11px] font-bold text-royal-blue'>
-          {formatPrice(getEffectivePrice(product))}
-        </span>
+        <div className='flex items-center gap-1.5 flex-wrap'>
+          <span className='text-[11px] font-bold text-royal-blue'>
+            {formatPrice(getEffectivePrice(product))}
+          </span>
+          {hasDiscount && (
+            <span className='text-[10px] text-slate-400 line-through'>
+              {formatPrice(product.price)}
+            </span>
+          )}
+        </div>
         {product.store && (
           <div className='flex items-center gap-1 min-w-0'>
             <p className='text-[10px] text-slate-500 truncate'>
@@ -321,12 +333,13 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
         )}
       </div>
     </Card>
-  );
+  )
 }
 
 function DealCard({ product }: { product: EnterpriseProduct }) {
-  const discount = getDiscountPercent(product.price, product.flashSalePrice);
-  const salePrice = product.flashSalePrice ?? product.price;
+  const discountedPrice = getDiscountedPrice(product)
+  const salePrice = discountedPrice ?? product.price
+  const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
     <Card
@@ -373,7 +386,7 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
         )}
       </div>
     </Card>
-  );
+  )
 }
 
 function StandardCard({
@@ -383,6 +396,9 @@ function StandardCard({
   product: EnterpriseProduct;
   badge?: string;
 }) {
+  const discountedPrice = getDiscountedPrice(product)
+  const hasDiscount = discountedPrice != null && discountedPrice < product.price
+
   return (
     <Card
       key={product.id}
@@ -406,9 +422,16 @@ function StandardCard({
         <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
           {product.name}
         </h3>
-        <span className='text-[11px] font-bold text-royal-blue'>
-          {formatPrice(getEffectivePrice(product))}
-        </span>
+        <div className='flex items-center gap-1.5 flex-wrap'>
+          <span className='text-[11px] font-bold text-royal-blue'>
+            {formatPrice(getEffectivePrice(product))}
+          </span>
+          {hasDiscount && (
+            <span className='text-[10px] text-slate-400 line-through'>
+              {formatPrice(product.price)}
+            </span>
+          )}
+        </div>
         {product.store && (
           <div className='flex items-center gap-1 min-w-0'>
             <p className='text-[10px] text-slate-500 truncate'>
@@ -421,7 +444,7 @@ function StandardCard({
         )}
       </div>
     </Card>
-  );
+  )
 }
 
 export function FlashSalesSection({
