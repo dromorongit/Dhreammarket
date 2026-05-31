@@ -32,7 +32,7 @@ interface CartItem {
     color?: string | null
     size?: string | null
     age?: string | null
-    stock: number
+    stock?: number
   } | null
   color?: string | null
   size?: string | null
@@ -293,7 +293,7 @@ export default function Cart() {
                       {formatPrice(item.product.price)}
                     </p>
                     <p className="text-sm text-slate-500">
-                      Stock available: {item.productVariant ? item.productVariant.stock : item.product.stock}
+                      Stock available: {item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock}
                     </p>
                   </div>
 
@@ -321,7 +321,7 @@ export default function Cart() {
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        disabled={updatingItems.has(item.id) || item.quantity >= (item.productVariant ? item.productVariant.stock : item.product.stock)}
+                        disabled={updatingItems.has(item.id) || item.quantity >= (item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock)}
                         className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
