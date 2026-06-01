@@ -66,7 +66,9 @@ interface Brand {
 interface Vendor {
   id: string;
   name: string;
+  storeName?: string;
   email?: string;
+  mobileNumber?: string;
   user?: { id: string; email: string };
   profile?: { firstName: string; lastName: string };
   store?: { id: string; name: string; isVerified: boolean; isFeatured: boolean };
@@ -1070,21 +1072,58 @@ function ManageSectionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <Card
         variant="elevated"
-        className="w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="w-full max-w-4xl max-h-[90vh] flex flex-col"
       >
-        <CardContent className="p-6 flex flex-col h-full">
+        <CardContent className="p-6 flex flex-col flex-1 min-h-0">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-deep-navy">
-                Manage: {section.name}
-              </h2>
-              <p className="text-sm text-slate-500 mt-1">
-                Search products, bulk add/remove, and drag to reorder
-              </p>
+            <div className="flex-1 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-deep-navy">
+                  Manage: {section.name}
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Search products, bulk add/remove, and drag to reorder
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {activeTab === "products" && (
+                  <Button
+                    onClick={onAssignProducts}
+                    loading={saving}
+                    disabled={selectedProducts.size === 0}
+                    size="sm"
+                  >
+                    Assign {selectedProducts.size} Product
+                    {selectedProducts.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
+                {activeTab === "vendors" && (
+                  <Button
+                    onClick={onAssignVendors}
+                    loading={saving}
+                    disabled={selectedVendors.size === 0}
+                    size="sm"
+                  >
+                    Assign {selectedVendors.size} Vendor
+                    {selectedVendors.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
+                {activeTab === "brands" && (
+                  <Button
+                    onClick={onAssignBrands}
+                    loading={saving}
+                    disabled={selectedBrands.size === 0}
+                    size="sm"
+                  >
+                    Assign {selectedBrands.size} Brand
+                    {selectedBrands.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600"
+              className="ml-4 text-slate-400 hover:text-slate-600"
             >
               <svg
                 className="w-6 h-6"
@@ -1139,7 +1178,7 @@ function ManageSectionModal({
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto min-h-[280px]">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {activeTab === "assigned" && (
               <>
                 {sortedAssignedProducts.length === 0 ? (
@@ -1284,27 +1323,38 @@ function ManageSectionModal({
               </div>
             )}
 {activeTab === "vendors" && (
-               <div className="space-y-2">
-                 {vendors.filter((v) =>
-                     (v.user?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                     (v.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
-                   ).map((vendor: Vendor) => (
-                   <div
-                     key={vendor.id}
-                     onClick={() => onVendorToggle(vendor.id)}
-                     className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer ${
-                       selectedVendors.has(vendor.id)
-                         ? "border-royal-blue bg-royal-blue/5"
-                         : "border-slate-200"
-                     }`}
-                   >
-                     <p className="text-sm font-medium">
-                       {vendor.user?.email || vendor.name || 'Unknown Vendor'}
-                     </p>
-                   </div>
-                 ))}
-               </div>
-             )}
+              <div className="space-y-2">
+                {vendors.filter((v) =>
+                    (v.user?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (v.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (v.storeName ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
+                  ).map((vendor: Vendor) => (
+                    <div
+                      key={vendor.id}
+                      onClick={() => onVendorToggle(vendor.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer ${
+                        selectedVendors.has(vendor.id)
+                          ? "border-royal-blue bg-royal-blue/5"
+                          : "border-slate-200"
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {vendor.storeName ?? vendor.name ?? 'Unnamed Store'}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {vendor.user?.email || vendor.email}
+                        </p>
+                        {vendor.mobileNumber && (
+                          <p className="text-xs text-slate-500 truncate">
+                            {vendor.mobileNumber}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
             {activeTab === "brands" && (
               <div className="space-y-2">
                 {brands.map((brand) => (
@@ -1337,7 +1387,7 @@ function ManageSectionModal({
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-4 mt-4 border-t border-slate-200 gap-3 flex-wrap">
+          <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-200 flex items-center justify-between gap-3 flex-wrap z-10">
             {activeTab === "products" && (
               <div className="flex gap-2 items-center">
                 <Button
@@ -1373,41 +1423,9 @@ function ManageSectionModal({
                 Remove {selectedAssigned.size} selected
               </Button>
             )}
-            <div className="flex gap-2 ml-auto">
-              {activeTab === "products" && (
-                <Button
-                  onClick={onAssignProducts}
-                  loading={saving}
-                  disabled={selectedProducts.size === 0}
-                >
-                  Assign {selectedProducts.size} Product
-                  {selectedProducts.size !== 1 ? "s" : ""}
-                </Button>
-              )}
-              {activeTab === "vendors" && (
-                <Button
-                  onClick={onAssignVendors}
-                  loading={saving}
-                  disabled={selectedVendors.size === 0}
-                >
-                  Assign {selectedVendors.size} Vendor
-                  {selectedVendors.size !== 1 ? "s" : ""}
-                </Button>
-              )}
-              {activeTab === "brands" && (
-                <Button
-                  onClick={onAssignBrands}
-                  loading={saving}
-                  disabled={selectedBrands.size === 0}
-                >
-                  Assign {selectedBrands.size} Brand
-                  {selectedBrands.size !== 1 ? "s" : ""}
-                </Button>
-              )}
-              <Button variant="outline" onClick={onClose}>
-                Close
-              </Button>
-            </div>
+            <Button variant="outline" onClick={onClose} className="ml-auto">
+              Close
+            </Button>
           </div>
         </CardContent>
       </Card>
