@@ -594,25 +594,25 @@ export default function SuperAdminHomepagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-deep-navy">
+            <h1 className="text-2xl sm:text-3xl font-bold text-deep-navy">
               Homepage Sections
             </h1>
-            <p className="text-slate-600 mt-1">
+            <p className="text-slate-600 mt-1 text-sm sm:text-base">
               Manage Flash Sales, Sponsored Products, Gadget Display, Big Top
               Deals, and Brand Store. Top Selling Items is automatic from
               completed sales.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/dashboard/super-admin/brands">
-              <Button variant="outline">Manage Brands</Button>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
+            <Link href="/dashboard/super-admin/brands" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto min-h-[44px]">Manage Brands</Button>
             </Link>
-            <Button onClick={() => setShowCreateModal(true)}>
+            <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto min-h-[44px]">
               + Add Section
             </Button>
           </div>
@@ -642,7 +642,7 @@ export default function SuperAdminHomepagePage() {
             onAction={() => setShowCreateModal(true)}
           />
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sections.map((section, index) => (
               <Card
                 key={section.id}
@@ -657,10 +657,10 @@ export default function SuperAdminHomepagePage() {
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragEnd={handleDragEnd}
               >
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-4">
+                <CardContent className="p-4 sm:p-5 flex flex-col h-full">
+                  <div className="flex items-start sm:items-center gap-3 mb-3">
                     {/* Drag Handle */}
-                    <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600">
+                    <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -679,9 +679,10 @@ export default function SuperAdminHomepagePage() {
                     {/* Toggle */}
                     <button
                       onClick={() => handleToggle(section)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors min-w-[44px] min-h-[44px] ${
                         section.isEnabled ? "bg-royal-blue" : "bg-slate-300"
                       }`}
+                      aria-label={`Toggle ${section.name} ${section.isEnabled ? 'off' : 'on'}`}
                     >
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -692,51 +693,54 @@ export default function SuperAdminHomepagePage() {
 
                     {/* Section Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-deep-navy truncate">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                        <h3 className="font-semibold text-deep-navy text-sm sm:text-base truncate">
                           {section.name}
                         </h3>
-                        <Badge variant="default" size="sm">
+                        <Badge variant="default" size="sm" className="text-[10px] sm:text-xs">
                           {section.type.replace(/_/g, " ")}
                         </Badge>
-                        {section.subtitle && (
-                          <span className="text-xs text-slate-500 truncate">
-                            — {section.subtitle}
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-slate-500">
-                        <span>Slug: {section.slug}</span>
-                        <span>Order: {section.displayOrder}</span>
-                        {section._count && (
-                          <>
-                            <span>{section._count.products} products</span>
-                            <span>{section._count.vendors} vendors</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      {section.slug === "brand-store" ? (
-                        <Link href="/dashboard/super-admin/brands">
-                          <Button variant="outline" size="sm">
-                            Manage Brands
-                          </Button>
-                        </Link>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setManagingSection(section)}
-                        >
-                          Manage
-                        </Button>
+                      {section.subtitle && (
+                        <span className="text-xs text-slate-500 truncate block mt-1">
+                          — {section.subtitle}
+                        </span>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Secondary Details - Mobile friendly */}
+                  <div className="flex flex-col gap-1 mb-3 px-11 sm:px-0 sm:ml-11 text-xs text-slate-500">
+                    <span className="truncate">Slug: {section.slug}</span>
+                    <span>Order: {section.displayOrder}</span>
+                    {section._count && (
+                      <span className="truncate">{section._count.products} products</span>
+                    )}
+                  </div>
+
+                  {/* Actions - Full width stacked on mobile */}
+                  <div className="flex flex-col gap-2 mt-auto">
+                    {section.slug === "brand-store" ? (
+                      <Link href="/dashboard/super-admin/brands">
+                        <Button variant="outline" size="sm" className="w-full min-h-[44px]">
+                          Manage Brands
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full min-h-[44px]"
+                        onClick={() => setManagingSection(section)}
+                      >
+                        Manage
+                      </Button>
+                    )}
+                    <div className="flex gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="flex-1 min-h-[44px]"
                         onClick={() => window.open("/", "_blank")}
                       >
                         Preview
@@ -744,6 +748,7 @@ export default function SuperAdminHomepagePage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="flex-1 min-h-[44px]"
                         onClick={() => setEditingSection(section)}
                       >
                         Edit
@@ -752,6 +757,7 @@ export default function SuperAdminHomepagePage() {
                         <Button
                           variant="danger"
                           size="sm"
+                          className="flex-1 min-h-[44px]"
                           onClick={() => handleDelete(section.id, section.slug)}
                         >
                           Delete
@@ -902,13 +908,13 @@ function SectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card variant="elevated" className="w-full max-w-lg">
-        <CardContent className="p-6">
-          <h2 className="text-xl font-bold text-deep-navy mb-6">{title}</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+      <Card variant="elevated" className="w-full max-w-none sm:max-w-lg max-h-[100dvh] sm:max-h-none sm:h-auto sm:rounded-2xl flex flex-col">
+        <CardContent className="p-4 sm:p-6 flex flex-col flex-1 min-h-0">
+          <h2 className="text-lg sm:text-xl font-bold text-deep-navy mb-4 sm:mb-6">{title}</h2>
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Section Name
               </label>
               <input
@@ -920,13 +926,13 @@ function SectionModal({
                     setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"));
                   }
                 }}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none"
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none min-h-[44px]"
                 placeholder="e.g. Flash Sales"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Slug
               </label>
               <input
@@ -935,19 +941,19 @@ function SectionModal({
                 onChange={(e) =>
                   setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))
                 }
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none"
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none min-h-[44px]"
                 placeholder="e.g. flash-sales"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Type
               </label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none"
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none min-h-[44px]"
               >
                 {SECTION_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -957,22 +963,22 @@ function SectionModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
                 Subtitle (optional)
               </label>
               <input
                 type="text"
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none"
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none min-h-[44px]"
                 placeholder="e.g. Up to 60% Off"
               />
             </div>
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" loading={saving} className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button type="submit" loading={saving} className="w-full sm:w-auto min-h-[44px]">
                 {initialData ? "Save Changes" : "Create Section"}
               </Button>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
                 Cancel
               </Button>
             </div>
@@ -1069,305 +1075,317 @@ function ManageSectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card
-        variant="elevated"
-        className="w-full max-w-4xl max-h-[90vh] flex flex-col"
-      >
-        <CardContent className="p-6 flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-deep-navy">
-                  Manage: {section.name}
-                </h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Search products, bulk add/remove, and drag to reorder
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {activeTab === "products" && (
-                  <Button
-                    onClick={onAssignProducts}
-                    loading={saving}
-                    disabled={selectedProducts.size === 0}
-                    size="sm"
-                  >
-                    Assign {selectedProducts.size} Product
-                    {selectedProducts.size !== 1 ? "s" : ""}
-                  </Button>
-                )}
-                {activeTab === "vendors" && (
-                  <Button
-                    onClick={onAssignVendors}
-                    loading={saving}
-                    disabled={selectedVendors.size === 0}
-                    size="sm"
-                  >
-                    Assign {selectedVendors.size} Vendor
-                    {selectedVendors.size !== 1 ? "s" : ""}
-                  </Button>
-                )}
-                {activeTab === "brands" && (
-                  <Button
-                    onClick={onAssignBrands}
-                    loading={saving}
-                    disabled={selectedBrands.size === 0}
-                    size="sm"
-                  >
-                    Assign {selectedBrands.size} Brand
-                    {selectedBrands.size !== 1 ? "s" : ""}
-                  </Button>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="ml-4 text-slate-400 hover:text-slate-600"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+       <Card
+         variant="elevated"
+         className="w-full max-w-none sm:max-w-4xl h-[100dvh] sm:max-h-[90vh] sm:h-auto sm:rounded-2xl flex flex-col"
+       >
+         <CardContent className="p-4 sm:p-6 flex flex-col flex-1 min-h-0">
+           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4 sm:mb-6">
+             <div className="flex-1">
+               <h2 className="text-lg sm:text-xl font-bold text-deep-navy">
+                 Manage: {section.name}
+               </h2>
+               <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                 Search products, bulk add/remove, and drag to reorder
+               </p>
+             </div>
+             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+               {activeTab === "products" && (
+                 <Button
+                   onClick={onAssignProducts}
+                   loading={saving}
+                   disabled={selectedProducts.size === 0}
+                   size="sm"
+                   className="w-full sm:w-auto min-h-[44px]"
+                 >
+                   Assign {selectedProducts.size} Product
+                   {selectedProducts.size !== 1 ? "s" : ""}
+                 </Button>
+               )}
+               {activeTab === "vendors" && (
+                 <Button
+                   onClick={onAssignVendors}
+                   loading={saving}
+                   disabled={selectedVendors.size === 0}
+                   size="sm"
+                   className="w-full sm:w-auto min-h-[44px]"
+                 >
+                   Assign {selectedVendors.size} Vendor
+                   {selectedVendors.size !== 1 ? "s" : ""}
+                 </Button>
+               )}
+               {activeTab === "brands" && (
+                 <Button
+                   onClick={onAssignBrands}
+                   loading={saving}
+                   disabled={selectedBrands.size === 0}
+                   size="sm"
+                   className="w-full sm:w-auto min-h-[44px]"
+                 >
+                   Assign {selectedBrands.size} Brand
+                   {selectedBrands.size !== 1 ? "s" : ""}
+                 </Button>
+               )}
+             </div>
+             <button
+               onClick={onClose}
+               className="ml-0 sm:ml-4 text-slate-400 hover:text-slate-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
+               aria-label="Close modal"
+             >
+               <svg
+                 className="w-6 h-6"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24"
+               >
+                 <path
+                   strokeLinecap="round"
+                   strokeLinejoin="round"
+                   strokeWidth={2}
+                   d="M6 18L18 6M6 6l12 12"
+                 />
+               </svg>
+             </button>
+           </div>
 
-          <div className="flex gap-2 mb-4 border-b border-slate-200 pb-3 flex-wrap">
-            {(["assigned", "products", "vendors", "brands"] as const).map(
-              (tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === tab
-                      ? "bg-royal-blue text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  {tab === "assigned" &&
-                    `Assigned (${sortedAssignedProducts.length})`}
-                  {tab === "products" &&
-                    `Add Products (${selectedProducts.size})`}
-                  {tab === "vendors" && `Vendors (${selectedVendors.size})`}
-                  {tab === "brands" && `Brands (${selectedBrands.size})`}
-                </button>
-              ),
-            )}
-          </div>
+           <div className="flex gap-2 mb-4 border-b border-slate-200 pb-3 overflow-x-auto flex-nowrap">
+             {(["assigned", "products", "vendors", "brands"] as const).map(
+               (tab) => (
+                 <button
+                   key={tab}
+                   onClick={() => setActiveTab(tab)}
+                   className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap min-h-[44px] ${
+                     activeTab === tab
+                       ? "bg-royal-blue text-white"
+                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                   }`}
+                 >
+                   {tab === "assigned" &&
+                     `Assigned (${sortedAssignedProducts.length})`}
+                   {tab === "products" &&
+                     `Add Products (${selectedProducts.size})`}
+                   {tab === "vendors" && `Vendors (${selectedVendors.size})`}
+                   {tab === "brands" && `Brands (${selectedBrands.size})`}
+                 </button>
+               ),
+             )}
+           </div>
 
-          {(activeTab === "products" ||
-            activeTab === "vendors" ||
-            activeTab === "brands") && (
-            <div className="mb-4">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                placeholder={`Search ${activeTab}...`}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none"
-              />
-            </div>
-          )}
+{(activeTab === "products" ||
+                activeTab === "vendors" ||
+                activeTab === "brands") && (
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    placeholder={`Search ${activeTab}...`}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+                  />
+                </div>
+              )}
 
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {activeTab === "assigned" && (
-              <>
-                {sortedAssignedProducts.length === 0 ? (
-                  <p className="text-sm text-slate-500 text-center py-8">
-                    No products assigned yet. Use Add Products tab.
-                  </p>
-                ) : (
-                  <div className="mb-4">
-                    <p className="text-font-medium text-slate-600 mb-2">
-                      Assigned Products ({sortedAssignedProducts.length})
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {activeTab === "assigned" && (
+                <>
+                  {sortedAssignedProducts.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-8">
+                      No products assigned yet. Use Add Products tab.
                     </p>
-                    <div className="space-y-2">
-                      {sortedAssignedProducts.map((item, index) => (
-                        <div
-                          key={item.id}
-                          draggable
-                          onDragStart={() => setDraggedProductIndex(index)}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDragEnd={handleAssignedDragEnd}
-                          className={`flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white ${
-                            draggedProductIndex === index ? "opacity-50" : ""
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedAssigned.has(item.productId)}
-                            onChange={() => {
-                              setSelectedAssigned((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(item.productId))
-                                  next.delete(item.productId);
-                                else next.add(item.productId);
-                                return next;
-                              });
-                            }}
-                          />
-                          <span className="text-slate-400 cursor-grab">⋮⋮</span>
-                          {item.product.images?.[0] && (
-                            <img
-                              src={item.product.images[0].url}
-                              alt=""
-                              className="w-10 h-10 rounded-lg object-cover"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {item.product.name}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {item.product.store?.name}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              onRemoveProduct(section.id, item.productId)
-                            }
+                  ) : (
+                    <div className="mb-4">
+                      <p className="text-font-medium text-slate-600 mb-2">
+                        Assigned Products ({sortedAssignedProducts.length})
+                      </p>
+                      <div className="space-y-2">
+                        {sortedAssignedProducts.map((item, index) => (
+                          <div
+                            key={item.id}
+                            draggable
+                            onDragStart={() => setDraggedProductIndex(index)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDragEnd={handleAssignedDragEnd}
+                            className={`flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-slate-200 bg-white min-h-[60px] ${
+                              draggedProductIndex === index ? "opacity-50" : ""
+                            }`}
                           >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {sortedAssignedBrands.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-font-medium text-slate-600 mb-2">
-                      Assigned Brands ({sortedAssignedBrands.length})
-                    </p>
-                    <div className="space-y-2">
-                      {sortedAssignedBrands.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-white"
-                        >
-                          {item.brand.logo ? (
-                            <img
-                              src={item.brand.logo}
-                              alt={item.brand.name}
-                              className="w-10 h-10 rounded-lg object-cover"
+                            <input
+                              type="checkbox"
+                              checked={selectedAssigned.has(item.productId)}
+                              onChange={() => {
+                                setSelectedAssigned((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(item.productId))
+                                    next.delete(item.productId);
+                                  else next.add(item.productId);
+                                  return next;
+                                });
+                              }}
+                              className="min-w-[20px] min-h-[20px]"
                             />
-                          ) : (
-                            <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
-                              <span className="text-xs font-medium">
-                                {item.brand.name?.charAt(0) || "B"}
-                              </span>
+                            <div className="text-slate-400 cursor-grab min-w-[24px] min-h-[44px] flex items-center justify-center">⋮⋮</div>
+                            {item.product.images?.[0] && (
+                              <img
+                                src={item.product.images[0].url}
+                                alt=""
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {item.product.name}
+                              </p>
+                              <p className="text-xs text-slate-500 truncate">
+                                {item.product.store?.name}
+                              </p>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {item.brand.name}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {item.brand._count?.products || 0} products
-                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="min-h-[44px]"
+                              onClick={() =>
+                                onRemoveProduct(section.id, item.productId)
+                              }
+                            >
+                              Remove
+                            </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              onRemoveBrand(section.id, item.brandId)
-                            }
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {sortedAssignedBrands.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-font-medium text-slate-600 mb-2">
+                        Assigned Brands ({sortedAssignedBrands.length})
+                      </p>
+                      <div className="space-y-3">
+                        {sortedAssignedBrands.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white min-h-[60px]"
                           >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
+                            {item.brand.logo ? (
+                              <img
+                                src={item.brand.logo}
+                                alt={item.brand.name}
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
+                                <span className="text-xs font-medium">
+                                  {item.brand.name?.charAt(0) || "B"}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {item.brand.name}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {item.brand._count?.products || 0} products
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="min-h-[44px]"
+                              onClick={() =>
+                                onRemoveBrand(section.id, item.brandId)
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-            {activeTab === "products" && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {products.map((product) => (
-                  <div
-                    key={product.id}
-                    onClick={() => onProductToggle(product.id)}
-                    className={`relative cursor-pointer rounded-xl border-2 transition-all ${
-                      selectedProducts.has(product.id)
-                        ? "border-royal-blue bg-royal-blue/5"
-                        : "border-slate-200"
-                    }`}
-                  >
-                    <div className="p-2">
-                      <p className="text-xs font-medium line-clamp-2">
-                        {product.name}
-                      </p>
-                      <p className="text-[10px] text-royal-blue font-bold">
-                        GH₵ {product.price.toFixed(2)}
-                      </p>
-                      {product.store && (
-                        <p className="text-[10px] text-slate-400 truncate">
-                          {product.store.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-{activeTab === "vendors" && (
-              <div className="space-y-2">
-                {vendors.filter((v) =>
-                    (v.user?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (v.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (v.storeName ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
-                  ).map((vendor: Vendor) => (
+                  )}
+                </>
+              )}
+{activeTab === "products" && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {products.map((product) => (
                     <div
-                      key={vendor.id}
-                      onClick={() => onVendorToggle(vendor.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer ${
-                        selectedVendors.has(vendor.id)
+                      key={product.id}
+                      onClick={() => onProductToggle(product.id)}
+                      className={`relative cursor-pointer rounded-xl border-2 transition-all min-h-[44px] ${
+                        selectedProducts.has(product.id)
                           ? "border-royal-blue bg-royal-blue/5"
                           : "border-slate-200"
                       }`}
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {vendor.storeName ?? vendor.name ?? 'Unnamed Store'}
+                      <div className="p-2 flex flex-col h-full">
+                        <p className="text-xs font-medium line-clamp-2 flex-1">
+                          {product.name}
                         </p>
-                        <p className="text-xs text-slate-500 truncate">
-                          {vendor.user?.email || vendor.email}
+                        <p className="text-[10px] text-royal-blue font-bold mt-1">
+                          GH₵ {product.price.toFixed(2)}
                         </p>
-                        {vendor.mobileNumber && (
-                          <p className="text-xs text-slate-500 truncate">
-                            {vendor.mobileNumber}
+                        {product.store && (
+                          <p className="text-[10px] text-slate-400 truncate mt-1">
+                            {product.store.name}
                           </p>
                         )}
                       </div>
                     </div>
                   ))}
-              </div>
-            )}
+                </div>
+              )}
+{activeTab === "vendors" && (
+                <div className="space-y-3">
+                  {vendors.filter((v) =>
+                      (v.user?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (v.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (v.storeName ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
+                    ).map((vendor: Vendor) => (
+                      <div
+                        key={vendor.id}
+                        onClick={() => onVendorToggle(vendor.id)}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer min-h-[60px] ${
+                          selectedVendors.has(vendor.id)
+                            ? "border-royal-blue bg-royal-blue/5"
+                            : "border-slate-200"
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {vendor.storeName ?? vendor.name ?? 'Unnamed Store'}
+                          </p>
+                          <p className="text-xs text-slate-500 truncate">
+                            {vendor.user?.email || vendor.email}
+                          </p>
+                          {vendor.mobileNumber && (
+                            <p className="text-xs text-slate-500 truncate">
+                              {vendor.mobileNumber}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
             {activeTab === "brands" && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {brands.map((brand) => (
                   <div
                     key={brand.id}
                     onClick={() => onBrandToggle(brand.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer ${
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer min-h-[60px] ${
                       selectedBrands.has(brand.id)
                         ? "border-royal-blue bg-royal-blue/5"
                         : "border-slate-200"
                     }`}
                   >
-                    <p className="text-sm font-medium">{brand.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {brand.name}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {brand._count?.products || 0} products
+                      </p>
+                    </div>
                     {brand.logo ? (
                       <img
                         src={brand.logo}
@@ -1385,52 +1403,55 @@ function ManageSectionModal({
                 ))}
               </div>
             )}
-          </div>
+            </div>
 
-          <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-200 flex items-center justify-between gap-3 flex-wrap z-10">
-            {activeTab === "products" && (
-              <div className="flex gap-2 items-center">
+            <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 z-10 pb-safe">
+              {activeTab === "products" && (
+                <div className="flex gap-2 items-center justify-center sm:justify-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={productPage <= 1}
+                    onClick={() => onPageChange(productPage - 1)}
+                    className="min-h-[44px]"
+                  >
+                    Prev
+                  </Button>
+                  <span className="text-sm text-slate-500">
+                    Page {productPage} / {productTotalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={productPage >= productTotalPages}
+                    onClick={() => onPageChange(productPage + 1)}
+                    className="min-h-[44px]"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+              {activeTab === "assigned" && selectedAssigned.size > 0 && (
                 <Button
-                  variant="outline"
+                  variant="danger"
                   size="sm"
-                  disabled={productPage <= 1}
-                  onClick={() => onPageChange(productPage - 1)}
+                  onClick={() => {
+                    onBulkRemove(Array.from(selectedAssigned));
+                    setSelectedAssigned(new Set());
+                  }}
+                  className="w-full sm:w-auto min-h-[44px]"
                 >
-                  Prev
+                  Remove {selectedAssigned.size} selected
                 </Button>
-                <span className="text-sm text-slate-500">
-                  Page {productPage} / {productTotalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={productPage >= productTotalPages}
-                  onClick={() => onPageChange(productPage + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-            {activeTab === "assigned" && selectedAssigned.size > 0 && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => {
-                  onBulkRemove(Array.from(selectedAssigned));
-                  setSelectedAssigned(new Set());
-                }}
-              >
-                Remove {selectedAssigned.size} selected
+              )}
+              <Button variant="outline" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
+                Close
               </Button>
-            )}
-            <Button variant="outline" onClick={onClose} className="ml-auto">
-              Close
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
 
