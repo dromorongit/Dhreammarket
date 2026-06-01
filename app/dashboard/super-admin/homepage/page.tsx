@@ -83,6 +83,9 @@ const SECTION_TYPES = [
   { value: "PRODUCT_GRID", label: "Product Grid" },
   { value: "QUICKLINK_CARD_GRID", label: "Quicklink Cards" },
   { value: "SERVICE_GRID", label: "Service Grid" },
+  { value: "TOP_SELLING", label: "Top Selling Items" },
+  { value: "CLEARANCE_SALES", label: "Clearance Sales" },
+  { value: "EXPRESS_OFFERS", label: "Express Offers" },
 ];
 
 const DEFAULT_SECTIONS = [
@@ -115,6 +118,30 @@ const DEFAULT_SECTIONS = [
     slug: "brand-store",
     type: "BRAND_GRID",
     subtitle: "Explore products from your favorite brands",
+  },
+  {
+    name: "Top Clearance Sales",
+    slug: "top-clearance-sales",
+    type: "FLASH_SALES",
+    subtitle: "Massive clearance offers",
+  },
+  {
+    name: "Top Services",
+    slug: "top-services",
+    type: "SERVICE_GRID",
+    subtitle: "Premium services marketplace",
+  },
+  {
+    name: "Home Theatre",
+    slug: "home-theatre",
+    type: "PRODUCT_GRID",
+    subtitle: "Home entertainment systems",
+  },
+  {
+    name: "Top Express Offers",
+    slug: "top-express-offers",
+    type: "BIG_DEALS",
+    subtitle: "Express delivery exclusive deals",
   },
 ];
 

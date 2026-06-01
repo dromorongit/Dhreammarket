@@ -875,6 +875,8 @@ const SECTION_TYPE_ALIASES: Record<string, keyof typeof sectionRenderers> = {
   SPONSORED_PRODUCTS: 'product_grid',
   TOP_SELLING: 'product_grid',
   BIG_DEALS: 'product_grid',
+  CLEARANCE_SALES: 'product_grid',
+  EXPRESS_OFFERS: 'product_grid',
   product_grid: 'product_grid',
   featured_vendors: 'featured_vendors',
   quicklinks: 'quicklinks',

@@ -725,6 +725,205 @@ export function BigTopDealsSection({
   );
 }
 
+export function TopClearanceSalesSection({
+  section,
+  loading,
+}: {
+  section: {
+    name: string;
+    subtitle: string | null;
+    type: string;
+    products?: EnterpriseProduct[];
+  };
+  loading?: boolean;
+}) {
+  if (loading) return <EnterpriseSectionSkeleton />;
+  const products = section?.products ?? [];
+  if (!products.length) return null;
+
+  return (
+    <section className='relative py-16 lg:py-24 bg-gradient-to-b from-green-50 to-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <SectionHeader
+          badge='Clearance'
+          title={section.name}
+          subtitle={section.subtitle ?? 'Massive clearance offers'}
+        />
+        <ResponsiveProductGrid
+          products={products}
+          seeMoreHref='/marketplace?sort=deals'
+          renderCard={(product) => (
+            <DealCard key={product.id} product={product} />
+          )}
+        />
+      </div>
+    </section>
+  );
+}
+
+export function TopServicesSection({
+  section,
+  loading,
+}: {
+  section: {
+    name: string;
+    subtitle: string | null;
+    type: string;
+    vendors?: any[];
+  };
+  loading?: boolean;
+}) {
+  if (loading) return <EnterpriseSectionSkeleton />;
+  const vendors = section?.vendors ?? [];
+  if (!vendors.length) return null;
+
+  return (
+    <section className='relative py-16 lg:py-24 bg-slate-50'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <SectionHeader
+          badge='Services'
+          title={section.name}
+          subtitle={section.subtitle ?? 'Premium services marketplace'}
+        />
+        <div className='grid grid-cols-2 gap-4 lg:gap-6 sm:hidden'>
+          {vendors.slice(0, 12).map((vendor: any) => (
+            <VendorCard key={vendor.id} vendor={vendor} />
+          ))}
+        </div>
+        <div className='hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6'>
+          {vendors.slice(0, 15).map((vendor: any) => (
+            <VendorCard key={vendor.id} vendor={vendor} />
+          ))}
+        </div>
+        <div className='hidden lg:grid lg:grid-cols-5 gap-4 lg:gap-6'>
+          {vendors.map((vendor: any) => (
+            <VendorCard key={vendor.id} vendor={vendor} />
+          ))}
+        </div>
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function HomeTheatreSection({
+  section,
+  loading,
+}: {
+  section: {
+    name: string;
+    subtitle: string | null;
+    type: string;
+    products?: EnterpriseProduct[];
+  };
+  loading?: boolean;
+}) {
+  if (loading) return <EnterpriseSectionSkeleton />;
+  const products = section?.products ?? [];
+  if (!products.length) return null;
+
+  return (
+    <section className='relative py-16 lg:py-24 bg-gradient-to-br from-purple-900 via-deep-navy to-slate-900 overflow-hidden'>
+      <div className='absolute inset-0 pointer-events-none'>
+        <div className='absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl' />
+        <div className='absolute bottom-0 left-0 w-64 h-64 bg-premium-gold/10 rounded-full blur-3xl' />
+      </div>
+      <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <SectionHeader
+          badge='Home Tech'
+          title={section.name}
+          subtitle={section.subtitle ?? 'Home entertainment systems'}
+          dark
+        />
+        <ResponsiveProductGrid
+          products={products}
+          seeMoreHref='/marketplace?category=Electronics'
+          renderCard={(product) => (
+            <StandardCard key={product.id} product={product} />
+          )}
+        />
+      </div>
+    </section>
+  );
+}
+
+export function TopExpressOffersSection({
+  section,
+  loading,
+}: {
+  section: {
+    name: string;
+    subtitle: string | null;
+    type: string;
+    products?: EnterpriseProduct[];
+  };
+  loading?: boolean;
+}) {
+  if (loading) return <EnterpriseSectionSkeleton />;
+  const products = section?.products ?? [];
+  if (!products.length) return null;
+
+  return (
+    <section className='relative py-16 lg:py-24 bg-gradient-to-b from-amber-50 to-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <SectionHeader
+          badge='Express'
+          title={section.name}
+          subtitle={section.subtitle ?? 'Express delivery exclusive deals'}
+        />
+        <ResponsiveProductGrid
+          products={products}
+          seeMoreHref='/marketplace?sort=deals'
+          renderCard={(product) => (
+            <DealCard key={product.id} product={product} />
+          )}
+        />
+      </div>
+    </section>
+  );
+}
+
+function VendorCard({ vendor }: { vendor: any }) {
+  return (
+    <Link href={`/vendor/${vendor.id}`}>
+      <Card
+        variant='elevated'
+        className='group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full'
+      >
+        <div className='w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform'>
+          {vendor?.logo ? (
+            <img
+              src={vendor.logo}
+              alt={vendor.name}
+              className='w-full h-full object-cover'
+            />
+          ) : (
+            <span className='text-2xl font-bold text-royal-blue'>
+              {(vendor?.name || vendor?.storeName)?.charAt(0).toUpperCase() || 'V'}
+            </span>
+          )}
+        </div>
+        <h3 className='text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors line-clamp-1'>
+          {vendor?.name || vendor?.storeName || 'Vendor'}
+        </h3>
+        <p className='text-xs text-slate-500 mt-1'>
+          {vendor.productCount || 0} products
+        </p>
+      </Card>
+    </Link>
+  );
+}
+
 function BrandCard({ brand }: { brand: EnterpriseBrand }) {
   const normalized = normalizeBrand(brand);
   const logo = normalized.logo;
@@ -839,4 +1038,153 @@ export function buildEnterpriseSections(data: EnterpriseHomepageData) {
     topSelling,
     excludeFromFeaturedIds,
   };
+}
+
+const QUICK_LINKS: Array<{ name: string; href: string; icon: string; color: string }> = [
+  { name: 'Marketplace', href: '/marketplace', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', color: 'from-blue-500 to-blue-600' },
+  { name: 'New Arrivals', href: '/#new-arrivals', icon: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z', color: 'from-emerald-500 to-emerald-600' },
+  { name: 'Groceries', href: '/marketplace?category=Groceries%20%26%20Food', icon: 'M3 3h2l.4 2M7 13h14l-1.35 6.75a2 2 0 01-1.85 1.25H7.44a2 2 0 01-1.85-1.25L3 6h2l1.5 7.5M7 13l-1.5-7.5M17 13l1.5-7.5', color: 'from-green-500 to-green-600' },
+  { name: 'Fashion', href: '/marketplace?category=Fashion', icon: 'M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z', color: 'from-pink-500 to-pink-600' },
+  { name: 'New This Week', href: '/#new-this-week', icon: 'M6 2a1 1 0 000 2h12a1 1 0 001-1 1H6a1 1 0 000-2zm0 4a1 1 0 000 2h12a1 1 0 001-1 1H6a1 1 0 000-2zm0 4a1 1 0 000 2h5a1 1 0 000-1v-5a1 1 0 00-2 0v5H6z', color: 'from-purple-500 to-purple-600' },
+  { name: 'Sell on Dhream Market', href: '/register', icon: 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'from-royal-blue to-indigo-600' },
+  { name: 'Televisions', href: '/marketplace?category=Appliances', icon: 'M4 6a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6z', color: 'from-indigo-500 to-indigo-600' },
+  { name: 'Brands', href: '/#brand-store', icon: 'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z', color: 'from-violet-500 to-violet-600' },
+  { name: 'Computing', href: '/marketplace?category=Desktop%20Computers', icon: 'M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25', color: 'from-cyan-500 to-cyan-600' },
+  { name: "Men's Sneakers", href: '/marketplace?category=Sneakers', icon: 'M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z', color: 'from-amber-500 to-amber-600' },
+  { name: 'Trending Now', href: '/marketplace', icon: 'M13 10V3L4 14h7v7l9-11h-7z', color: 'from-rose-500 to-rose-600' },
+  { name: 'Appliances', href: '/marketplace?category=Appliances', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M5.25 12v7a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5v-7m-18 0h18', color: 'from-teal-500 to-teal-600' },
+]
+
+export function QuickLinksSection() {
+  return (
+    <section className='relative py-16 lg:py-24 bg-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <div className='text-center mb-10'>
+          <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
+            Quick Links
+          </h2>
+          <p className='text-slate-600 mt-2'>Fast access to popular categories</p>
+        </div>
+        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4'>
+          {QUICK_LINKS.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-xl'
+              tabIndex={0}
+            >
+              <Card variant='elevated' className='p-4 text-center hover:shadow-xl transition-all duration-300 group-hover:-translate-y-0.5 h-full min-h-[100px]'>
+                <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                  <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d={link.icon} />
+                  </svg>
+                </div>
+                <h3 className='text-xs sm:text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
+                  {link.name}
+                </h3>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> }) {
+  const [products, setProducts] = useState<EnterpriseProduct[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchProducts()
+  }, [excludeIds])
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('/api/products?sortBy=createdAt&sortOrder=desc&limit=20')
+      if (response.ok) {
+        const data = await response.json()
+        const availableProducts = (data.products || [])
+          .filter((p: EnterpriseProduct) => p.stock > 0 && !excludeIds?.has(p.id))
+          .slice(0, 20)
+        setProducts(availableProducts)
+      }
+    } catch (error) {
+      console.error('Error fetching new arrivals:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <EnterpriseSectionSkeleton />
+  if (!products.length) return null
+
+  return (
+    <section id='new-arrivals' className='relative py-16 lg:py-24 bg-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <SectionHeader
+          badge='New'
+          title='New Arrivals'
+          subtitle='Latest products on Dhream Market'
+        />
+        <ResponsiveProductGrid
+          products={products}
+          seeMoreHref='/marketplace'
+          renderCard={(product) => (
+            <StandardCard key={product.id} product={product} />
+          )}
+        />
+      </div>
+    </section>
+  );
+}
+
+export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> }) {
+  const [products, setProducts] = useState<EnterpriseProduct[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchProducts()
+  }, [excludeIds])
+
+  const fetchProducts = async () => {
+    try {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const response = await fetch(`/api/products?sortBy=createdAt&sortOrder=desc&limit=20&createdAtMin=${sevenDaysAgo.toISOString()}`)
+      if (response.ok) {
+        const data = await response.json()
+        const availableProducts = (data.products || [])
+          .filter((p: EnterpriseProduct) => p.stock > 0 && !excludeIds?.has(p.id))
+          .slice(0, 20)
+        setProducts(availableProducts)
+      }
+    } catch (error) {
+      console.error('Error fetching new this week:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <EnterpriseSectionSkeleton />
+  if (!products.length) return null
+
+  return (
+    <section id='new-this-week' className='relative py-16 lg:py-24 bg-slate-50'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <SectionHeader
+          badge='This Week'
+          title='New This Week'
+          subtitle='Products added in the last 7 days'
+        />
+        <ResponsiveProductGrid
+          products={products}
+          seeMoreHref='/marketplace'
+          renderCard={(product) => (
+            <StandardCard key={product.id} product={product} />
+          )}
+        />
+      </div>
+    </section>
+  );
 }

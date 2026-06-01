@@ -23,10 +23,18 @@ import {
   BigTopDealsSection,
   BrandStoreSection,
   buildEnterpriseSections,
+  TopClearanceSalesSection,
+  TopServicesSection,
+  HomeTheatreSection,
+  TopExpressOffersSection,
+  QuickLinksSection,
+  NewArrivalsSection,
+  NewThisWeekSection,
 } from '@/components/homepage-enterprise-sections'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
+import { Footer } from '@/components/Footer'
 
 interface Category {
   id: string
@@ -60,8 +68,15 @@ export default function Home() {
     const ids = new Set(enterpriseSections.excludeFromFeaturedIds)
     const flash = sectionsBySlug['flash-sales']?.products ?? []
     const sponsored = sectionsBySlug['sponsored-products']?.products ?? []
+    const topClearance = sectionsBySlug['top-clearance-sales']?.products ?? []
+    const topServices = sectionsBySlug['top-services']?.vendors ?? []
+    const homeTheatre = sectionsBySlug['home-theatre']?.products ?? []
+    const topExpress = sectionsBySlug['top-express-offers']?.products ?? []
     collectProductIds(flash).forEach((id) => ids.add(id))
     collectProductIds(sponsored).forEach((id) => ids.add(id))
+    collectProductIds(topClearance).forEach((id) => ids.add(id))
+    collectProductIds(homeTheatre).forEach((id) => ids.add(id))
+    collectProductIds(topExpress).forEach((id) => ids.add(id))
     return ids
   }, [enterpriseSections.excludeFromFeaturedIds, sectionsBySlug])
 
@@ -87,7 +102,7 @@ export default function Home() {
     fetchFeaturedVendors()
   }, [])
 
-  return (
+return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -170,15 +185,15 @@ export default function Home() {
         </div>
       </section>
 
-       {/* ─── Super Admin managed: Flash Sales & Sponsored ─── */}
-       <FlashSalesSection
-         section={sectionsBySlug['flash-sales']}
-         loading={loadingManaged}
-       />
-       <SponsoredProductsSection
-         section={sectionsBySlug['sponsored-products']}
-         loading={loadingManaged}
-       />
+      {/* ─── Super Admin managed: Flash Sales & Sponsored ─── */}
+      <FlashSalesSection
+        section={sectionsBySlug['flash-sales']}
+        loading={loadingManaged}
+      />
+      <SponsoredProductsSection
+        section={sectionsBySlug['sponsored-products']}
+        loading={loadingManaged}
+      />
 
       {/* ─── Featured Products (always shown) ─── */}
       {!loadingManaged && (
@@ -198,27 +213,66 @@ export default function Home() {
         </section>
       )}
 
-       {/* ─── Super Admin managed: Gadget Display ─── */}
-       <EnterpriseGadgetDisplaySection
-         section={sectionsBySlug['gadget-display']}
-         loading={loadingManaged}
-       />
+      {/* ─── Quick Links Section (hardcoded) ─── */}
+      {!loadingManaged && (
+        <QuickLinksSection />
+      )}
+
+      {/* ─── New Arrivals Section (hardcoded) ─── */}
+      {!loadingManaged && (
+        <NewArrivalsSection excludeIds={excludeFromFeaturedIds} />
+      )}
+
+      {/* ─── New This Week Section (hardcoded) ─── */}
+      {!loadingManaged && (
+        <NewThisWeekSection excludeIds={excludeFromFeaturedIds} />
+      )}
+
+      {/* ─── Super Admin managed: Gadget Display ─── */}
+      <EnterpriseGadgetDisplaySection
+        section={sectionsBySlug['gadget-display']}
+        loading={loadingManaged}
+      />
 
       {/* ─── Automatic: Top Selling (real sales data) ─── */}
       <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
 
-       {/* ─── Super Admin managed: Big Top Deals ─── */}
-       <BigTopDealsSection
-         section={sectionsBySlug['big-top-deals']}
-         loading={loadingManaged}
-       />
+      {/* ─── Super Admin managed: Big Top Deals ─── */}
+      <BigTopDealsSection
+        section={sectionsBySlug['big-top-deals']}
+        loading={loadingManaged}
+      />
 
-       {/* ─── Super Admin managed: Brand Store ─── */}
-       <BrandStoreSection
-         section={sectionsBySlug['brand-store']}
-         brands={managedData.brands}
-         loading={loadingManaged}
-       />
+      {/* ─── Super Admin managed: Top Clearance Sales ─── */}
+      <TopClearanceSalesSection
+        section={sectionsBySlug['top-clearance-sales']}
+        loading={loadingManaged}
+      />
+
+      {/* ─── Super Admin managed: Top Services ─── */}
+      <TopServicesSection
+        section={sectionsBySlug['top-services']}
+        loading={loadingManaged}
+      />
+
+      {/* ─── Super Admin managed: Home Theatre ─── */}
+      <HomeTheatreSection
+        section={sectionsBySlug['home-theatre']}
+        loading={loadingManaged}
+      />
+
+      {/* ─── Super Admin managed: Top Express Offers ─── */}
+      <TopExpressOffersSection
+        section={sectionsBySlug['top-express-offers']}
+        loading={loadingManaged}
+      />
+
+      {/* ─── Super Admin managed: Brand Store ─── */}
+      <BrandStoreSection
+        section={sectionsBySlug['brand-store']}
+        brands={managedData.brands}
+        loading={loadingManaged}
+      />
 
       {/* ─── Optional extra custom sections (non-core) ─── */}
       {loadingManaged ? (
@@ -285,7 +339,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* ─── Fallback: Popular Categories (only when no extra sections) ─── */}
+{/* ─── Fallback: Popular Categories (only when no extra sections) ─── */}
       {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-24 lg:py-32 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -478,6 +532,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      <Footer />
     </div>
   )
 }

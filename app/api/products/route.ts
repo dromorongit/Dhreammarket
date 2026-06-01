@@ -15,20 +15,27 @@ export async function GET(request: NextRequest) {
       payload = await verifyToken(token)
     }
 
-     // For authenticated vendors, get only their products
-     if (payload && payload.role === 'VENDOR') {
-       const store = await getPrisma().store.findUnique({
-         where: { userId: payload.userId },
-         include: {
-           products: {
-             include: {
-               category: true,
-               images: true,
-               variants: true,
-             },
-           },
-         },
-       })
+    // Parse query parameters
+    const url = new URL(request.url)
+    const sortBy = url.searchParams.get('sortBy') || 'createdAt'
+    const sortOrder = url.searchParams.get('sortOrder') || 'desc'
+    const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+    const createdAtMin = url.searchParams.get('createdAtMin')
+
+    // For authenticated vendors, get only their products
+    if (payload && payload.role === 'VENDOR') {
+      const store = await getPrisma().store.findUnique({
+        where: { userId: payload.userId },
+        include: {
+          products: {
+            include: {
+              category: true,
+              images: true,
+              variants: true,
+            },
+          },
+        },
+      })
 
       if (!store) {
         const response = NextResponse.json({ products: [] })
@@ -43,34 +50,43 @@ export async function GET(request: NextRequest) {
       return response
     }
 
-// For marketplace browsing (public or authenticated non-vendors), get all products
-      // Use cached averageRating and reviewCount from Product model
-      // Sort by newest first
-      const products = await getPrisma().product.findMany({
-        include: {
-          category: true,
-          brandRelation: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              logo: true,
-            },
+    // Build where clause for public products
+    const whereClause: any = {
+      stock: { gt: 0 },
+    }
+    if (createdAtMin) {
+      whereClause.createdAt = { gte: new Date(createdAtMin) }
+    }
+
+    // For marketplace browsing (public or authenticated non-vendors), get all products
+    // Use cached averageRating and reviewCount from Product model
+    const products = await getPrisma().product.findMany({
+      where: whereClause,
+      take: limit,
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      include: {
+        category: true,
+        brandRelation: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
           },
-          store: {
-            select: {
-              id: true,
-              name: true,
-              isVerified: true,
-            },
+        },
+        store: {
+          select: {
+            id: true,
+            name: true,
+            isVerified: true,
           },
-          images: true,
-          variants: true,
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      })
+        images: true,
+        variants: true,
+      },
+    })
 
     // Use cached ratings from database
     const productsWithCachedRatings = products.map((product) => ({

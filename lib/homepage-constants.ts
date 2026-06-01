@@ -4,6 +4,10 @@ export const MANAGED_SECTION_SLUGS = [
   'gadget-display',
   'big-top-deals',
   'brand-store',
+  'top-clearance-sales',
+  'top-services',
+  'home-theatre',
+  'top-express-offers',
 ] as const
 
 export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
@@ -43,6 +47,34 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'BRAND_GRID' as const,
     subtitle: 'Explore products from your favorite brands',
     displayOrder: 7,
+  },
+  {
+    name: 'Top Clearance Sales',
+    slug: 'top-clearance-sales',
+    type: 'FLASH_SALES' as const,
+    subtitle: 'Massive clearance offers',
+    displayOrder: 11,
+  },
+  {
+    name: 'Top Services',
+    slug: 'top-services',
+    type: 'SERVICE_GRID' as const,
+    subtitle: 'Premium services marketplace',
+    displayOrder: 12,
+  },
+  {
+    name: 'Home Theatre',
+    slug: 'home-theatre',
+    type: 'PRODUCT_GRID' as const,
+    subtitle: 'Home entertainment systems',
+    displayOrder: 13,
+  },
+  {
+    name: 'Top Express Offers',
+    slug: 'top-express-offers',
+    type: 'BIG_DEALS' as const,
+    subtitle: 'Express delivery exclusive deals',
+    displayOrder: 14,
   },
 ]
 
