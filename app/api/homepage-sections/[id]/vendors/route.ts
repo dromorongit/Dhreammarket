@@ -42,7 +42,6 @@ export async function POST(
       include: {
         profile: true,
         store: { select: { id: true, name: true, isVerified: true, isFeatured: true } },
-        _count: { select: { products: true } },
       },
     })
 
@@ -71,14 +70,22 @@ export async function POST(
       })
     }
 
-    const updated = await prisma.homepageSectionVendor.findMany({
+const updated = await prisma.homepageSectionVendor.findMany({
       where: { sectionId: id },
       include: {
         vendor: {
           include: {
             profile: true,
-            store: { select: { id: true, name: true, isVerified: true, isFeatured: true, logo: true } },
-            _count: { select: { products: true } },
+            store: {
+              select: {
+                id: true,
+                name: true,
+                isVerified: true,
+                isFeatured: true,
+                logo: true,
+                _count: { select: { products: true } },
+              },
+            },
           },
         },
       },
@@ -87,7 +94,7 @@ export async function POST(
     return NextResponse.json({
       vendors: updated.map((v) => ({
         ...v.vendor,
-        productCount: v.vendor._count?.products ?? 0,
+        productCount: v.vendor.store?._count?.products ?? 0,
       })),
     })
   } catch (error) {
