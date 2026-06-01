@@ -42,6 +42,7 @@ export async function POST(
       include: {
         profile: true,
         store: { select: { id: true, name: true, isVerified: true, isFeatured: true } },
+        _count: { select: { products: true } },
       },
     })
 
@@ -76,13 +77,19 @@ export async function POST(
         vendor: {
           include: {
             profile: true,
-            store: { select: { id: true, name: true, isVerified: true, isFeatured: true } },
+            store: { select: { id: true, name: true, isVerified: true, isFeatured: true, logo: true } },
+            _count: { select: { products: true } },
           },
         },
       },
     })
 
-    return NextResponse.json({ vendors: updated.map((v) => v.vendor) })
+    return NextResponse.json({
+      vendors: updated.map((v) => ({
+        ...v.vendor,
+        productCount: v.vendor._count?.products ?? 0,
+      })),
+    })
   } catch (error) {
     console.error('Error adding vendors to section:', error)
     return NextResponse.json(

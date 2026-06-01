@@ -52,25 +52,30 @@ products: {
                },
              },
            },
-          vendors: {
-            include: {
-              vendor: {
-                include: {
-                  profile: true,
-                  store: {
-                    select: {
-                      id: true,
-                      name: true,
-                      isVerified: true,
-                      isFeatured: true,
-                      logo: true,
-                    },
-                  },
-                },
-              },
-            },
-            take: 10,
-          },
+vendors: {
+             include: {
+               vendor: {
+                 include: {
+                   profile: true,
+                   store: {
+                     select: {
+                       id: true,
+                       name: true,
+                       isVerified: true,
+                       isFeatured: true,
+                       logo: true,
+                     },
+                   },
+                   _count: {
+                     select: {
+                       products: true,
+                     },
+                   },
+                 },
+               },
+             },
+             take: 10,
+           },
         },
       })
       console.log('[homepage/public] homepageSection.findMany succeeded, count:', sections.length)
@@ -116,7 +121,10 @@ products: {
       subtitle: section.subtitle,
       displayOrder: section.displayOrder,
       products: sortedProducts,
-      vendors: (section.vendors || []).map((sv: any) => sv.vendor).filter(Boolean),
+      vendors: (section.vendors || []).map((sv: any) => ({
+        ...sv.vendor,
+        productCount: sv.vendor._count?.products ?? 0,
+      })).filter(Boolean),
     }
   })
 

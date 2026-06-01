@@ -901,9 +901,9 @@ function VendorCard({ vendor }: { vendor: any }) {
         className='group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full'
       >
         <div className='w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform'>
-          {vendor?.logo ? (
+          {vendor?.store?.logo ? (
             <img
-              src={vendor.logo}
+              src={vendor.store.logo}
               alt={vendor.name}
               className='w-full h-full object-cover'
             />
@@ -1065,26 +1065,28 @@ export function QuickLinksSection() {
           </h2>
           <p className='text-slate-600 mt-2'>Fast access to popular categories</p>
         </div>
-        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4'>
-          {QUICK_LINKS.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-xl'
-              tabIndex={0}
-            >
-              <Card variant='elevated' className='p-4 text-center hover:shadow-xl transition-all duration-300 group-hover:-translate-y-0.5 h-full min-h-[100px]'>
-                <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                  <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d={link.icon} />
-                  </svg>
-                </div>
-                <h3 className='text-xs sm:text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
-                  {link.name}
-                </h3>
-              </Card>
-            </Link>
-          ))}
+        <div className='overflow-x-auto overflow-y-hidden scrollbar-hide snap-x snap-mandatory scroll-smooth'>
+          <div className='flex gap-4 lg:gap-6 px-4 -mx-4 sm:-mx-6 lg:-mx-8 pb-4 touch-pan-x'>
+            {QUICK_LINKS.map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-xl snap-start flex-shrink-0'
+                tabIndex={0}
+              >
+                <Card variant='elevated' className='p-4 text-center hover:shadow-xl transition-all duration-300 group-hover:-translate-y-0.5 h-full min-h-[100px] min-w-[140px] max-w-[180px] w-[160px]'>
+                  <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d={link.icon} />
+                    </svg>
+                  </div>
+                  <h3 className='text-xs sm:text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
+                    {link.name}
+                  </h3>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>

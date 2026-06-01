@@ -33,23 +33,25 @@ export async function GET(
             },
           },
         },
-        vendors: {
-          include: {
-            vendor: {
-              include: {
-                profile: true,
-                store: {
-                  select: {
-                    id: true,
-                    name: true,
-                    isVerified: true,
-                    isFeatured: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+vendors: {
+           include: {
+             vendor: {
+               include: {
+                 profile: true,
+                 store: {
+                   select: {
+                     id: true,
+                     name: true,
+                     isVerified: true,
+                     isFeatured: true,
+                     logo: true,
+                   },
+                 },
+                 _count: { select: { products: true } },
+               },
+             },
+           },
+         },
         brands: {
           orderBy: { brand: { displayOrder: "asc" } },
           include: {
