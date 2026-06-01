@@ -65,14 +65,11 @@ interface Brand {
 
 interface Vendor {
   id: string;
-  email: string;
+  name: string;
+  email?: string;
+  user?: { id: string; email: string };
   profile?: { firstName: string; lastName: string };
-  store?: {
-    id: string;
-    name: string;
-    isVerified: boolean;
-    isFeatured: boolean;
-  };
+  store?: { id: string; name: string; isVerified: boolean; isFeatured: boolean };
 }
 
 const SECTION_TYPES = [
@@ -185,7 +182,7 @@ export default function SuperAdminHomepagePage() {
 
   const fetchVendors = useCallback(async () => {
     try {
-      const response = await fetch("/api/vendors?limit=100");
+      const response = await fetch("/api/admin/vendors?limit=100");
       if (response.ok) {
         const data = await response.json();
         setVendors(data.vendors || []);
@@ -540,10 +537,8 @@ export default function SuperAdminHomepagePage() {
 
   const filteredVendors = vendors.filter(
     (v) =>
-      (v.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.profile?.firstName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.profile?.lastName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.store?.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
+      (v.user?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (v.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredBrands = brands.filter(
@@ -1288,25 +1283,28 @@ function ManageSectionModal({
                 ))}
               </div>
             )}
-            {activeTab === "vendors" && (
-              <div className="space-y-2">
-                {filteredVendors(vendors, searchQuery).map((vendor: Vendor) => (
-                  <div
-                    key={vendor.id}
-                    onClick={() => onVendorToggle(vendor.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer ${
-                      selectedVendors.has(vendor.id)
-                        ? "border-royal-blue bg-royal-blue/5"
-                        : "border-slate-200"
-                    }`}
-                  >
-                    <p className="text-sm font-medium">
-                      {vendor.store?.name || vendor.email}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+{activeTab === "vendors" && (
+               <div className="space-y-2">
+                 {vendors.filter((v) =>
+                     (v.user?.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                     (v.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
+                   ).map((vendor: Vendor) => (
+                   <div
+                     key={vendor.id}
+                     onClick={() => onVendorToggle(vendor.id)}
+                     className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer ${
+                       selectedVendors.has(vendor.id)
+                         ? "border-royal-blue bg-royal-blue/5"
+                         : "border-slate-200"
+                     }`}
+                   >
+                     <p className="text-sm font-medium">
+                       {vendor.user?.email || vendor.name || 'Unknown Vendor'}
+                     </p>
+                   </div>
+                 ))}
+               </div>
+             )}
             {activeTab === "brands" && (
               <div className="space-y-2">
                 {brands.map((brand) => (
@@ -1417,13 +1415,4 @@ function ManageSectionModal({
   );
 }
 
-// Helper for filtered vendors in ManageSectionModal
-function filteredVendors(vendors: Vendor[], searchQuery: string) {
-  return vendors.filter(
-    (v) =>
-      (v.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.profile?.firstName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.profile?.lastName ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (v.store?.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-}
+
