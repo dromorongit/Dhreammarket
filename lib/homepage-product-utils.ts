@@ -41,6 +41,11 @@ export interface ManagedHomepageSection {
   vendors: unknown[]
 }
 
+export interface ManagedHomepageData {
+  sections: ManagedHomepageSection[]
+  brands: EnterpriseBrand[]
+}
+
 export function collectProductIds(products: EnterpriseProduct[] | undefined | null): Set<string> {
   if (!Array.isArray(products)) return new Set()
   return new Set(products.map((p) => p.id))
