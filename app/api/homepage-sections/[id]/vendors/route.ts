@@ -70,7 +70,7 @@ export async function POST(
       })
     }
 
-const updated = await prisma.homepageSectionVendor.findMany({
+    const updated = await prisma.homepageSectionVendor.findMany({
       where: { sectionId: id },
       include: {
         vendor: {
@@ -94,6 +94,7 @@ const updated = await prisma.homepageSectionVendor.findMany({
     return NextResponse.json({
       vendors: updated.map((v) => ({
         ...v.vendor,
+        storeName: v.vendor.store?.name ?? v.vendor.name,
         productCount: v.vendor.store?._count?.products ?? 0,
       })),
     })

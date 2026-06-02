@@ -769,13 +769,13 @@ export function TopServicesSection({
     name: string;
     subtitle: string | null;
     type: string;
-    vendors?: any[];
+    products?: EnterpriseProduct[];
   };
   loading?: boolean;
 }) {
   if (loading) return <EnterpriseSectionSkeleton />;
-  const vendors = section?.vendors ?? [];
-  if (!vendors.length) return null;
+  const products = section?.products ?? [];
+  if (!products.length) return null;
 
   return (
     <section className='relative py-16 lg:py-24 bg-slate-50'>
@@ -785,32 +785,13 @@ export function TopServicesSection({
           title={section.name}
           subtitle={section.subtitle ?? 'Premium services marketplace'}
         />
-        <div className='grid grid-cols-2 gap-4 lg:gap-6 sm:hidden'>
-          {vendors.slice(0, 12).map((vendor: any) => (
-            <VendorCard key={vendor.id} vendor={vendor} />
-          ))}
-        </div>
-        <div className='hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6'>
-          {vendors.slice(0, 15).map((vendor: any) => (
-            <VendorCard key={vendor.id} vendor={vendor} />
-          ))}
-        </div>
-        <div className='hidden lg:grid lg:grid-cols-5 gap-4 lg:gap-6'>
-          {vendors.map((vendor: any) => (
-            <VendorCard key={vendor.id} vendor={vendor} />
-          ))}
-        </div>
-        <div className='mt-8 text-center'>
-          <Link href='/marketplace'>
-            <Button
-              variant='outline'
-              size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
-            >
-              See More
-            </Button>
-          </Link>
-        </div>
+        <ResponsiveProductGrid
+          products={products}
+          seeMoreHref='/marketplace?category=Services'
+          renderCard={(product) => (
+            <StandardCard key={product.id} product={product} />
+          )}
+        />
       </div>
     </section>
   );
@@ -889,39 +870,8 @@ export function TopExpressOffersSection({
           )}
         />
       </div>
-    </section>
-  );
-}
-
-function VendorCard({ vendor }: { vendor: any }) {
-  return (
-    <Link href={`/vendor/${vendor.id}`}>
-      <Card
-        variant='elevated'
-        className='group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full'
-      >
-        <div className='w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform'>
-          {vendor?.store?.logo ? (
-            <img
-              src={vendor.store.logo}
-              alt={vendor.name}
-              className='w-full h-full object-cover'
-            />
-          ) : (
-            <span className='text-2xl font-bold text-royal-blue'>
-              {(vendor?.name || vendor?.storeName)?.charAt(0).toUpperCase() || 'V'}
-            </span>
-          )}
-        </div>
-        <h3 className='text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors line-clamp-1'>
-          {vendor?.name || vendor?.storeName || 'Vendor'}
-        </h3>
-        <p className='text-xs text-slate-500 mt-1'>
-          {vendor.productCount || 0} products
-        </p>
-      </Card>
-    </Link>
-  );
+</section>
+);
 }
 
 function BrandCard({ brand }: { brand: EnterpriseBrand }) {

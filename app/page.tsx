@@ -32,9 +32,9 @@ import {
   NewThisWeekSection,
 } from '@/components/homepage-enterprise-sections'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
+import { Footer } from '@/components/Footer'
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
-import { Footer } from '@/components/Footer'
 
 interface Category {
   id: string
@@ -69,7 +69,6 @@ export default function Home() {
     const flash = sectionsBySlug['flash-sales']?.products ?? []
     const sponsored = sectionsBySlug['sponsored-products']?.products ?? []
     const topClearance = sectionsBySlug['top-clearance-sales']?.products ?? []
-    const topServices = sectionsBySlug['top-services']?.vendors ?? []
     const homeTheatre = sectionsBySlug['home-theatre']?.products ?? []
     const topExpress = sectionsBySlug['top-express-offers']?.products ?? []
     collectProductIds(flash).forEach((id) => ids.add(id))

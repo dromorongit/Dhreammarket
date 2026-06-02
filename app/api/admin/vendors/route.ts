@@ -62,8 +62,9 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit)
 
     // Transform stores to vendors format expected by frontend
+    // Note: id must be the user.id (not store.id) for compatibility with HomepageSectionVendor
     const vendors = stores.map((store) => ({
-      id: store.id,
+      id: store.user.id,
       storeName: store.name,
       name: store.name,
       description: store.description,

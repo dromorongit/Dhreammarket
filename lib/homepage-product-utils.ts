@@ -41,9 +41,25 @@ export interface ManagedHomepageSection {
   vendors: unknown[]
 }
 
-export interface ManagedHomepageData {
-  sections: ManagedHomepageSection[]
-  brands: EnterpriseBrand[]
+export function collectProductIds(products: EnterpriseProduct[] | undefined | null): Set<string> {
+  if (!Array.isArray(products)) return new Set()
+  return new Set(products.map((p) => p.id))
+}
+
+export const EMPTY_ENTERPRISE_DATA: EnterpriseHomepageData = {
+  topSelling: [],
+}
+
+export const EMPTY_MANAGED_DATA: ManagedHomepageData = {
+  sections: [],
+  brands: [],
+}
+
+export function sectionsBySlug(sections: ManagedHomepageSection[]): Record<string, ManagedHomepageSection> {
+  return sections.reduce<Record<string, ManagedHomepageSection>>((acc, section) => {
+    acc[section.slug] = section
+    return acc
+  }, {})
 }
 
 export function getDiscountPercent(price: number, salePrice: number | null | undefined): number {
@@ -71,27 +87,6 @@ export function dedupeProducts(
 ): EnterpriseProduct[] {
   const list = Array.isArray(products) ? products : []
   return list.filter((p) => p?.id && !excludeIds.has(p.id)).slice(0, 20)
-}
-
-export function collectProductIds(products: EnterpriseProduct[] | undefined | null): Set<string> {
-  if (!Array.isArray(products)) return new Set()
-  return new Set(products.map((p) => p.id))
-}
-
-export const EMPTY_ENTERPRISE_DATA: EnterpriseHomepageData = {
-  topSelling: [],
-}
-
-export const EMPTY_MANAGED_DATA: ManagedHomepageData = {
-  sections: [],
-  brands: [],
-}
-
-export function sectionsBySlug(sections: ManagedHomepageSection[]): Record<string, ManagedHomepageSection> {
-  return sections.reduce<Record<string, ManagedHomepageSection>>((acc, section) => {
-    acc[section.slug] = section
-    return acc
-  }, {})
 }
 
 export function normalizeBrand(brand: {

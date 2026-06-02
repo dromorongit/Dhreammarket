@@ -44,34 +44,34 @@ export async function GET(_request: NextRequest) {
         where: { isEnabled: true },
         orderBy: { displayOrder: 'asc' },
         include: {
-products: {
-             orderBy: { displayOrder: 'asc' },
-             select: {
-               product: {
-                 select: productSelect,
-               },
-             },
-           },
-vendors: {
-              include: {
-                vendor: {
-                  include: {
-                    profile: true,
-                    store: {
-                      select: {
-                        id: true,
-                        name: true,
-                        isVerified: true,
-                        isFeatured: true,
-                        logo: true,
-                        _count: { select: { products: true } },
-                      },
+          products: {
+            orderBy: { displayOrder: 'asc' },
+            select: {
+              product: {
+                select: productSelect,
+              },
+            },
+          },
+          vendors: {
+            include: {
+              vendor: {
+                include: {
+                  profile: true,
+                  store: {
+                    select: {
+                      id: true,
+                      name: true,
+                      isVerified: true,
+                      isFeatured: true,
+                      logo: true,
+                      _count: { select: { products: true } },
                     },
                   },
                 },
               },
-              take: 10,
             },
+            take: 10,
+          },
         },
       })
       console.log('[homepage/public] homepageSection.findMany succeeded, count:', sections.length)
@@ -117,10 +117,13 @@ vendors: {
       subtitle: section.subtitle,
       displayOrder: section.displayOrder,
       products: sortedProducts,
-vendors: (section.vendors || []).map((sv: any) => ({
-         ...sv.vendor,
-         productCount: sv.vendor.store?._count?.products ?? 0,
-       })).filter(Boolean),
+      vendors: (section.vendors || [])
+        .map((sv: any) => ({
+          ...sv.vendor,
+          storeName: sv.vendor.store?.name ?? sv.vendor.name,
+          productCount: sv.vendor.store?._count?.products ?? 0,
+        }))
+        .filter(Boolean),
     }
   })
 
