@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/Skeleton";
 import { isManagedSectionSlug } from "@/lib/homepage-constants";
 
+
 interface HomepageSectionProduct {
   id: string;
   productId: string;

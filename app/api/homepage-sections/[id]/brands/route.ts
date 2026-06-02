@@ -12,6 +12,7 @@ export async function POST(
     if (authResult instanceof NextResponse) {
       return authResult;
     }
+    
 
     const prisma = getPrisma();
     const { id } = await params;
