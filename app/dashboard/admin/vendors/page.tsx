@@ -12,6 +12,7 @@ interface Vendor {
   isFeatured: boolean
   featuredUntil: string | null
   createdAt: string
+  mobileNumber: string | null
   user: {
     id: string
     email: string
@@ -80,7 +81,6 @@ export default function AdminVendorsPage() {
         return
       }
       
-      // Refresh the list
       fetchVendors()
     } catch (err) {
       alert('Failed to update vendor')
@@ -112,7 +112,6 @@ export default function AdminVendorsPage() {
         return
       }
       
-      // Refresh the list
       fetchVendors()
     } catch (err) {
       alert('Failed to disable vendor')
@@ -144,7 +143,6 @@ export default function AdminVendorsPage() {
         return
       }
       
-      // Refresh the list
       fetchVendors()
     } catch (err) {
       alert('Failed to enable vendor')
@@ -177,7 +175,6 @@ export default function AdminVendorsPage() {
         return
       }
       
-      // Refresh the list
       fetchVendors()
     } catch (err) {
       alert('Failed to update vendor feature status')
@@ -189,12 +186,10 @@ export default function AdminVendorsPage() {
 
   const handleFeatureWithDuration = (vendorId: string, feature: boolean) => {
     if (!feature) {
-      // If unfeaturing, no duration needed
       handleFeature(vendorId, false, 0)
       return
     }
     
-    // Show prompt for duration
     const duration = prompt('Enter feature duration in days (e.g., 7, 30):', '7')
     if (duration === null) return
     
@@ -227,7 +222,6 @@ export default function AdminVendorsPage() {
         return
       }
 
-      // Refresh the list
       fetchVendors()
     } catch (err) {
       alert('Failed to delete vendor')
@@ -297,7 +291,7 @@ export default function AdminVendorsPage() {
               </select>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors min-h-[44px]"
               >
                 Search
               </button>
@@ -305,7 +299,7 @@ export default function AdminVendorsPage() {
           </CardContent>
         </Card>
 
-        {/* Vendors Table */}
+        {/* Vendors Table - Responsive */}
         <Card>
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
@@ -333,24 +327,75 @@ export default function AdminVendorsPage() {
             </CardContent>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="block md:hidden">
+                <div className="divide-y divide-gray-200">
+                  {vendors.map((vendor) => (
+                    <div key={vendor.id} className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-900">{vendor.name}</p>
+                          <p className="text-sm text-gray-500">{vendor.user.email}</p>
+                        </div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {vendor.isVerified ? 'Verified' : 'Pending'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Phone:</span>
+                        <span className="text-gray-900">{vendor.mobileNumber || '-'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Products:</span>
+                        <span className="text-gray-900">{vendor._count.products}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {vendor.isVerified ? (
+                          <button
+                            onClick={() => handleVerify(vendor.id, false)}
+                            className="px-3 py-1.5 text-xs bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100 min-h-[44px]"
+                          >
+                            Revoke
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleVerify(vendor.id, true)}
+                            className="px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 min-h-[44px]"
+                          >
+                            Verify
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDisable(vendor.id)}
+                          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                        >
+                          Disable
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {vendors.map((vendor) => (
                       <tr key={vendor.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
                           {vendor.description && (
                             <div className="text-sm text-gray-500 truncate max-w-xs">
@@ -358,18 +403,16 @@ export default function AdminVendorsPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <div className="text-sm text-gray-900">{vendor.user.email}</div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
+                          <span className="text-sm text-gray-600">{vendor.mobileNumber || '-'}</span>
+                        </td>
+                        <td className="px-4 py-4">
                           <span className="text-sm text-gray-600">{vendor._count.products}</span>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            Active
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {vendor.isVerified ? (
                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                               Verified
@@ -380,7 +423,7 @@ export default function AdminVendorsPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {vendor.isFeatured ? (
                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
                               Featured
@@ -389,10 +432,10 @@ export default function AdminVendorsPage() {
                             <span className="text-sm text-gray-400">-</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-4 py-4 text-sm text-gray-500">
                           {new Date(vendor.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {actionLoading === vendor.id ? (
                             <span className="text-sm text-gray-500">Processing...</span>
                           ) : (
@@ -400,7 +443,7 @@ export default function AdminVendorsPage() {
                               {vendor.isVerified ? (
                                 <button
                                   onClick={() => handleVerify(vendor.id, false)}
-                                  className="text-sm text-yellow-600 hover:text-yellow-800"
+                                  className="text-sm text-yellow-600 hover:text-yellow-800 min-h-[44px]"
                                   title="Revoke verification"
                                 >
                                   Revoke
@@ -408,7 +451,7 @@ export default function AdminVendorsPage() {
                               ) : (
                                 <button
                                   onClick={() => handleVerify(vendor.id, true)}
-                                  className="text-sm text-green-600 hover:text-green-800"
+                                  className="text-sm text-green-600 hover:text-green-800 min-h-[44px]"
                                   title="Verify vendor"
                                 >
                                   Verify
@@ -416,7 +459,7 @@ export default function AdminVendorsPage() {
                               )}
                               <button
                                 onClick={() => handleDisable(vendor.id)}
-                                className="text-sm text-red-600 hover:text-red-800"
+                                className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
                                 title="Disable vendor"
                               >
                                 Disable
@@ -430,7 +473,7 @@ export default function AdminVendorsPage() {
                               </button>
                               <button
                                 onClick={() => handleDeleteVendor(vendor.id, vendor.name)}
-                                className="text-sm text-red-600 hover:text-red-800"
+                                className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
                                 title="Delete vendor"
                               >
                                 Delete
@@ -446,7 +489,7 @@ export default function AdminVendorsPage() {
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="px-6 py-4 border-t flex items-center justify-between">
+                <div className="px-4 py-4 border-t flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     Page {pagination.page} of {pagination.totalPages}
                   </div>
@@ -454,14 +497,14 @@ export default function AdminVendorsPage() {
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                       disabled={pagination.page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                       disabled={pagination.page >= pagination.totalPages}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
                     >
                       Next
                     </button>

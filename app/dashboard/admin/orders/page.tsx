@@ -10,10 +10,18 @@ interface Order {
   status: string
   paymentStatus: string
   createdAt: string
+  customerName: string
+  storeNames: string[] | null
+  vendorContact: string | null
   user: {
     id: string
     email: string
     role: string
+    profile?: {
+      firstName: string | null
+      lastName: string | null
+      phone: string | null
+    }
   }
   _count: {
     items: number
@@ -80,7 +88,7 @@ export default function AdminOrdersPage() {
         PENDING: 'bg-yellow-100 text-yellow-800',
         PROCESSING: 'bg-blue-100 text-blue-800',
         SHIPPED: 'bg-purple-100 text-purple-800',
-        DELIVERED: 'bg-green-100 text-green-800',
+        DELIVERED: 'bg-indigo-100 text-indigo-800',
         COMPLETED: 'bg-green-100 text-green-800',
         CANCELLED: 'bg-red-100 text-red-800',
       }
@@ -117,9 +125,7 @@ export default function AdminOrdersPage() {
         return
       }
 
-      // Remove the order from the list
       setOrders(prev => prev.filter(order => order.id !== orderId))
-      // Update pagination total
       setPagination(prev => ({ ...prev, total: prev.total - 1 }))
     } catch (err) {
       alert('Failed to delete order')
@@ -184,7 +190,7 @@ export default function AdminOrdersPage() {
               <select
                 value={filters.status}
                 onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[44px]"
               >
                 <option value="">All Order Status</option>
                 <option value="PENDING">Pending</option>
@@ -197,7 +203,7 @@ export default function AdminOrdersPage() {
               <select
                 value={filters.paymentStatus}
                 onChange={(e) => setFilters(prev => ({ ...prev, paymentStatus: e.target.value }))}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[44px]"
               >
                 <option value="">All Payment Status</option>
                 <option value="PENDING">Pending</option>
@@ -208,7 +214,7 @@ export default function AdminOrdersPage() {
               </select>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors min-h-[44px]"
               >
                 Filter
               </button>
@@ -216,7 +222,7 @@ export default function AdminOrdersPage() {
           </CardContent>
         </Card>
 
-        {/* Orders Table */}
+        {/* Orders Table - Responsive */}
         <Card>
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
@@ -236,7 +242,7 @@ export default function AdminOrdersPage() {
             <CardContent className="p-12 text-center">
               <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
@@ -244,48 +250,120 @@ export default function AdminOrdersPage() {
             </CardContent>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="block md:hidden">
+                <div className="divide-y divide-gray-200">
+                  {orders.map((order) => (
+                    <div key={order.id} className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-900">#{order.id.slice(0, 8)}...</p>
+                          <p className="text-sm text-gray-600">{order.customerName}</p>
+                        </div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(order.status, 'order')}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-500">Total:</span>
+                          <span className="ml-1 font-medium">{formatCurrency(order.total)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Items:</span>
+                          <span className="ml-1">{order._count.items}</span>
+                        </div>
+                      </div>
+                      
+                      {order.storeNames && (
+                        <div>
+                          <span className="text-gray-500 text-sm">Store(s):</span>
+                          <p className="text-gray-900 text-sm font-medium">
+                            {order.storeNames.length > 1 
+                              ? order.storeNames.join(', ') 
+                              : order.storeNames[0]}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Link href={`/dashboard/admin/orders/${order.id}`}>
+                          <button
+                            className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
+                            title="View order details"
+                          >
+                            View Details
+                          </button>
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                          title="Delete order"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store(s)</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Order Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {orders.map((order) => (
                       <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4">
-                          <Link 
-                            href={`/dashboard/admin/orders?id=${order.id}`}
-                            className="text-sm font-mono text-blue-600 hover:underline"
-                          >
-                            {order.id.slice(0, 8)}...
-                          </Link>
+                        <td className="px-4 py-4">
+                          <span className="text-sm font-mono text-gray-900">
+                            #{order.id.slice(0, 8)}...
+                          </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">{order.user.email}</div>
+                        <td className="px-4 py-4">
+                          <span className="text-sm font-medium text-gray-900">
+                            {order.customerName}
+                          </span>
+                          <p className="text-xs text-gray-500">{order.user.email}</p>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
+                          {order.storeNames ? (
+                            <span className="text-sm text-gray-900">
+                              {order.storeNames.length > 1 
+                                ? order.storeNames.join(', ') 
+                                : order.storeNames[0]}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
                           <span className="text-sm font-medium text-gray-900">
                             {formatCurrency(order.total)}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <span className="text-sm text-gray-600">{order._count.items}</span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(order.status, 'order')}`}>
                             {order.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {order.payment ? (
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(order.payment.status, 'payment')}`}>
                               {order.payment.status}
@@ -294,20 +372,30 @@ export default function AdminOrdersPage() {
                             <span className="text-sm text-gray-500">No payment</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-4 py-4 text-sm text-gray-500">
                           {new Date(order.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           {actionLoading === order.id ? (
                             <span className="text-sm text-gray-500">Processing...</span>
                           ) : (
-                            <button
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="text-sm text-red-600 hover:text-red-800"
-                              title="Delete order"
-                            >
-                              Delete
-                            </button>
+                            <div className="flex gap-2 flex-wrap">
+                              <Link href={`/dashboard/admin/orders/${order.id}`}>
+                                <button
+                                  className="text-sm text-blue-600 hover:text-blue-800 min-h-[44px]"
+                                  title="View order details"
+                                >
+                                  View Details
+                                </button>
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteOrder(order.id)}
+                                className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
+                                title="Delete order"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -318,7 +406,7 @@ export default function AdminOrdersPage() {
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="px-6 py-4 border-t flex items-center justify-between">
+                <div className="px-4 py-4 border-t flex items-center justify-between">
                   <div className="text-sm text-gray-600">
                     Page {pagination.page} of {pagination.totalPages}
                   </div>
@@ -326,14 +414,14 @@ export default function AdminOrdersPage() {
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                       disabled={pagination.page === 1}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[44px]"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                       disabled={pagination.page >= pagination.totalPages}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 min-h-[44px]"
                     >
                       Next
                     </button>
