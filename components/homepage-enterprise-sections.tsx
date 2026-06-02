@@ -129,11 +129,26 @@ function ProductRail({
 }) {
   if (products.length === 0) return null;
 
+  const half = Math.ceil(products.length / 2);
+  const topRowProducts = products.slice(0, half);
+  const bottomRowProducts = products.slice(half);
+
   return (
-    <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-      <div className="grid grid-rows-2 grid-flow-col gap-4 auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(25%-12px)] lg:auto-cols-[calc(20%-12px)]">
-        {products.map((product) => renderCard(product))}
-      </div>
+    <div className="space-y-4">
+      {topRowProducts.length > 0 && (
+        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+          <div className="flex gap-4">
+            {topRowProducts.map((product) => renderCard(product))}
+          </div>
+        </div>
+      )}
+      {bottomRowProducts.length > 0 && (
+        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+          <div className="flex gap-4">
+            {bottomRowProducts.map((product) => renderCard(product))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -186,13 +201,24 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
             className='h-8 w-48 rounded'
           />
         </div>
-        <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
-          <div className='grid grid-rows-2 grid-flow-col gap-4 auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(25%-12px)] lg:auto-cols-[calc(20%-12px)]'>
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="snap-start flex-shrink-0">
-                <SkeletonCard />
-              </div>
-            ))}
+        <div className='space-y-4'>
+          <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+            <div className='flex gap-4'>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <SkeletonCard />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+            <div className='flex gap-4'>
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <SkeletonCard />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -206,7 +232,7 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
-    <div key={product.id} className="snap-start flex-shrink-0">
+    <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
@@ -277,7 +303,7 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
   const hasDiscount = discountedPrice != null && discountedPrice < product.price
 
   return (
-    <div key={product.id} className="snap-start flex-shrink-0">
+    <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
@@ -329,7 +355,7 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
-    <div key={product.id} className="snap-start flex-shrink-0">
+    <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200 w-full'
@@ -388,7 +414,7 @@ function StandardCard({
   const hasDiscount = discountedPrice != null && discountedPrice < product.price
 
   return (
-    <div key={product.id} className="snap-start flex-shrink-0">
+    <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
@@ -560,6 +586,11 @@ export function EnterpriseGadgetDisplaySection({
   const products = section?.products ?? [];
   if (!products.length) return null;
 
+  const mobileProducts = products.slice(0, 20);
+  const half = Math.ceil(mobileProducts.length / 2);
+  const topRowProducts = mobileProducts.slice(0, half);
+  const bottomRowProducts = mobileProducts.slice(half);
+
   return (
     <section className='relative py-16 lg:py-24 bg-gradient-to-br from-slate-900 via-deep-navy to-slate-900 overflow-hidden'>
       <div className='absolute inset-0 pointer-events-none'>
@@ -613,38 +644,76 @@ export function EnterpriseGadgetDisplaySection({
           ))}
         </div>
 
-        {/* Mobile & tablet horizontal scroll */}
-        <div className='lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide'>
-          <div className='flex gap-4 pb-4' style={{ width: 'max-content' }}>
-            {products.slice(0, 20).map((product) => (
-              <Link
-                key={product.id}
-                href={`/marketplace/product/${product.id}`}
-                className='w-64 flex-shrink-0'
-              >
-                <Card
-                  variant='elevated'
-                  className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
-                >
-                  <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
-                    <ProductImage
-                      product={product}
-                      className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                    />
-                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
-                    <div className='absolute bottom-0 left-0 right-0 p-4'>
-                      <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
-                        {product.name}
-                      </h3>
-                      <span className='text-lg font-bold text-premium-gold'>
-                        {formatPrice(getEffectivePrice(product))}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
+        {/* Mobile & tablet horizontal scroll - Two independent rows */}
+        <div className='lg:hidden space-y-4'>
+          {topRowProducts.length > 0 && (
+            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+              <div className='flex gap-4'>
+                {topRowProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/marketplace/product/${product.id}`}
+                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
+                  >
+                    <Card
+                      variant='elevated'
+                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
+                    >
+                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
+                        <ProductImage
+                          product={product}
+                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                        />
+                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                        <div className='absolute bottom-0 left-0 right-0 p-4'>
+                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
+                            {product.name}
+                          </h3>
+                          <span className='text-lg font-bold text-premium-gold'>
+                            {formatPrice(getEffectivePrice(product))}
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {bottomRowProducts.length > 0 && (
+            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+              <div className='flex gap-4'>
+                {bottomRowProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/marketplace/product/${product.id}`}
+                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
+                  >
+                    <Card
+                      variant='elevated'
+                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
+                    >
+                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
+                        <ProductImage
+                          product={product}
+                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                        />
+                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                        <div className='absolute bottom-0 left-0 right-0 p-4'>
+                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
+                            {product.name}
+                          </h3>
+                          <span className='text-lg font-bold text-premium-gold'>
+                            {formatPrice(getEffectivePrice(product))}
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className='mt-8 text-center'>
