@@ -189,7 +189,9 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
         <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
           <div className='grid grid-rows-2 grid-flow-col gap-4 auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(25%-12px)] lg:auto-cols-[calc(20%-12px)]'>
             {[...Array(10)].map((_, i) => (
-              <SkeletonCard key={i} className="snap-start flex-shrink-0" />
+              <div key={i} className="snap-start flex-shrink-0">
+                <SkeletonCard />
+              </div>
             ))}
           </div>
         </div>
