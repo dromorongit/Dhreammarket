@@ -120,40 +120,21 @@ function ProductImage({
   );
 }
 
-function ResponsiveProductGrid({
+function ProductRail({
   products,
   renderCard,
-  seeMoreHref = '/marketplace',
 }: {
   products: EnterpriseProduct[];
   renderCard: (product: EnterpriseProduct) => ReactNode;
-  seeMoreHref?: string;
 }) {
   if (products.length === 0) return null;
 
   return (
-    <>
-      <div className='grid grid-cols-2 gap-4 lg:gap-6 sm:hidden'>
-        {products.slice(0, 12).map((product) => renderCard(product))}
-      </div>
-      <div className='hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6'>
-        {products.slice(0, 15).map((product) => renderCard(product))}
-      </div>
-      <div className='hidden lg:grid lg:grid-cols-5 gap-4 lg:gap-6'>
+    <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+      <div className="grid grid-rows-2 grid-flow-col gap-4 auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(25%-12px)] lg:auto-cols-[calc(20%-12px)]">
         {products.map((product) => renderCard(product))}
       </div>
-      <div className='mt-8 text-center'>
-        <Link href={seeMoreHref}>
-          <Button
-            variant='outline'
-            size='lg'
-            className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
-          >
-            See More
-          </Button>
-        </Link>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -205,10 +186,12 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
             className='h-8 w-48 rounded'
           />
         </div>
-        <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6'>
-          {[...Array(10)].map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
+        <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+          <div className='grid grid-rows-2 grid-flow-col gap-4 auto-cols-[calc(50%-8px)] sm:auto-cols-[calc(25%-12px)] lg:auto-cols-[calc(20%-12px)]'>
+            {[...Array(10)].map((_, i) => (
+              <SkeletonCard key={i} className="snap-start flex-shrink-0" />
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -221,68 +204,69 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
-    <Card
-      key={product.id}
-      variant='elevated'
-      className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0'
-    >
-      <Link href={`/marketplace/product/${product.id}`} className='block'>
-        <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-          <ProductImage
-            product={product}
-            className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-          />
-          {discount > 0 && (
-            <div className='absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg'>
-              -{discount}%
-            </div>
-          )}
-          {product.flashSaleEnd && (
-            <div className='absolute top-2 right-2 bg-deep-navy/90 text-white px-2 py-1 rounded-full flex items-center gap-1'>
-              <svg
-                className='w-3 h-3'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                />
-              </svg>
-              <CountdownTimer endTime={product.flashSaleEnd} />
-            </div>
-          )}
-        </div>
-      </Link>
-      <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-        <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-          {product.name}
-        </h3>
-        <div className='flex items-center gap-1.5 flex-wrap'>
-          <span className='text-[11px] font-bold text-rose-600'>
-            {formatPrice(salePrice)}
-          </span>
-          {discount > 0 && (
-            <span className='text-[10px] text-slate-400 line-through'>
-              {formatPrice(product.price)}
-            </span>
-          )}
-        </div>
-        {product.store && (
-          <div className='flex items-center gap-1 min-w-0'>
-            <p className='text-[10px] text-slate-500 truncate'>
-              {product.store.name}
-            </p>
-            {product.store.isVerified && (
-              <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+    <div key={product.id} className="snap-start flex-shrink-0">
+      <Card
+        variant='elevated'
+        className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+      >
+        <Link href={`/marketplace/product/${product.id}`} className='block'>
+          <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+            <ProductImage
+              product={product}
+              className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+            />
+            {discount > 0 && (
+              <div className='absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg'>
+                -{discount}%
+              </div>
+            )}
+            {product.flashSaleEnd && (
+              <div className='absolute top-2 right-2 bg-deep-navy/90 text-white px-2 py-1 rounded-full flex items-center gap-1'>
+                <svg
+                  className='w-3 h-3'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                  />
+                </svg>
+                <CountdownTimer endTime={product.flashSaleEnd} />
+              </div>
             )}
           </div>
-        )}
-      </div>
-    </Card>
+        </Link>
+        <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+          <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+            {product.name}
+          </h3>
+          <div className='flex items-center gap-1.5 flex-wrap'>
+            <span className='text-[11px] font-bold text-rose-600'>
+              {formatPrice(salePrice)}
+            </span>
+            {discount > 0 && (
+              <span className='text-[10px] text-slate-400 line-through'>
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
+          {product.store && (
+            <div className='flex items-center gap-1 min-w-0'>
+              <p className='text-[10px] text-slate-500 truncate'>
+                {product.store.name}
+              </p>
+              {product.store.isVerified && (
+                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   )
 }
 
@@ -291,48 +275,49 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
   const hasDiscount = discountedPrice != null && discountedPrice < product.price
 
   return (
-    <Card
-      key={product.id}
-      variant='elevated'
-      className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0'
-    >
-      <Link href={`/marketplace/product/${product.id}`} className='block'>
-        <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-          <ProductImage
-            product={product}
-            className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-          />
-          <div className='absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide'>
-            Sponsored
+    <div key={product.id} className="snap-start flex-shrink-0">
+      <Card
+        variant='elevated'
+        className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+      >
+        <Link href={`/marketplace/product/${product.id}`} className='block'>
+          <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+            <ProductImage
+              product={product}
+              className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+            />
+            <div className='absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide'>
+              Sponsored
+            </div>
           </div>
-        </div>
-      </Link>
-      <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-        <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-          {product.name}
-        </h3>
-        <div className='flex items-center gap-1.5 flex-wrap'>
-          <span className='text-[11px] font-bold text-royal-blue'>
-            {formatPrice(getEffectivePrice(product))}
-          </span>
-          {hasDiscount && (
-            <span className='text-[10px] text-slate-400 line-through'>
-              {formatPrice(product.price)}
+        </Link>
+        <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+          <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+            {product.name}
+          </h3>
+          <div className='flex items-center gap-1.5 flex-wrap'>
+            <span className='text-[11px] font-bold text-royal-blue'>
+              {formatPrice(getEffectivePrice(product))}
             </span>
-          )}
-        </div>
-        {product.store && (
-          <div className='flex items-center gap-1 min-w-0'>
-            <p className='text-[10px] text-slate-500 truncate'>
-              {product.store.name}
-            </p>
-            {product.store.isVerified && (
-              <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+            {hasDiscount && (
+              <span className='text-[10px] text-slate-400 line-through'>
+                {formatPrice(product.price)}
+              </span>
             )}
           </div>
-        )}
-      </div>
-    </Card>
+          {product.store && (
+            <div className='flex items-center gap-1 min-w-0'>
+              <p className='text-[10px] text-slate-500 truncate'>
+                {product.store.name}
+              </p>
+              {product.store.isVerified && (
+                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   )
 }
 
@@ -342,50 +327,51 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
-    <Card
-      key={product.id}
-      variant='elevated'
-      className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200'
-    >
-      <Link href={`/marketplace/product/${product.id}`} className='block'>
-        <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-          <ProductImage
-            product={product}
-            className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-          />
-          {discount > 0 && (
-            <div className='absolute top-2 left-2 bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-lg'>
-              SAVE {discount}%
+    <div key={product.id} className="snap-start flex-shrink-0">
+      <Card
+        variant='elevated'
+        className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200 w-full'
+      >
+        <Link href={`/marketplace/product/${product.id}`} className='block'>
+          <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+            <ProductImage
+              product={product}
+              className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+            />
+            {discount > 0 && (
+              <div className='absolute top-2 left-2 bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-lg'>
+                SAVE {discount}%
+              </div>
+            )}
+          </div>
+        </Link>
+        <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+          <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+            {product.name}
+          </h3>
+          <div className='flex items-center gap-1.5 flex-wrap'>
+            <span className='text-sm font-bold text-rose-600'>
+              {formatPrice(salePrice)}
+            </span>
+            {discount > 0 && (
+              <span className='text-[11px] text-slate-400 line-through'>
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
+          {product.store && (
+            <div className='flex items-center gap-1 min-w-0'>
+              <p className='text-[10px] text-slate-500 truncate'>
+                {product.store.name}
+              </p>
+              {product.store.isVerified && (
+                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+              )}
             </div>
           )}
         </div>
-      </Link>
-      <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-        <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-          {product.name}
-        </h3>
-        <div className='flex items-center gap-1.5 flex-wrap'>
-          <span className='text-sm font-bold text-rose-600'>
-            {formatPrice(salePrice)}
-          </span>
-          {discount > 0 && (
-            <span className='text-[11px] text-slate-400 line-through'>
-              {formatPrice(product.price)}
-            </span>
-          )}
-        </div>
-        {product.store && (
-          <div className='flex items-center gap-1 min-w-0'>
-            <p className='text-[10px] text-slate-500 truncate'>
-              {product.store.name}
-            </p>
-            {product.store.isVerified && (
-              <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-            )}
-          </div>
-        )}
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }
 
@@ -400,50 +386,51 @@ function StandardCard({
   const hasDiscount = discountedPrice != null && discountedPrice < product.price
 
   return (
-    <Card
-      key={product.id}
-      variant='elevated'
-      className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0'
-    >
-      <Link href={`/marketplace/product/${product.id}`} className='block'>
-        <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-          <ProductImage
-            product={product}
-            className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-          />
-          {badge && (
-            <div className='absolute top-2 left-2 bg-royal-blue text-white text-[10px] font-bold px-2 py-1 rounded-full'>
-              {badge}
+    <div key={product.id} className="snap-start flex-shrink-0">
+      <Card
+        variant='elevated'
+        className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+      >
+        <Link href={`/marketplace/product/${product.id}`} className='block'>
+          <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+            <ProductImage
+              product={product}
+              className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+            />
+            {badge && (
+              <div className='absolute top-2 left-2 bg-royal-blue text-white text-[10px] font-bold px-2 py-1 rounded-full'>
+                {badge}
+              </div>
+            )}
+          </div>
+        </Link>
+        <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+          <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+            {product.name}
+          </h3>
+          <div className='flex items-center gap-1.5 flex-wrap'>
+            <span className='text-[11px] font-bold text-royal-blue'>
+              {formatPrice(getEffectivePrice(product))}
+            </span>
+            {hasDiscount && (
+              <span className='text-[10px] text-slate-400 line-through'>
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
+          {product.store && (
+            <div className='flex items-center gap-1 min-w-0'>
+              <p className='text-[10px] text-slate-500 truncate'>
+                {product.store.name}
+              </p>
+              {product.store.isVerified && (
+                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+              )}
             </div>
           )}
         </div>
-      </Link>
-      <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-        <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-          {product.name}
-        </h3>
-        <div className='flex items-center gap-1.5 flex-wrap'>
-          <span className='text-[11px] font-bold text-royal-blue'>
-            {formatPrice(getEffectivePrice(product))}
-          </span>
-          {hasDiscount && (
-            <span className='text-[10px] text-slate-400 line-through'>
-              {formatPrice(product.price)}
-            </span>
-          )}
-        </div>
-        {product.store && (
-          <div className='flex items-center gap-1 min-w-0'>
-            <p className='text-[10px] text-slate-500 truncate'>
-              {product.store.name}
-            </p>
-            {product.store.isVerified && (
-              <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-            )}
-          </div>
-        )}
-      </div>
-    </Card>
+      </Card>
+    </div>
   )
 }
 
@@ -479,13 +466,23 @@ export function FlashSalesSection({
           title={section.name}
           subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?sort=deals'
           renderCard={(product) => (
-            <FlashSaleCard key={product.id} product={product} />
+            <FlashSaleCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?sort=deals'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -523,12 +520,23 @@ export function SponsoredProductsSection({
           title={section.name}
           subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
           renderCard={(product) => (
-            <SponsoredCard key={product.id} product={product} />
+            <SponsoredCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -671,12 +679,10 @@ export function TopSellingSection({
           title='Top-Selling Items'
           subtitle='Most popular products loved by our customers'
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?sort=popular'
           renderCard={(product) => (
             <StandardCard
-              key={product.id}
               product={product}
               badge={
                 product.salesCount ? `${product.salesCount} sold` : undefined
@@ -684,6 +690,17 @@ export function TopSellingSection({
             />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?sort=popular'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -713,13 +730,23 @@ export function BigTopDealsSection({
           title={section.name}
           subtitle={section.subtitle ?? 'Biggest savings on premium products'}
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?sort=deals'
           renderCard={(product) => (
-            <DealCard key={product.id} product={product} />
+            <DealCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?sort=deals'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -749,13 +776,23 @@ export function TopClearanceSalesSection({
           title={section.name}
           subtitle={section.subtitle ?? 'Massive clearance offers'}
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?sort=deals'
           renderCard={(product) => (
-            <DealCard key={product.id} product={product} />
+            <DealCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?sort=deals'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -785,13 +822,23 @@ export function TopServicesSection({
           title={section.name}
           subtitle={section.subtitle ?? 'Premium services marketplace'}
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?category=Services'
           renderCard={(product) => (
-            <StandardCard key={product.id} product={product} />
+            <StandardCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?category=Services'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -826,13 +873,23 @@ export function HomeTheatreSection({
           subtitle={section.subtitle ?? 'Home entertainment systems'}
           dark
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?category=Electronics'
           renderCard={(product) => (
-            <StandardCard key={product.id} product={product} />
+            <StandardCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?category=Electronics'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -862,16 +919,26 @@ export function TopExpressOffersSection({
           title={section.name}
           subtitle={section.subtitle ?? 'Express delivery exclusive deals'}
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace?sort=deals'
           renderCard={(product) => (
-            <DealCard key={product.id} product={product} />
+            <DealCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace?sort=deals'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
-</section>
-);
+    </section>
+  );
 }
 
 function BrandCard({ brand }: { brand: EnterpriseBrand }) {
@@ -1079,13 +1146,23 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
           title='New Arrivals'
           subtitle='Latest products on Dhream Market'
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace'
           renderCard={(product) => (
-            <StandardCard key={product.id} product={product} />
+            <StandardCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -1129,13 +1206,23 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
           title='New This Week'
           subtitle='Products added in the last 7 days'
         />
-        <ResponsiveProductGrid
+        <ProductRail
           products={products}
-          seeMoreHref='/marketplace'
           renderCard={(product) => (
-            <StandardCard key={product.id} product={product} />
+            <StandardCard product={product} />
           )}
         />
+        <div className='mt-8 text-center'>
+          <Link href='/marketplace'>
+            <Button
+              variant='outline'
+              size='lg'
+              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+            >
+              See More
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
