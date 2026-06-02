@@ -76,44 +76,45 @@ export async function GET(request: NextRequest) {
       getPrisma().store.count({ where }),
     ])
 
-    // Use cached ratings from database
-    const vendorsWithMetrics = await Promise.all(
-      vendors.map(async (store) => {
-        // Get order count for popularity
-        const orderItems = await getPrisma().orderItem.findMany({
-          where: {
-            product: {
-              storeId: store.id,
-            },
-          },
-          include: {
-            order: {
-              select: {
-                status: true,
-              },
-            },
-          },
-        })
+// Use cached ratings from database
+     const vendorsWithMetrics = await Promise.all(
+       vendors.map(async (store) => {
+         // Get order count for popularity
+         const orderItems = await getPrisma().orderItem.findMany({
+           where: {
+             product: {
+               storeId: store.id,
+             },
+           },
+           include: {
+             order: {
+               select: {
+                 status: true,
+               },
+             },
+           },
+         })
 
-        // Count completed orders only
-        const orderCount = orderItems.filter(item =>
-          item.order.status === 'COMPLETED' || item.order.status === 'DELIVERED'
-        ).length
+         // Count completed orders only
+         const orderCount = orderItems.filter(item =>
+           item.order.status === 'COMPLETED' || item.order.status === 'DELIVERED'
+         ).length
 
-        // Check if featured status is still valid
-        const now = new Date()
-        const isCurrentlyFeatured = (store as any).isFeatured &&
-          (store as any).featuredUntil &&
-          new Date((store as any).featuredUntil) > now
+         // Check if featured status is still valid
+         const now = new Date()
+         const isCurrentlyFeatured = (store as any).isFeatured &&
+           (store as any).featuredUntil &&
+           new Date((store as any).featuredUntil) > now
 
-        return {
-          ...store,
-          isFeatured: isCurrentlyFeatured,
-          rating: store.averageRating,
-          orderCount,
-        }
-      })
-    )
+         return {
+           ...store,
+           isFeatured: isCurrentlyFeatured,
+           rating: store.averageRating,
+           orderCount,
+           category: store.vendor_categories,
+         }
+       })
+     )
 
     // Apply ranking logic: Featured first, then by rating, then by order count, then by newest
     const sortedVendors = vendorsWithMetrics.sort((a: any, b: any) => {

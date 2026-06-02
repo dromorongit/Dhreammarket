@@ -337,125 +337,128 @@ export default function SuperAdminDashboard() {
            </Card>
         </div>
 
-        {/* Employee/Admin Management & Vendor Governance */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card variant="elevated">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-deep-navy">Employee / Admin Management</h3>
-                <Link href="/dashboard/admin/create-admin">
-                  <Button variant="primary" size="sm">
-                    Create Admin
-                  </Button>
-                </Link>
-              </div>
-              <div className="space-y-3">
-                {admins.length === 0 ? (
-                  <EmptyState
-                    icon={
-                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    }
-                    title="No admins found"
-                    description="Admin accounts will appear here."
-                    className="py-6"
-                  />
-) : (
-                  <div className="space-y-2">
-                    {admins.slice(0, 5).map((admin) => (
-                       <div key={admin.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                         <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold">
-                             {admin.profile?.firstName?.charAt(0) || admin.profile?.lastName?.charAt(0) || admin.email?.charAt(0) || ''}
+{/* Employee/Admin Management & Vendor Governance - Mobile Responsive */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+           <Card variant="elevated">
+             <CardContent className="p-4 sm:p-6">
+               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                 <h3 className="text-lg font-semibold text-deep-navy">Employee / Admin Management</h3>
+                 <Link href="/dashboard/admin/create-admin">
+                   <Button variant="primary" size="sm" className="w-full sm:w-auto min-h-[44px]">
+                     Create Admin
+                   </Button>
+                 </Link>
+               </div>
+               <div className="space-y-3">
+                 {admins.length === 0 ? (
+                   <EmptyState
+                     icon={
+                       <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                       </svg>
+                     }
+                     title="No admins found"
+                     description="Admin accounts will appear here."
+                     className="py-6"
+                   />
+ ) : (
+                   <div className="space-y-3">
+                     {admins.slice(0, 5).map((admin) => (
+                        <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
+                          <div className="flex items-start sm:items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                              {admin.profile?.firstName?.charAt(0) || admin.profile?.lastName?.charAt(0) || admin.email?.charAt(0) || ''}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-slate-700 break-words">
+                                {admin.profile?.firstName && admin.profile?.lastName 
+                                  ? `${admin.profile.firstName} ${admin.profile.lastName}` 
+                                  : admin.email}
+                              </p>
+                              <p className="text-xs text-slate-500 break-all">{admin.email}</p>
+                              {admin.mobileNumber && (
+                                <p className="text-xs text-slate-400 mt-1">{admin.mobileNumber}</p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="info" className="w-full sm:w-auto text-center sm:text-left">ADMIN</Badge>
+                        </div>
+                      ))}
+                    </div>
+                 )}
+                 <Link href="/dashboard/admin/users">
+                   <Button variant="ghost" className="w-full min-h-[44px]">
+                     View All Admins
+                   </Button>
+                 </Link>
+               </div>
+             </CardContent>
+           </Card>
+
+           <Card variant="elevated">
+             <CardContent className="p-4 sm:p-6">
+               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                 <h3 className="text-lg font-semibold text-deep-navy">Vendor Governance</h3>
+                 <Link href="/dashboard/admin/vendors">
+                   <Button variant="primary" size="sm" className="w-full sm:w-auto min-h-[44px]">
+                     Manage Vendors
+                   </Button>
+                 </Link>
+               </div>
+               <div className="space-y-3">
+                 {vendors.length === 0 ? (
+                   <EmptyState
+                     icon={
+                       <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                       </svg>
+                     }
+                     title="No vendors found"
+                     description="Vendors will appear here."
+                     className="py-6"
+                   />
+ ) : (
+                   <div className="space-y-3">
+                     {vendors.slice(0, 5).map((vendor) => (
+                       <div key={vendor.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
+                         <div className="flex items-start sm:items-center gap-3 min-w-0">
+                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                             {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
                            </div>
-                           <div>
-                             <p className="text-sm font-medium text-slate-700">
-                               {admin.profile?.firstName && admin.profile?.lastName 
-                                 ? `${admin.profile.firstName} ${admin.profile.lastName}` 
-                                 : admin.email}
+                           <div className="min-w-0 flex-1">
+                             <p className="text-sm font-medium text-slate-700 break-words">
+                               {vendor.storeName || vendor.name || 'Unnamed Store'}
                              </p>
-                             <p className="text-xs text-slate-500">{admin.email}</p>
-                             {admin.mobileNumber && (
-                               <p className="text-xs text-slate-400">{admin.mobileNumber}</p>
+                             <p className="text-xs text-slate-500 break-all">{vendor.email}</p>
+                             {vendor.mobileNumber && (
+                               <p className="text-xs text-slate-400 mt-1">{vendor.mobileNumber}</p>
                              )}
                            </div>
                          </div>
-                         <Badge variant="info">ADMIN</Badge>
+                         <div className="flex flex-col sm:flex-row gap-1 w-full sm:w-auto">
+                           {vendor.store?.isVerified && (
+                             <Badge variant="success" className="text-center">Verified</Badge>
+                           )}
+                           {vendor.store?.isFeatured && (
+                             <Badge variant="premium" className="text-center">Featured</Badge>
+                           )}
+                           {(!vendor.store?.isVerified && !vendor.store?.isFeatured) && (
+                             <Badge variant="default" className="text-center">Pending</Badge>
+                           )}
+                         </div>
                        </div>
                      ))}
                    </div>
-                )}
-                <Link href="/dashboard/admin/users">
-                  <Button variant="ghost" className="w-full mt-2">
-                    View All Admins
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card variant="elevated">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-deep-navy">Vendor Governance</h3>
-                <Link href="/dashboard/admin/vendors">
-                  <Button variant="primary" size="sm">
-                    Manage Vendors
-                  </Button>
-                </Link>
-              </div>
-              <div className="space-y-3">
-                {vendors.length === 0 ? (
-                  <EmptyState
-                    icon={
-                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    }
-                    title="No vendors found"
-                    description="Vendors will appear here."
-                    className="py-6"
-                  />
-) : (
-                  <div className="space-y-2">
-                    {vendors.slice(0, 5).map((vendor) => (
-                      <div key={vendor.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold">
-                            {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-700">
-                              {vendor.storeName || vendor.name || 'Unnamed Store'}
-                            </p>
-                            <p className="text-xs text-slate-500">{vendor.email}</p>
-                            {vendor.mobileNumber && (
-                              <p className="text-xs text-slate-400">{vendor.mobileNumber}</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-1">
-                          {vendor.store?.isVerified && (
-                            <Badge variant="success">Verified</Badge>
-                          )}
-                          {vendor.store?.isFeatured && (
-                            <Badge variant="premium">Featured</Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <Link href="/dashboard/admin/vendors">
-                  <Button variant="ghost" className="w-full mt-2">
-                    View All Vendors
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                 )}
+                 <Link href="/dashboard/admin/vendors">
+                   <Button variant="ghost" className="w-full min-h-[44px]">
+                     View All Vendors
+                   </Button>
+                 </Link>
+               </div>
+             </CardContent>
+           </Card>
+         </div>
 
         {/* Platform Health & Support */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

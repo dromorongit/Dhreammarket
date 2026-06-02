@@ -195,10 +195,11 @@ function MarketplaceContent() {
         setTotalVendorCount(vendorsData.pagination?.total || 0)
       }
 
-      const vendorCategoriesResponse = await fetch('/api/vendor-categories')
+const vendorCategoriesResponse = await fetch('/api/vendor-categories')
       if (vendorCategoriesResponse.ok) {
         const vendorCategoriesData = await vendorCategoriesResponse.json()
-        setTotalVendorCategoryCount(vendorCategoriesData.categories?.length || 0)
+        const totalVendorCats = vendorCategoriesData.categories?.reduce((sum: number, cat: any) => sum + (cat.productCount || 0), 0) || 0
+        setTotalVendorCategoryCount(totalVendorCats)
       }
     } catch (error) {
       console.error('Error fetching counts:', error)
@@ -313,7 +314,7 @@ function MarketplaceContent() {
       >
         {vc.name}
         <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-          {vendors.filter(v => v.category?.id === vc.id).length}
+          {vc.productCount ?? vendors.filter(v => v.category?.id === vc.id).length}
         </span>
       </Button>
     ))

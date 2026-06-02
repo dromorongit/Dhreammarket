@@ -16,10 +16,20 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         slug: true,
-      }
+        _count: {
+          select: { stores: true },
+        },
+      },
     })
 
-    const response = NextResponse.json({ categories })
+    const categoriesWithCounts = categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      productCount: cat._count.stores,
+    }))
+
+    const response = NextResponse.json({ categories: categoriesWithCounts })
     // Prevent caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
