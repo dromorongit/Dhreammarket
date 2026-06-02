@@ -94,7 +94,7 @@ export async function POST(
     return NextResponse.json({
       vendors: updated.map((v) => ({
         ...v.vendor,
-        storeName: v.vendor.store?.name ?? v.vendor.name,
+        storeName: v.vendor.store?.name ?? v.vendor.profile?.firstName ?? '',
         productCount: v.vendor.store?._count?.products ?? 0,
       })),
     })
