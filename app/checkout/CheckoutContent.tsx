@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/Skeleton'
 import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
-import { getAvailableRegions, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
+import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
@@ -60,12 +60,6 @@ interface UserProfile {
   } | null
 }
 
-interface ShippingInfo {
-  price: number
-  estimatedDays: { min: number; max: number }
-  zone: string
-}
-
 // Checkout progress steps
 const CHECKOUT_STEPS = [
   { id: 1, name: 'Cart', completed: true },
@@ -83,17 +77,12 @@ export default function CheckoutContent() {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-  // Use cart context for centralized state
+// Use cart context for centralized state
   const { cart: contextCart, fetchCart: contextFetchCart } = useCart()
-  
-  // Shipping state - kept for informational purposes (zone estimation)
-  // Delivery fees are negotiated separately by vendors and delivery partners
-  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null)
-  const [shippingLoading, setShippingLoading] = useState(false)
-  
-// Payment result states from callback
-  const paymentStatus = searchParams.get('status')
-  const reference = searchParams.get('reference')
+   
+   // Payment result states from callback
+   const paymentStatus = searchParams.get('status')
+   const reference = searchParams.get('reference')
   
   // Customer form state - for address collection and delivery coordination
   const [formData, setFormData] = useState({
@@ -164,39 +153,7 @@ export default function CheckoutContent() {
     }
   }
 
-  // Calculate shipping when city/region changes
-  const calculateShipping = useCallback(async (city: string, region: string) => {
-    if (!city && !region) {
-      setShippingInfo(null)
-      return
-    }
-    
-    setShippingLoading(true)
-    try {
-      const rate = getShippingRate(city, region)
-      
-      if (rate) {
-        setShippingInfo({
-          price: rate.price,
-          estimatedDays: rate.estimatedDays,
-          zone: rate.zone.name
-        })
-      } else {
-        // Default shipping for unknown locations
-        setShippingInfo({
-          price: 40.00,
-          estimatedDays: { min: 3, max: 7 },
-          zone: 'Other Locations'
-        })
-      }
-    } catch (error) {
-      console.error('Error calculating shipping:', error)
-    } finally {
-      setShippingLoading(false)
-    }
-  }, [])
-
-// Handle form field changes - Note: region/city changes no longer affect pricing
+// Handle form field changes - for address collection only (pricing no longer affected)
    // Delivery fees are negotiated separately by vendors
    const handleInputChange = (field: string, value: string) => {
      setFormData(prev => ({ ...prev, [field]: value }))
@@ -255,21 +212,19 @@ export default function CheckoutContent() {
     setError(null)
 
     try {
-      console.log('[Checkout] Calling /api/checkout with payload:', {
-        customerInfo: { ...formData, email: formData.email },
-        shippingInfo
-      })
-      
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerInfo: formData,
-          shippingInfo: shippingInfo
-        }),
-      })
+console.log('[Checkout] Calling /api/checkout with payload:', {
+         customerInfo: { ...formData, email: formData.email },
+       })
+       
+       const response = await fetch('/api/checkout', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({
+           customerInfo: formData,
+         }),
+       })
 
       console.log('[Checkout] API response status:', response.status)
       
@@ -361,12 +316,10 @@ export default function CheckoutContent() {
   }, [searchParams])
 
 // Calculate totals - Tax and Delivery Fee are always 0 as per business rules
-  // Delivery fees are negotiated separately by vendors and delivery partners
-  const subtotal = cart?.total || 0
-  const shipping = 0 // Delivery Fee is always 0 - negotiated separately by vendors
-  const tax = 0 // Tax is always 0
-  const total = calculateGrandTotal(subtotal, shipping, tax)
-  const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+   // Delivery fees are negotiated separately by vendors and delivery partners
+   const subtotal = cart?.total || 0
+   const total = subtotal // Total equals subtotal only
+   const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
   
   // Get available regions for dropdown
   const availableRegions = useMemo(() => getAvailableRegions(), [])
@@ -587,33 +540,11 @@ export default function CheckoutContent() {
                     />
                   </div>
                 </div>
-              </CardContent>
+</CardContent>
             </Card>
-
-            {/* Shipping Information Display */}
-            {shippingInfo && (
-              <Card variant="elevated">
-                <CardHeader>
-                  <h2 className="text-xl font-semibold text-deep-navy">Shipping Information</h2>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-deep-navy">{shippingInfo.zone}</p>
-                      <p className="text-sm text-slate-600">
-                        Estimated delivery: {shippingInfo.estimatedDays.min}-{shippingInfo.estimatedDays.max} business days
-                      </p>
-                    </div>
-                    <Badge variant="success" size="lg">
-                      {formatPrice(shippingInfo.price)}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Order Items Summary */}
-            <Card variant="elevated">
+ 
+             {/* Order Items Summary */}
+             <Card variant="elevated">
               <CardHeader>
                 <h2 className="text-xl font-semibold text-deep-navy">Order Items ({totalQuantity} items)</h2>
               </CardHeader>

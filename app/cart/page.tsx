@@ -9,7 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
-import { getAvailableRegions, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
+import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
@@ -56,15 +56,7 @@ export default function Cart() {
   // Use cart context for centralized state
   const { cart: contextCart, fetchCart } = useCart()
   
-  // Shipping state
-  const [shippingInfo, setShippingInfo] = useState<{
-    price: number
-    estimatedDays: { min: number; max: number }
-    zone: string
-  } | null>(null)
-  const [shippingLoading, setShippingLoading] = useState(false)
-  
-  // Location for shipping calculation
+  // Location fields for address collection (no longer affects pricing)
   const [selectedRegion, setSelectedRegion] = useState('')
   const [selectedCity, setSelectedCity] = useState('')
   
@@ -160,38 +152,11 @@ export default function Cart() {
     }
   }
 
-  // Calculate shipping when location changes
-  useEffect(() => {
-    if (selectedCity || selectedRegion) {
-      setShippingLoading(true)
-      const rate = getShippingRate(selectedCity, selectedRegion)
-      
-      if (rate) {
-        setShippingInfo({
-          price: rate.price,
-          estimatedDays: rate.estimatedDays,
-          zone: rate.zone.name
-        })
-      } else {
-        setShippingInfo({
-          price: 40.00,
-          estimatedDays: { min: 3, max: 7 },
-          zone: 'Other Locations'
-        })
-      }
-      setShippingLoading(false)
-    } else {
-      setShippingInfo(null)
-    }
-  }, [selectedCity, selectedRegion])
-
 // Calculate totals - Tax and Delivery Fee are always 0 as per business rules
-  // Delivery fees are negotiated separately by vendors
-  const subtotal = cart?.total || 0
-  const shipping = 0 // Delivery Fee is always 0 - negotiated separately by vendors
-  const tax = 0 // Tax is always 0
-  const total = calculateGrandTotal(subtotal, shipping, tax)
-  const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+   // Delivery fees are negotiated separately by vendors
+   const subtotal = cart?.total || 0
+   const total = subtotal // Total equals subtotal only
+   const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
   if (loading) {
     return (
@@ -354,56 +319,40 @@ export default function Cart() {
           ))}
         </div>
 
-        {/* Shipping Location Selector */}
-        <Card variant="elevated" className="mb-6">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-deep-navy">Calculate Shipping</h3>
-            <p className="text-sm text-slate-600">Select your location to calculate shipping cost</p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Region/State</label>
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
-                >
-                  <option value="">Select a region</option>
-                  {availableRegions.map((region) => (
-                    <option key={region} value={region}>{region}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">City</label>
-                <input
-                  type="text"
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  placeholder="Enter your city"
-                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
-                />
-              </div>
-            </div>
-            
-            {shippingInfo && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-xl">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-deep-navy">{shippingInfo.zone}</p>
-                    <p className="text-sm text-slate-600">
-                      Estimated delivery: {shippingInfo.estimatedDays.min}-{shippingInfo.estimatedDays.max} business days
-                    </p>
-                  </div>
-                  <Badge variant="success" size="lg">
-                    {formatPrice(shippingInfo.price)}
-                  </Badge>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+{/* Address Information */}
+         <Card variant="elevated" className="mb-6">
+           <CardHeader>
+             <h3 className="text-lg font-semibold text-deep-navy">Delivery Address</h3>
+             <p className="text-sm text-slate-600">Provide your location for delivery coordination</p>
+           </CardHeader>
+           <CardContent>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-2">Region/State</label>
+                 <select
+                   value={selectedRegion}
+                   onChange={(e) => setSelectedRegion(e.target.value)}
+                   className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
+                 >
+                   <option value="">Select a region</option>
+                   {availableRegions.map((region) => (
+                     <option key={region} value={region}>{region}</option>
+                   ))}
+                 </select>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-slate-700 mb-2">City</label>
+                 <input
+                   type="text"
+                   value={selectedCity}
+                   onChange={(e) => setSelectedCity(e.target.value)}
+                   placeholder="Enter your city"
+                   className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-6 py-4 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
+                 />
+               </div>
+             </div>
+           </CardContent>
+         </Card>
 
         {/* Order Summary */}
         <Card variant="elevated" className="sticky top-24">

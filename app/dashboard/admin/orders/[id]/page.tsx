@@ -409,15 +409,31 @@ export default function AdminOrderDetailPage() {
           </Card>
         )}
 
-        {/* Order Total */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
-              <span className="text-lg font-semibold text-gray-900">Total Amount</span>
-              <span className="text-2xl font-bold text-gray-900">{formatCurrency(order.total)}</span>
-            </div>
-          </CardContent>
-        </Card>
+{/* Order Total */}
+         <Card className="mb-6">
+           <CardContent className="p-6">
+             <div className="space-y-2 mb-4">
+               <div className="flex justify-between text-slate-600">
+                 <span>Subtotal</span>
+                 <span>{formatCurrency(order.total)}</span>
+               </div>
+               <div className="flex justify-between text-slate-600">
+                 <span>Tax</span>
+                 <span>{formatCurrency(0)}</span>
+               </div>
+               <div className="flex justify-between text-slate-600">
+                 <span>Delivery Fee</span>
+                 <span>{formatCurrency(0)}</span>
+               </div>
+             </div>
+             <div className="border-t border-slate-200 pt-4">
+               <div className="flex justify-between items-center">
+                 <span className="text-lg font-semibold text-gray-900">Total Amount</span>
+                 <span className="text-2xl font-bold text-gray-900">{formatCurrency(order.total)}</span>
+               </div>
+             </div>
+           </CardContent>
+         </Card>
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
