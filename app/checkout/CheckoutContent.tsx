@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/Skeleton'
 import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
-import { getAvailableRegions, calculateTax, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
+import { getAvailableRegions, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
@@ -86,7 +86,16 @@ export default function CheckoutContent() {
   // Use cart context for centralized state
   const { cart: contextCart, fetchCart: contextFetchCart } = useCart()
   
-  // Customer form state
+  // Shipping state - kept for informational purposes (zone estimation)
+  // Delivery fees are negotiated separately by vendors and delivery partners
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null)
+  const [shippingLoading, setShippingLoading] = useState(false)
+  
+// Payment result states from callback
+  const paymentStatus = searchParams.get('status')
+  const reference = searchParams.get('reference')
+  
+  // Customer form state - for address collection and delivery coordination
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -98,14 +107,6 @@ export default function CheckoutContent() {
     notes: ''
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  
-  // Shipping state
-  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null)
-  const [shippingLoading, setShippingLoading] = useState(false)
-  
-  // Payment result states from callback
-  const paymentStatus = searchParams.get('status')
-  const reference = searchParams.get('reference')
   
   // Track processed references to prevent duplicate verification (idempotency)
   const processedRefs = useRef<Set<string>>(new Set())
@@ -195,26 +196,16 @@ export default function CheckoutContent() {
     }
   }, [])
 
-  // Handle form field changes
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value }
-      
-      // Recalculate shipping when city or region changes
-      if (field === 'city' || field === 'region') {
-        const newCity = field === 'city' ? value : updated.city
-        const newRegion = field === 'region' ? value : updated.region
-        calculateShipping(newCity, newRegion)
-      }
-      
-      return updated
-    })
-    
-    // Clear error when user types
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: '' }))
-    }
-  }
+// Handle form field changes - Note: region/city changes no longer affect pricing
+   // Delivery fees are negotiated separately by vendors
+   const handleInputChange = (field: string, value: string) => {
+     setFormData(prev => ({ ...prev, [field]: value }))
+     
+     // Clear error when user types
+     if (formErrors[field]) {
+       setFormErrors(prev => ({ ...prev, [field]: '' }))
+     }
+   }
 
   // Validate form
   const validateForm = () => {
@@ -369,10 +360,11 @@ export default function CheckoutContent() {
     }
   }, [searchParams])
 
-  // Calculate totals
+// Calculate totals - Tax and Delivery Fee are always 0 as per business rules
+  // Delivery fees are negotiated separately by vendors and delivery partners
   const subtotal = cart?.total || 0
-  const shipping = shippingInfo?.price || 0
-  const tax = calculateTax(subtotal)
+  const shipping = 0 // Delivery Fee is always 0 - negotiated separately by vendors
+  const tax = 0 // Tax is always 0
   const total = calculateGrandTotal(subtotal, shipping, tax)
   const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
   
@@ -686,23 +678,17 @@ export default function CheckoutContent() {
                       <span className="font-semibold text-deep-navy">{formatPrice(subtotal)}</span>
                     </div>
                     
-                    {/* Shipping */}
-                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                      <span className="text-slate-600">Shipping</span>
-                      {shippingLoading ? (
-                        <span className="text-slate-500">Calculating...</span>
-                      ) : shippingInfo ? (
-                        <span className="font-semibold text-emerald-600">{formatPrice(shipping)}</span>
-                      ) : (
-                        <span className="text-slate-500">Enter location</span>
-                      )}
-                    </div>
-                    
-                    {/* Tax */}
-                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                      <span className="text-slate-600">Tax (VAT 12.5%)</span>
-                      <span className="font-semibold text-deep-navy">{formatPrice(tax)}</span>
-                    </div>
+{/* Shipping */}
+                     <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                       <span className="text-slate-600">Delivery Fee</span>
+                       <span className="font-semibold text-emerald-600">{formatPrice(0)}</span>
+                     </div>
+                     
+                     {/* Tax */}
+                     <div className="flex justify-between items-center py-3 border-b border-slate-100">
+                       <span className="text-slate-600">Tax</span>
+                       <span className="font-semibold text-deep-navy">{formatPrice(0)}</span>
+                     </div>
                     
                     {/* Discount/Coupon (Future-ready) */}
                     <div className="flex justify-between items-center py-3 border-b border-slate-100">
@@ -720,12 +706,12 @@ export default function CheckoutContent() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    size="lg"
-                    className="w-full shadow-lg shadow-royal-blue/20"
-                    disabled={!shippingInfo || processing}
-                    onClick={handleCheckout}
-                  >
+<Button
+                     size="lg"
+                     className="w-full shadow-lg shadow-royal-blue/20"
+                     disabled={processing}
+                     onClick={handleCheckout}
+                   >
                     {processing ? (
                       <span className="flex items-center gap-2">
                         <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">

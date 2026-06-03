@@ -280,8 +280,22 @@ export default function CustomerOrderDetailPage() {
             {/* Order Progress Timeline */}
             {renderOrderProgress()}
 
-            {/* Order Total */}
+            {/* Order Summary */}
             <div className="border-t pt-4 mt-4">
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(order.total)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Tax</span>
+                  <span>{formatPrice(0)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Delivery Fee</span>
+                  <span>{formatPrice(0)}</span>
+                </div>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-gray-900">Total Amount</span>
                 <span className="text-2xl font-bold text-gray-900">{formatPrice(order.total)}</span>

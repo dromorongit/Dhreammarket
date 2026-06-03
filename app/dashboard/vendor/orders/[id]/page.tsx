@@ -369,10 +369,26 @@ export default function VendorOrderDetailPage() {
             {renderFulfillmentProgress()}
 
             {/* Vendor Total */}
-            <div className="border-t pt-4 mt-4">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-900">Your Items Total</span>
-                <span className="text-2xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</span>
+            <div className="bg-slate-50 rounded-xl p-4 mb-4">
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(order.vendorTotal)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Tax</span>
+                  <span>{formatPrice(0)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Delivery Fee</span>
+                  <span>{formatPrice(0)}</span>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-gray-900">Your Items Total</span>
+                  <span className="text-2xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</span>
+                </div>
               </div>
             </div>
           </CardContent>

@@ -9,7 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
-import { getAvailableRegions, calculateTax, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
+import { getAvailableRegions, calculateGrandTotal, getShippingRate } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 
@@ -185,10 +185,11 @@ export default function Cart() {
     }
   }, [selectedCity, selectedRegion])
 
-  // Calculate totals
+// Calculate totals - Tax and Delivery Fee are always 0 as per business rules
+  // Delivery fees are negotiated separately by vendors
   const subtotal = cart?.total || 0
-  const shipping = shippingInfo?.price || 0
-  const tax = calculateTax(subtotal)
+  const shipping = 0 // Delivery Fee is always 0 - negotiated separately by vendors
+  const tax = 0 // Tax is always 0
   const total = calculateGrandTotal(subtotal, shipping, tax)
   const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
@@ -416,18 +417,12 @@ export default function Cart() {
                 <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Shipping</span>
-                {shippingLoading ? (
-                  <span className="text-slate-500">Calculating...</span>
-                ) : shippingInfo ? (
-                  <span className="text-emerald-600">{formatPrice(shipping)}</span>
-                ) : (
-                  <span className="text-slate-500">Enter location</span>
-                )}
+                <span>Delivery Fee</span>
+                <span className="text-emerald-600">{formatPrice(0)}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Tax (VAT 12.5%)</span>
-                <span>{formatPrice(tax)}</span>
+                <span>Tax</span>
+                <span>{formatPrice(0)}</span>
               </div>
             </div>
 

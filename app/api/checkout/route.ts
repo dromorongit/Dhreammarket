@@ -4,7 +4,6 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { initializePaystackPayment, isPaystackConfigured } from '@/lib/paystack'
 import { sendOrderConfirmationEmail } from '@/lib/email'
 import { createNotification } from '@/lib/notifications'
-import { calculateTax, calculateGrandTotal } from '@/lib/shipping'
 import crypto from 'crypto'
 
 // PRODUCTION RUNTIME HARDENING
@@ -81,10 +80,11 @@ export async function POST(request: NextRequest) {
       0
     )
     
-    // Calculate shipping and tax
-    const shippingPrice = shippingInfo?.price || 0
-    const tax = calculateTax(subtotal)
-    const total = calculateGrandTotal(subtotal, shippingPrice, tax)
+    // Shipping and tax are always 0 as per business rules
+    // Delivery fees are negotiated separately by vendors and delivery partners
+    const shippingPrice = 0
+    const tax = 0
+    const total = subtotal
 
     // Generate unique reference for the payment
     const reference = `DHV-${crypto.randomBytes(8).toString('hex').toUpperCase()}`

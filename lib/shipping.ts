@@ -157,15 +157,16 @@ export function getAvailableZones(): ShippingZone[] {
   return SHIPPING_ZONES
 }
 
-// Calculate tax (Ghana VAT is 12.5%)
-export function calculateTax(subtotal: number, taxRate: number = 0.125): number {
-  return Math.round(subtotal * taxRate * 100) / 100
+// Calculate tax - Always returns 0 as per business rules
+// Tax is no longer automatically calculated; delivery fees are negotiated separately
+export function calculateTax(subtotal: number, taxRate: number = 0): number {
+  return 0
 }
 
-// Calculate grand total
+// Calculate grand total - Shipping and tax are not automatically calculated
 export function calculateGrandTotal(
   subtotal: number,
-  shipping: number,
+  shipping: number = 0,
   tax: number = 0,
   discount: number = 0
 ): number {
