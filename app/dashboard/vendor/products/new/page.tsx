@@ -56,7 +56,7 @@ export default function NewProduct() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
-  const AGE_OPTIONS = ['0-6 Months', '6-12 Months', '1-2 Years', '2-3 Years', '4-5 Years', '6-7 Years', '8-10 Years', '12-14 Years']
+  const AGE_OPTIONS = ['0-3 Months', '3-6 Months', '6-9 Months', '9-12 Months', '1-2 Years', '2-3 Years', '3-4 Years', '4-5 Years', '5-7 Years', '7-9 Years', '9-11 Years', '11-13 Years', '13-15 Years', '15-17 Years', '18+']
 
   useEffect(() => {
     const loadAllData = async () => {

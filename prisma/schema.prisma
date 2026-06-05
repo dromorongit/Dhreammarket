@@ -29,6 +29,8 @@ model User {
   store                Store?
   supportTickets       SupportTicket[]
   vendorPayouts        VendorPayout[]          @relation("VendorPayoutVendor")
+  verificationApplications VendorVerificationApplication[]
+  auditLogs            VerificationAuditLog[]
 
   @@map("users")
 }
@@ -70,6 +72,7 @@ model Store {
   user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorPayouts        VendorPayout[]  @relation("VendorPayoutStore")
   vendorReviews        VendorReview[]
+  verificationApplications VendorVerificationApplication[]
 
   @@map("stores")
 }
@@ -389,6 +392,82 @@ model VendorPayout {
   @@map("vendor_payouts")
 }
 
+model VerificationSetting {
+  id                          String   @id @default(cuid())
+  verificationFee             Float    @default(250.00)
+  verificationEnabled         Boolean  @default(true)
+  allowResubmissionAfterRejection Boolean @default(true)
+  autoExpirePendingApplications Boolean @default(false)
+  expiryDays                  Int      @default(30)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@map("verification_settings")
+}
+
+model VendorVerificationApplication {
+  id              String   @id @default(cuid())
+  vendorId        String
+  storeId         String
+  status          VerificationStatus @default(NOT_APPLIED)
+  paymentReference String?
+  paymentStatus   String?  @default("PENDING")
+  paymentAmount   Float?
+  paymentCompletedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  vendor          User     @relation(fields: [vendorId], references: [id])
+  store           Store    @relation(fields: [storeId], references: [id])
+  kycInfo         VendorVerificationKYC?
+  documents       VerificationDocument[]
+  auditLogs       VerificationAuditLog[]
+
+  @@unique([vendorId])
+  @@map("vendor_verification_applications")
+}
+
+model VendorVerificationKYC {
+  id                    String   @id @default(cuid())
+  applicationId         String   @unique
+  businessName          String
+  businessType          String
+  businessRegistrationNumber String?
+  tinNumber             String?
+  fullName              String
+  phoneNumber           String
+  email                 String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  application           VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_verification_kyc")
+}
+
+model VerificationDocument {
+  id            String   @id @default(cuid())
+  applicationId   String
+  documentType  String
+  documentUrl     String
+  fileName        String?
+  createdAt       DateTime @default(now())
+  application     VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("verification_documents")
+}
+
+model VerificationAuditLog {
+  id            String   @id @default(cuid())
+  applicationId   String
+  action        VerificationAction
+  adminId       String?
+  note          String?
+  createdAt     DateTime @default(now())
+  application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  admin         User?    @relation(fields: [adminId], references: [id])
+
+  @@map("verification_audit_logs")
+}
+
 model SupportTicket {
   id         String                @id @default(cuid())
   userId     String
@@ -552,4 +631,24 @@ enum HomepageSectionType {
   BIG_DEALS
   CLEARANCE_SALES
   EXPRESS_OFFERS
+}
+
+enum VerificationStatus {
+  NOT_APPLIED
+  PAYMENT_PENDING
+  PAYMENT_COMPLETED
+  KYC_SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum VerificationAction {
+  APPLICATION_CREATED
+  PAYMENT_COMPLETED
+  KYC_SUBMITTED
+  ADMIN_APPROVED
+  ADMIN_REJECTED
+  ADMIN_REQUESTED_CHANGES
+  VENDOR_RESUBMITTED
 }

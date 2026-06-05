@@ -8,6 +8,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { MdVerified } from 'react-icons/md'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -45,6 +46,10 @@ interface VendorMetrics {
   totalPaidOrders: number
   hasStore: boolean
   hasCategory: boolean
+  grossRevenue: number
+  totalPayouts: number
+  outstandingBalance: number
+  verificationStatus: string
 }
 
 interface OnboardingStep {
@@ -68,10 +73,15 @@ export default function VendorDashboard() {
     bestSellers: [],
     totalPaidOrders: 0,
     hasStore: false,
-    hasCategory: false
+    hasCategory: false,
+    grossRevenue: 0,
+    totalPayouts: 0,
+    outstandingBalance: 0,
+    verificationStatus: 'NOT_APPLIED'
   })
   const [loading, setLoading] = useState(true)
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
+  const [actionLoading, setActionLoading] = useState(false)
 
   useEffect(() => {
     fetchVendorOrders()
@@ -120,24 +130,75 @@ export default function VendorDashboard() {
       if (response.ok) {
         const data = await response.json()
         // Apply null safety to all metrics with safe defaults
-        setMetrics({
-          productCount: data?.productCount ?? 0,
-          activeOrderCount: data?.activeOrderCount ?? 0,
-          revenue: data?.revenue ?? 0,
-          vendorEarnings: data?.vendorEarnings ?? 0,
-          averageRating: data?.averageRating ?? 0,
-          totalReviews: data?.totalReviews ?? 0,
-          bestSellers: Array.isArray(data?.bestSellers) ? data.bestSellers : [],
-          totalPaidOrders: data?.totalPaidOrders ?? 0,
-          hasStore: data?.hasStore ?? false,
-          hasCategory: data?.hasCategory ?? false
-        })
+        setMetrics((prev) => ({
+          ...prev,
+          productCount: data?.productCount ?? prev.productCount ?? 0,
+          activeOrderCount: data?.activeOrderCount ?? prev.activeOrderCount ?? 0,
+          revenue: data?.revenue ?? prev.revenue ?? 0,
+          vendorEarnings: data?.vendorEarnings ?? prev.vendorEarnings ?? 0,
+          averageRating: data?.averageRating ?? prev.averageRating ?? 0,
+          totalReviews: data?.totalReviews ?? prev.totalReviews ?? 0,
+          bestSellers: Array.isArray(data?.bestSellers) ? data.bestSellers : (prev.bestSellers || []),
+          totalPaidOrders: data?.totalPaidOrders ?? prev.totalPaidOrders ?? 0,
+          hasStore: data?.hasStore ?? prev.hasStore ?? false,
+          hasCategory: data?.hasCategory ?? prev.hasCategory ?? false,
+          grossRevenue: data?.grossRevenue ?? prev.grossRevenue ?? 0,
+          totalPayouts: data?.totalPayouts ?? prev.totalPayouts ?? 0,
+          outstandingBalance: data?.outstandingBalance ?? prev.outstandingBalance ?? 0,
+          verificationStatus: data?.verificationStatus ?? prev.verificationStatus ?? 'NOT_APPLIED'
+        }))
       }
     } catch (error) {
       console.error('Error fetching vendor metrics:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleApplyForVerification = async () => {
+    if (actionLoading) return
+    
+    try {
+      setActionLoading(true)
+      const response = await fetch('/api/vendor/verification/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        alert(data.error || 'Failed to apply for verification')
+        return
+      }
+      
+      alert('Verification application submitted! Please complete the payment to proceed.')
+      fetchMetrics()
+    } catch (error) {
+      console.error('Error applying for verification:', error)
+      alert('Error applying for verification')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const renderVerificationStatusBadge = () => {
+    const status = metrics.verificationStatus
+    const variants: Record<string, 'info' | 'default' | 'success' | 'danger' | 'warning'> = {
+      APPROVED: 'success',
+      UNDER_REVIEW: 'info',
+      REJECTED: 'danger',
+      PAYMENT_PENDING: 'warning',
+      PAYMENT_COMPLETED: 'info',
+      KYC_SUBMITTED: 'info',
+      NOT_APPLIED: 'default'
+    }
+    return (
+      <Badge variant={variants[status] || 'default'} size="sm" className="flex items-center gap-1">
+        {status === 'APPROVED' && <MdVerified className="w-3 h-3" />}
+        {status.replace('_', ' ')}
+      </Badge>
+    )
   }
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -649,6 +710,27 @@ export default function VendorDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {metrics.verificationStatus !== 'APPROVED' && (
+          <Card variant="elevated" className="mb-8 border-2 border-royal-blue/20">
+            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-deep-navy mb-1">Get Verified</h3>
+                <p className="text-sm text-slate-600">
+                  Apply for vendor verification to gain customer trust and access premium features.
+                </p>
+              </div>
+              <Button
+                onClick={handleApplyForVerification}
+                disabled={actionLoading}
+                className="flex items-center gap-2"
+              >
+                <MdVerified className="w-5 h-5" />
+                {actionLoading ? 'Processing...' : 'Apply For Verification'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick Actions */}
         <Card variant="elevated">

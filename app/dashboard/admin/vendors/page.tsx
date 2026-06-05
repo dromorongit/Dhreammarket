@@ -2,6 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/Card'
+import { Button } from '@/components/Button'
+import { Badge } from '@/components/Badge'
+import { formatPrice } from '@/lib/currency'
 import Link from 'next/link'
 
 interface Vendor {
@@ -22,6 +25,9 @@ interface Vendor {
   _count: {
     products: number
   }
+  grossRevenue?: number
+  totalPayouts?: number
+  outstandingBalance?: number
 }
 
 export default function AdminVendorsPage() {
@@ -345,11 +351,25 @@ export default function AdminVendorsPage() {
                         <span className="text-gray-500">Phone:</span>
                         <span className="text-gray-900">{vendor.mobileNumber || '-'}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Products:</span>
-                        <span className="text-gray-900">{vendor._count.products}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-2">
+<div className="flex justify-between text-sm">
+                         <span className="text-gray-500">Products:</span>
+                         <span className="text-gray-900">{vendor._count.products}</span>
+                       </div>
+                       <div className="flex justify-between text-sm">
+                         <span className="text-gray-500">Gross Revenue:</span>
+                         <span className="text-sm font-medium text-emerald-600">{formatPrice(vendor.grossRevenue || 0)}</span>
+                       </div>
+                       <div className="flex justify-between text-sm">
+                         <span className="text-gray-500">Payouts:</span>
+                         <span className="text-gray-900">{formatPrice(vendor.totalPayouts || 0)}</span>
+                       </div>
+                       <div className="flex justify-between text-sm">
+                         <span className="text-gray-500">Balance:</span>
+                         <span className={`text-sm font-medium ${(vendor.outstandingBalance || 0) > 0 ? 'text-amber-600' : 'text-gray-600'}`}>
+                           {formatPrice(vendor.outstandingBalance || 0)}
+                         </span>
+                       </div>
+                       <div className="flex flex-wrap gap-2 pt-2">
                         {vendor.isVerified ? (
                           <button
                             onClick={() => handleVerify(vendor.id, false)}
@@ -380,61 +400,75 @@ export default function AdminVendorsPage() {
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Actions</th>
-                    </tr>
-                  </thead>
+<thead className="bg-gray-50 border-b">
+                     <tr>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gross Revenue</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payouts</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Balance</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Actions</th>
+                     </tr>
+                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {vendors.map((vendor) => (
                       <tr key={vendor.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4">
-                          <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
-                          {vendor.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {vendor.description}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900">{vendor.user.email}</div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="text-sm text-gray-600">{vendor.mobileNumber || '-'}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="text-sm text-gray-600">{vendor._count.products}</span>
-                        </td>
-                        <td className="px-4 py-4">
-                          {vendor.isVerified ? (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                              Verified
-                            </span>
-                          ) : (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4">
-                          {vendor.isFeatured ? (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-                              Featured
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-500">
-                          {new Date(vendor.createdAt).toLocaleDateString()}
-                        </td>
+<td className="px-4 py-4">
+                           <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
+                           {vendor.description && (
+                             <div className="text-sm text-gray-500 truncate max-w-xs">
+                               {vendor.description}
+                             </div>
+                           )}
+                         </td>
+                         <td className="px-4 py-4">
+                           <div className="text-sm text-gray-900">{vendor.user.email}</div>
+                         </td>
+                         <td className="px-4 py-4">
+                           <span className="text-sm text-gray-600">{vendor.mobileNumber || '-'}</span>
+                         </td>
+                         <td className="px-4 py-4">
+                           <span className="text-sm text-gray-600">{vendor._count.products}</span>
+                         </td>
+                         <td className="px-4 py-4">
+                           <span className="text-sm font-medium text-emerald-600">{formatPrice(vendor.grossRevenue || 0)}</span>
+                         </td>
+                         <td className="px-4 py-4">
+                           <span className="text-sm text-gray-600">{formatPrice(vendor.totalPayouts || 0)}</span>
+                         </td>
+                         <td className="px-4 py-4">
+                           <span className={`text-sm font-medium ${(vendor.outstandingBalance || 0) > 0 ? 'text-amber-600' : 'text-gray-600'}`}>
+                             {formatPrice(vendor.outstandingBalance || 0)}
+                           </span>
+                         </td>
+                         <td className="px-4 py-4">
+                           {vendor.isVerified ? (
+                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                               Verified
+                             </span>
+                           ) : (
+                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                               Pending
+                             </span>
+                           )}
+                         </td>
+                         <td className="px-4 py-4">
+                           {vendor.isFeatured ? (
+                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
+                               Featured
+                             </span>
+                           ) : (
+                             <span className="text-sm text-gray-400">-</span>
+                           )}
+                         </td>
+                         <td className="px-4 py-4 text-sm text-gray-500">
+                           {new Date(vendor.createdAt).toLocaleDateString()}
+                         </td>
                         <td className="px-4 py-4">
                           {actionLoading === vendor.id ? (
                             <span className="text-sm text-gray-500">Processing...</span>

@@ -32,7 +32,7 @@ import {
   NewThisWeekSection,
 } from '@/components/homepage-enterprise-sections'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
-import { Footer } from '@/components/Footer'
+
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
 
@@ -531,7 +531,6 @@ return (
           </p>
         </div>
       </section>
-      <Footer />
     </div>
   )
 }
