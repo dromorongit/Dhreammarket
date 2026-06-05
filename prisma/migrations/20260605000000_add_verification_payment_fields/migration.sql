@@ -1,3 +1,31 @@
+-- Update VerificationStatus enum values before altering the type
+-- Map old values to new values:
+-- PAYMENT_PENDING -> UNPAID
+-- PAYMENT_COMPLETED -> PAID_PENDING_KYC
+-- KYC_SUBMITTED -> PENDING_REVIEW
+-- UNDER_REVIEW -> PENDING_REVIEW
+-- REVOKED -> REJECTED
+
+UPDATE vendor_verification_applications 
+SET status = 'UNPAID' 
+WHERE status = 'PAYMENT_PENDING';
+
+UPDATE vendor_verification_applications 
+SET status = 'PAID_PENDING_KYC' 
+WHERE status = 'PAYMENT_COMPLETED';
+
+UPDATE vendor_verification_applications 
+SET status = 'PENDING_REVIEW' 
+WHERE status = 'KYC_SUBMITTED';
+
+UPDATE vendor_verification_applications 
+SET status = 'PENDING_REVIEW' 
+WHERE status = 'UNDER_REVIEW';
+
+UPDATE vendor_verification_applications 
+SET status = 'REJECTED' 
+WHERE status = 'REVOKED';
+
 -- Add verification payment tracking fields
 ALTER TABLE vendor_verification_applications 
 ADD COLUMN IF NOT EXISTS paymentReference VARCHAR(255),
