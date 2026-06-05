@@ -45,6 +45,22 @@ ADD COLUMN IF NOT EXISTS city TEXT,
 ADD COLUMN IF NOT EXISTS nationalIdType VARCHAR(50),
 ADD COLUMN IF NOT EXISTS nationalIdNumber VARCHAR(100);
 
+-- Step 5b: Rename columns to proper case if they were created lowercase
+ALTER TABLE "vendor_verification_kyc" 
+RENAME COLUMN IF EXISTS businessaddress TO "businessAddress",
+RENAME COLUMN IF EXISTS nationalidtype TO "nationalIdType",
+RENAME COLUMN IF EXISTS nationalidnumber TO "nationalIdNumber";
+
+ALTER TABLE "vendor_verification_applications" 
+RENAME COLUMN IF EXISTS paystackref TO "paystackRef";
+
+ALTER TABLE "verification_payments"
+RENAME COLUMN IF EXISTS applicationid TO "applicationId",
+RENAME COLUMN IF EXISTS paystackref TO "paystackRef",
+RENAME COLUMN IF EXISTS createdat TO "createdAt",
+RENAME COLUMN IF EXISTS updatedat TO "updatedAt",
+RENAME COLUMN IF EXISTS completedat TO "completedAt";
+
 -- Step 6: Create verification_payments table (matches schema.prisma exactly)
 CREATE TABLE IF NOT EXISTS verification_payments (
     id TEXT PRIMARY KEY,
