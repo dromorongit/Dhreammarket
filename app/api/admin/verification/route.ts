@@ -141,7 +141,7 @@ export async function PATCH(request: NextRequest) {
         break
       case 'revoke':
         newStatus = 'REJECTED'
-        auditAction = 'ADMIN_REVOKED'
+        auditAction = 'ADMIN_REJECTED'
         break
       case 'request_changes':
         newStatus = 'CHANGES_REQUESTED'
