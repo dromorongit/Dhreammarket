@@ -93,6 +93,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 })
     }
 
+    // Verify store exists before any update
+    const existingStore = await prisma.store.findUnique({
+      where: { id },
+      include: { user: true }
+    })
+    
+    if (!existingStore) {
+      return NextResponse.json({ error: 'Vendor store not found' }, { status: 404 })
+    }
+
     // Update store with necessary includes to return vendor format
     let updatedStore
 
@@ -102,6 +112,27 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         updatedStore = await prisma.store.update({
           where: { id },
           data: { isVerified: value === true },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                createdAt: true,
+              },
+            },
+            _count: {
+              select: { products: true },
+            },
+          },
+        })
+        break
+
+      case 'revoke':
+        // Revoke the vendor (set isVerified to false)
+        updatedStore = await prisma.store.update({
+          where: { id },
+          data: { isVerified: false },
           include: {
             user: {
               select: {

@@ -52,6 +52,7 @@ const statusColors: Record<string, string> = {
   KYC_SUBMITTED: 'bg-purple-100 text-purple-800',
   UNDER_REVIEW: 'bg-indigo-100 text-indigo-800',
   APPROVED: 'bg-green-100 text-green-800',
+  REVOKED: 'bg-orange-100 text-orange-800',
   REJECTED: 'bg-red-100 text-red-800',
 }
 
@@ -91,13 +92,15 @@ export default function AdminVerificationApplicationsPage() {
     fetchApplications()
   }, [fetchApplications])
 
-  const handleAction = async (applicationId: string, action: 'approve' | 'reject' | 'request_changes') => {
+const handleAction = async (applicationId: string, action: 'approve' | 'reject' | 'revoke' | 'request_changes') => {
     if (actionLoading) return
-
+    
     const confirmMessage = action === 'approve' 
       ? 'Are you sure you want to approve this vendor?' 
       : action === 'reject'
       ? 'Are you sure you want to reject this vendor? They can resubmit if allowed.'
+      : action === 'revoke'
+      ? 'Are you sure you want to revoke this vendor\'s verification? This will remove their verified status.'
       : 'Request changes to this application?'
 
     if (!confirm(confirmMessage)) return
@@ -307,6 +310,15 @@ export default function AdminVerificationApplicationsPage() {
                                   Changes
                                 </button>
                               </>
+                            )}
+                            {app.status === 'APPROVED' && (
+                              <button
+                                onClick={() => handleAction(app.id, 'revoke')}
+                                className="text-sm text-orange-600 hover:text-orange-800 min-h-[44px]"
+                                title="Revoke Verification"
+                              >
+                                Revoke
+                              </button>
                             )}
                           </div>
                         )}

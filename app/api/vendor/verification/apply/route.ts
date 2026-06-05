@@ -24,8 +24,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
     }
 
-    const settings = await getPrisma().verificationSetting.findFirst()
-    if (!settings || !settings.verificationEnabled) {
+    // Self-healing Verification Settings - create if missing
+    let settings = await getPrisma().verificationSetting.findFirst({
+      orderBy: { createdAt: 'asc' }
+    })
+    
+    if (!settings) {
+      console.warn('No VerificationSetting found, creating default settings')
+      settings = await getPrisma().verificationSetting.create({
+        data: {
+          verificationFee: 250,
+          verificationEnabled: true,
+          allowResubmissionAfterRejection: true,
+          autoExpirePendingApplications: false,
+          expiryDays: 30,
+        }
+      })
+    }
+    
+    // Check if multiple settings exist and log warning
+    const allSettings = await getPrisma().verificationSetting.findMany()
+    if (allSettings.length > 1) {
+      console.warn(`Multiple VerificationSetting records found (${allSettings.length}), using oldest`)
+    }
+    
+    if (!settings.verificationEnabled) {
       return NextResponse.json({ error: 'Verification is currently disabled' }, { status: 400 })
     }
 

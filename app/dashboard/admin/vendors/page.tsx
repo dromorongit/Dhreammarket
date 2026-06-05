@@ -72,12 +72,14 @@ export default function AdminVendorsPage() {
   const handleVerify = async (vendorId: string, verify: boolean) => {
     if (actionLoading) return
     
+    const action = verify ? 'verify' : 'revoke'
+    
     try {
       setActionLoading(vendorId)
       const response = await fetch(`/api/admin/vendors/${vendorId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: verify ? 'verify' : 'verify', value: verify }),
+        body: JSON.stringify({ action, value: verify }),
       })
       
       const data = await response.json()

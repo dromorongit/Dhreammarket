@@ -103,8 +103,7 @@ export async function GET(request: NextRequest) {
       outstandingBalance = Math.max(0, outstandingBalance - paidOut)
 
       return {
-        id: store.user.id,
-        storeName: store.name,
+        id: store.id,
         name: store.name,
         description: store.description,
         isVerified: store.isVerified,

@@ -112,6 +112,10 @@ export async function PATCH(request: NextRequest) {
         newStatus = 'REJECTED'
         auditAction = 'ADMIN_REJECTED'
         break
+      case 'revoke':
+        newStatus = 'APPROVED'
+        auditAction = 'ADMIN_REVOKED'
+        break
       case 'request_changes':
         newStatus = 'UNDER_REVIEW'
         auditAction = 'ADMIN_REQUESTED_CHANGES'
@@ -121,6 +125,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Update application status
+    if (!application.store) {
+      return NextResponse.json({ error: 'Vendor store not found' }, { status: 404 })
+    }
+    
     const updatedApplication = await getPrisma().vendorVerificationApplication.update({
       where: { id: applicationId },
       data: { status: newStatus as any },
@@ -143,11 +151,16 @@ export async function PATCH(request: NextRequest) {
       }
     })
 
-    // Update store verification status for APPROVED
+    // Update store verification status for APPROVED or REVOKE
     if (action === 'approve') {
       await getPrisma().store.update({
         where: { id: application.storeId },
         data: { isVerified: true }
+      })
+    } else if (action === 'revoke') {
+      await getPrisma().store.update({
+        where: { id: application.storeId },
+        data: { isVerified: false }
       })
     }
 
