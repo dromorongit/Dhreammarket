@@ -1,10 +1,11 @@
+// Admin verification API - only shows PAID applications
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 
 export const dynamic = 'force-dynamic'
 
-// GET all verification applications (for admin listing)
+// GET all verification applications (for admin listing - only PAID applications)
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
@@ -21,9 +22,27 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const search = searchParams.get('search') || ''
 
-    const where: any = {}
-    if (status) where.status = status
+    // Build where clause - only show PAID applications by default
+    const where: any = {
+      paymentStatus: 'PAID',
+    }
+
+    // If a specific status is requested, filter by it
+    if (status) {
+      where.status = status
+    }
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { store: { name: { contains: search, mode: 'insensitive' } } },
+        { vendor: { email: { contains: search, mode: 'insensitive' } } },
+        { vendor: { profile: { firstName: { contains: search, mode: 'insensitive' } } } },
+        { vendor: { profile: { lastName: { contains: search, mode: 'insensitive' } } } },
+      ]
+    }
 
     const applications = await getPrisma().vendorVerificationApplication.findMany({
       where,
@@ -48,6 +67,14 @@ export async function GET(request: NextRequest) {
           }
         },
         documents: true,
+        payments: {
+          take: 1,
+          orderBy: { createdAt: 'desc' }
+        },
+        auditLogs: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -113,11 +140,11 @@ export async function PATCH(request: NextRequest) {
         auditAction = 'ADMIN_REJECTED'
         break
       case 'revoke':
-        newStatus = 'APPROVED'
+        newStatus = 'REJECTED'
         auditAction = 'ADMIN_REVOKED'
         break
       case 'request_changes':
-        newStatus = 'UNDER_REVIEW'
+        newStatus = 'CHANGES_REQUESTED'
         auditAction = 'ADMIN_REQUESTED_CHANGES'
         break
       default:
@@ -128,7 +155,7 @@ export async function PATCH(request: NextRequest) {
     if (!application.store) {
       return NextResponse.json({ error: 'Vendor store not found' }, { status: 404 })
     }
-    
+
     const updatedApplication = await getPrisma().vendorVerificationApplication.update({
       where: { id: applicationId },
       data: { status: newStatus as any },

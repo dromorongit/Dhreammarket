@@ -411,9 +411,10 @@ model VendorVerificationApplication {
   storeId         String
   status          VerificationStatus @default(NOT_APPLIED)
   paymentReference String?
-  paymentStatus   String?  @default("PENDING")
+  paymentStatus   String?  @default("UNPAID")
   paymentAmount   Float?
   paymentCompletedAt DateTime?
+  paystackRef     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   vendor          User     @relation(fields: [vendorId], references: [id])
@@ -421,6 +422,7 @@ model VendorVerificationApplication {
   kycInfo         VendorVerificationKYC?
   documents       VerificationDocument[]
   auditLogs       VerificationAuditLog[]
+  payments        VerificationPayment[]
 
   @@unique([vendorId])
   @@map("vendor_verification_applications")
@@ -432,10 +434,15 @@ model VendorVerificationKYC {
   businessName          String
   businessType          String
   businessRegistrationNumber String?
+  businessAddress       String?
+  region                String?
+  city                  String?
   tinNumber             String?
   fullName              String
   phoneNumber           String
   email                 String
+  nationalIdType        String?
+  nationalIdNumber      String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   application           VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -453,6 +460,22 @@ model VerificationDocument {
   application     VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("verification_documents")
+}
+
+model VerificationPayment {
+  id            String   @id @default(cuid())
+  applicationId String   @unique
+  reference     String   @unique
+  amount        Float
+  currency      String   @default("GHS")
+  status        String   @default("UNPAID")
+  paystackRef   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  completedAt   DateTime?
+  application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("verification_payments")
 }
 
 model VerificationAuditLog {
@@ -635,18 +658,17 @@ enum HomepageSectionType {
 
 enum VerificationStatus {
   NOT_APPLIED
-  PAYMENT_PENDING
-  PAYMENT_COMPLETED
-  KYC_SUBMITTED
-  UNDER_REVIEW
+  UNPAID
+  PAID_PENDING_KYC
+  PENDING_REVIEW
   APPROVED
-  REVOKED
   REJECTED
+  CHANGES_REQUESTED
 }
 
 enum VerificationAction {
   APPLICATION_CREATED
-  PAYMENT_COMPLETED
+  PAYMENT_SUCCESSFUL
   KYC_SUBMITTED
   ADMIN_APPROVED
   ADMIN_REJECTED

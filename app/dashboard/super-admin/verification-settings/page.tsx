@@ -104,7 +104,7 @@ export default function SuperAdminVerificationSettings() {
               {/* Verification Fee */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Fee (GHS)
+                  Verification Fee (GH₵)
                 </label>
                 <Input
                   type="number"

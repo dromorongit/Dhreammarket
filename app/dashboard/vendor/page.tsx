@@ -157,23 +157,23 @@ export default function VendorDashboard() {
 
   const handleApplyForVerification = async () => {
     if (actionLoading) return
-    
+
     try {
       setActionLoading(true)
       const response = await fetch('/api/vendor/verification/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
-      
+
       const data = await response.json()
-      
+
       if (!response.ok) {
         alert(data.error || 'Failed to apply for verification')
         return
       }
-      
-      alert('Verification application submitted! Please complete the payment to proceed.')
-      fetchMetrics()
+
+      // Redirect to verification page to start payment flow
+      window.location.href = '/dashboard/vendor/verification'
     } catch (error) {
       console.error('Error applying for verification:', error)
       alert('Error applying for verification')
@@ -186,17 +186,16 @@ export default function VendorDashboard() {
     const status = metrics.verificationStatus
     const variants: Record<string, 'info' | 'default' | 'success' | 'danger' | 'warning'> = {
       APPROVED: 'success',
-      UNDER_REVIEW: 'info',
+      PENDING_REVIEW: 'info',
       REJECTED: 'danger',
-      PAYMENT_PENDING: 'warning',
-      PAYMENT_COMPLETED: 'info',
-      KYC_SUBMITTED: 'info',
-      NOT_APPLIED: 'default'
+      CHANGES_REQUESTED: 'warning',
+      PAID_PENDING_KYC: 'info',
+      UNPAID: 'default'
     }
     return (
       <Badge variant={variants[status] || 'default'} size="sm" className="flex items-center gap-1">
         {status === 'APPROVED' && <MdVerified className="w-3 h-3" />}
-        {status.replace('_', ' ')}
+        {status.replace(/_/g, ' ')}
       </Badge>
     )
   }

@@ -4,6 +4,8 @@ import { verifyToken } from '@/lib/auth-middleware'
 
 export const dynamic = 'force-dynamic'
 
+// This endpoint now creates the application record but payment is handled separately
+// Payment initialization should use /api/verification-payment
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
@@ -24,11 +26,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
     }
 
-    // Self-healing Verification Settings - create if missing
+    // Get verification settings
     let settings = await getPrisma().verificationSetting.findFirst({
       orderBy: { createdAt: 'asc' }
     })
-    
+
     if (!settings) {
       console.warn('No VerificationSetting found, creating default settings')
       settings = await getPrisma().verificationSetting.create({
@@ -41,13 +43,7 @@ export async function POST(request: NextRequest) {
         }
       })
     }
-    
-    // Check if multiple settings exist and log warning
-    const allSettings = await getPrisma().verificationSetting.findMany()
-    if (allSettings.length > 1) {
-      console.warn(`Multiple VerificationSetting records found (${allSettings.length}), using oldest`)
-    }
-    
+
     if (!settings.verificationEnabled) {
       return NextResponse.json({ error: 'Verification is currently disabled' }, { status: 400 })
     }
@@ -61,8 +57,9 @@ export async function POST(request: NextRequest) {
         data: {
           vendorId: payload.userId,
           storeId: store.id,
-          status: 'PAYMENT_PENDING',
+          status: 'UNPAID',
           paymentAmount: settings.verificationFee,
+          paymentStatus: 'UNPAID',
         }
       })
 
@@ -73,20 +70,42 @@ export async function POST(request: NextRequest) {
         }
       })
     } else {
-      await getPrisma().vendorVerificationApplication.update({
-        where: { id: application.id },
-        data: {
-          status: 'PAYMENT_PENDING',
-          paymentAmount: settings.verificationFee,
-        }
-      })
+      // If application exists in a terminal state (APPROVED/REJECTED), allow resubmission
+      if (application.status === 'APPROVED' || application.status === 'REJECTED') {
+        application = await getPrisma().vendorVerificationApplication.update({
+          where: { id: application.id },
+          data: {
+            status: 'UNPAID',
+            paymentStatus: 'UNPAID',
+            paymentAmount: settings.verificationFee,
+            paymentReference: null,
+            paymentCompletedAt: null,
+          }
+        })
+
+        // Clear existing KYC and documents for resubmission
+        await getPrisma().vendorVerificationKYC.deleteMany({
+          where: { applicationId: application.id },
+        })
+        await getPrisma().verificationDocument.deleteMany({
+          where: { applicationId: application.id },
+        })
+
+        await getPrisma().verificationAuditLog.create({
+          data: {
+            applicationId: application.id,
+            action: 'VENDOR_RESUBMITTED',
+          }
+        })
+      }
     }
 
     return NextResponse.json({
       success: true,
       application,
       amount: settings.verificationFee,
-      enabled: settings.verificationEnabled
+      enabled: settings.verificationEnabled,
+      message: 'Verification application created. Please proceed to payment.',
     })
   } catch (error) {
     console.error('Error creating verification application:', error)

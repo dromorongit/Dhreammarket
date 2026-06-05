@@ -1,30 +1,47 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { Input } from '@/components/Input'
 import ImageUpload from '@/components/ImageUpload'
 import { formatPrice } from '@/lib/currency'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+interface VerificationPayment {
+  id: string
+  reference: string
+  amount: number
+  status: string
+  completedAt?: string
+}
 
 interface VerificationApplication {
   id: string
   status: string
   paymentStatus?: string
   paymentAmount?: number
+  paymentReference?: string
+  payments?: VerificationPayment[]
   kycInfo?: {
     businessName: string
     businessType: string
     businessRegistrationNumber?: string
+    businessAddress?: string
+    region?: string
+    city?: string
     tinNumber?: string
     fullName: string
     phoneNumber: string
     email: string
+    nationalIdType?: string
+    nationalIdNumber?: string
   }
   documents?: Array<{
     documentType: string
     documentUrl: string
+    fileName?: string
   }>
 }
 
@@ -34,24 +51,30 @@ interface VerificationSettings {
   allowResubmissionAfterRejection: boolean
 }
 
-const statusSteps = ['NOT_APPLIED', 'PAYMENT_PENDING', 'PAYMENT_COMPLETED', 'KYC_SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED']
+const statusSteps = ['NOT_APPLIED', 'UNPAID', 'PAID_PENDING_KYC', 'PENDING_REVIEW', 'APPROVED', 'REJECTED', 'CHANGES_REQUESTED']
 
-export default function VendorVerificationPage() {
+function VendorVerificationContent() {
   const [application, setApplication] = useState<VerificationApplication | null>(null)
   const [settings, setSettings] = useState<VerificationSettings | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeStep, setActiveStep] = useState<'payment' | 'kyc'>('payment')
   const [submitting, setSubmitting] = useState(false)
   const [kycData, setKycData] = useState({
     businessName: '',
     businessType: '',
     businessRegistrationNumber: '',
+    businessAddress: '',
+    region: '',
+    city: '',
     tinNumber: '',
     fullName: '',
     phoneNumber: '',
     email: '',
+    nationalIdType: '',
+    nationalIdNumber: '',
   })
   const [kycDocuments, setKycDocuments] = useState<Record<string, string>>({})
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   const fetchData = useCallback(async () => {
     try {
@@ -64,6 +87,29 @@ export default function VendorVerificationPage() {
       if (appRes.ok) {
         const appData = await appRes.json()
         setApplication(appData.application)
+        if (appData.application?.kycInfo) {
+          setKycData({
+            businessName: appData.application.kycInfo.businessName || '',
+            businessType: appData.application.kycInfo.businessType || '',
+            businessRegistrationNumber: appData.application.kycInfo.businessRegistrationNumber || '',
+            businessAddress: appData.application.kycInfo.businessAddress || '',
+            region: appData.application.kycInfo.region || '',
+            city: appData.application.kycInfo.city || '',
+            tinNumber: appData.application.kycInfo.tinNumber || '',
+            fullName: appData.application.kycInfo.fullName || '',
+            phoneNumber: appData.application.kycInfo.phoneNumber || '',
+            email: appData.application.kycInfo.email || '',
+            nationalIdType: appData.application.kycInfo.nationalIdType || '',
+            nationalIdNumber: appData.application.kycInfo.nationalIdNumber || '',
+          })
+        }
+        if (appData.application?.documents) {
+          const docs: Record<string, string> = {}
+          appData.application.documents.forEach((doc: any) => {
+            docs[doc.documentType] = doc.documentUrl
+          })
+          setKycDocuments(docs)
+        }
       }
 
       if (settingsRes.ok) {
@@ -77,24 +123,61 @@ export default function VendorVerificationPage() {
     }
   }, [])
 
+  const verifyPayment = useCallback(async (reference: string) => {
+    try {
+      const response = await fetch('/api/verification-payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          await fetchData()
+          alert('Payment verified successfully! Please complete your KYC information.')
+        }
+      }
+    } catch (error) {
+      console.error('Error verifying payment:', error)
+    }
+  }, [fetchData])
+
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+    
+    const reference = searchParams.get('reference')
+    const status = searchParams.get('status')
+
+    if (reference && status === 'success') {
+      verifyPayment(reference)
+      router.replace('/dashboard/vendor/verification')
+    }
+  }, [searchParams, router, fetchData, verifyPayment])
 
   const handleInitiatePayment = async () => {
     if (!settings) return
     setSubmitting(true)
     try {
-      const response = await fetch('/api/vendor/verification', {
+      const appResponse = await fetch('/api/vendor/verification/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'initiate_payment' }),
       })
+
+      if (!appResponse.ok) {
+        const error = await appResponse.json()
+        alert(error.error || 'Failed to initialize application')
+        return
+      }
+
+      const response = await fetch('/api/verification-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
       if (response.ok) {
         const data = await response.json()
-        setApplication(data.application)
-        // Redirect to payment page
-        window.location.href = `/payment/verification?amount=${data.amount}&ref=${Date.now()}`
+        window.location.href = data.authorizationUrl
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to initiate payment')
@@ -108,6 +191,11 @@ export default function VendorVerificationPage() {
   }
 
   const handleKYCSubmit = async () => {
+    if (!application || application.status !== 'PAID_PENDING_KYC') {
+      alert('KYC can only be submitted after payment is completed')
+      return
+    }
+
     setSubmitting(true)
     try {
       const documents = Object.entries(kycDocuments).map(([type, url]) => ({
@@ -125,10 +213,11 @@ export default function VendorVerificationPage() {
           documents,
         }),
       })
+
       if (response.ok) {
         const data = await response.json()
         setApplication(data.application)
-        alert('KYC submitted successfully!')
+        alert('KYC submitted successfully! Application is now under review.')
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to submit KYC')
@@ -182,19 +271,17 @@ export default function VendorVerificationPage() {
           <p className="text-gray-600 mt-2">Apply for verified vendor status to increase trust and visibility</p>
         </div>
 
-        {/* Progress Steps */}
         {application && (
           <Card variant="elevated" className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                {['Application', 'Payment', 'KYC', 'Review', 'Verified'].map((step, idx) => {
-                  const appStatus = application.status
+                {['Payment', 'KYC', 'Review', 'Verified'].map((step, idx) => {
                   const isActive = getCurrentStepIndex() >= idx
                   const isComplete = getCurrentStepIndex() > idx
                   return (
                     <div key={step} className="flex-1 flex flex-col items-center">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        isComplete ? 'bg-green-600 text-white' : 
+                        isComplete ? 'bg-green-600 text-white' :
                         isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
                       }`}>
                         {idx + 1}
@@ -211,7 +298,6 @@ export default function VendorVerificationPage() {
           </Card>
         )}
 
-        {/* Application Status */}
         {application?.status === 'APPROVED' && (
           <Card variant="elevated" className="mb-8">
             <CardContent className="text-center py-12">
@@ -226,8 +312,28 @@ export default function VendorVerificationPage() {
           </Card>
         )}
 
-        {/* Payment Step */}
-        {(!application || application.status === 'NOT_APPLIED' || canResubmit) && activeStep === 'payment' && (
+        {application?.status === 'REJECTED' && canResubmit && (
+          <Card variant="elevated" className="mb-8">
+            <CardContent className="text-center py-12">
+              <Badge variant="danger" size="lg" className="mb-4">Application Rejected</Badge>
+              <p className="text-gray-600 mb-4">Your verification application was rejected. You can resubmit after making changes.</p>
+              <Button onClick={handleInitiatePayment} disabled={submitting}>
+                {submitting ? 'Processing...' : 'Resubmit Application'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {application?.status === 'CHANGES_REQUESTED' && (
+          <Card variant="elevated" className="mb-8">
+            <CardContent className="text-center py-12">
+              <Badge variant="warning" size="lg" className="mb-4">Changes Requested</Badge>
+              <p className="text-gray-600 mb-4">Admin has requested changes to your application. Please update your KYC information.</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {(!application || application.status === 'UNPAID') && (
           <Card variant="elevated" className="mb-8">
             <CardHeader>
               <h2 className="text-lg font-semibold">Step 1: Payment</h2>
@@ -254,8 +360,7 @@ export default function VendorVerificationPage() {
           </Card>
         )}
 
-        {/* KYC Step */}
-        {(!application || application.status === 'PAYMENT_COMPLETED') && activeStep === 'kyc' && (
+        {application?.status === 'PAID_PENDING_KYC' && (
           <Card variant="elevated" className="mb-8">
             <CardHeader>
               <h2 className="text-lg font-semibold">Step 2: KYC Information</h2>
@@ -295,6 +400,35 @@ export default function VendorVerificationPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Address *</label>
+                  <Input
+                    required
+                    value={kycData.businessAddress}
+                    onChange={(e) => setKycData(prev => ({ ...prev, businessAddress: e.target.value }))}
+                    placeholder="Business address"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Region *</label>
+                    <Input
+                      required
+                      value={kycData.region}
+                      onChange={(e) => setKycData(prev => ({ ...prev, region: e.target.value }))}
+                      placeholder="Region/State"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                    <Input
+                      required
+                      value={kycData.city}
+                      onChange={(e) => setKycData(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="City"
+                    />
+                  </div>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">TIN Number (Optional)</label>
                   <Input
                     value={kycData.tinNumber}
@@ -332,55 +466,70 @@ export default function VendorVerificationPage() {
                     placeholder="Email address"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">National ID Type *</label>
+                    <select
+                      required
+                      value={kycData.nationalIdType}
+                      onChange={(e) => setKycData(prev => ({ ...prev, nationalIdType: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Select ID type</option>
+                      <option value="GHANA_CARD">Ghana Card</option>
+                      <option value="PASSPORT">Passport</option>
+                      <option value="DRIVERS_LICENSE">Driver's License</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">National ID Number *</label>
+                    <Input
+                      required
+                      value={kycData.nationalIdNumber}
+                      onChange={(e) => setKycData(prev => ({ ...prev, nationalIdNumber: e.target.value }))}
+                      placeholder="ID number"
+                    />
+                  </div>
+                </div>
 
                 <div className="border-t pt-4">
                   <h3 className="font-medium text-gray-900 mb-3">Required Documents</h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm text-gray-700 mb-1">Ghana Card Front *</label>
+                      <label className="block text-sm text-gray-700 mb-1">Ghana Card (Required) *</label>
                       <ImageUpload
-                        value={kycDocuments['ghana_card_front'] ? [kycDocuments['ghana_card_front']] : []}
-                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, ghana_card_front: urls[0] || '' }))}
+                        value={kycDocuments['ghana_card'] ? [kycDocuments['ghana_card']] : []}
+                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, ghana_card: urls[0] || '' }))}
                         folder="verification"
                         maxFiles={1}
                         maxSizeMB={5}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-700 mb-1">Ghana Card Back *</label>
+                      <label className="block text-sm text-gray-700 mb-1">Passport (Required) *</label>
                       <ImageUpload
-                        value={kycDocuments['ghana_card_back'] ? [kycDocuments['ghana_card_back']] : []}
-                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, ghana_card_back: urls[0] || '' }))}
+                        value={kycDocuments['passport'] ? [kycDocuments['passport']] : []}
+                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, passport: urls[0] || '' }))}
                         folder="verification"
                         maxFiles={1}
                         maxSizeMB={5}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-700 mb-1">Selfie Holding Ghana Card *</label>
+                      <label className="block text-sm text-gray-700 mb-1">Driver's License (Required) *</label>
                       <ImageUpload
-                        value={kycDocuments['selfie'] ? [kycDocuments['selfie']] : []}
-                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, selfie: urls[0] || '' }))}
+                        value={kycDocuments['drivers_license'] ? [kycDocuments['drivers_license']] : []}
+                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, drivers_license: urls[0] || '' }))}
                         folder="verification"
                         maxFiles={1}
                         maxSizeMB={5}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-700 mb-1">Business Certificate (Optional)</label>
+                      <label className="block text-sm text-gray-700 mb-1">Business Registration Certificate (Required) *</label>
                       <ImageUpload
-                        value={kycDocuments['business_certificate'] ? [kycDocuments['business_certificate']] : []}
-                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, business_certificate: urls[0] || '' }))}
-                        folder="verification"
-                        maxFiles={1}
-                        maxSizeMB={5}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-1">Proof of Address (Optional)</label>
-                      <ImageUpload
-                        value={kycDocuments['proof_of_address'] ? [kycDocuments['proof_of_address']] : []}
-                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, proof_of_address: urls[0] || '' }))}
+                        value={kycDocuments['business_registration_certificate'] ? [kycDocuments['business_registration_certificate']] : []}
+                        onChange={(urls) => setKycDocuments(prev => ({ ...prev, business_registration_certificate: urls[0] || '' }))}
                         folder="verification"
                         maxFiles={1}
                         maxSizeMB={5}
@@ -397,7 +546,15 @@ export default function VendorVerificationPage() {
           </Card>
         )}
 
-        {/* Rejected State - Resubmit Option */}
+        {application?.status === 'PENDING_REVIEW' && (
+          <Card variant="elevated" className="mb-8">
+            <CardContent className="text-center py-12">
+              <Badge variant="info" size="lg" className="mb-4">Under Review</Badge>
+              <p className="text-gray-600">Your verification application is under review. You will be notified once it's processed.</p>
+            </CardContent>
+          </Card>
+        )}
+
         {application?.status === 'REJECTED' && !canResubmit && (
           <Card variant="elevated" className="mb-8">
             <CardContent className="text-center py-12">
@@ -408,5 +565,13 @@ export default function VendorVerificationPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function VendorVerificationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 py-8"><div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8"><div className="text-center">Loading...</div></div></div>}>
+      <VendorVerificationContent />
+    </Suspense>
   )
 }

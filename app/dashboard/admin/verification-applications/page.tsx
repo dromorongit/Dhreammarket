@@ -15,14 +15,40 @@ interface VerificationDocument {
   fileName: string
 }
 
+interface VerificationPayment {
+  id: string
+  reference: string
+  amount: number
+  status: string
+  completedAt?: string
+}
+
 interface VerificationKYC {
   businessName: string
   businessType: string
   businessRegistrationNumber?: string
+  businessAddress?: string
+  region?: string
+  city?: string
   tinNumber?: string
   fullName: string
   phoneNumber: string
   email: string
+  nationalIdType?: string
+  nationalIdNumber?: string
+}
+
+interface VerificationAuditLog {
+  id: string
+  action: string
+  note?: string
+  createdAt: string
+  admin?: {
+    profile?: {
+      firstName?: string
+      lastName?: string
+    }
+  }
 }
 
 interface VerificationApplication {
@@ -35,25 +61,27 @@ interface VerificationApplication {
     profile?: {
       firstName?: string
       lastName?: string
+      phone?: string
     }
   }
   status: string
   paymentStatus?: string
   paymentAmount?: number
+  paymentReference?: string
+  payments?: VerificationPayment[]
   kycInfo?: VerificationKYC
   documents?: VerificationDocument[]
+  auditLogs?: VerificationAuditLog[]
   createdAt: string
 }
 
 const statusColors: Record<string, string> = {
-  NOT_APPLIED: 'bg-slate-100 text-slate-800',
-  PAYMENT_PENDING: 'bg-yellow-100 text-yellow-800',
-  PAYMENT_COMPLETED: 'bg-blue-100 text-blue-800',
-  KYC_SUBMITTED: 'bg-purple-100 text-purple-800',
-  UNDER_REVIEW: 'bg-indigo-100 text-indigo-800',
+  UNPAID: 'bg-slate-100 text-slate-800',
+  PAID_PENDING_KYC: 'bg-blue-100 text-blue-800',
+  PENDING_REVIEW: 'bg-indigo-100 text-indigo-800',
   APPROVED: 'bg-green-100 text-green-800',
-  REVOKED: 'bg-orange-100 text-orange-800',
   REJECTED: 'bg-red-100 text-red-800',
+  CHANGES_REQUESTED: 'bg-amber-100 text-amber-800',
 }
 
 export default function AdminVerificationApplicationsPage() {
@@ -92,11 +120,11 @@ export default function AdminVerificationApplicationsPage() {
     fetchApplications()
   }, [fetchApplications])
 
-const handleAction = async (applicationId: string, action: 'approve' | 'reject' | 'revoke' | 'request_changes') => {
+  const handleAction = async (applicationId: string, action: 'approve' | 'reject' | 'revoke' | 'request_changes') => {
     if (actionLoading) return
-    
-    const confirmMessage = action === 'approve' 
-      ? 'Are you sure you want to approve this vendor?' 
+
+    const confirmMessage = action === 'approve'
+      ? 'Are you sure you want to approve this vendor?'
       : action === 'reject'
       ? 'Are you sure you want to reject this vendor? They can resubmit if allowed.'
       : action === 'revoke'
@@ -169,7 +197,7 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Verification Applications</h1>
-            <p className="text-gray-600 mt-1">Review and manage vendor verification requests</p>
+            <p className="text-gray-600 mt-1">Review and manage paid vendor verification requests</p>
           </div>
         </div>
 
@@ -180,7 +208,7 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
               <div className="flex-1 min-w-[200px]">
                 <input
                   type="text"
-                  placeholder="Search by store name or email..."
+                  placeholder="Search by store name, email, or phone..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -192,13 +220,11 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Statuses</option>
-                <option value="NOT_APPLIED">Not Applied</option>
-                <option value="PAYMENT_PENDING">Payment Pending</option>
-                <option value="PAYMENT_COMPLETED">Payment Completed</option>
-                <option value="KYC_SUBMITTED">KYC Submitted</option>
-                <option value="UNDER_REVIEW">Under Review</option>
+                <option value="PAID_PENDING_KYC">Paid - KYC Pending</option>
+                <option value="PENDING_REVIEW">Pending Review</option>
                 <option value="APPROVED">Approved</option>
                 <option value="REJECTED">Rejected</option>
+                <option value="CHANGES_REQUESTED">Changes Requested</option>
               </select>
               <button
                 type="submit"
@@ -210,10 +236,11 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
           </CardContent>
         </Card>
 
-        {/* Applications Table */}
+        {/* Applications Table - Only PAID applications shown */}
         <Card>
           <CardHeader className="border-b">
-            <h2 className="text-lg font-semibold">Application List</h2>
+            <h2 className="text-lg font-semibold">Paid Applications Only</h2>
+            <p className="text-sm text-gray-500 mt-1">Unpaid applications are not displayed</p>
           </CardHeader>
           {loading ? (
             <CardContent className="p-8 text-center">
@@ -231,8 +258,8 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 0l3-3m-3 3l3 3M3 8a4 4 0 014-4 4v0a4 4 0 01-4 4H7a4 4 0 01-4-4V8a4 4 0 014-4z" />
                   </svg>
                 }
-                title="No applications found"
-                description="Verification applications will appear here when vendors apply."
+                title="No paid applications found"
+                description="Paid verification applications will appear here when vendors complete payment."
               />
             </CardContent>
           ) : (
@@ -240,11 +267,14 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile Number</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification Fee Paid</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Reference</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submission Date</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Submitted</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
@@ -252,27 +282,36 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                   {applications.map((app) => (
                     <tr key={app.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4">
-                        <div className="text-sm font-medium text-gray-900">{app.store?.name}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm font-medium text-gray-900">
                           {app.vendor.profile?.firstName && app.vendor.profile?.lastName
                             ? `${app.vendor.profile.firstName} ${app.vendor.profile.lastName}`
-                            : app.vendor.email}
+                            : 'N/A'}
                         </div>
-                        <div className="text-xs text-gray-500">{app.vendor.email}</div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">{app.paymentAmount ? formatPrice(app.paymentAmount) : '-'}</div>
-                        <div className="text-xs text-gray-500">{app.paymentStatus || '-'}</div>
+                        <div className="text-sm text-gray-900">{app.store?.name}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-900">{app.vendor.profile?.phone || '-'}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-900">{app.vendor?.email}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {app.paymentAmount ? formatPrice(app.paymentAmount) : '-'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="text-sm text-gray-900 font-mono">{app.paymentReference || '-'}</div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-500">
+                        {formatDate(app.createdAt)}
                       </td>
                       <td className="px-4 py-4">
                         <Badge className={statusColors[app.status] || 'bg-gray-100 text-gray-800'}>
                           {app.status.replace(/_/g, ' ')}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-500">
-                        {formatDate(app.createdAt)}
                       </td>
                       <td className="px-4 py-4">
                         {actionLoading === app.id ? (
@@ -286,7 +325,7 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                             >
                               View
                             </button>
-                            {(app.status === 'KYC_SUBMITTED' || app.status === 'UNDER_REVIEW') && (
+                            {(app.status === 'PENDING_REVIEW' || app.status === 'CHANGES_REQUESTED') && (
                               <>
                                 <button
                                   onClick={() => handleAction(app.id, 'approve')}
@@ -301,13 +340,6 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                                   title="Reject"
                                 >
                                   Reject
-                                </button>
-                                <button
-                                  onClick={() => handleAction(app.id, 'request_changes')}
-                                  className="text-sm text-amber-600 hover:text-amber-800 min-h-[44px]"
-                                  title="Request Changes"
-                                >
-                                  Changes
                                 </button>
                               </>
                             )}
@@ -334,7 +366,7 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
         {/* Details Modal */}
         {selectedApp && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Application Details</h3>
@@ -346,15 +378,45 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                   </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Payment Information */}
                   <div>
-                    <h4 className="font-medium text-gray-700">Store Information</h4>
+                    <h4 className="font-medium text-gray-700 mb-2">Payment Information</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-lg">
+                      <div>
+                        <p className="text-gray-500">Amount Paid</p>
+                        <p className="font-medium">{selectedApp.paymentAmount ? formatPrice(selectedApp.paymentAmount) : '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Payment Reference</p>
+                        <p className="font-mono">{selectedApp.paymentReference || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Payment Status</p>
+                        <p className="font-medium">{selectedApp.paymentStatus || '-'}</p>
+                      </div>
+                      {selectedApp.payments && selectedApp.payments.length > 0 && selectedApp.payments[0]?.completedAt && (
+                        <div>
+                          <p className="text-gray-500">Payment Date</p>
+                          <p>{formatDate(selectedApp.payments[0].completedAt)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Store Information */}
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">Store Information</h4>
                     <p className="text-sm text-gray-600">{selectedApp.store?.name}</p>
                   </div>
 
+                  {/* Vendor Contact */}
                   <div>
-                    <h4 className="font-medium text-gray-700">Vendor Contact</h4>
+                    <h4 className="font-medium text-gray-700 mb-2">Vendor Contact</h4>
                     <p className="text-sm text-gray-600">{selectedApp.vendor.email}</p>
+                    {selectedApp.vendor.profile?.phone && (
+                      <p className="text-sm text-gray-600">{selectedApp.vendor.profile.phone}</p>
+                    )}
                   </div>
 
                   {selectedApp.kycInfo && (
@@ -374,6 +436,18 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                           <p>{selectedApp.kycInfo.businessRegistrationNumber || '-'}</p>
                         </div>
                         <div>
+                          <p className="text-gray-500">Business Address</p>
+                          <p>{selectedApp.kycInfo.businessAddress || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Region</p>
+                          <p>{selectedApp.kycInfo.region || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">City</p>
+                          <p>{selectedApp.kycInfo.city || '-'}</p>
+                        </div>
+                        <div>
                           <p className="text-gray-500">TIN Number</p>
                           <p>{selectedApp.kycInfo.tinNumber || '-'}</p>
                         </div>
@@ -389,6 +463,14 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                           <p className="text-gray-500">Email</p>
                           <p>{selectedApp.kycInfo.email}</p>
                         </div>
+                        <div>
+                          <p className="text-gray-500">National ID Type</p>
+                          <p>{selectedApp.kycInfo.nationalIdType?.replace(/_/g, ' ') || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">National ID Number</p>
+                          <p>{selectedApp.kycInfo.nationalIdNumber || '-'}</p>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -396,18 +478,34 @@ const handleAction = async (applicationId: string, action: 'approve' | 'reject' 
                   {selectedApp.documents && selectedApp.documents.length > 0 && (
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Submitted Documents</h4>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-3">
                         {selectedApp.documents.map((doc) => (
-                          <div key={doc.id} className="border border-gray-200 rounded p-2">
-                            <p className="text-xs font-medium">{doc.documentType}</p>
+                          <div key={doc.id} className="border border-gray-200 rounded p-3">
+                            <p className="text-xs font-medium truncate">{doc.documentType.replace(/_/g, ' ')}</p>
                             <a
                               href={doc.documentUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline"
+                              className="text-xs text-blue-600 hover:underline mt-1 inline-block"
                             >
                               Download
                             </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Audit Trail */}
+                  {selectedApp.auditLogs && selectedApp.auditLogs.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">Audit Trail</h4>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedApp.auditLogs.map((log) => (
+                          <div key={log.id} className="text-xs border-l-2 border-gray-200 pl-3 py-1">
+                            <p className="font-medium">{log.action.replace(/_/g, ' ')}</p>
+                            <p className="text-gray-500">{formatDate(log.createdAt)}</p>
+                            {log.note && <p className="text-gray-600 mt-1">{log.note}</p>}
                           </div>
                         ))}
                       </div>
