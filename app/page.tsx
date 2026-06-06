@@ -404,7 +404,7 @@ return (
                           <Badge variant="verified" size="sm">Verified</Badge>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600">"Best platform for our electronics business. Sales up 300% in 6 months!"</p>
+                      <p className="text-sm text-slate-600">&quot;Best platform for our electronics business. Sales up 300% in 6 months!&quot;</p>
                     </Card>
                     <Card variant="elevated" className="p-4">
                       <div className="flex items-center gap-3 mb-3">
@@ -414,7 +414,7 @@ return (
                           <Badge variant="verified" size="sm">Verified</Badge>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600">"Easy to use dashboard and great customer support. Highly recommend!"</p>
+                      <p className="text-sm text-slate-600">&quot;Easy to use dashboard and great customer support. Highly recommend!&quot;</p>
                     </Card>
                   </div>
                   <div className="space-y-4 pt-8">
@@ -426,7 +426,7 @@ return (
                           <Badge variant="verified" size="sm">Verified</Badge>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600">"Our revenue doubled after joining. The tools are incredible!"</p>
+                      <p className="text-sm text-slate-600">&quot;Our revenue doubled after joining. The tools are incredible!&quot;</p>
                     </Card>
                     <Card variant="elevated" className="p-4">
                       <div className="flex items-center gap-3 mb-3">
@@ -436,7 +436,7 @@ return (
                           <Badge variant="verified" size="sm">Verified</Badge>
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600">"Professional platform with everything we need to scale."</p>
+                      <p className="text-sm text-slate-600">&quot;Professional platform with everything we need to scale.&quot;</p>
                     </Card>
                   </div>
                 </div>

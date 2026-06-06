@@ -2,7 +2,7 @@
 const nextConfig = {
   // Next.js 14 has App Router enabled by default
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma', 'cloudinary']
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma', 'cloudinary', 'pg']
   },
   webpack: (config, { isServer }) => {
     // Externalize Prisma packages to prevent webpack from bundling them
@@ -14,7 +14,7 @@ const nextConfig = {
       config.externals = [
         ...(config.externals || []),
         ({ context, request }, callback) => {
-          if (request === '@prisma/client' || request === 'prisma' || request === '@prisma/adapter-pg' || request === 'cloudinary') {
+          if (request === '@prisma/client' || request === 'prisma' || request === '@prisma/adapter-pg' || request === 'cloudinary' || request === 'pg') {
             return callback(null, `commonjs ${request}`)
           }
           callback()

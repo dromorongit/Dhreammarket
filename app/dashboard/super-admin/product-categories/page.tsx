@@ -915,7 +915,7 @@ export default function SuperAdminProductCategoriesPage() {
               </div>
             </div>
             <p className="text-slate-600 mb-2">
-              Are you sure you want to delete <strong className="text-slate-900">"{deleteConfirm.name}"</strong>?
+              Are you sure you want to delete <strong className="text-slate-900">&quot;{deleteConfirm.name}&quot;</strong>?
             </p>
             {deleteConfirm.hasProducts && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">

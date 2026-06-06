@@ -100,7 +100,7 @@ export default function RefundPolicyPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">Items specifically marked as "final sale" or "non-refundable"</span>
+                    <span className="text-slate-600">Items specifically marked as &quot;final sale&quot; or &quot;non-refundable&quot;</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
