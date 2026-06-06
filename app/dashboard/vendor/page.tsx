@@ -354,7 +354,7 @@ export default function VendorDashboard() {
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold text-deep-navy mb-2">Get Started on Dhream Market</h2>
                     <p className="text-slate-600 mb-4">
-                      Complete these steps to maximize your store's potential and start selling.
+                      Complete these steps to maximize your store&apos;s potential and start selling.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {onboardingSteps.map((step) => (
@@ -427,7 +427,7 @@ export default function VendorDashboard() {
                   <div className="flex-1 text-center sm:text-left">
                     <h2 className="text-2xl font-bold text-deep-navy mb-2">Welcome to Your Store!</h2>
                     <p className="text-slate-600">
-                      Your store is fully set up and ready to sell. You've completed all onboarding steps!
+                      Your store is fully set up and ready to sell. You&apos;ve completed all onboarding steps!
                     </p>
                   </div>
                   <Link href="/marketplace">

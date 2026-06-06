@@ -518,7 +518,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-slate-700">No results for "{results.query}"</p>
+                <p className="text-sm font-medium text-slate-700">No results for &quot;{results.query}&quot;</p>
                 <p className="text-xs text-slate-500 mt-1">Try different keywords</p>
               </div>
             )}
@@ -533,7 +533,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  View all {results.total} results for "{results.query}"
+                  View all {results.total} results for &quot;{results.query}&quot;
                 </button>
               </div>
             )}

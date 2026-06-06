@@ -273,7 +273,7 @@ export default function AboutPage() {
             <div>
               <Badge variant="default" className="mb-4">Our Story</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold text-deep-navy mb-6">
-                Building Ghana's Digital Future
+                Building Ghana&apos;s Digital Future
               </h2>
               <p className="text-lg text-slate-600 mb-6 leading-relaxed">
                 Dhream Market was founded with the vision of creating a trusted online marketplace 
@@ -309,8 +309,8 @@ export default function AboutPage() {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-            Whether you're a vendor looking to sell on our platform, a customer with questions, 
-            or a potential partner, reach out to us. We'd love to hear from you!
+            Whether you&apos;re a vendor looking to sell on our platform, a customer with questions,
+            or a potential partner, reach out to us. We&apos;d love to hear from you!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button variant="primary" size="lg">

@@ -52,7 +52,7 @@ export default function PaymentPolicyPage() {
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">All customer payments made on Dhream Market are processed through Dhream Market's centralized Paystack account.</span>
+                    <span className="text-slate-600">All customer payments made on Dhream Market are processed through Dhream Market&apos;s centralized Paystack account.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>

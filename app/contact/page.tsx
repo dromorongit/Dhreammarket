@@ -169,7 +169,7 @@ export default function ContactPage() {
               Contact Us
             </h1>
             <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
-              Have questions or need help? We're here to assist you. Fill out the form or reach out 
+              Have questions or need help? We&apos;re here to assist you. Fill out the form or reach out
               through any of our contact channels.
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function ContactPage() {
                 Send us a Message
               </Badge>
               <h2 className="text-2xl sm:text-3xl font-bold text-deep-navy">
-                We'd love to hear from you
+                We&apos;d love to hear from you
               </h2>
             </div>
 
@@ -241,7 +241,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-emerald-800 font-medium">Message sent successfully!</p>
                     <p className="text-sm text-emerald-700 mt-1">
-                      We've received your message and will respond within 24-48 hours.
+                      We&apos;ve received your message and will respond within 24-48 hours.
                     </p>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export default function ContactPage() {
                       </svg>
                     </div>
                     <p className="text-sm text-slate-700">
-                      You're logged in as <span className="font-medium text-royal-blue">{userEmail}</span>. 
+                      You&apos;re logged in as <span className="font-medium text-royal-blue">{userEmail}</span>. 
                       Your message will be automatically linked to your account.
                     </p>
                   </div>

@@ -424,7 +424,7 @@ export default function CustomerDashboard() {
               <div className="p-4 bg-slate-50 rounded-xl">
                 <h4 className="font-medium text-deep-navy mb-2">Get Support</h4>
                 <p className="text-sm text-slate-600 mb-3">
-                  Having issues with an order? Create a support ticket and we'll assist you.
+                  Having issues with an order? Create a support ticket and we&apos;ll assist you.
                 </p>
                 <NeedHelpButton
                   variant="outline"

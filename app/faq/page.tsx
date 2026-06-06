@@ -281,7 +281,7 @@ export default function FAQPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-slate-700 mb-2">No FAQs found</h3>
-              <p className="text-slate-500">Try adjusting your search or filter to find what you're looking for.</p>
+              <p className="text-slate-500">Try adjusting your search or filter to find what you&apos;re looking for.</p>
             </CardContent>
           </Card>
         ) : (
@@ -376,7 +376,7 @@ export default function FAQPage() {
           <CardContent className="p-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Still need help?</h3>
             <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-              Can't find the answer you're looking for? Our support team is here to help.
+              Can&apos;t find the answer you&apos;re looking for? Our support team is here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button

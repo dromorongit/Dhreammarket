@@ -473,7 +473,7 @@ const addToCart = async () => {
               </svg>
             }
             title="Product Not Found"
-            description="The product you're looking for doesn't exist or has been removed."
+            description="The product you&apos;re looking for doesn&apos;t exist or has been removed."
             actionLabel="Back to Marketplace"
             onAction={() => router.push('/marketplace')}
           />

@@ -371,7 +371,7 @@ fetchVendor()
               </svg>
             }
             title="Vendor Not Found"
-            description={error || "The vendor you're looking for doesn't exist or hasn't completed their profile yet."}
+            description={error || "The vendor you&apos;re looking for doesn&apos;t exist or hasn&apos;t completed their profile yet."}
             actionLabel="Back to Marketplace"
             onAction={() => window.location.href = '/marketplace'}
           />
@@ -552,25 +552,25 @@ fetchVendor()
                    </svg>
                  }
                  title="No products yet"
-                 description="This vendor hasn't added any products yet. Check back soon!"
+                 description="This vendor hasn&apos;t added any products yet. Check back soon!"
                />
-             </Card>
-) : (
-               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+</Card>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 {vendor.products.map((product) => {
                     const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
                     const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null
                     const discountPercentage = hasDiscount && product.price > effectivePrice
                       ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-                   return (
-                   <Card
-                     key={product.id}
-                     variant="elevated"
-                     className="group flex flex-col overflow-hidden h-full p-0"
-                   >
-                     <Link href={`/marketplace/product/${product.id}`} className="block">
-                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-{product.images?.length > 0 ? (
+                    return (
+                    <Card
+                      key={product.id}
+                      variant="elevated"
+                      className="group flex flex-col overflow-hidden h-full p-0"
+                    >
+                      <Link href={`/marketplace/product/${product.id}`} className="block">
+                        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                          {product.images?.length > 0 ? (
                             <img
                               src={product.images[0].url}
                               alt={product.images[0].alt || product.name}

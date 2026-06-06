@@ -306,7 +306,7 @@ function VendorVerificationContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Congratulations! You're Verified</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Congratulations! You&apos;re Verified</h3>
               <p className="text-gray-600">Your vendor verification has been approved. You now have the verified badge on your store.</p>
             </CardContent>
           </Card>
@@ -478,7 +478,7 @@ function VendorVerificationContent() {
                       <option value="">Select ID type</option>
                       <option value="GHANA_CARD">Ghana Card</option>
                       <option value="PASSPORT">Passport</option>
-                      <option value="DRIVERS_LICENSE">Driver's License</option>
+                      <option value="DRIVERS_LICENSE">Driver&apos;s License</option>
                     </select>
                   </div>
                   <div>
@@ -516,7 +516,7 @@ function VendorVerificationContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-700 mb-1">Driver's License (Required) *</label>
+                      <label className="block text-sm text-gray-700 mb-1">Driver&apos;s License (Required) *</label>
                       <ImageUpload
                         value={kycDocuments['drivers_license'] ? [kycDocuments['drivers_license']] : []}
                         onChange={(urls) => setKycDocuments(prev => ({ ...prev, drivers_license: urls[0] || '' }))}
@@ -550,7 +550,7 @@ function VendorVerificationContent() {
           <Card variant="elevated" className="mb-8">
             <CardContent className="text-center py-12">
               <Badge variant="info" size="lg" className="mb-4">Under Review</Badge>
-              <p className="text-gray-600">Your verification application is under review. You will be notified once it's processed.</p>
+              <p className="text-gray-600">Your verification application is under review. You will be notified once it&apos;s processed.</p>
             </CardContent>
           </Card>
         )}

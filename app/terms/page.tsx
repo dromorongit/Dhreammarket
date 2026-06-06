@@ -302,7 +302,7 @@ export default function TermsAndConditionsPage() {
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">Our platform is provided "as is" without warranties of any kind</span>
+                    <span className="text-slate-600">Our platform is provided &quot;as is&quot; without warranties of any kind</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
@@ -376,7 +376,7 @@ export default function TermsAndConditionsPage() {
                  <ul className="space-y-2 mb-4">
                    <li className="flex items-start gap-3">
                      <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
-                     <span className="text-slate-600">All customer payments made on Dhream Market are processed through Dhream Market's centralized Paystack account.</span>
+                     <span className="text-slate-600">All customer payments made on Dhream Market are processed through Dhream Market&apos;s centralized Paystack account.</span>
                    </li>
                    <li className="flex items-start gap-3">
                      <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>

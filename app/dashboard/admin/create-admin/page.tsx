@@ -191,7 +191,7 @@ export default function CreateAdminPage() {
                   required
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  This defines the employee's job function (e.g., "Order Manager", "Product Moderator")
+                  This defines the employee&apos;s job function (e.g., &quot;Order Manager&quot;, &quot;Product Moderator&quot;)
                 </p>
               </div>
 

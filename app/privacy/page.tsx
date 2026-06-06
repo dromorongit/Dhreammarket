@@ -267,8 +267,8 @@ export default function PrivacyPolicyPage() {
                 </h2>
                 <p className="text-slate-600">
                   We may update this Privacy Policy from time to time. We will notify you of any 
-                  material changes by posting the new policy on this page and updating the "Last 
-                  updated" date. Your continued use of the platform after such changes constitutes 
+                  material changes by posting the new policy on this page and updating the &quot;Last 
+                  updated&quot; date. Your continued use of the platform after such changes constitutes 
                   acceptance of the new policy.
                 </p>
               </section>
