@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Generate payment reference
     const paymentReference = generateVerificationReference()
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://dhreamarket-production.up.railway.app'}/dashboard/vendor/verification`
+    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/vendor/verification`
 
     if (!application) {
       // Create new application in UNPAID state

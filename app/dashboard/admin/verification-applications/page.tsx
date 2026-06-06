@@ -189,9 +189,9 @@ export default function AdminVerificationApplicationsPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link href="/dashboard/super-admin" className="text-blue-600 hover:underline">
-            ← Back to Dashboard
-          </Link>
+<Link href="/dashboard/admin" className="text-blue-600 hover:underline">
+             ← Back to Dashboard
+             </Link>
         </div>
 
         <div className="flex items-center justify-between mb-6">

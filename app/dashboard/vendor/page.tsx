@@ -710,26 +710,35 @@ export default function VendorDashboard() {
           </CardContent>
         </Card>
 
-        {metrics.verificationStatus !== 'APPROVED' && (
-          <Card variant="elevated" className="mb-8 border-2 border-royal-blue/20">
-            <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-deep-navy mb-1">Get Verified</h3>
-                <p className="text-sm text-slate-600">
-                  Apply for vendor verification to gain customer trust and access premium features.
-                </p>
-              </div>
-              <Button
-                onClick={handleApplyForVerification}
-                disabled={actionLoading}
-                className="flex items-center gap-2"
-              >
-                <MdVerified className="w-5 h-5" />
-                {actionLoading ? 'Processing...' : 'Apply For Verification'}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+{metrics.verificationStatus !== 'APPROVED' && (
+           <Card variant="elevated" className="mb-8 border-2 border-royal-blue/20">
+             <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+               <div>
+                 <h3 className="text-lg font-semibold text-deep-navy mb-1">Get Verified</h3>
+                 <p className="text-sm text-slate-600">
+                   Apply for vendor verification to gain customer trust and access premium features.
+                 </p>
+               </div>
+               <div className="flex gap-2">
+                 {metrics.verificationStatus !== 'NOT_APPLIED' && (
+                   <Link href="/dashboard/vendor/verification">
+                     <Button variant="outline" className="flex items-center gap-2">
+                       View Application
+                     </Button>
+                   </Link>
+                 )}
+                 <Button
+                   onClick={handleApplyForVerification}
+                   disabled={actionLoading}
+                   className="flex items-center gap-2"
+                 >
+                   <MdVerified className="w-5 h-5" />
+                   {actionLoading ? 'Processing...' : metrics.verificationStatus === 'NOT_APPLIED' ? 'Apply For Verification' : 'Restart Application'}
+                 </Button>
+               </div>
+             </CardContent>
+           </Card>
+         )}
 
         {/* Quick Actions */}
         <Card variant="elevated">

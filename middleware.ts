@@ -37,13 +37,18 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Additional onboarding check for vendor routes
+// Additional onboarding check for vendor routes
      if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
-       // Allow access to store setup page without onboarding check
-       // Use startsWith to allow all store-related subpaths (e.g., /dashboard/vendor/store, /dashboard/vendor/store/edit)
-       if (pathname.startsWith('/dashboard/vendor/store')) {
-         return NextResponse.next()
-       }
+        // Allow access to store setup page without onboarding check
+        // Use startsWith to allow all store-related subpaths (e.g., /dashboard/vendor/store, /dashboard/vendor/store/edit)
+        if (pathname.startsWith('/dashboard/vendor/store')) {
+          return NextResponse.next()
+        }
+        
+        // Also allow access to vendor verification page without onboarding check
+        if (pathname.startsWith('/dashboard/vendor/verification')) {
+          return NextResponse.next()
+        }
        
        try {
          const { isVendorOnboarded } = await import('./lib/onboarding')
