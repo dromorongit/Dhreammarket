@@ -41,7 +41,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Check stock (variant stock takes precedence)
     const stockToCheck = cartItem.productVariant?.stock ?? cartItem.product.stock
-    if (stockToCheck < quantity) {
+    const isPreorderOrBackorder = cartItem.product.availabilityType === 'PREORDER' || 
+                                  cartItem.product.availabilityType === 'BACKORDER'
+    // Skip stock validation for preorder/backorder items
+    if (!isPreorderOrBackorder && stockToCheck < quantity) {
       return NextResponse.json({ error: `Insufficient stock. Available: ${stockToCheck}` }, { status: 400 })
     }
 
@@ -58,7 +61,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         items: {
           include: {
             product: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                stock: true,
+                availabilityType: true,
+                expectedArrivalDate: true,
+                estimatedFulfillmentDays: true,
+                preOrderNotes: true,
+                expectedRestockDate: true,
+                backOrderNotes: true,
                 images: true,
               },
             },
@@ -125,7 +138,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         items: {
           include: {
             product: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                stock: true,
+                availabilityType: true,
+                expectedArrivalDate: true,
+                estimatedFulfillmentDays: true,
+                preOrderNotes: true,
+                expectedRestockDate: true,
+                backOrderNotes: true,
                 images: true,
               },
             },

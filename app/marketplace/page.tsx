@@ -53,6 +53,12 @@ interface Product {
     url: string
     alt: string | null
   }>
+  availabilityType?: string
+  expectedArrivalDate?: string | null
+  estimatedFulfillmentDays?: number | null
+  preOrderNotes?: string | null
+  expectedRestockDate?: string | null
+  backOrderNotes?: string | null
 }
 
 interface Category {
@@ -531,16 +537,26 @@ const vendorCategoriesResponse = await fetch('/api/vendor-categories')
                                </svg>
                              </div>
                            )}
-                           {discountPercentage > 0 && (
-                             <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                               -{discountPercentage}%
-                             </div>
-                           )}
-                           {product.stock === 0 && (
-                             <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                               Sold Out
-                             </div>
-                           )}
+{discountPercentage > 0 && (
+                              <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                                -{discountPercentage}%
+                              </div>
+                            )}
+                            {product.availabilityType === 'PREORDER' && (
+                              <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                Pre-order
+                              </Badge>
+                            )}
+                            {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                              <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                Backorder
+                              </Badge>
+                            )}
+                            {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
+                              <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                Sold Out
+                              </div>
+                            )}
                          </div>
                        </Link>
                        <div className="p-2 space-y-1 flex-1 flex flex-col">
@@ -568,18 +584,22 @@ const vendorCategoriesResponse = await fetch('/api/vendor-categories')
                            </div>
                          )}
                          <div className="flex flex-col gap-1 pt-0.5">
-                           <Button
-                             size="sm"
-                             className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-                             disabled={product.stock === 0 || addingToCart.has(product.id)}
-                             onClick={() => addToCart(product.id)}
-                           >
-                             {addingToCart.has(product.id)
-                               ? '...'
-                               : product.stock > 0
-                               ? 'Add to Cart'
-                               : 'Out of Stock'}
-                           </Button>
+<Button
+                              size="sm"
+                              className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
+                              disabled={product.stock === 0 && product.availabilityType === 'IN_STOCK' || addingToCart.has(product.id)}
+                              onClick={() => addToCart(product.id)}
+                            >
+                              {addingToCart.has(product.id)
+                                ? '...'
+                                : product.availabilityType === 'PREORDER'
+                                ? 'Pre-order'
+                                : product.availabilityType === 'BACKORDER'
+                                ? 'Backorder'
+                                : product.stock > 0
+                                ? 'Add to Cart'
+                                : 'Out of Stock'}
+                            </Button>
                            <Link href={`/marketplace/product/${product.id}`} className="w-full">
                              <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
                                View Details

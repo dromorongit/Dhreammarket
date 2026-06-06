@@ -11,6 +11,12 @@ export interface EnterpriseProduct {
   salesCount?: number
   isSponsored?: boolean
   brand?: string | null
+  availabilityType?: string
+  expectedArrivalDate?: string | null
+  estimatedFulfillmentDays?: number | null
+  preOrderNotes?: string | null
+  expectedRestockDate?: string | null
+  backOrderNotes?: string | null
   images: Array<{ id: string; url: string; alt: string | null }>
   store?: { id: string; name: string; isVerified: boolean; logo?: string | null }
   category?: { id: string; name: string; slug?: string }

@@ -50,19 +50,20 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
       })
 
-      results.products = products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        brand: p.brand,
-        price: p.price,
-        salesPrice: p.salesPrice,
-        dealsPrice: p.dealsPrice,
-        stock: p.stock,
-        image: p.images?.[0]?.url || null,
-        store: p.store,
-        category: p.category,
-        type: 'product',
-      }))
+results.products = products.map((p) => ({
+         id: p.id,
+         name: p.name,
+         brand: p.brand,
+         price: p.price,
+         salesPrice: p.salesPrice,
+         dealsPrice: p.dealsPrice,
+         stock: p.stock,
+         image: p.images?.[0]?.url || null,
+         store: p.store,
+         category: p.category,
+         type: 'product',
+         availabilityType: p.availabilityType,
+       }))
     }
 
     // Search Vendors (Stores)

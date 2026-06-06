@@ -84,7 +84,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -177,6 +177,39 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Validate availability type based on store settings
+    const validAvailabilityTypes = ['IN_STOCK']
+    if (store.acceptsPreOrders) {
+      validAvailabilityTypes.push('PREORDER')
+    }
+    if (store.acceptsBackOrders) {
+      validAvailabilityTypes.push('BACKORDER')
+    }
+
+    const finalAvailabilityType = availabilityType || 'IN_STOCK'
+    if (!validAvailabilityTypes.includes(finalAvailabilityType)) {
+      return NextResponse.json({ error: 'Invalid availability type for this store' }, { status: 400 })
+    }
+
+    // Validate preorder/backorder specific fields
+    if (finalAvailabilityType === 'PREORDER') {
+      if (!expectedArrivalDate) {
+        return NextResponse.json({ error: 'Expected arrival date is required for preorder items' }, { status: 400 })
+      }
+      if (isNaN(new Date(expectedArrivalDate).getTime())) {
+        return NextResponse.json({ error: 'Invalid expected arrival date' }, { status: 400 })
+      }
+    }
+
+    if (finalAvailabilityType === 'BACKORDER') {
+      if (!expectedRestockDate) {
+        return NextResponse.json({ error: 'Expected restock date is required for backorder items' }, { status: 400 })
+      }
+      if (isNaN(new Date(expectedRestockDate).getTime())) {
+        return NextResponse.json({ error: 'Invalid expected restock date' }, { status: 400 })
+      }
+    }
+
     // Update product - use first category as primary
     const primaryCategoryId = uniqueCategoryIds[0]
     const product = await getPrisma().product.update({
@@ -190,6 +223,12 @@ export async function PUT(
         brandId: brandId || null,
         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+        availabilityType: finalAvailabilityType as any,
+        expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
+        estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays) : null,
+        preOrderNotes: preOrderNotes || null,
+        expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
+        backOrderNotes: backOrderNotes || null,
       },
       include: {
         category: true,

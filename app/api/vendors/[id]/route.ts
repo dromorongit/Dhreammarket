@@ -24,22 +24,28 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             slug: true,
           },
         },
-        products: {
-          where: { stock: { gt: 0 } },
-          include: {
-            images: true,
-category: {
+products: {
+           where: {
+             OR: [
+               { stock: { gt: 0 } },
+               { availabilityType: 'PREORDER' },
+               { availabilityType: 'BACKORDER' },
+             ],
+           },
+           include: {
+             images: true,
+             category: {
                select: {
                  id: true,
                  name: true,
                },
              },
              _count: {
-              select: { productReviews: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-        },
+               select: { productReviews: true },
+             },
+           },
+           orderBy: { createdAt: 'desc' },
+         },
         _count: {
           select: { products: true },
         },
@@ -91,19 +97,25 @@ category: {
       totalReviews,
       createdAt: store.createdAt,
       category: store.vendor_categories,
-      products: store.products.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        flashSalePrice: p.flashSalePrice,
-        salesPrice: p.salesPrice,
-        dealsPrice: p.dealsPrice,
-        stock: p.stock,
-        images: p.images,
-        category: p.category,
-        reviewCount: p._count.productReviews,
-      })),
+products: store.products.map((p: any) => ({
+         id: p.id,
+         name: p.name,
+         description: p.description,
+         price: p.price,
+         flashSalePrice: p.flashSalePrice,
+         salesPrice: p.salesPrice,
+         dealsPrice: p.dealsPrice,
+         stock: p.stock,
+         images: p.images,
+         category: p.category,
+         reviewCount: p._count.productReviews,
+         availabilityType: p.availabilityType,
+         expectedArrivalDate: p.expectedArrivalDate,
+         estimatedFulfillmentDays: p.estimatedFulfillmentDays,
+         preOrderNotes: p.preOrderNotes,
+         expectedRestockDate: p.expectedRestockDate,
+         backOrderNotes: p.backOrderNotes,
+       })),
       productCount: store._count.products,
     }
 

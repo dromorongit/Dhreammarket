@@ -16,6 +16,8 @@ interface Store {
   alternativePhoneNumber: string | null
   whatsappNumber: string | null
   categoryId: string | null
+  acceptsPreOrders: boolean
+  acceptsBackOrders: boolean
   logo?: string | null
   banner?: string | null
   category?: {
@@ -48,6 +50,8 @@ export default function StoreManagement() {
     mainPhoneNumber: '',
     alternativePhoneNumber: '',
     whatsappNumber: '',
+    acceptsPreOrders: false,
+    acceptsBackOrders: false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -73,6 +77,8 @@ export default function StoreManagement() {
             mainPhoneNumber: data.store.mainPhoneNumber || '',
             alternativePhoneNumber: data.store.alternativePhoneNumber || '',
             whatsappNumber: data.store.whatsappNumber || '',
+            acceptsPreOrders: data.store.acceptsPreOrders || false,
+            acceptsBackOrders: data.store.acceptsBackOrders || false,
           })
         } else {
           // Store doesn't exist yet
@@ -157,9 +163,11 @@ export default function StoreManagement() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
+    const checked = (e.target as HTMLInputElement).checked
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value
     }))
     // Clear success message when user starts editing
     if (saveSuccess) {
@@ -325,6 +333,55 @@ export default function StoreManagement() {
                     <p className="text-xs text-gray-500 mt-1">
                       WhatsApp contact number (optional)
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pre-order and Backorder Settings Section */}
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Order Settings</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="acceptsPreOrders"
+                        name="acceptsPreOrders"
+                        type="checkbox"
+                        checked={formData.acceptsPreOrders}
+                        onChange={handleChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </div>
+                    <div className="ml-3">
+                      <label htmlFor="acceptsPreOrders" className="text-sm font-medium text-gray-700">
+                        Accept Pre-orders
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Allow customers to place orders for products not yet in stock
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="acceptsBackOrders"
+                        name="acceptsBackOrders"
+                        type="checkbox"
+                        checked={formData.acceptsBackOrders}
+                        onChange={handleChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </div>
+                    <div className="ml-3">
+                      <label htmlFor="acceptsBackOrders" className="text-sm font-medium text-gray-700">
+                        Accept Backorders
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Allow customers to place orders for out-of-stock products
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -57,7 +57,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate stock for all items (variant stock takes precedence)
+    // Preorder and Backorder products skip stock validation
     for (const item of cart.items) {
+      const isPreorderOrBackorder = item.product.availabilityType === 'PREORDER' || 
+                                     item.product.availabilityType === 'BACKORDER'
+      if (isPreorderOrBackorder) {
+        continue // Skip stock validation for preorder/backorder items
+      }
       const availableStock = item.productVariant?.stock ?? item.product.stock
       if (availableStock < item.quantity) {
         console.log('[Checkout API] Insufficient stock for:', item.product.name)
@@ -123,12 +129,29 @@ export async function POST(request: NextRequest) {
       vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * 0.9 * 100) / 100
     }
 
+    // Determine order type based on product availability
+    let orderType = 'NORMAL'
+    const hasPreorder = cart.items.some((item: any) => 
+      item.product.availabilityType === 'PREORDER' || 
+      item.productVariant?.stock === 0 && item.product.availabilityType === 'BACKORDER'
+    )
+    const hasBackorder = cart.items.some((item: any) => 
+      item.product.availabilityType === 'BACKORDER'
+    )
+
+    if (hasPreorder) {
+      orderType = 'PREORDER'
+    } else if (hasBackorder) {
+      orderType = 'BACKORDER'
+    }
+
     // Create order and payment record in a transaction
     const orderData: any = {
       userId: payload.userId,
       total,
       status: 'PENDING',
       paymentStatus: 'PENDING',
+      orderType,
       // Store customer info
       customerFirstName: customerInfo?.firstName || '',
       customerLastName: customerInfo?.lastName || '',

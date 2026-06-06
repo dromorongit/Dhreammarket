@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
+import { Badge } from '@/components/Badge'
 import { formatPrice } from '@/lib/currency'
 import NeedHelpButton from '@/components/NeedHelpButton'
 
@@ -23,6 +24,7 @@ interface Product {
     url: string
     alt: string | null
   }>
+  availabilityType?: string
 }
 
 export default function VendorProducts() {
@@ -190,14 +192,22 @@ export default function VendorProducts() {
                     <p className="text-gray-600 text-sm mb-2 line-clamp-2">
                       {product.description || 'No description'}
                     </p>
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-lg font-bold text-blue-600">
-                        {formatPrice(product.price)}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        Stock: {product.stock}
-                      </span>
-                    </div>
+<div className="flex justify-between items-center mb-3">
+                       <span className="text-lg font-bold text-blue-600">
+                         {formatPrice(product.price)}
+                       </span>
+                       <div className="flex items-center gap-2">
+                         {product.availabilityType === 'PREORDER' && (
+                           <Badge variant="info" size="sm">Pre-order</Badge>
+                         )}
+                         {product.availabilityType === 'BACKORDER' && (
+                           <Badge variant="warning" size="sm">Backorder</Badge>
+                         )}
+                         <span className="text-sm text-gray-500">
+                           Stock: {product.stock}
+                         </span>
+                       </div>
+                     </div>
                     <p className="text-xs text-gray-500 mb-4">
                       Category: {product.category.name}
                     </p>

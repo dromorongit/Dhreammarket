@@ -21,14 +21,11 @@ export async function GET(request: NextRequest) {
       include: {
         kycInfo: true,
         documents: true,
-        auditLogs: {
-          orderBy: { createdAt: 'desc' },
-        },
-        payments: {
-          take: 1,
-          orderBy: { createdAt: 'desc' }
-        },
-      }
+auditLogs: {
+           orderBy: { createdAt: 'desc' },
+         },
+         payments: true,
+       }
     })
 
     if (!application) {

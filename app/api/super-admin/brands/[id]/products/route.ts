@@ -42,16 +42,26 @@ export async function POST(
       },
     })
 
-    const updated = await prisma.product.findMany({
-      where: { brandId: id },
-      include: {
-        images: true,
-        store: { select: { id: true, name: true } },
-      },
-      orderBy: { name: 'asc' },
-    })
+const updated = await prisma.product.findMany({
+       where: { brandId: id },
+       include: {
+         images: true,
+         store: { select: { id: true, name: true } },
+       },
+       orderBy: { name: 'asc' }
+     })
 
-    return NextResponse.json({ products: updated })
+     const formatted = updated.map((p: any) => ({
+       ...p,
+       availabilityType: p.availabilityType,
+       expectedArrivalDate: p.expectedArrivalDate,
+       estimatedFulfillmentDays: p.estimatedFulfillmentDays,
+       preOrderNotes: p.preOrderNotes,
+       expectedRestockDate: p.expectedRestockDate,
+       backOrderNotes: p.backOrderNotes,
+     }))
+
+     return NextResponse.json({ products: formatted })
   } catch (error) {
     console.error('Assign products to brand error:', error)
     return NextResponse.json({ error: 'Failed to assign products' }, { status: 500 })

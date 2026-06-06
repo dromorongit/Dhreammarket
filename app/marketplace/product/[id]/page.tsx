@@ -76,6 +76,12 @@ interface Product {
       name: string
     }
   }>
+  availabilityType?: string
+  expectedArrivalDate?: string | null
+  estimatedFulfillmentDays?: number | null
+  preOrderNotes?: string | null
+  expectedRestockDate?: string | null
+  backOrderNotes?: string | null
 }
 
 interface User {
@@ -559,32 +565,84 @@ const addToCart = async () => {
                   </span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-3 mb-6">
-                {hasDiscount && (
-                  <>
-                    <span className="text-lg text-slate-400 line-through">
-                      {formatPrice(product.price)}
-                    </span>
-                    <Badge variant="success" size="sm" className="text-xs">
-                      -{discountPercentage}%
-                    </Badge>
-                  </>
-                )}
-                <span className="text-4xl sm:text-5xl font-bold text-royal-blue">
-                  {formatPrice(displayPrice)}
-                </span>
-                <Badge variant={availableStock > 0 ? 'success' : 'danger'}>
-                  {availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}
-                </Badge>
-              </div>
-              {product.category && (
-                <div className="mb-6">
-                  <Badge variant="default" size="md">
-                    {product.category.name}
-                  </Badge>
-                </div>
-              )}
-            </div>
+<div className="flex items-baseline gap-3 mb-6">
+                 {hasDiscount && (
+                   <>
+                     <span className="text-lg text-slate-400 line-through">
+                       {formatPrice(product.price)}
+                     </span>
+                     <Badge variant="success" size="sm" className="text-xs">
+                       -{discountPercentage}%
+                     </Badge>
+                   </>
+                 )}
+                 <span className="text-4xl sm:text-5xl font-bold text-royal-blue">
+                   {formatPrice(displayPrice)}
+                 </span>
+                 {product.availabilityType === 'PREORDER' && (
+                   <Badge variant="info">
+                     Pre-order Available
+                   </Badge>
+                 )}
+                 {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                   <Badge variant="warning">
+                     Backorder
+                   </Badge>
+                 )}
+                 {product.availabilityType === 'IN_STOCK' && (
+                   <Badge variant={availableStock > 0 ? 'success' : 'danger'}>
+                     {availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}
+                   </Badge>
+                 )}
+               </div>
+{product.category && (
+                 <div className="mb-6">
+                   <Badge variant="default" size="md">
+                     {product.category.name}
+                   </Badge>
+                 </div>
+               )}
+
+               {(product.availabilityType === 'PREORDER' || product.availabilityType === 'BACKORDER') && (
+                 <Card variant="elevated" className="mb-6">
+                   <CardContent className="pt-6">
+                     <h3 className="text-lg font-semibold text-deep-navy mb-3">
+                       {product.availabilityType === 'PREORDER' ? 'Pre-order Information' : 'Backorder Information'}
+                     </h3>
+                     {product.availabilityType === 'PREORDER' && product.expectedArrivalDate && (
+                       <p className="text-sm text-slate-600 mb-2">
+                         Expected arrival: {new Date(product.expectedArrivalDate).toLocaleDateString('en-US', {
+                           year: 'numeric',
+                           month: 'long',
+                           day: 'numeric',
+                         })}
+                       </p>
+                     )}
+                     {product.availabilityType === 'PREORDER' && product.estimatedFulfillmentDays && (
+                       <p className="text-sm text-slate-600 mb-2">
+                         Estimated fulfillment: {product.estimatedFulfillmentDays} days
+                       </p>
+                     )}
+                     {product.availabilityType === 'BACKORDER' && product.expectedRestockDate && (
+                       <p className="text-sm text-slate-600 mb-2">
+                         Expected restock: {new Date(product.expectedRestockDate).toLocaleDateString('en-US', {
+                           year: 'numeric',
+                           month: 'long',
+                           day: 'numeric',
+                         })}
+                       </p>
+                     )}
+                     {product.availabilityType === 'PREORDER' && product.preOrderNotes && (
+                       <p className="text-sm text-slate-600 mt-2">{product.preOrderNotes}</p>
+                     )}
+                     {product.availabilityType === 'BACKORDER' && product.backOrderNotes && (
+                       <p className="text-sm text-slate-600 mt-2">{product.backOrderNotes}</p>
+                     )}
+                   </CardContent>
+                 </Card>
+               )}
+
+             </div>
 
             {product.description && (
               <Card variant="outline">
@@ -827,20 +885,24 @@ const addToCart = async () => {
               </div>
             )}
 
-            <div className="space-y-3">
-              <Button
-                size="lg"
-                className="w-full shadow-lg shadow-royal-blue/20"
-                disabled={availableStock === 0 || addingToCart || (hasVariants && !selectedVariant)}
-                onClick={addToCart}
-              >
-                {addingToCart
-                  ? 'Adding to Cart...'
-                  : availableStock > 0
-                  ? 'Add to Cart'
-                  : 'Out of Stock'}
-              </Button>
-            </div>
+<div className="space-y-3">
+               <Button
+                 size="lg"
+                 className="w-full shadow-lg shadow-royal-blue/20"
+                 disabled={(product.availabilityType === 'IN_STOCK' && availableStock === 0) || addingToCart || (hasVariants && !selectedVariant)}
+                 onClick={addToCart}
+               >
+                 {addingToCart
+                   ? 'Adding to Cart...'
+                   : product.availabilityType === 'PREORDER'
+                   ? 'Pre-order Now'
+                   : product.availabilityType === 'BACKORDER'
+                   ? 'Backorder Request'
+                   : availableStock > 0
+                   ? 'Add to Cart'
+                   : 'Out of Stock'}
+               </Button>
+             </div>
           </div>
         </div>
 

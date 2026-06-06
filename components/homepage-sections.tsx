@@ -52,6 +52,7 @@ interface Product {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
+  availabilityType?: string
   images: Array<{ id: string; url: string; alt: string | null }>
   store?: { id: string; name: string; isVerified: boolean }
   category?: { id: string; name: string }
@@ -97,16 +98,26 @@ function CompactProductCard({ product }: { product: Product }) {
                 </svg>
               </div>
             )}
-            {discountPercentage > 0 && (
-              <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                -{discountPercentage}%
-              </div>
-            )}
-            {product.stock === 0 && (
-              <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                Sold Out
-              </div>
-            )}
+{discountPercentage > 0 && (
+               <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                 -{discountPercentage}%
+               </div>
+             )}
+             {product.availabilityType === 'PREORDER' && (
+               <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                 Pre-order
+               </Badge>
+             )}
+             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+               <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                 Backorder
+               </Badge>
+             )}
+             {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
+               <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                 Sold Out
+               </div>
+             )}
           </div>
         </Link>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
@@ -479,16 +490,26 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                         </svg>
                       </div>
                     )}
-                    {discountPercentage > 0 && (
-                      <div className="absolute top-2 left-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                        -{discountPercentage}%
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6">
-                      <Badge variant="premium" size="sm" className="mb-2">Featured</Badge>
-                      <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
-                      <p className="text-white/80 text-sm mb-3">{product.store?.name}</p>
+{discountPercentage > 0 && (
+                       <div className="absolute top-2 left-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                         -{discountPercentage}%
+                       </div>
+                     )}
+                     {product.availabilityType === 'PREORDER' && (
+                       <Badge variant="info" size="sm" className="absolute top-2 right-2">
+                         Pre-order
+                       </Badge>
+                     )}
+                     {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                       <Badge variant="warning" size="sm" className="absolute top-2 right-2">
+                         Backorder
+                       </Badge>
+                     )}
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                     <div className="absolute bottom-0 left-0 right-0 p-6">
+                       <Badge variant="premium" size="sm" className="mb-2">Featured</Badge>
+                       <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
+                       <p className="text-white/80 text-sm mb-3">{product.store?.name}</p>
                       <div className="flex items-baseline gap-2">
                         {hasDiscount && (
                           <span className="text-lg text-white/60 line-through">
@@ -529,14 +550,24 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                           </svg>
                         </div>
                       )}
-                      {discountPercentage > 0 && (
-                        <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                          -{discountPercentage}%
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
+{discountPercentage > 0 && (
+                         <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                           -{discountPercentage}%
+                         </div>
+                       )}
+                       {product.availabilityType === 'PREORDER' && (
+                         <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                           Pre-order
+                         </Badge>
+                       )}
+                       {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                         <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                           Backorder
+                         </Badge>
+                       )}
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                       <div className="absolute bottom-0 left-0 right-0 p-4">
+                         <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
                         <div className="flex items-baseline gap-1">
                           {hasDiscount && (
                             <span className="text-xs text-white/60 line-through">
@@ -714,14 +745,24 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                                 </svg>
                               </div>
                             )}
-                            {discountPercentage > 0 && (
-                              <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                                -{discountPercentage}%
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            <div className="absolute bottom-0 left-0 right-0 p-3">
-                              <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+{discountPercentage > 0 && (
+                               <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                                 -{discountPercentage}%
+                               </div>
+                             )}
+                             {product.availabilityType === 'PREORDER' && (
+                               <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                 Pre-order
+                               </Badge>
+                             )}
+                             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                               <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                 Backorder
+                               </Badge>
+                             )}
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                             <div className="absolute bottom-0 left-0 right-0 p-3">
+                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
                               <div className="flex items-baseline gap-1">
                                 {hasDiscount && (
                                   <span className="text-xs text-white/60 line-through">
@@ -767,14 +808,24 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                                 </svg>
                               </div>
                             )}
-                            {discountPercentage > 0 && (
-                              <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                                -{discountPercentage}%
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            <div className="absolute bottom-0 left-0 right-0 p-3">
-                              <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+{discountPercentage > 0 && (
+                               <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                                 -{discountPercentage}%
+                               </div>
+                             )}
+                             {product.availabilityType === 'PREORDER' && (
+                               <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                 Pre-order
+                               </Badge>
+                             )}
+                             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                               <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                 Backorder
+                               </Badge>
+                             )}
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                             <div className="absolute bottom-0 left-0 right-0 p-3">
+                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
                               <div className="flex items-baseline gap-1">
                                 {hasDiscount && (
                                   <span className="text-xs text-white/60 line-through">

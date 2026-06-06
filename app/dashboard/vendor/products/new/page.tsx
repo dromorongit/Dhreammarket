@@ -34,6 +34,11 @@ interface ProductVariant {
   active?: boolean
 }
 
+interface Store {
+  acceptsPreOrders: boolean
+  acceptsBackOrders: boolean
+}
+
 export default function NewProduct() {
   const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
@@ -41,6 +46,7 @@ export default function NewProduct() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null)
+  const [store, setStore] = useState<Store | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -52,6 +58,12 @@ export default function NewProduct() {
     categoryIds: [] as string[],
     imageUrls: [''],
     variants: [] as ProductVariant[],
+    availabilityType: 'IN_STOCK',
+    expectedArrivalDate: '',
+    estimatedFulfillmentDays: '',
+    preOrderNotes: '',
+    expectedRestockDate: '',
+    backOrderNotes: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -76,6 +88,12 @@ export default function NewProduct() {
       if (response.ok) {
         const data = await response.json()
         setIsOnboarded(!!data.store?.categoryId)
+        if (data.store) {
+          setStore({
+            acceptsPreOrders: data.store.acceptsPreOrders || false,
+            acceptsBackOrders: data.store.acceptsBackOrders || false,
+          })
+        }
       } else {
         setIsOnboarded(false)
       }
@@ -142,6 +160,18 @@ export default function NewProduct() {
       return
     }
 
+    if (formData.availabilityType === 'PREORDER' && !formData.expectedArrivalDate) {
+      setErrors({ expectedArrivalDate: 'Expected arrival date is required for preorder items' })
+      setSaving(false)
+      return
+    }
+
+    if (formData.availabilityType === 'BACKORDER' && !formData.expectedRestockDate) {
+      setErrors({ expectedRestockDate: 'Expected restock date is required for backorder items' })
+      setSaving(false)
+      return
+    }
+
     try {
       const productData = {
         ...formData,
@@ -152,6 +182,11 @@ export default function NewProduct() {
         brandId: formData.brandId || null,
         imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
         variants: formData.variants.filter(v => v.color || v.size || v.age),
+        expectedArrivalDate: formData.expectedArrivalDate || null,
+        estimatedFulfillmentDays: formData.estimatedFulfillmentDays || null,
+        preOrderNotes: formData.preOrderNotes || null,
+        expectedRestockDate: formData.expectedRestockDate || null,
+        backOrderNotes: formData.backOrderNotes || null,
       }
 
       const response = await fetch('/api/products', {
@@ -183,6 +218,17 @@ export default function NewProduct() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  const getAvailableAvailabilityTypes = () => {
+    const types: { value: string; label: string }[] = [{ value: 'IN_STOCK', label: 'In Stock' }]
+    if (store?.acceptsPreOrders) {
+      types.push({ value: 'PREORDER', label: 'Pre-order' })
+    }
+    if (store?.acceptsBackOrders) {
+      types.push({ value: 'BACKORDER', label: 'Backorder' })
+    }
+    return types
   }
 
   if (isOnboarded === null || loading) {
@@ -304,6 +350,114 @@ export default function NewProduct() {
                 </div>
               </div>
 
+              <div>
+                <label htmlFor="availabilityType" className="block text-sm font-medium text-gray-700 mb-2">
+                  Availability Type
+                </label>
+                <select
+                  id="availabilityType"
+                  name="availabilityType"
+                  value={formData.availabilityType}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {getAvailableAvailabilityTypes().map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+{formData.availabilityType === 'PREORDER' && (
+                 <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                   <h4 className="text-sm font-medium text-blue-900">Pre-order Information</h4>
+                   <div>
+                     <label htmlFor="expectedArrivalDate" className="block text-xs text-gray-600 mb-1">
+                       Expected Arrival Date
+                     </label>
+                     <Input
+id="expectedArrivalDate"
+                        name="expectedArrivalDate"
+                        type="date"
+                        required
+                        value={formData.expectedArrivalDate}
+                        onChange={handleChange}
+                        className="w-full"
+                      />
+                    </div>
+                    {errors.expectedArrivalDate && (
+                      <div className="text-red-600 text-sm">{errors.expectedArrivalDate}</div>
+                    )}
+                    <div>
+                    <label htmlFor="estimatedFulfillmentDays" className="block text-xs text-gray-600 mb-1">
+                      Estimated Fulfillment Days
+                    </label>
+                    <Input
+                      id="estimatedFulfillmentDays"
+                      name="estimatedFulfillmentDays"
+                      type="number"
+                      min="1"
+                      value={formData.estimatedFulfillmentDays}
+                      onChange={handleChange}
+                      placeholder="e.g., 7"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="preOrderNotes" className="block text-xs text-gray-600 mb-1">
+                      Pre-order Notes
+                    </label>
+                    <textarea
+                      id="preOrderNotes"
+                      name="preOrderNotes"
+                      rows={2}
+                      value={formData.preOrderNotes}
+                      onChange={handleChange}
+                      placeholder="Additional information about the pre-order"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+{formData.availabilityType === 'BACKORDER' && (
+                 <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                   <h4 className="text-sm font-medium text-amber-900">Backorder Information</h4>
+                   <div>
+                     <label htmlFor="expectedRestockDate" className="block text-xs text-gray-600 mb-1">
+                       Expected Restock Date
+                     </label>
+                     <Input
+id="expectedRestockDate"
+                        name="expectedRestockDate"
+                        type="date"
+                        required
+                        value={formData.expectedRestockDate}
+                        onChange={handleChange}
+                        className="w-full"
+                      />
+                    </div>
+                    {errors.expectedRestockDate && (
+                      <div className="text-red-600 text-sm">{errors.expectedRestockDate}</div>
+                    )}
+                    <div>
+                    <label htmlFor="backOrderNotes" className="block text-xs text-gray-600 mb-1">
+                      Backorder Notes
+                    </label>
+                    <textarea
+                      id="backOrderNotes"
+                      name="backOrderNotes"
+                      rows={2}
+                      value={formData.backOrderNotes}
+                      onChange={handleChange}
+                      placeholder="Additional information about the backorder"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
@@ -400,12 +554,12 @@ export default function NewProduct() {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">Color</label>
-<Input
-                               type="text"
-                               value={variant.color || ''}
-                               onChange={(e) => updateVariant(index, 'color', e.target.value)}
-                               placeholder="e.g., Red, Blue"
-                             />
+                            <Input
+                              type="text"
+                              value={variant.color || ''}
+                              onChange={(e) => updateVariant(index, 'color', e.target.value)}
+                              placeholder="e.g., Red, Blue"
+                            />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">Size</label>
@@ -435,22 +589,22 @@ export default function NewProduct() {
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">SKU</label>
-<Input
-                               type="text"
-                               value={variant.sku || ''}
-                               onChange={(e) => updateVariant(index, 'sku', e.target.value)}
-                               placeholder="Stock keeping unit"
-                             />
+                            <Input
+                              type="text"
+                              value={variant.sku || ''}
+                              onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                              placeholder="Stock keeping unit"
+                            />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">Stock</label>
-<Input
-                               type="number"
-                               min="0"
-                               value={variant.stock !== undefined ? variant.stock : ''}
-                               onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
-                               placeholder="0"
-                             />
+                            <Input
+                              type="number"
+                              min="0"
+                              value={variant.stock !== undefined ? variant.stock : ''}
+                              onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                              placeholder="0"
+                            />
                           </div>
                         </div>
                       </div>

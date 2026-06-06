@@ -21,6 +21,12 @@ interface CartItem {
     name: string
     price: number
     stock: number
+    availabilityType?: string
+    expectedArrivalDate?: string | null
+    estimatedFulfillmentDays?: number | null
+    preOrderNotes?: string | null
+    expectedRestockDate?: string | null
+    backOrderNotes?: string | null
     images: Array<{
       id: string
       url: string
@@ -242,22 +248,28 @@ export default function Cart() {
                     <h3 className="text-lg font-semibold text-deep-navy mb-1">
                       {item.product.name}
                     </h3>
-                    {item.productVariant && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {item.productVariant.color && (
-                          <Badge variant="default" size="sm">Color: {item.productVariant.color}</Badge>
-                        )}
-                        {item.productVariant.size && (
-                          <Badge variant="default" size="sm">Size: {item.productVariant.size}</Badge>
-                        )}
-                        {item.productVariant.age && (
-                          <Badge variant="default" size="sm">Age: {item.productVariant.age}</Badge>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-royal-blue font-semibold text-lg">
-                      {formatPrice(item.product.price)}
-                    </p>
+{item.productVariant && (
+                       <div className="flex flex-wrap gap-2 mb-2">
+                         {item.productVariant.color && (
+                           <Badge variant="default" size="sm">Color: {item.productVariant.color}</Badge>
+                         )}
+                         {item.productVariant.size && (
+                           <Badge variant="default" size="sm">Size: {item.productVariant.size}</Badge>
+                         )}
+                         {item.productVariant.age && (
+                           <Badge variant="default" size="sm">Age: {item.productVariant.age}</Badge>
+                         )}
+                       </div>
+                     )}
+                     {item.product.availabilityType === 'PREORDER' && (
+                       <Badge variant="info" size="sm" className="mb-2">Pre-order</Badge>
+                     )}
+                     {item.product.availabilityType === 'BACKORDER' && (
+                       <Badge variant="warning" size="sm" className="mb-2">Backorder</Badge>
+                     )}
+                     <p className="text-royal-blue font-semibold text-lg">
+                       {formatPrice(item.product.price)}
+                     </p>
                     <p className="text-sm text-slate-500">
                       Stock available: {item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock}
                     </p>
@@ -266,35 +278,35 @@ export default function Cart() {
                   {/* Quantity Controls */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        disabled={updatingItems.has(item.id) || item.quantity <= 1}
-                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                        </svg>
-                      </button>
-                      <span className="w-12 text-center font-semibold text-deep-navy">
-                        {updatingItems.has(item.id) ? (
-                          <svg className="w-4 h-4 animate-spin mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                        ) : (
-                          item.quantity
-                        )}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        disabled={updatingItems.has(item.id) || item.quantity >= (item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock)}
-                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                      </button>
-                    </div>
+<button
+                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                         disabled={updatingItems.has(item.id) || item.quantity <= 1}
+                         className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                         </svg>
+                       </button>
+                       <span className="w-12 text-center font-semibold text-deep-navy">
+                         {updatingItems.has(item.id) ? (
+                           <svg className="w-4 h-4 animate-spin mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                           </svg>
+                         ) : (
+                           item.quantity
+                         )}
+                       </span>
+                       <button
+                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                         disabled={updatingItems.has(item.id) || (item.product.availabilityType === 'IN_STOCK' && item.quantity >= (item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock))}
+                         className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                       >
+                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                         </svg>
+                       </button>
+                     </div>
                   </div>
 
                   {/* Price & Remove */}

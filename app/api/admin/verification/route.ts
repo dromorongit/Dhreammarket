@@ -66,12 +66,9 @@ export async function GET(request: NextRequest) {
             name: true,
           }
         },
-        documents: true,
-        payments: {
-          take: 1,
-          orderBy: { createdAt: 'desc' }
-        },
-        auditLogs: {
+documents: true,
+         payments: true,
+         auditLogs: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },

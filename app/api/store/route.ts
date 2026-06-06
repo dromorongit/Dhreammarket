@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber } = await request.json()
+    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, acceptsPreOrders, acceptsBackOrders } = await request.json()
   
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
@@ -97,10 +97,12 @@ export async function POST(request: NextRequest) {
           userId: payload.userId,
           name: name.trim(),
           description: description?.trim() || null,
-          categoryId: categoryId, // Already validated above, no need for || null
+          categoryId: categoryId,
           mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
           alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
           whatsappNumber: sanitizePhoneNumber(whatsappNumber),
+          acceptsPreOrders: acceptsPreOrders || false,
+          acceptsBackOrders: acceptsBackOrders || false,
           ...(logo !== undefined && { logo }),
           ...(banner !== undefined && { banner }),
         },
@@ -138,7 +140,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber } = await request.json()
+    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, acceptsPreOrders, acceptsBackOrders } = await request.json()
   
      if (!name || !name.trim()) {
        return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
@@ -172,22 +174,24 @@ export async function PUT(request: NextRequest) {
        hasMainPhone: !!mainPhoneNumber,
      })
   
-     const store = await getPrisma().store.update({
-       where: { userId: payload.userId },
-       data: {
-         name: name.trim(),
-         description: description?.trim() || null,
-         categoryId: categoryId,
-         mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
-         alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
-         whatsappNumber: sanitizePhoneNumber(whatsappNumber),
-         ...(logo !== undefined && { logo }),
-         ...(banner !== undefined && { banner }),
-       },
-       include: {
-         vendor_categories: true,
-       }
-     })
+const store = await getPrisma().store.update({
+        where: { userId: payload.userId },
+        data: {
+          name: name.trim(),
+          description: description?.trim() || null,
+          categoryId: categoryId,
+          mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
+          alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
+          whatsappNumber: sanitizePhoneNumber(whatsappNumber),
+          acceptsPreOrders: acceptsPreOrders !== undefined ? acceptsPreOrders : false,
+          acceptsBackOrders: acceptsBackOrders !== undefined ? acceptsBackOrders : false,
+          ...(logo !== undefined && { logo }),
+          ...(banner !== undefined && { banner }),
+        },
+        include: {
+          vendor_categories: true,
+        }
+      })
   
     // Debug: Log the updated store
     console.log('[Store API] Store updated successfully:', {

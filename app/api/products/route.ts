@@ -52,7 +52,11 @@ export async function GET(request: NextRequest) {
 
     // Build where clause for public products
     const whereClause: any = {
-      stock: { gt: 0 },
+      OR: [
+        { stock: { gt: 0 } },
+        { availabilityType: 'PREORDER' },
+        { availabilityType: 'BACKORDER' },
+      ],
     }
     if (createdAtMin) {
       whereClause.createdAt = { gte: new Date(createdAtMin) }
@@ -122,7 +126,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -186,7 +190,7 @@ export async function POST(request: NextRequest) {
        }
      }
 
-    // Check if vendor has completed onboarding (store and vendor category)
+// Check if vendor has completed onboarding (store and vendor category)
     const isOnboarded = await isVendorOnboarded(payload.userId);
     if (!isOnboarded) {
       return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
@@ -201,25 +205,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Store not found' }, { status: 400 })
     }
 
-     // Create product - use first category as primary, rest will be linked via junction table
-     const primaryCategoryId = uniqueCategoryIds[0]
-     const product = await getPrisma().product.create({
-       data: {
-         storeId: store.id,
-         categoryId: primaryCategoryId,
-         name: name.trim(),
-         description: description?.trim() || null,
-         price: parseFloat(price),
-         stock: parseInt(stock),
-         brandId: brandId || null,
-         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
-         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
-       },
-       include: {
-         category: true,
-         images: true,
-       },
-     })
+    // Validate availability type based on store settings
+    const validAvailabilityTypes = ['IN_STOCK']
+    if (store.acceptsPreOrders) {
+      validAvailabilityTypes.push('PREORDER')
+    }
+    if (store.acceptsBackOrders) {
+      validAvailabilityTypes.push('BACKORDER')
+    }
+
+    const finalAvailabilityType = availabilityType || 'IN_STOCK'
+    if (!validAvailabilityTypes.includes(finalAvailabilityType)) {
+      return NextResponse.json({ error: 'Invalid availability type for this store' }, { status: 400 })
+    }
+
+    // Validate preorder/backorder specific fields
+    if (finalAvailabilityType === 'PREORDER') {
+      if (!expectedArrivalDate) {
+        return NextResponse.json({ error: 'Expected arrival date is required for preorder items' }, { status: 400 })
+      }
+      if (isNaN(new Date(expectedArrivalDate).getTime())) {
+        return NextResponse.json({ error: 'Invalid expected arrival date' }, { status: 400 })
+      }
+    }
+
+    if (finalAvailabilityType === 'BACKORDER') {
+      if (!expectedRestockDate) {
+        return NextResponse.json({ error: 'Expected restock date is required for backorder items' }, { status: 400 })
+      }
+      if (isNaN(new Date(expectedRestockDate).getTime())) {
+        return NextResponse.json({ error: 'Invalid expected restock date' }, { status: 400 })
+      }
+    }
+
+    // Create product - use first category as primary, rest will be linked via junction table
+    const primaryCategoryId = uniqueCategoryIds[0]
+    const product = await getPrisma().product.create({
+      data: {
+        storeId: store.id,
+        categoryId: primaryCategoryId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        price: parseFloat(price),
+        stock: parseInt(stock),
+        brandId: brandId || null,
+        salesPrice: salesPrice ? parseFloat(salesPrice) : null,
+        dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+        availabilityType: finalAvailabilityType as any,
+        expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
+        estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays) : null,
+        preOrderNotes: preOrderNotes || null,
+        expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
+        backOrderNotes: backOrderNotes || null,
+      },
+      include: {
+        category: true,
+        images: true,
+      },
+    })
 
      // Create variants if provided
      if (variants && Array.isArray(variants) && variants.length > 0) {

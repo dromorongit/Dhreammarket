@@ -3,34 +3,34 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-  id                   String                  @id @default(cuid())
-  email                String                  @unique
-  password             String
-  role                 Role                    @default(CUSTOMER)
-  status               UserStatus              @default(ACTIVE)
-  position             String?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  resetPasswordToken   String?
-  resetPasswordExpires DateTime?
-  cart                 Cart?
-  feedbacks            Feedback[]
-  homepageSections     HomepageSectionVendor[]
-  notifications        Notification[]
-  orders               Order[]
-  payments             Payment[]
-  profile              Profile?
-  productReviews       ProductReview[]
-  vendorReviews        VendorReview[]
-  store                Store?
-  supportTickets       SupportTicket[]
-  vendorPayouts        VendorPayout[]          @relation("VendorPayoutVendor")
-  verificationApplications VendorVerificationApplication[]
-  auditLogs            VerificationAuditLog[]
+  id                       String                         @id @default(cuid())
+  email                    String                         @unique
+  password                 String
+  role                     Role                           @default(CUSTOMER)
+  status                   UserStatus                     @default(ACTIVE)
+  position                 String?
+  createdAt                DateTime                       @default(now())
+  updatedAt                DateTime                       @updatedAt
+  resetPasswordToken       String?
+  resetPasswordExpires     DateTime?
+  cart                     Cart?
+  feedbacks                Feedback[]
+  homepageSections         HomepageSectionVendor[]
+  notifications            Notification[]
+  orders                   Order[]
+  payments                 Payment[]
+  productReviews           ProductReview[]
+  profile                  Profile?
+  store                    Store?
+  supportTickets           SupportTicket[]
+  vendorPayouts            VendorPayout[]                 @relation("VendorPayoutVendor")
+  vendorReviews            VendorReview[]
+  verificationApplications VendorVerificationApplication?
+  auditLogs                VerificationAuditLog[]
 
   @@map("users")
 }
@@ -50,28 +50,30 @@ model Profile {
 }
 
 model Store {
-  id                   String          @id @default(cuid())
-  userId               String          @unique
-  name                 String
-  description          String?
-  mainPhoneNumber      String?
-  alternativePhoneNumber String?
-  whatsappNumber       String?
-  isVerified           Boolean         @default(false)
-  isFeatured           Boolean         @default(false)
-  featuredUntil        DateTime?
-  logo                 String?
-  banner               String?
-  categoryId           String?
-  averageRating        Float           @default(0)
-  reviewCount          Int             @default(0)
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
-  products             Product[]
-  vendor_categories    VendorCategory? @relation(fields: [categoryId], references: [id])
-  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vendorPayouts        VendorPayout[]  @relation("VendorPayoutStore")
-  vendorReviews        VendorReview[]
+  id                       String                          @id @default(cuid())
+  userId                   String                          @unique
+  name                     String
+  description              String?
+  isVerified               Boolean                         @default(false)
+  isFeatured               Boolean                         @default(false)
+  featuredUntil            DateTime?
+  logo                     String?
+  banner                   String?
+  categoryId               String?
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  alternativePhoneNumber   String?
+  mainPhoneNumber          String?
+  whatsappNumber           String?
+  averageRating            Float                           @default(0)
+  reviewCount              Int                             @default(0)
+  acceptsPreOrders         Boolean                         @default(false)
+  acceptsBackOrders        Boolean                         @default(false)
+  products                 Product[]
+  vendor_categories        VendorCategory?                 @relation(fields: [categoryId], references: [id])
+  user                     User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vendorPayouts            VendorPayout[]                  @relation("VendorPayoutStore")
+  vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication[]
 
   @@map("stores")
@@ -89,88 +91,93 @@ model VendorCategory {
 }
 
 model ProductCategory {
-  id        String            @id(map: "categories_pkey") @default(cuid())
-  name      String
-  parentId  String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  slug      String?           @unique(map: "categories_slug_key") @db.VarChar(255)
-  isActive  Boolean           @default(true)
-  parent    ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], map: "categories_parentId_fkey")
-  children  ProductCategory[] @relation("ProductCategoryHierarchy")
-  products  Product[]
+  id                 String                      @id(map: "categories_pkey") @default(cuid())
+  name               String
+  parentId           String?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  slug               String?                     @unique(map: "categories_slug_key") @db.VarChar(255)
+  isActive           Boolean                     @default(true)
+  parent             ProductCategory?            @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], map: "categories_parentId_fkey")
+  children           ProductCategory[]           @relation("ProductCategoryHierarchy")
   productAssignments ProductCategoryAssignment[]
+  products           Product[]
 
   @@map("product_categories")
 }
 
 model Brand {
-  id           String    @id @default(cuid())
-  name         String    @unique
-  slug         String    @unique
-  logo         String?
-  description  String?
-  isActive     Boolean   @default(true)
-  displayOrder Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  products     Product[]
+  id               String                 @id @default(cuid())
+  name             String                 @unique
+  slug             String                 @unique
+  logo             String?
+  description      String?
+  isActive         Boolean                @default(true)
+  displayOrder     Int                    @default(0)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
   homepageSections HomepageSectionBrand[]
+  products         Product[]
 
   @@map("brands")
 }
 
 model Product {
-  id               String                   @id @default(cuid())
-  storeId          String
-  categoryId       String
-  name             String
-  description      String?
-  brand            String?
-  brandId          String?
-  price            Float
-  flashSalePrice   Float?                   // Discounted price for flash sales (kept for backward compatibility)
-  salesPrice       Float?                   // Temporary discounted selling price
-  dealsPrice       Float?                   // Deep-discount promotional price
-  flashSaleStart   DateTime?                // When flash sale starts
-  flashSaleEnd     DateTime?                // When flash sale ends
-  salesCount       Int                      @default(0) // Total units sold
-  isSponsored      Boolean                  @default(false) // Sponsored/promoted products
-  stock            Int                      @default(0)
-  averageRating    Float                    @default(0)
-  reviewCount      Int                      @default(0)
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
-  cartItems        CartItem[]
-  homepageSections HomepageSectionProduct[]
-  orderItems       OrderItem[]
-  images           ProductImage[]
-  variants         ProductVariant[]         @relation("ProductVariants")
-  category         ProductCategory          @relation(fields: [categoryId], references: [id])
-  store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  brandRelation    Brand?                   @relation(fields: [brandId], references: [id], onDelete: SetNull)
-  productReviews   ProductReview[]
+  id                  String                      @id @default(cuid())
+  storeId             String
+  categoryId          String
+  name                String
+  description         String?
+  brand               String?
+  price               Float
+  stock               Int                         @default(0)
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  averageRating       Float                       @default(0)
+  reviewCount         Int                         @default(0)
+  flashSalePrice      Float?
+  flashSaleStart      DateTime?
+  flashSaleEnd        DateTime?
+  salesCount          Int                         @default(0)
+  isSponsored         Boolean                     @default(false)
+  brandId             String?
+  dealsPrice          Float?
+  salesPrice          Float?
+  availabilityType    ProductAvailabilityType     @default(IN_STOCK)
+  expectedArrivalDate DateTime?
+  estimatedFulfillmentDays Int?
+  preOrderNotes       String?
+  expectedRestockDate  DateTime?
+  backOrderNotes      String?
+  cartItems           CartItem[]
+  homepageSections    HomepageSectionProduct[]
+  orderItems          OrderItem[]
   categoryAssignments ProductCategoryAssignment[]
-  
+  images              ProductImage[]
+  productReviews      ProductReview[]
+  variants            ProductVariant[]            @relation("ProductVariants")
+  brandRelation       Brand?                      @relation(fields: [brandId], references: [id])
+  category            ProductCategory             @relation(fields: [categoryId], references: [id])
+  store               Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
   @@map("products")
 }
 
 model ProductVariant {
-  id        String   @id @default(cuid())
-  productId String
-  color     String?
-  size      String?
-  age       String?
-  sku       String?
-  stock     Int      @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  product Product @relation("ProductVariants", fields: [productId], references: [id], onDelete: Cascade)
-  cartItems CartItem[]
+  id         String      @id @default(cuid())
+  productId  String
+  color      String?
+  size       String?
+  age        String?
+  sku        String?
+  stock      Int         @default(0)
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  cartItems  CartItem[]
   orderItems OrderItem[]
-  
+  product    Product     @relation("ProductVariants", fields: [productId], references: [id], onDelete: Cascade)
+
   @@map("product_variants")
 }
 
@@ -186,13 +193,13 @@ model ProductImage {
 }
 
 model ProductCategoryAssignment {
-  id               String         @id @default(cuid())
-  productId        String
+  id                String          @id @default(cuid())
+  productId         String
   productCategoryId String
-  isPrimary        Boolean        @default(false)
-  createdAt        DateTime       @default(now())
-  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productCategory  ProductCategory @relation(fields: [productCategoryId], references: [id])
+  isPrimary         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  productCategory   ProductCategory @relation(fields: [productCategoryId], references: [id])
+  product           Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, productCategoryId])
   @@map("product_category_assignments")
@@ -210,17 +217,17 @@ model Cart {
 }
 
 model CartItem {
-  id               String   @id @default(cuid())
+  id               String          @id @default(cuid())
   cartId           String
   productId        String
-  productVariantId String?
-  quantity         Int      @default(1)
-  color            String?
-  size             String?
+  quantity         Int             @default(1)
+  createdAt        DateTime        @default(now())
   age              String?
-  createdAt        DateTime @default(now())
-  cart             Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color            String?
+  productVariantId String?
+  size             String?
+  cart             Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
 
   @@unique([cartId, productId, productVariantId])
@@ -228,7 +235,7 @@ model CartItem {
 }
 
 model Order {
-  id                 String        @id @default(cuid())
+  id                 String          @id @default(cuid())
   userId             String
   grossAmount        Float?
   processorFee       Float?
@@ -237,28 +244,26 @@ model Order {
   vendorEarnings     Float?
   commissionRate     Float?
   total              Float
-  subtotal           Float?
-  shipping           Float?
-  tax                Float?
-  status             OrderStatus   @default(PENDING)
-  paymentStatus      PaymentStatus @default(PENDING)
+  status             OrderStatus     @default(PENDING)
+  paymentStatus      PaymentStatus   @default(PENDING)
   deletedAt          DateTime?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  // Customer information
-  customerFirstName  String?
-  customerLastName   String?
-  customerEmail      String?
-  customerPhone      String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
   customerAddress    String?
   customerCity       String?
-  customerRegion     String?
-  // Shipping information
-  shippingZone       String?
-  shippingDaysMin    Int?
+  customerEmail      String?
+  customerFirstName  String?
+  customerLastName   String?
+  customerPhone      String?
+  shipping           Float?
   shippingDaysMax    Int?
+  shippingDaysMin    Int?
+  shippingZone       String?
+  subtotal           Float?
+  tax                Float?
+  orderType          OrderType       @default(NORMAL)
   items              OrderItem[]
-  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment            Payment?
   productReviews     ProductReview[]
   vendorReviews      VendorReview[]
@@ -267,25 +272,25 @@ model Order {
 }
 
 model OrderItem {
-  id               String   @id @default(cuid())
-  orderId          String
-  productId        String
-  productVariantId String?
-  quantity         Int
-  price            Float
-  color            String?
-  size             String?
-  age              String?
-  grossAmount      Float?
-  processorFee     Float?
-  netAmount        Float?
+  id                 String          @id @default(cuid())
+  orderId            String
+  productId          String
+  quantity           Int
+  price              Float
+  grossAmount        Float?
+  processorFee       Float?
+  netAmount          Float?
   platformCommission Float?
-  vendorEarnings   Float?
-  commissionRate   Float?
-  createdAt        DateTime @default(now())
-  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
+  vendorEarnings     Float?
+  commissionRate     Float?
+  createdAt          DateTime        @default(now())
+  age                String?
+  color              String?
+  productVariantId   String?
+  size               String?
+  order              Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariant     ProductVariant? @relation(fields: [productVariantId], references: [id])
 
   @@map("order_items")
 }
@@ -309,40 +314,38 @@ model Payment {
 }
 
 model ProductReview {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  userId    String
-  productId String
-  orderId   String?
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  userId     String
+  productId  String
+  orderId    String?
   isApproved Boolean  @default(true)
-  isHidden  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-  order   Order?  @relation(fields: [orderId], references: [id])
+  isHidden   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order?   @relation(fields: [orderId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, productId])
   @@map("product_reviews")
 }
 
 model VendorReview {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  userId    String
-  storeId   String
-  orderId   String?
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  userId     String
+  storeId    String
+  orderId    String?
   isApproved Boolean  @default(true)
-  isHidden  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id])
-  store Store @relation(fields: [storeId], references: [id])
-  order Order? @relation(fields: [orderId], references: [id])
+  isHidden   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order?   @relation(fields: [orderId], references: [id])
+  store      Store    @relation(fields: [storeId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, storeId])
   @@map("vendor_reviews")
@@ -393,85 +396,84 @@ model VendorPayout {
 }
 
 model VerificationSetting {
-  id                          String   @id @default(cuid())
-  verificationFee             Float    @default(250.00)
-  verificationEnabled         Boolean  @default(true)
-  allowResubmissionAfterRejection Boolean @default(true)
-  autoExpirePendingApplications Boolean @default(false)
-  expiryDays                  Int      @default(30)
-  createdAt                   DateTime @default(now())
-  updatedAt                   DateTime @updatedAt
+  id                              String   @id @default(cuid())
+  verificationFee                 Float    @default(250.00)
+  verificationEnabled             Boolean  @default(true)
+  allowResubmissionAfterRejection Boolean  @default(true)
+  autoExpirePendingApplications   Boolean  @default(false)
+  expiryDays                      Int      @default(30)
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
 
   @@map("verification_settings")
 }
 
 model VendorVerificationApplication {
-  id              String   @id @default(cuid())
-  vendorId        String
-  storeId         String
-  status          VerificationStatus @default(NOT_APPLIED)
-  paymentReference String?
-  paymentStatus   String?  @default("UNPAID")
-  paymentAmount   Float?
+  id                 String                 @id @default(cuid())
+  vendorId           String                 @unique
+  storeId            String
+  status             VerificationStatus     @default(NOT_APPLIED)
+  paymentReference   String?
+  paymentStatus      String?                @default("UNPAID")
+  paymentAmount      Float?
   paymentCompletedAt DateTime?
-  paystackRef     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  vendor          User     @relation(fields: [vendorId], references: [id])
-  store           Store    @relation(fields: [storeId], references: [id])
-  kycInfo         VendorVerificationKYC?
-  documents       VerificationDocument[]
-  auditLogs       VerificationAuditLog[]
-  payments        VerificationPayment[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  paystackRef        String?
+  store              Store                  @relation(fields: [storeId], references: [id])
+  vendor             User                   @relation(fields: [vendorId], references: [id])
+  kycInfo            VendorVerificationKYC?
+  auditLogs          VerificationAuditLog[]
+  documents          VerificationDocument[]
+  payments           VerificationPayment?
 
-  @@unique([vendorId])
   @@map("vendor_verification_applications")
 }
 
 model VendorVerificationKYC {
-  id                    String   @id @default(cuid())
-  applicationId         String   @unique
-  businessName          String
-  businessType          String
+  id                         String                        @id @default(cuid())
+  applicationId              String                        @unique
+  businessName               String
+  businessType               String
   businessRegistrationNumber String?
-  businessAddress       String?
-  region                String?
-  city                  String?
-  tinNumber             String?
-  fullName              String
-  phoneNumber           String
-  email                 String
-  nationalIdType        String?
-  nationalIdNumber      String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  application           VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  tinNumber                  String?
+  fullName                   String
+  phoneNumber                String
+  email                      String
+  createdAt                  DateTime                      @default(now())
+  updatedAt                  DateTime                      @updatedAt
+  businessAddress            String?
+  region                     String?
+  city                       String?
+  nationalIdType             String?
+  nationalIdNumber           String?
+  application                VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("vendor_verification_kyc")
 }
 
 model VerificationDocument {
-  id            String   @id @default(cuid())
-  applicationId   String
+  id            String                        @id @default(cuid())
+  applicationId String
   documentType  String
-  documentUrl     String
-  fileName        String?
-  createdAt       DateTime @default(now())
-  application     VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentUrl   String
+  fileName      String?
+  createdAt     DateTime                      @default(now())
+  application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("verification_documents")
 }
 
 model VerificationPayment {
-  id            String   @id @default(cuid())
-  applicationId String   @unique
-  reference     String   @unique
+  id            String                        @id @default(cuid())
+  applicationId String                        @unique
+  reference     String                        @unique
   amount        Float
-  currency      String   @default("GHS")
-  status        String   @default("UNPAID")
+  currency      String                        @default("GHS")
+  status        String                        @default("UNPAID")
   paystackRef   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
   completedAt   DateTime?
   application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
@@ -479,14 +481,14 @@ model VerificationPayment {
 }
 
 model VerificationAuditLog {
-  id            String   @id @default(cuid())
-  applicationId   String
+  id            String                        @id @default(cuid())
+  applicationId String
   action        VerificationAction
   adminId       String?
   note          String?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime                      @default(now())
+  admin         User?                         @relation(fields: [adminId], references: [id])
   application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  admin         User?    @relation(fields: [adminId], references: [id])
 
   @@map("verification_audit_logs")
 }
@@ -517,9 +519,9 @@ model HomepageSection {
   subtitle     String?
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
+  brands       HomepageSectionBrand[]
   products     HomepageSectionProduct[]
   vendors      HomepageSectionVendor[]
-  brands       HomepageSectionBrand[]
 
   @@map("homepage_sections")
 }
@@ -528,8 +530,8 @@ model HomepageSectionProduct {
   id           String          @id @default(cuid())
   sectionId    String
   productId    String
-  displayOrder Int             @default(0)
   createdAt    DateTime        @default(now())
+  displayOrder Int             @default(0)
   product      Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   section      HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
@@ -554,8 +556,8 @@ model HomepageSectionBrand {
   sectionId String
   brandId   String
   createdAt DateTime        @default(now())
-  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   brand     Brand           @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  section   HomepageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
   @@unique([sectionId, brandId])
   @@map("homepage_section_brands")
@@ -675,4 +677,16 @@ enum VerificationAction {
   ADMIN_REQUESTED_CHANGES
   VENDOR_RESUBMITTED
   PAYMENT_REINITIATED
+}
+
+enum OrderType {
+  NORMAL
+  PREORDER
+  BACKORDER
+}
+
+enum ProductAvailabilityType {
+  IN_STOCK
+  PREORDER
+  BACKORDER
 }

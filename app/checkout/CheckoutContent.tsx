@@ -23,6 +23,12 @@ interface CartItem {
     name: string
     price: number
     stock: number
+    availabilityType?: string
+    expectedArrivalDate?: string | null
+    estimatedFulfillmentDays?: number | null
+    preOrderNotes?: string | null
+    expectedRestockDate?: string | null
+    backOrderNotes?: string | null
     images: Array<{
       id: string
       url: string
@@ -195,11 +201,15 @@ export default function CheckoutContent() {
 
     // Revalidate stock before checkout
     for (const item of cart.items) {
-      const availableStock = item.productVariant?.stock ?? item.product.stock
-      if (availableStock < item.quantity) {
-        setError(`Insufficient stock for ${item.product.name}. Available: ${availableStock}`)
-        setProcessing(false)
-        return
+      const isPreorderOrBackorder = item.product.availabilityType === 'PREORDER' || 
+                                    item.product.availabilityType === 'BACKORDER'
+      if (!isPreorderOrBackorder) {
+        const availableStock = item.productVariant?.stock ?? item.product.stock
+        if (availableStock < item.quantity) {
+          setError(`Insufficient stock for ${item.product.name}. Available: ${availableStock}`)
+          setProcessing(false)
+          return
+        }
       }
     }
     
@@ -567,23 +577,32 @@ console.log('[Checkout] Calling /api/checkout with payload:', {
                            </div>
                          )}
                        </div>
-                       <div className="flex-1 min-w-0">
-                         <h4 className="font-medium text-deep-navy">{item.product.name}</h4>
-                         {item.productVariant && (
-                           <div className="flex flex-wrap gap-1 mt-1">
-                             {item.productVariant.color && (
-                               <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Color: {item.productVariant.color}</span>
-                             )}
-                             {item.productVariant.size && (
-                               <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Size: {item.productVariant.size}</span>
-                             )}
-                             {item.productVariant.age && (
-                               <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Age: {item.productVariant.age}</span>
-                             )}
-                           </div>
-                         )}
-                         <p className="text-sm text-slate-500 mt-1">Qty: {item.quantity}</p>
-                       </div>
+<div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-deep-navy">{item.product.name}</h4>
+                          {item.product.availabilityType && item.product.availabilityType !== 'IN_STOCK' && (
+                            <Badge 
+                              variant={item.product.availabilityType === 'PREORDER' ? 'info' : 'warning'} 
+                              size="sm" 
+                              className="mt-1"
+                            >
+                              {item.product.availabilityType === 'PREORDER' ? 'Pre-order' : 'Backorder'}
+                            </Badge>
+                          )}
+                          {item.productVariant && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.productVariant.color && (
+                                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Color: {item.productVariant.color}</span>
+                              )}
+                              {item.productVariant.size && (
+                                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Size: {item.productVariant.size}</span>
+                              )}
+                              {item.productVariant.age && (
+                                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Age: {item.productVariant.age}</span>
+                              )}
+                            </div>
+                          )}
+                          <p className="text-sm text-slate-500 mt-1">Qty: {item.quantity}</p>
+                        </div>
                        <p className="font-semibold text-deep-navy">
                          {formatPrice(item.product.price * item.quantity)}
                        </p>

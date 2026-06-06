@@ -107,7 +107,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         customerPhone: order.user.profile?.phone || null,
         customerAddress: order.customerAddress,
         customerCity: order.customerCity,
-        customerRegion: order.customerRegion,
         storeGroups,
         payment: order.payment ? {
           id: order.payment.id,

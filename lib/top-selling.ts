@@ -13,6 +13,12 @@ const productSelect = {
   salesCount: true,
   isSponsored: true,
   brand: true,
+  availabilityType: true,
+  expectedArrivalDate: true,
+  estimatedFulfillmentDays: true,
+  preOrderNotes: true,
+  expectedRestockDate: true,
+  backOrderNotes: true,
   images: { select: { id: true, url: true, alt: true } },
   category: { select: { id: true, name: true, slug: true } },
   store: {
@@ -60,7 +66,11 @@ export async function getTopSellingProducts(prisma: PrismaClient, limit = 20) {
       products = await prisma.product.findMany({
         where: {
           id: { in: productIds },
-          stock: { gt: 0 },
+          OR: [
+            { stock: { gt: 0 } },
+            { availabilityType: 'PREORDER' },
+            { availabilityType: 'BACKORDER' },
+          ],
         },
         select: productSelect,
       })

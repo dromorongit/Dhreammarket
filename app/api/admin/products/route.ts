@@ -39,39 +39,50 @@ export async function GET(request: NextRequest) {
       where.storeId = storeId
     }
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          store: {
-            select: {
-              id: true,
-              name: true,
-              isVerified: true,
-            },
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          _count: {
-             select: { productReviews: true, orderItems: true },
+const [products, total] = await Promise.all([
+       prisma.product.findMany({
+         where,
+         skip,
+         take: limit,
+         orderBy: { createdAt: 'desc' },
+         include: {
+           store: {
+             select: {
+               id: true,
+               name: true,
+               isVerified: true,
+             },
            },
-        },
-      }),
-      prisma.product.count({ where }),
-    ])
+           category: {
+             select: {
+               id: true,
+               name: true,
+             },
+           },
+           _count: {
+              select: { productReviews: true, orderItems: true },
+            },
+         },
+       }),
+       prisma.product.count({ where }),
+     ])
 
-    const totalPages = Math.ceil(total / limit)
+     // Include availability fields in response
+     const productsWithAvailability = products.map((p: any) => ({
+       ...p,
+       availabilityType: p.availabilityType,
+       expectedArrivalDate: p.expectedArrivalDate,
+       estimatedFulfillmentDays: p.estimatedFulfillmentDays,
+       preOrderNotes: p.preOrderNotes,
+       expectedRestockDate: p.expectedRestockDate,
+       backOrderNotes: p.backOrderNotes,
+     }))
 
-    return NextResponse.json({
-      products,
-      pagination: {
+const totalPages = Math.ceil(total / limit)
+
+     return NextResponse.json({
+       products: productsWithAvailability,
+       pagination: {
         page,
         limit,
         total,

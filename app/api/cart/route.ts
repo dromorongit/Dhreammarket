@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's cart with safe fallback
+// Get user's cart with safe fallback
     let cart: any = null
     try {
       cart = await getPrisma().cart.findUnique({
@@ -23,7 +23,17 @@ export async function GET(request: NextRequest) {
           items: {
             include: {
               product: {
-                include: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  stock: true,
+                  availabilityType: true,
+                  expectedArrivalDate: true,
+                  estimatedFulfillmentDays: true,
+                  preOrderNotes: true,
+                  expectedRestockDate: true,
+                  backOrderNotes: true,
                   images: true,
                 },
               },
@@ -110,6 +120,8 @@ export async function POST(request: NextRequest) {
 
     // Determine stock to check (variant stock or product stock)
     let availableStock = product.stock
+    const isPreorderOrBackorder = product.availabilityType === 'PREORDER' || 
+                                    product.availabilityType === 'BACKORDER'
     if (productVariantId) {
       const variant = product.variants?.find((v: any) => v.id === productVariantId)
       if (variant) {
@@ -117,7 +129,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (availableStock < quantity) {
+    // Skip stock validation for preorder/backorder items
+    if (!isPreorderOrBackorder && availableStock < quantity) {
       return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
     }
 
@@ -173,11 +186,11 @@ export async function POST(request: NextRequest) {
     }
 
 if (existingItem) {
-       // Update quantity - validate against stock again
-       const newTotalQuantity = existingItem.quantity + quantity
-       if (availableStock < newTotalQuantity) {
-         return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
-       }
+        // Update quantity - validate against stock again
+        const newTotalQuantity = existingItem.quantity + quantity
+        if (!isPreorderOrBackorder && availableStock < newTotalQuantity) {
+          return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
+        }
        try {
          await getPrisma().cartItem.update({
            where: { id: existingItem.id },
@@ -216,7 +229,17 @@ if (existingItem) {
           items: {
             include: {
               product: {
-                include: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  stock: true,
+                  availabilityType: true,
+                  expectedArrivalDate: true,
+                  estimatedFulfillmentDays: true,
+                  preOrderNotes: true,
+                  expectedRestockDate: true,
+                  backOrderNotes: true,
                   images: true,
                 },
               },
