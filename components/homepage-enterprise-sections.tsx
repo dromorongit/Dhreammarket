@@ -1198,9 +1198,9 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
       const response = await fetch('/api/products?sortBy=createdAt&sortOrder=desc&limit=20')
       if (response.ok) {
         const data = await response.json()
-        const availableProducts = (data.products || [])
-          .filter((p: EnterpriseProduct) => p.stock > 0 && !excludeIds?.has(p.id))
-          .slice(0, 20)
+const availableProducts = (data.products || [])
+           .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+           .slice(0, 20)
         setProducts(availableProducts)
       }
     } catch (error) {
@@ -1258,9 +1258,9 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
       const response = await fetch(`/api/products?sortBy=createdAt&sortOrder=desc&limit=20&createdAtMin=${sevenDaysAgo.toISOString()}`)
       if (response.ok) {
         const data = await response.json()
-        const availableProducts = (data.products || [])
-          .filter((p: EnterpriseProduct) => p.stock > 0 && !excludeIds?.has(p.id))
-          .slice(0, 20)
+const availableProducts = (data.products || [])
+           .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+           .slice(0, 20)
         setProducts(availableProducts)
       }
     } catch (error) {

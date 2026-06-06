@@ -70,8 +70,29 @@ export async function GET(request: NextRequest) {
       orderBy: {
         [sortBy]: sortOrder,
       },
-      include: {
-        category: true,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        flashSalePrice: true,
+        flashSaleStart: true,
+        flashSaleEnd: true,
+        salesPrice: true,
+        dealsPrice: true,
+        stock: true,
+        salesCount: true,
+        isSponsored: true,
+        brand: true,
+        availabilityType: true,
+        expectedArrivalDate: true,
+        estimatedFulfillmentDays: true,
+        preOrderNotes: true,
+        expectedRestockDate: true,
+        backOrderNotes: true,
+        averageRating: true,
+        reviewCount: true,
+        images: { select: { id: true, url: true, alt: true } },
+        category: { select: { id: true, name: true, slug: true } },
         brandRelation: {
           select: {
             id: true,
@@ -85,19 +106,14 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             isVerified: true,
+            logo: true,
           },
         },
-        images: true,
-        variants: true,
       },
     })
 
-    // Use cached ratings from database
-    const productsWithCachedRatings = products.map((product) => ({
-      ...product,
-      averageRating: product.averageRating,
-      reviewCount: product.reviewCount,
-    }))
+    // Products already include averageRating and reviewCount from select
+    const productsWithCachedRatings = products
 
     const response = NextResponse.json({ products: productsWithCachedRatings })
     // Prevent caching
