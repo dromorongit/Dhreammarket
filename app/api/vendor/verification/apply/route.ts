@@ -69,35 +69,37 @@ export async function POST(request: NextRequest) {
           action: 'APPLICATION_CREATED',
         }
       })
-    } else {
+    } else if (application.status === 'APPROVED' || application.status === 'REJECTED') {
       // If application exists in a terminal state (APPROVED/REJECTED), allow resubmission
-      if (application.status === 'APPROVED' || application.status === 'REJECTED') {
-        application = await getPrisma().vendorVerificationApplication.update({
-          where: { id: application.id },
-          data: {
-            status: 'UNPAID',
-            paymentStatus: 'UNPAID',
-            paymentAmount: settings.verificationFee,
-            paymentReference: null,
-            paymentCompletedAt: null,
-          }
-        })
+      application = await getPrisma().vendorVerificationApplication.update({
+        where: { id: application.id },
+        data: {
+          status: 'UNPAID',
+          paymentStatus: 'UNPAID',
+          paymentAmount: settings.verificationFee,
+          paymentReference: null,
+          paymentCompletedAt: null,
+          paystackRef: null,
+        },
+      })
 
-        // Clear existing KYC and documents for resubmission
-        await getPrisma().vendorVerificationKYC.deleteMany({
-          where: { applicationId: application.id },
-        })
-        await getPrisma().verificationDocument.deleteMany({
-          where: { applicationId: application.id },
-        })
+      // Clear existing KYC, documents, and payment for resubmission
+      await getPrisma().vendorVerificationKYC.deleteMany({
+        where: { applicationId: application.id },
+      })
+      await getPrisma().verificationDocument.deleteMany({
+        where: { applicationId: application.id },
+      })
+      await getPrisma().verificationPayment.deleteMany({
+        where: { applicationId: application.id },
+      })
 
-        await getPrisma().verificationAuditLog.create({
-          data: {
-            applicationId: application.id,
-            action: 'VENDOR_RESUBMITTED',
-          }
-        })
-      }
+      await getPrisma().verificationAuditLog.create({
+        data: {
+          applicationId: application.id,
+          action: 'VENDOR_RESUBMITTED',
+        },
+      })
     }
 
     return NextResponse.json({

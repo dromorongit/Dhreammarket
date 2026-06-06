@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
           status: 'UNPAID',
         },
       })
-    } else {
-      // Update existing application for new payment attempt
+    } else if (application.status === 'UNPAID' || application.status === 'REJECTED') {
+      // Only allow re-initialization for UNPAID or REJECTED applications
       application = await getPrisma().vendorVerificationApplication.update({
         where: { id: application.id },
         data: {
@@ -120,22 +120,49 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Create new verification payment record
-      await getPrisma().verificationPayment.create({
-        data: {
-          applicationId: application.id,
-          reference: paymentReference,
-          amount: settings.verificationFee,
-          status: 'UNPAID',
-        },
+      // Check if payment record exists and update or create accordingly
+      const existingPayment = await getPrisma().verificationPayment.findUnique({
+        where: { applicationId: application.id },
       })
+
+      if (existingPayment) {
+        // Update existing payment record
+        await getPrisma().verificationPayment.update({
+          where: { applicationId: application.id },
+          data: {
+            reference: paymentReference,
+            amount: settings.verificationFee,
+            status: 'UNPAID',
+            paystackRef: null,
+            completedAt: null,
+          },
+        })
+      } else {
+        // Create new payment record
+        await getPrisma().verificationPayment.create({
+          data: {
+            applicationId: application.id,
+            reference: paymentReference,
+            amount: settings.verificationFee,
+            status: 'UNPAID',
+          },
+        })
+      }
 
       // Create audit log for payment re-initiated
       await getPrisma().verificationAuditLog.create({
         data: {
           applicationId: application.id,
-          action: 'APPLICATION_CREATED',
+          action: 'PAYMENT_REINITIATED',
         },
+      })
+    } else {
+      // Application exists in a state where payment re-initialization is not allowed
+      // (e.g., PENDING_REVIEW, APPROVED, CHANGES_REQUESTED)
+      return NextResponse.json({
+        success: true,
+        application,
+        message: 'Application status: ' + application.status.replace(/_/g, ' ')
       })
     }
 
