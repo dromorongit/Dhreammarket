@@ -15,6 +15,9 @@ interface OrderItem {
   color?: string | null
   size?: string | null
   age?: string | null
+  availabilityType?: string | null
+  expectedArrivalDate?: string | null
+  expectedRestockDate?: string | null
   product: {
     id: string
     name: string
@@ -36,6 +39,8 @@ interface Order {
   paymentStatus: string
   createdAt: string
   updatedAt: string
+  orderType: string
+  fulfillmentStatus: string
   items: OrderItem[]
   payment: Payment | null
   vendorTotal: number
@@ -61,8 +66,26 @@ const ORDER_STATUS_CONFIG = {
   CANCELLED: { label: 'Cancelled', description: 'Order cancelled', color: 'bg-red-100 text-red-800 border-red-300' },
 }
 
-// Status progression for vendors
+// Fulfillment status configuration
+const FULFILLMENT_STATUS_CONFIG = {
+  PENDING: { label: 'Pending', description: 'Ready to process', color: 'bg-gray-100 text-gray-800' },
+  AWAITING_STOCK: { label: 'Awaiting Stock', description: 'Waiting for stock arrival', color: 'bg-amber-100 text-amber-800' },
+  AWAITING_RESTOCK: { label: 'Awaiting Restock', description: 'Waiting for restock', color: 'bg-orange-100 text-orange-800' },
+  READY_TO_FULFILL: { label: 'Ready to Fulfill', description: 'Stock confirmed, ready to process', color: 'bg-cyan-100 text-cyan-800' },
+  PROCESSING: { label: 'Processing', description: 'Order being processed', color: 'bg-blue-100 text-blue-800' },
+  SHIPPED: { label: 'Shipped', description: 'Order shipped', color: 'bg-purple-100 text-purple-800' },
+  DELIVERED: { label: 'Delivered', description: 'Order delivered', color: 'bg-indigo-100 text-indigo-800' },
+  CANCELLED: { label: 'Cancelled', description: 'Order cancelled', color: 'bg-red-100 text-red-800' },
+}
+
+// Status progression for vendors (Order Status)
 const STATUS_PROGRESSION = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
+
+// Fulfillment status progression for pre-orders/backorders
+const FULFILLMENT_PROGRESSION: Record<string, string[]> = {
+  PREORDER: ['AWAITING_STOCK', 'READY_TO_FULFILL', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'],
+  BACKORDER: ['AWAITING_RESTOCK', 'READY_TO_FULFILL', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'],
+}
 
 export default function VendorOrderDetailPage() {
   const params = useParams()
@@ -100,17 +123,24 @@ export default function VendorOrderDetailPage() {
     }
   }
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: string, type: 'order' | 'fulfillment' = 'order') => {
     if (!order) return
     
     setUpdatingStatus(true)
     try {
+      const body: any = {}
+      if (type === 'order') {
+        body.status = newStatus
+      } else {
+        body.fulfillmentStatus = newStatus
+      }
+      
       const response = await fetch(`/api/vendor/orders/${order.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify(body),
       })
 
       if (!response.ok) {
@@ -120,7 +150,11 @@ export default function VendorOrderDetailPage() {
       }
 
       const data = await response.json()
-      setOrder((prev) => prev ? { ...prev, status: data.order.status, updatedAt: data.order.updatedAt } : null)
+      if (type === 'order') {
+        setOrder((prev) => prev ? { ...prev, status: data.order.status, updatedAt: data.order.updatedAt } : null)
+      } else {
+        setOrder((prev) => prev ? { ...prev, fulfillmentStatus: data.order.fulfillmentStatus, updatedAt: data.order.updatedAt } : null)
+      }
     } catch (err) {
       console.error('Error updating order status:', err)
       alert('Failed to update order status')
@@ -129,21 +163,108 @@ export default function VendorOrderDetailPage() {
     }
   }
 
-  // Render fulfillment status progression
-  const renderFulfillmentProgress = () => {
+// Render fulfillment status progression
+   const renderFulfillmentProgress = () => {
     if (!order) return null
 
-    const currentStatusConfig = ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]
-    if (!currentStatusConfig) return null
+    const fulfillmentConfig = FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]
+    const orderStatusConfig = ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]
+    
+    const isPreorderOrBackorder = order.orderType === 'PREORDER' || order.orderType === 'BACKORDER'
+    
+    if (isPreorderOrBackorder) {
+      const progression = FULFILLMENT_PROGRESSION[order.orderType] || []
+      const currentIndex = progression.indexOf(order.fulfillmentStatus)
+      const isCancelled = order.fulfillmentStatus === 'CANCELLED'
 
+      return (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Fulfillment Progress</h3>
+          
+          <div className="flex items-center gap-2 mb-2">
+            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+              order.orderType === 'PREORDER' ? 'bg-cyan-100 text-cyan-800' : 'bg-orange-100 text-orange-800'
+            }`}>
+              {order.orderType === 'PREORDER' ? 'Pre-Order' : 'Back-Order'}
+            </span>
+            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+              fulfillmentConfig?.color || 'bg-gray-100 text-gray-800'
+            }`}>
+              {fulfillmentConfig?.label || order.fulfillmentStatus}
+            </span>
+          </div>
+          
+          {!isCancelled && (
+            <div className="flex items-center justify-between mb-4">
+              {progression.map((status, index) => {
+                const config = FULFILLMENT_STATUS_CONFIG[status as keyof typeof FULFILLMENT_STATUS_CONFIG]
+                const isActive = index <= currentIndex
+                const isCurrent = status === order.fulfillmentStatus
+                
+                return (
+                  <div key={status} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center">
+                      <div 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                          isActive 
+                            ? isCurrent
+                              ? 'bg-orange-600 text-white ring-2 ring-orange-100'
+                              : 'bg-orange-100 text-orange-700'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {index + 1}
+                      </div>
+                      <span className={`text-xs mt-1 font-medium ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {config?.label?.split(' ')[0] || status}
+                      </span>
+                    </div>
+                    {index < progression.length - 1 && (
+                      <div 
+                        className={`flex-1 h-1 mx-1 rounded transition-all ${
+                          index < currentIndex ? 'bg-orange-300' : 'bg-gray-200'
+                        }`}
+                      />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {fulfillmentConfig && (
+            <div className={`p-4 rounded-lg border-2 ${fulfillmentConfig.color}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">{fulfillmentConfig.label}</p>
+                  <p className="text-sm opacity-80">{fulfillmentConfig.description}</p>
+                </div>
+                <div className="text-right text-sm">
+                  <p className="opacity-70">Last updated</p>
+                  <p className="font-medium">
+                    {new Date(order.updatedAt).toLocaleDateString('en-GH', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    // Normal order progression
     const currentIndex = STATUS_PROGRESSION.indexOf(order.status)
     const isCancelled = order.status === 'CANCELLED'
 
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Fulfillment Progress</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Order Progress</h3>
         
-        {/* Progress Steps */}
         {!isCancelled && (
           <div className="flex items-center justify-between mb-4">
             {STATUS_PROGRESSION.map((status, index) => {
@@ -182,12 +303,11 @@ export default function VendorOrderDetailPage() {
           </div>
         )}
 
-        {/* Current Status Display */}
-        <div className={`p-4 rounded-lg border-2 ${currentStatusConfig.color}`}>
+        <div className={`p-4 rounded-lg border-2 ${orderStatusConfig?.color || 'bg-gray-100 text-gray-800'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-semibold">{currentStatusConfig.label}</p>
-              <p className="text-sm opacity-80">{currentStatusConfig.description}</p>
+              <p className="font-semibold">{orderStatusConfig?.label || order.status}</p>
+              <p className="text-sm opacity-80">{orderStatusConfig?.description}</p>
             </div>
             <div className="text-right text-sm">
               <p className="opacity-70">Last updated</p>
@@ -202,43 +322,6 @@ export default function VendorOrderDetailPage() {
             </div>
           </div>
         </div>
-
-        {/* Status Update Controls */}
-        {!isCancelled && (
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Update Order Status
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {STATUS_PROGRESSION.map((status) => {
-                const config = ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG]
-                const isCurrentStatus = status === order.status
-                const statusIndex = STATUS_PROGRESSION.indexOf(status)
-                const canAdvance = statusIndex > currentIndex && statusIndex === currentIndex + 1
-                
-                return (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusUpdate(status)}
-                    disabled={isCurrentStatus || !canAdvance || updatingStatus}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      isCurrentStatus
-                        ? 'bg-orange-600 text-white cursor-default'
-                        : canAdvance
-                        ? 'bg-white border-2 border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    }`}
-                  >
-                    {isCurrentStatus ? `✓ ${config.label}` : config.label}
-                  </button>
-                )
-              })}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Click on the next status in the progression to advance the order.
-            </p>
-          </div>
-        )}
       </div>
     )
   }

@@ -542,16 +542,16 @@ const vendorCategoriesResponse = await fetch('/api/vendor-categories')
                                 -{discountPercentage}%
                               </div>
                             )}
-                            {product.availabilityType === 'PREORDER' && (
-                              <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                Pre-order
-                              </Badge>
-                            )}
-                            {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                              <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                Backorder
-                              </Badge>
-                            )}
+{product.availabilityType === 'PREORDER' && (
+                               <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                 Pre-order
+                               </Badge>
+                             )}
+                             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                               <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                 Backorder
+                               </Badge>
+                             )}
                             {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
                               <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                                 Sold Out

@@ -24,6 +24,14 @@ interface PlatformStats {
   totalCategories: number
   paidOrderCount: number
   pendingVerifications: number
+  preorderAnalytics?: {
+    total: number
+    byStatus: Array<{ status: string; count: number }>
+  }
+  backorderAnalytics?: {
+    total: number
+    byStatus: Array<{ status: string; count: number }>
+  }
 }
 
 interface RecentItem {
@@ -324,34 +332,32 @@ export default function AdminDashboard() {
          </Card>
 
 {/* Quick Stats Row */}
-         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-             <CardContent className="p-6">
-               <p className="text-sm text-slate-500 mb-1">Categories</p>
-               <p className="text-3xl font-bold text-deep-navy">{stats?.totalCategories.toLocaleString() || 0}</p>
-               <p className="text-sm text-slate-500 mt-1">Product categories</p>
-             </CardContent>
-           </Card>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+              <CardContent className="p-6">
+                <p className="text-sm text-slate-500 mb-1">Categories</p>
+                <p className="text-3xl font-bold text-deep-navy">{stats?.totalCategories.toLocaleString() || 0}</p>
+                <p className="text-sm text-slate-500 mt-1">Product categories</p>
+              </CardContent>
+            </Card>
 
-           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-             <CardContent className="p-6">
-               <p className="text-sm text-slate-500 mb-1">Reviews</p>
-               <p className="text-3xl font-bold text-deep-navy">{stats?.totalReviews.toLocaleString() || 0}</p>
-               <p className="text-sm text-slate-500 mt-1">Customer reviews</p>
-             </CardContent>
-           </Card>
+            <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+              <CardContent className="p-6">
+                <p className="text-sm text-slate-500 mb-1">Pre-orders</p>
+                <p className="text-3xl font-bold text-cyan-600">{stats?.preorderAnalytics?.total ?? 0}</p>
+                <p className="text-sm text-slate-500 mt-1">Total pre-orders</p>
+              </CardContent>
+            </Card>
 
-           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-             <CardContent className="p-6">
-               <p className="text-sm text-slate-500 mb-1">Verified Vendors</p>
-               <p className="text-3xl font-bold text-deep-navy">{stats?.verifiedVendors.toLocaleString() || 0}</p>
-               <p className="text-sm text-slate-500 mt-1">
-                 {stats?.totalVendors ? Math.round((stats.verifiedVendors / stats.totalVendors) * 100) : 0}% of vendors
-               </p>
-             </CardContent>
-           </Card>
+            <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+              <CardContent className="p-6">
+                <p className="text-sm text-slate-500 mb-1">Backorders</p>
+                <p className="text-3xl font-bold text-orange-600">{stats?.backorderAnalytics?.total ?? 0}</p>
+                <p className="text-sm text-slate-500 mt-1">Total backorders</p>
+              </CardContent>
+            </Card>
 
-<Link href="/dashboard/admin/verification-applications">
+            <Link href="/dashboard/admin/verification-applications">
               <Card variant="outline" className="hover:border-royal-blue/30 transition-colors cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
@@ -365,7 +371,7 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </Link>
-         </div>
+          </div>
 
         {/* Quick Links & Platform Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

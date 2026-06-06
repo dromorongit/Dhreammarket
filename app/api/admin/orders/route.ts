@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const status = searchParams.get('status')
     const paymentStatus = searchParams.get('paymentStatus')
+    const orderType = searchParams.get('orderType')
+    const fulfillmentStatus = searchParams.get('fulfillmentStatus')
 
     const skip = (page - 1) * limit
 
@@ -28,65 +30,80 @@ export async function GET(request: NextRequest) {
     if (status && ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].includes(status)) {
       where.status = status
     }
+
+    if (orderType && ['NORMAL', 'PREORDER', 'BACKORDER'].includes(orderType)) {
+      where.orderType = orderType
+    }
     
     if (paymentStatus && ['PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED'].includes(paymentStatus)) {
       where.paymentStatus = paymentStatus
     }
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              role: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                  phone: true,
-                },
-              },
-            },
-          },
-          items: {
-            select: {
-              id: true,
-              quantity: true,
-              price: true,
-              product: {
-                select: {
-                  store: {
-                    select: {
-                      id: true,
-                      name: true,
-                      mainPhoneNumber: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-          _count: {
-            select: { items: true },
-          },
-          payment: {
-            select: {
-              id: true,
-              status: true,
-              amount: true,
-              reference: true,
-            },
-          },
-        },
-      }),
-      prisma.order.count({ where }),
-    ])
+    if (fulfillmentStatus && ['PENDING', 'AWAITING_STOCK', 'AWAITING_RESTOCK', 'READY_TO_FULFILL', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].includes(fulfillmentStatus)) {
+      where.fulfillmentStatus = fulfillmentStatus
+    }
+
+const [orders, total] = await Promise.all([
+       prisma.order.findMany({
+         where,
+         skip,
+         take: limit,
+         orderBy: { createdAt: 'desc' },
+         include: {
+           user: {
+             select: {
+               id: true,
+               email: true,
+               role: true,
+               profile: {
+                 select: {
+                   firstName: true,
+                   lastName: true,
+                   phone: true,
+                 },
+               },
+             },
+           },
+           items: {
+             select: {
+               id: true,
+               quantity: true,
+               price: true,
+               product: {
+                 select: {
+                   store: {
+                     select: {
+                       id: true,
+                       name: true,
+                       mainPhoneNumber: true,
+                     },
+                   },
+                 },
+               },
+             },
+           },
+           _count: {
+             select: { items: true },
+           },
+           payment: {
+             select: {
+               id: true,
+               status: true,
+               amount: true,
+               reference: true,
+             },
+           },
+         },
+       }),
+       prisma.order.count({ where }),
+     ])
+
+    const ordersWithDaysOutstanding = orders.map((order) => ({
+          ...order,
+       daysOutstanding: order.orderType !== 'NORMAL' 
+         ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+         : undefined,
+     }))
 
     const totalPages = Math.ceil(total / limit)
 
@@ -101,35 +118,35 @@ export async function GET(request: NextRequest) {
       _count: true,
     })
 
-    return NextResponse.json({
-      orders: orders.map((order) => {
-        // Extract unique store names from order items
-        const storeNames = Array.from(new Set(
-          order.items.map(item => item.product?.store?.name).filter(Boolean)
-        ))
-        
-        // Get customer name with fallback hierarchy
-        const customerName = [
-          order.user.profile?.firstName,
-          order.user.profile?.lastName,
-        ].filter(Boolean).join(' ') || order.user.email
-        
-        // Get vendor contact from first item's store
-        const vendorContact = order.items[0]?.product?.store?.mainPhoneNumber || null
-        
-        return {
-          ...order,
-          customerName,
-          storeNames: storeNames.length > 0 ? storeNames : null,
-          vendorContact,
-        }
-      }),
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-      },
+return NextResponse.json({
+       orders: ordersWithDaysOutstanding.map((order) => {
+         // Extract unique store names from order items
+         const storeNames = Array.from(new Set(
+           order.items.map(item => item.product?.store?.name).filter(Boolean)
+         ))
+         
+         // Get customer name with fallback hierarchy
+         const customerName = [
+           order.user.profile?.firstName,
+           order.user.profile?.lastName,
+         ].filter(Boolean).join(' ') || order.user.email
+         
+         // Get vendor contact from first item's store
+         const vendorContact = order.items[0]?.product?.store?.mainPhoneNumber || null
+         
+         return {
+           ...order,
+           customerName,
+           storeNames: storeNames.length > 0 ? storeNames : null,
+           vendorContact,
+         }
+       }),
+       pagination: {
+         page,
+         limit,
+         total,
+         totalPages,
+       },
       summary: {
         byStatus: summary,
         byPaymentStatus: paymentSummary,

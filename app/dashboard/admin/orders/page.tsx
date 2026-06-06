@@ -9,10 +9,13 @@ interface Order {
   total: number
   status: string
   paymentStatus: string
+  orderType: string
+  fulfillmentStatus: string
   createdAt: string
   customerName: string
   storeNames: string[] | null
   vendorContact: string | null
+  daysOutstanding?: number
   user: {
     id: string
     email: string
@@ -39,7 +42,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
-  const [filters, setFilters] = useState({ status: '', paymentStatus: '' })
+  const [filters, setFilters] = useState({ status: '', orderType: '', fulfillmentStatus: '', paymentStatus: '' })
   const [summary, setSummary] = useState({ byStatus: [], byPaymentStatus: [] })
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
@@ -50,6 +53,8 @@ export default function AdminOrdersPage() {
       params.set('page', pagination.page.toString())
       params.set('limit', pagination.limit.toString())
       if (filters.status) params.set('status', filters.status)
+      if (filters.orderType) params.set('orderType', filters.orderType)
+      if (filters.fulfillmentStatus) params.set('fulfillmentStatus', filters.fulfillmentStatus)
       if (filters.paymentStatus) params.set('paymentStatus', filters.paymentStatus)
 
       const response = await fetch(`/api/admin/orders?${params}`)
@@ -69,7 +74,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [pagination.page, pagination.limit, filters.status, filters.paymentStatus])
+  }, [pagination.page, pagination.limit, filters.status, filters.orderType, filters.fulfillmentStatus, filters.paymentStatus])
 
   useEffect(() => {
     fetchOrders()
@@ -82,7 +87,7 @@ export default function AdminOrdersPage() {
     }).format(amount)
   }
 
-  const getStatusBadge = (status: string, type: 'order' | 'payment') => {
+  const getStatusBadge = (status: string, type: 'order' | 'payment' | 'fulfillment') => {
     if (type === 'order') {
       const colors: Record<string, string> = {
         PENDING: 'bg-yellow-100 text-yellow-800',
@@ -90,6 +95,18 @@ export default function AdminOrdersPage() {
         SHIPPED: 'bg-purple-100 text-purple-800',
         DELIVERED: 'bg-indigo-100 text-indigo-800',
         COMPLETED: 'bg-green-100 text-green-800',
+        CANCELLED: 'bg-red-100 text-red-800',
+      }
+      return colors[status] || 'bg-gray-100 text-gray-800'
+    } else if (type === 'fulfillment') {
+      const colors: Record<string, string> = {
+        PENDING: 'bg-gray-100 text-gray-800',
+        AWAITING_STOCK: 'bg-amber-100 text-amber-800',
+        AWAITING_RESTOCK: 'bg-orange-100 text-orange-800',
+        READY_TO_FULFILL: 'bg-cyan-100 text-cyan-800',
+        PROCESSING: 'bg-blue-100 text-blue-800',
+        SHIPPED: 'bg-purple-100 text-purple-800',
+        DELIVERED: 'bg-indigo-100 text-indigo-800',
         CANCELLED: 'bg-red-100 text-red-800',
       }
       return colors[status] || 'bg-gray-100 text-gray-800'
@@ -199,6 +216,29 @@ export default function AdminOrdersPage() {
                 <option value="DELIVERED">Delivered</option>
                 <option value="COMPLETED">Completed</option>
                 <option value="CANCELLED">Cancelled</option>
+              </select>
+              <select
+                value={filters.orderType}
+                onChange={(e) => setFilters(prev => ({ ...prev, orderType: e.target.value }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+              >
+                <option value="">All Order Types</option>
+                <option value="PREORDER">Pre-orders</option>
+                <option value="BACKORDER">Backorders</option>
+                <option value="NORMAL">Normal</option>
+              </select>
+              <select
+                value={filters.fulfillmentStatus}
+                onChange={(e) => setFilters(prev => ({ ...prev, fulfillmentStatus: e.target.value }))}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+              >
+                <option value="">All Fulfillment Status</option>
+                <option value="AWAITING_STOCK">Awaiting Stock</option>
+                <option value="AWAITING_RESTOCK">Awaiting Restock</option>
+                <option value="READY_TO_FULFILL">Ready to Fulfill</option>
+                <option value="PROCESSING">Processing</option>
+                <option value="SHIPPED">Shipped</option>
+                <option value="DELIVERED">Delivered</option>
               </select>
               <select
                 value={filters.paymentStatus}
@@ -312,19 +352,21 @@ export default function AdminOrdersPage() {
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store(s)</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Order Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    </tr>
-                  </thead>
+<thead className="bg-gray-50 border-b">
+                   <tr>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store(s)</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Order Status</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfillment</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days Outstanding</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                   </tr>
+                 </thead>
                   <tbody className="divide-y divide-gray-200">
                     {orders.map((order) => (
                       <tr key={order.id} className="hover:bg-gray-50">
@@ -362,6 +404,29 @@ export default function AdminOrdersPage() {
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(order.status, 'order')}`}>
                             {order.status}
                           </span>
+                          {order.orderType !== 'NORMAL' && (
+                            <span className="block mt-1">
+                              <span className={`inline-flex px-1.5 py-0.5 text-xs font-medium rounded ${
+                                order.orderType === 'PREORDER' ? 'bg-cyan-100 text-cyan-800' : 'bg-orange-100 text-orange-800'
+                              }`}>
+                                {order.orderType === 'PREORDER' ? 'Pre-Order' : 'Back-Order'}
+                              </span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {order.orderType !== 'NORMAL' && (
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(order.fulfillmentStatus, 'fulfillment')}`}>
+                              {order.fulfillmentStatus.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {order.daysOutstanding && order.orderType !== 'NORMAL' ? (
+                            <span className="text-sm text-gray-600">{order.daysOutstanding} days</span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-4">
                           {order.payment ? (

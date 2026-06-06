@@ -589,12 +589,12 @@ fetchVendor()
                             </div>
                           )}
                           {product.availabilityType === 'PREORDER' && (
-                            <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                            <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
                               Pre-order
                             </Badge>
                           )}
                           {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                            <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                            <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
                               Backorder
                             </Badge>
                           )}

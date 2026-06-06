@@ -37,6 +37,8 @@ interface Order {
   total: number
   status: string
   paymentStatus: string
+  orderType: string
+  fulfillmentStatus: string
   createdAt: string
   updatedAt: string
   customerName: string
@@ -55,6 +57,17 @@ const ORDER_STATUS_CONFIG = {
   SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-800' },
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
   COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+}
+
+const FULFILLMENT_STATUS_CONFIG = {
+  PENDING: { label: 'Pending', color: 'bg-gray-100 text-gray-800' },
+  AWAITING_STOCK: { label: 'Awaiting Stock', color: 'bg-amber-100 text-amber-800' },
+  AWAITING_RESTOCK: { label: 'Awaiting Restock', color: 'bg-orange-100 text-orange-800' },
+  READY_TO_FULFILL: { label: 'Ready to Fulfill', color: 'bg-cyan-100 text-cyan-800' },
+  PROCESSING: { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
+  SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-800' },
+  DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 }
 
@@ -243,6 +256,24 @@ export default function AdminOrderDetailPage() {
                   {paymentStatusConfig.label}
                 </span>
               </div>
+              {order.orderType !== 'NORMAL' && (
+                <div>
+                  <p className="text-sm text-gray-500">Order Type</p>
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                    order.orderType === 'PREORDER' ? 'bg-cyan-100 text-cyan-800' : 'bg-orange-100 text-orange-800'
+                  }`}>
+                    {order.orderType === 'PREORDER' ? 'Pre-Order' : 'Back-Order'}
+                  </span>
+                </div>
+              )}
+              {order.orderType !== 'NORMAL' && (
+                <div>
+                  <p className="text-sm text-gray-500">Fulfillment Status</p>
+                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}`}>
+                    {FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.label?.split(' ')[0] || order.fulfillmentStatus}
+                  </span>
+                </div>
+              )}
               {deliveryStatusConfig && (
                 <div>
                   <p className="text-sm text-gray-500">Delivery Status</p>

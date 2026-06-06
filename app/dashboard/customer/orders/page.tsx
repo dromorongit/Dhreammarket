@@ -40,20 +40,15 @@ interface Order {
   total: number
   status: string
   paymentStatus: string
+  orderType: string
+  fulfillmentStatus: string
   createdAt: string
   updatedAt: string
-  customerFirstName: string | null
-  customerLastName: string | null
-  customerEmail: string | null
-  customerPhone: string | null
-  customerAddress: string | null
-  customerCity: string | null
-  customerRegion: string | null
-  shippingZone: string | null
-  shippingDaysMin: number | null
-  shippingDaysMax: number | null
   items: OrderItem[]
   payment: Payment | null
+  shippingZone?: string | null
+  shippingDaysMin?: number | null
+  shippingDaysMax?: number | null
 }
 
 const ORDER_STATUS_CONFIG = {
@@ -71,6 +66,17 @@ const PAYMENT_STATUS_CONFIG = {
   FAILED: { label: 'Failed', color: 'bg-rose-100 text-rose-700' },
   CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700' },
   REFUNDED: { label: 'Refunded', color: 'bg-slate-100 text-slate-700' },
+}
+
+const FULFILLMENT_STATUS_CONFIG = {
+  PENDING: { label: 'Pending', color: 'bg-gray-100 text-gray-800' },
+  AWAITING_STOCK: { label: 'Awaiting Stock', color: 'bg-amber-100 text-amber-800' },
+  AWAITING_RESTOCK: { label: 'Awaiting Restock', color: 'bg-orange-100 text-orange-800' },
+  READY_TO_FULFILL: { label: 'Ready to Fulfill', color: 'bg-cyan-100 text-cyan-800' },
+  PROCESSING: { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
+  SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-800' },
+  DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
+  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 }
 
 export default function CustomerOrdersPage() {
@@ -219,9 +225,20 @@ export default function CustomerOrdersPage() {
                         <span className="font-semibold text-deep-navy text-lg">
                           Order #{order.id.slice(-8).toUpperCase()}
                         </span>
-                        <Badge variant="default" size="sm" className={orderStatus.color}>
-                          {orderStatus.label}
+                        <Badge variant="default" size="sm" className={
+                          order.orderType === 'PREORDER' 
+                            ? 'bg-cyan-100 text-cyan-800' 
+                            : order.orderType === 'BACKORDER'
+                            ? 'bg-orange-100 text-orange-800'
+                            : orderStatus.color
+                        }>
+                          {order.orderType === 'PREORDER' ? 'Pre-Order' : order.orderType === 'BACKORDER' ? 'Back-Order' : orderStatus.label}
                         </Badge>
+                        {order.orderType !== 'NORMAL' && (
+                          <Badge variant="default" size="sm" className={FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}>
+                            {FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.label?.split(' ')[0] || order.fulfillmentStatus}
+                          </Badge>
+                        )}
                         <Badge 
                           variant={order.paymentStatus === 'PAID' ? 'success' : order.paymentStatus === 'PENDING' ? 'warning' : 'danger'} 
                           size="sm"

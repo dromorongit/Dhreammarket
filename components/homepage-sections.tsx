@@ -103,16 +103,16 @@ function CompactProductCard({ product }: { product: Product }) {
                  -{discountPercentage}%
                </div>
              )}
-             {product.availabilityType === 'PREORDER' && (
-               <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                 Pre-order
-               </Badge>
-             )}
-             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-               <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                 Backorder
-               </Badge>
-             )}
+{product.availabilityType === 'PREORDER' && (
+                <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                  Pre-order
+                </Badge>
+              )}
+              {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                  Backorder
+                </Badge>
+              )}
              {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
                <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                  Sold Out
@@ -495,16 +495,16 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                          -{discountPercentage}%
                        </div>
                      )}
-                     {product.availabilityType === 'PREORDER' && (
-                       <Badge variant="info" size="sm" className="absolute top-2 right-2">
-                         Pre-order
-                       </Badge>
-                     )}
-                     {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                       <Badge variant="warning" size="sm" className="absolute top-2 right-2">
-                         Backorder
-                       </Badge>
-                     )}
+{product.availabilityType === 'PREORDER' && (
+                        <Badge variant="preorder" size="sm" className="absolute top-2 right-2">
+                          Pre-order
+                        </Badge>
+                      )}
+                      {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                        <Badge variant="backorder" size="sm" className="absolute top-2 right-2">
+                          Backorder
+                        </Badge>
+                      )}
                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                      <div className="absolute bottom-0 left-0 right-0 p-6">
                        <Badge variant="premium" size="sm" className="mb-2">Featured</Badge>
@@ -555,16 +555,16 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                            -{discountPercentage}%
                          </div>
                        )}
-                       {product.availabilityType === 'PREORDER' && (
-                         <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                           Pre-order
-                         </Badge>
-                       )}
-                       {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                         <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                           Backorder
-                         </Badge>
-                       )}
+{product.availabilityType === 'PREORDER' && (
+                          <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                            Pre-order
+                          </Badge>
+                        )}
+                        {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                          <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                            Backorder
+                          </Badge>
+                        )}
                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                        <div className="absolute bottom-0 left-0 right-0 p-4">
                          <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
@@ -750,16 +750,16 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                                  -{discountPercentage}%
                                </div>
                              )}
-                             {product.availabilityType === 'PREORDER' && (
-                               <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                 Pre-order
-                               </Badge>
-                             )}
-                             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                               <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                 Backorder
-                               </Badge>
-                             )}
+{product.availabilityType === 'PREORDER' && (
+                                <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                  Pre-order
+                                </Badge>
+                              )}
+                              {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                                <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                  Backorder
+                                </Badge>
+                              )}
                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                              <div className="absolute bottom-0 left-0 right-0 p-3">
                                <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
@@ -813,16 +813,16 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                                  -{discountPercentage}%
                                </div>
                              )}
-                             {product.availabilityType === 'PREORDER' && (
-                               <Badge variant="info" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                 Pre-order
-                               </Badge>
-                             )}
-                             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                               <Badge variant="warning" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                 Backorder
-                               </Badge>
-                             )}
+{product.availabilityType === 'PREORDER' && (
+                                <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                  Pre-order
+                                </Badge>
+                              )}
+                              {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                                <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
+                                  Backorder
+                                </Badge>
+                              )}
                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                              <div className="absolute bottom-0 left-0 right-0 p-3">
                                <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>

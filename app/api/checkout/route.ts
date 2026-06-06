@@ -129,42 +129,45 @@ export async function POST(request: NextRequest) {
       vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * 0.9 * 100) / 100
     }
 
-    // Determine order type based on product availability
-    let orderType = 'NORMAL'
-    const hasPreorder = cart.items.some((item: any) => 
-      item.product.availabilityType === 'PREORDER' || 
-      item.productVariant?.stock === 0 && item.product.availabilityType === 'BACKORDER'
-    )
-    const hasBackorder = cart.items.some((item: any) => 
-      item.product.availabilityType === 'BACKORDER'
-    )
+// Determine order type and fulfillment status based on product availability
+     let orderType = 'NORMAL'
+     let fulfillmentStatus = 'PENDING'
+     const hasPreorder = cart.items.some((item: any) => 
+       item.product.availabilityType === 'PREORDER'
+     )
+     const hasBackorder = cart.items.some((item: any) => 
+       item.product.availabilityType === 'BACKORDER'
+     )
 
-    if (hasPreorder) {
-      orderType = 'PREORDER'
-    } else if (hasBackorder) {
-      orderType = 'BACKORDER'
-    }
+     if (hasPreorder) {
+       orderType = 'PREORDER'
+       fulfillmentStatus = 'AWAITING_STOCK'
+     } else if (hasBackorder) {
+       orderType = 'BACKORDER'
+       fulfillmentStatus = 'AWAITING_RESTOCK'
+     }
 
-    // Create order and payment record in a transaction
-    const orderData: any = {
-      userId: payload.userId,
-      total,
-      status: 'PENDING',
-      paymentStatus: 'PENDING',
-      orderType,
-      // Store customer info
-      customerFirstName: customerInfo?.firstName || '',
-      customerLastName: customerInfo?.lastName || '',
-      customerEmail: customerInfo?.email || user.email,
-      customerPhone: customerInfo?.phone || '',
-      customerAddress: customerInfo?.address || '',
-      customerCity: customerInfo?.city || '',
-      customerRegion: customerInfo?.region || '',
-      // Store shipping info
-      shippingZone: shippingInfo?.zone || 'Other Locations',
-      shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
-      shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
-    }
+// Create order and payment record in a transaction
+     const orderData: any = {
+       userId: payload.userId,
+       total,
+       status: 'PENDING',
+       paymentStatus: 'PENDING',
+       orderType,
+       fulfillmentStatus,
+       // Store customer info
+       customerFirstName: customerInfo?.firstName || '',
+       customerLastName: customerInfo?.lastName || '',
+       customerEmail: customerInfo?.email || user.email,
+       customerPhone: customerInfo?.phone || '',
+       customerAddress: customerInfo?.address || '',
+       customerCity: customerInfo?.city || '',
+       customerRegion: customerInfo?.region || '',
+       // Store shipping info
+       shippingZone: shippingInfo?.zone || 'Other Locations',
+       shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
+       shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
+     }
     
     try {
       orderData.subtotal = subtotal
@@ -193,21 +196,25 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        // Create order items with variant information
-        for (const item of cart.items) {
-          await prisma.orderItem.create({
-            data: {
-              orderId: order.id,
-              productId: item.productId,
-              productVariantId: item.productVariantId || null,
-              quantity: item.quantity,
-              price: item.product.price,
-              color: item.color || null,
-              size: item.size || null,
-              age: item.age || null,
-            },
-          })
-        }
+// Create order items with variant information and snapshots
+         for (const item of cart.items) {
+           await prisma.orderItem.create({
+             data: {
+               orderId: order.id,
+               productId: item.productId,
+               productVariantId: item.productVariantId || null,
+               quantity: item.quantity,
+               price: item.product.price,
+               color: item.color || null,
+               size: item.size || null,
+               age: item.age || null,
+               // Snapshot fulfillment data at purchase time
+               availabilityType: item.product.availabilityType,
+               expectedArrivalDate: item.product.expectedArrivalDate || null,
+               expectedRestockDate: item.product.expectedRestockDate || null,
+             },
+           })
+         }
 
         return { order, payment }
       })

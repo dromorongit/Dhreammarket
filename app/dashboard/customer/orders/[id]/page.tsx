@@ -15,9 +15,17 @@ interface OrderItem {
   color?: string | null
   size?: string | null
   age?: string | null
+  availabilityType?: string | null
+  expectedArrivalDate?: string | null
+  expectedRestockDate?: string | null
   product: {
     id: string
     name: string
+    images: Array<{
+      id: string
+      url: string
+      alt: string | null
+    }>
   }
 }
 
@@ -35,6 +43,8 @@ interface Order {
   total: number
   status: string
   paymentStatus: string
+  orderType: string
+  fulfillmentStatus: string
   createdAt: string
   updatedAt: string
   items: OrderItem[]
@@ -53,12 +63,24 @@ interface Order {
 
 // Order status configuration for timeline display
 const ORDER_STATUS_CONFIG = {
-  PENDING: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', step: 0 },
-  PROCESSING: { label: 'Processing', color: 'bg-blue-100 text-blue-800', step: 1 },
-  SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-800', step: 2 },
-  DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800', step: 3 },
-  COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-800', step: 4 },
-  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800', step: -1 },
+  PENDING: { label: 'Pending', color: 'bg-amber-100 text-amber-700', step: 0 },
+  PROCESSING: { label: 'Processing', color: 'bg-blue-100 text-blue-700', step: 1 },
+  SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-700', step: 2 },
+  DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-700', step: 3 },
+  COMPLETED: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700', step: 4 },
+  CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700', step: -1 },
+}
+
+// Fulfillment status configuration
+const FULFILLMENT_STATUS_CONFIG = {
+  PENDING: { label: 'Pending', color: 'bg-gray-100 text-gray-800' },
+  AWAITING_STOCK: { label: 'Awaiting Stock', color: 'bg-amber-100 text-amber-800' },
+  AWAITING_RESTOCK: { label: 'Awaiting Restock', color: 'bg-orange-100 text-orange-800' },
+  READY_TO_FULFILL: { label: 'Ready to Fulfill', color: 'bg-cyan-100 text-cyan-800' },
+  PROCESSING: { label: 'Processing', color: 'bg-blue-100 text-blue-800' },
+  SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-800' },
+  DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
+  CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 }
 
 const PAYMENT_STATUS_CONFIG = {
@@ -270,12 +292,66 @@ export default function CustomerOrderDetailPage() {
                 </span>
               </div>
               <div>
-                <span className="text-xs text-gray-500 mr-2">Status:</span>
+                <span className="text-xs text-gray-500 mr-2">Order:</span>
+                <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">
+                  {order.orderType === 'PREORDER' ? 'Pre-Order' : order.orderType === 'BACKORDER' ? 'Back-Order' : 'Normal'}
+                </span>
                 <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
                   {statusConfig.label}
                 </span>
               </div>
+              {(order.orderType === 'PREORDER' || order.orderType === 'BACKORDER') && (
+                <div>
+                  <span className="text-xs text-gray-500 mr-2">Fulfillment:</span>
+                  <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}`}>
+                    {FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.label || order.fulfillmentStatus}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Expected Date Banner for Pre-orders/Backorders */}
+            {order.orderType === 'PREORDER' && order.items.some(item => item.expectedArrivalDate) && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <div>
+                    <p className="font-medium text-amber-800">Expected Arrival Date</p>
+                    <p className="text-sm text-amber-700">
+                      {order.items.find(item => item.expectedArrivalDate)?.expectedArrivalDate && 
+                        new Date(order.items.find(item => item.expectedArrivalDate)!.expectedArrivalDate!).toLocaleDateString('en-GH', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {order.orderType === 'BACKORDER' && order.items.some(item => item.expectedRestockDate) && (
+              <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <div>
+                    <p className="font-medium text-orange-800">Expected Restock Date</p>
+                    <p className="text-sm text-orange-700">
+                      {order.items.find(item => item.expectedRestockDate)?.expectedRestockDate && 
+                        new Date(order.items.find(item => item.expectedRestockDate)!.expectedRestockDate!).toLocaleDateString('en-GH', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Order Progress Timeline */}
             {renderOrderProgress()}

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
+import { AvailabilityBadge } from '@/components/AvailabilityBadge'
 import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
@@ -25,6 +26,7 @@ interface SearchProduct {
   store: { id: string; name: string; isVerified: boolean } | null
   category: { id: string; name: string } | null
   type: string
+  availabilityType?: string
 }
 
 interface SearchVendor {
@@ -512,11 +514,7 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
               -{discountPercentage}%
             </div>
           )}
-          {product.stock === 0 && (
-            <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-              Sold Out
-            </div>
-          )}
+          <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
         </div>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
           <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 leading-tight">

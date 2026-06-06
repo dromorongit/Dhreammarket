@@ -50,8 +50,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || ''
+    const orderType = searchParams.get('orderType') || ''
+    const fulfillmentStatus = searchParams.get('fulfillmentStatus') || ''
 
-    const skip = (page - 1) * limit
+const skip = (page - 1) * limit
 
     // Build where clause for orders
     const orderWhere: Record<string, unknown> = {
@@ -61,6 +63,16 @@ export async function GET(request: NextRequest) {
     // Filter by order status
     if (status && status !== 'all') {
       orderWhere.status = status
+    }
+
+    // Filter by order type (PREORDER/BACKORDER)
+    if (orderType && orderType !== 'all') {
+      orderWhere.orderType = orderType
+    }
+
+    // Filter by fulfillment status
+    if (fulfillmentStatus && fulfillmentStatus !== 'all') {
+      orderWhere.fulfillmentStatus = fulfillmentStatus
     }
 
     // Search by customer email or order ID
@@ -74,64 +86,65 @@ export async function GET(request: NextRequest) {
     // Get orders containing vendor's products
     const [orders, total] = await Promise.all([
       getPrisma().order.findMany({
-        where: {
-          ...orderWhere,
-          items: {
-            some: {
-              productId: { in: productIds },
-            },
-          },
-        },
-        include: {
-          items: {
-            where: {
-              productId: { in: productIds },
-            },
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-          user: {
-            select: {
-              id: true,
-              email: true,
-              profile: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-          payment: {
-            select: {
-              id: true,
-              status: true,
-              reference: true,
-              amount: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      getPrisma().order.count({
-        where: {
-          ...orderWhere,
-          items: {
-            some: {
-              productId: { in: productIds },
-            },
-          },
-        },
-      }),
-    ])
+         where: {
+           ...orderWhere,
+           items: {
+             some: {
+               productId: { in: productIds },
+             },
+           },
+         },
+         include: {
+           items: {
+             where: {
+               productId: { in: productIds },
+             },
+             include: {
+               product: {
+                 select: {
+                   id: true,
+                   name: true,
+                   availabilityType: true,
+                 },
+               },
+             },
+           },
+           user: {
+             select: {
+               id: true,
+               email: true,
+               profile: {
+                 select: {
+                   firstName: true,
+                   lastName: true,
+                 },
+               },
+             },
+           },
+           payment: {
+             select: {
+               id: true,
+               status: true,
+               reference: true,
+               amount: true,
+             },
+           },
+         },
+         orderBy: { createdAt: 'desc' },
+         skip,
+         take: limit,
+       }),
+       getPrisma().order.count({
+         where: {
+           ...orderWhere,
+           items: {
+             some: {
+               productId: { in: productIds },
+             },
+           },
+         },
+       }),
+     ])
 
     // Calculate vendor totals for each order
     const ordersWithTotals = orders.map((order) => {

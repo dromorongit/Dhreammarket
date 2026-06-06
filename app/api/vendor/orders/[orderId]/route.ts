@@ -51,7 +51,7 @@ export async function GET(
 
     const productIds = store.products.map((p: { id: string }) => p.id)
 
-    // Fetch the order ensuring it contains vendor's products and is paid
+// Fetch the order ensuring it contains vendor's products and is paid
     const order = await getPrisma().order.findFirst({
       where: {
         id: orderId,
@@ -137,7 +137,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Check if vendor has completed onboarding (store and category)
     const isOnboarded = await isVendorOnboarded(payload.userId)
     if (!isOnboarded) {
       return NextResponse.json({ error: 'Complete store setup to update order status' }, { status: 403 })
@@ -145,17 +144,8 @@ export async function PATCH(
 
     const orderId = params.orderId
     const body = await request.json()
-    const { status } = body
+    const { status, fulfillmentStatus } = body
 
-    // Validate status - vendors can only update to PROCESSING, SHIPPED, DELIVERED, or COMPLETED
-    if (!status || !VENDOR_VALID_STATUSES.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status. Must be one of: ' + VENDOR_VALID_STATUSES.join(', ') },
-        { status: 400 }
-      )
-    }
-
-    // Get vendor's store to verify ownership
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
       include: {
@@ -174,7 +164,6 @@ export async function PATCH(
 
     const productIds = store.products.map((p: { id: string }) => p.id)
 
-    // Verify the order contains vendor's products and is paid
     const existingOrder = await getPrisma().order.findFirst({
       where: {
         id: orderId,
@@ -194,13 +183,42 @@ export async function PATCH(
       )
     }
 
-    // Update the order status
+    const updateData: any = {}
+    
+    if (status !== undefined) {
+      if (!VENDOR_VALID_STATUSES.includes(status)) {
+        return NextResponse.json(
+          { error: 'Invalid status. Must be one of: ' + VENDOR_VALID_STATUSES.join(', ') },
+          { status: 400 }
+        )
+      }
+      updateData.status = status
+    }
+
+    if (fulfillmentStatus !== undefined) {
+      const validTransitions: Record<string, string[]> = {
+        AWAITING_STOCK: ['READY_TO_FULFILL'],
+        AWAITING_RESTOCK: ['READY_TO_FULFILL'],
+        READY_TO_FULFILL: ['PROCESSING'],
+        PROCESSING: ['SHIPPED'],
+        SHIPPED: ['DELIVERED'],
+        DELIVERED: ['COMPLETED'],
+      }
+
+      if (!validTransitions[existingOrder.fulfillmentStatus]?.includes(fulfillmentStatus)) {
+        return NextResponse.json(
+          { error: `Invalid fulfillment status transition. From ${existingOrder.fulfillmentStatus}, can only transition to: ${validTransitions[existingOrder.fulfillmentStatus]?.join(', ') || 'none'}` },
+          { status: 400 }
+        )
+      }
+      updateData.fulfillmentStatus = fulfillmentStatus
+    }
+
     const updatedOrder = await getPrisma().order.update({
       where: { id: orderId },
-      data: { status },
+      data: updateData,
     })
 
-    // Get customer info for email notification
     const orderWithUser = await getPrisma().order.findUnique({
       where: { id: orderId },
       include: {
@@ -210,10 +228,10 @@ export async function PATCH(
       },
     })
 
-    // Send status update email (non-blocking)
     if (orderWithUser?.user) {
       const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
-      sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, status).catch(err => {
+      const statusToUpdate = status || updatedOrder.status
+      sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, statusToUpdate).catch(err => {
         console.error('Failed to send order status update email:', err)
       })
     }
@@ -222,6 +240,7 @@ export async function PATCH(
       order: {
         id: updatedOrder.id,
         status: updatedOrder.status,
+        fulfillmentStatus: updatedOrder.fulfillmentStatus,
         updatedAt: updatedOrder.updatedAt,
       },
     })

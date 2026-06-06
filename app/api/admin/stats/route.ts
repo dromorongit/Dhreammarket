@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
       recentOrders,
       recentUsers,
       recentVendors,
+      preorderOrders,
+      backorderOrders,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'VENDOR' } }),
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
       prisma.order.count(),
       prisma.order.findMany({
         where: { paymentStatus: 'PAID' },
-        select: { 
+        select: {
           id: true,
           grossAmount: true,
           processorFee: true,
@@ -72,6 +74,14 @@ export async function GET(request: NextRequest) {
             select: { email: true, role: true },
           },
         },
+      }),
+      prisma.order.findMany({
+        where: { orderType: 'PREORDER', paymentStatus: 'PAID' },
+        select: { fulfillmentStatus: true },
+      }),
+      prisma.order.findMany({
+        where: { orderType: 'BACKORDER', paymentStatus: 'PAID' },
+        select: { fulfillmentStatus: true },
       }),
     ])
 
@@ -118,6 +128,15 @@ export async function GET(request: NextRequest) {
       prisma.vendorCategory.count(),
     ])
 
+    // Group fulfillment status for preorder/backorder orders
+    const groupByFulfillmentStatus = (orders: { fulfillmentStatus: string }[]) => {
+      const statusCounts: Record<string, number> = {}
+      for (const order of orders) {
+        statusCounts[order.fulfillmentStatus] = (statusCounts[order.fulfillmentStatus] || 0) + 1
+      }
+      return Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+    }
+
     return NextResponse.json({
       stats: {
         totalUsers,
@@ -137,6 +156,14 @@ export async function GET(request: NextRequest) {
         totalVendorCategories,
         paidOrderCount: paidOrders.length,
         pendingVerifications,
+        preorderAnalytics: {
+          total: preorderOrders.length,
+          byStatus: groupByFulfillmentStatus(preorderOrders),
+        },
+        backorderAnalytics: {
+          total: backorderOrders.length,
+          byStatus: groupByFulfillmentStatus(backorderOrders),
+        },
       },
       recentOrders,
       recentUsers,

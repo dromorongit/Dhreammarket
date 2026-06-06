@@ -579,16 +579,16 @@ const addToCart = async () => {
                  <span className="text-4xl sm:text-5xl font-bold text-royal-blue">
                    {formatPrice(displayPrice)}
                  </span>
-                 {product.availabilityType === 'PREORDER' && (
-                   <Badge variant="info">
-                     Pre-order Available
-                   </Badge>
-                 )}
-                 {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                   <Badge variant="warning">
-                     Backorder
-                   </Badge>
-                 )}
+{product.availabilityType === 'PREORDER' && (
+                    <Badge variant="preorder">
+                      Pre-order Available
+                    </Badge>
+                  )}
+                  {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                    <Badge variant="backorder">
+                      Backorder
+                    </Badge>
+                  )}
                  {product.availabilityType === 'IN_STOCK' && (
                    <Badge variant={availableStock > 0 ? 'success' : 'danger'}>
                      {availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}

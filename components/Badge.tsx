@@ -2,7 +2,7 @@ import { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium' | 'verified'
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium' | 'verified' | 'preorder' | 'backorder'
   size?: 'sm' | 'md' | 'lg'
   rounded?: boolean
 }
@@ -23,6 +23,8 @@ export function Badge({
     info: 'bg-blue-100 text-blue-700 border border-blue-200',
     premium: 'bg-gradient-to-r from-premium-gold/20 to-yellow-100 text-premium-gold border border-premium-gold/30',
     verified: 'bg-gradient-to-r from-royal-blue/20 to-blue-100 text-royal-blue border border-royal-blue/30',
+    preorder: 'bg-blue-600 text-white',
+    backorder: 'bg-orange-500 text-white',
   }
 
   const sizeClasses = {

@@ -50,6 +50,10 @@ interface VendorMetrics {
   totalPayouts: number
   outstandingBalance: number
   verificationStatus: string
+  fulfillment?: {
+    preorder: { total: number; byStatus: Array<{ status: string; count: number }> }
+    backorder: { total: number; byStatus: Array<{ status: string; count: number }> }
+  }
 }
 
 interface OnboardingStep {
@@ -145,7 +149,8 @@ export default function VendorDashboard() {
           grossRevenue: data?.grossRevenue ?? prev.grossRevenue ?? 0,
           totalPayouts: data?.totalPayouts ?? prev.totalPayouts ?? 0,
           outstandingBalance: data?.outstandingBalance ?? prev.outstandingBalance ?? 0,
-          verificationStatus: data?.verificationStatus ?? prev.verificationStatus ?? 'NOT_APPLIED'
+          verificationStatus: data?.verificationStatus ?? prev.verificationStatus ?? 'NOT_APPLIED',
+          fulfillment: data?.fulfillment || { preorder: { total: 0, byStatus: [] }, backorder: { total: 0, byStatus: [] } }
         }))
       }
     } catch (error) {
@@ -507,25 +512,61 @@ export default function VendorDashboard() {
              </CardContent>
            </Card>
  
-           <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-             <CardContent className="p-6">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                   </svg>
-                 </div>
-                 <div>
-                   <p className="text-sm text-slate-500">Rating</p>
-                   <div className="flex items-center gap-2">
-                     <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-12" /> : metrics.averageRating.toFixed(1)}</p>
-                     {!loading && metrics.totalReviews > 0 && renderStars(metrics.averageRating)}
-                   </div>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
-         </div>
+<Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Pre-orders</p>
+                    <p className="text-2xl font-bold text-deep-navy">
+                      {loading ? <Skeleton className="h-8 w-16" /> : metrics.fulfillment?.preorder.total ?? 0}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Backorders</p>
+                    <p className="text-2xl font-bold text-deep-navy">
+                      {loading ? <Skeleton className="h-8 w-16" /> : metrics.fulfillment?.backorder.total ?? 0}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Rating</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-12" /> : metrics.averageRating.toFixed(1)}</p>
+                      {!loading && metrics.totalReviews > 0 && renderStars(metrics.averageRating)}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
         {/* Store Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

@@ -4,7 +4,8 @@ import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
-import { Badge } from '@/components/Badge';
+import { Badge } from '@/components/Badge'
+import { AvailabilityBadge } from '@/components/AvailabilityBadge';
 import { SkeletonCard } from '@/components/Skeleton';
 import { formatPrice } from '@/lib/currency';
 import { truncateVendorName } from '@/lib/utils';
@@ -231,7 +232,7 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
   const salePrice = discountedPrice ?? product.price
   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
-  return (
+return (
     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
         variant='elevated'
@@ -266,6 +267,7 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
                 <CountdownTimer endTime={product.flashSaleEnd} />
               </div>
             )}
+            <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
@@ -371,6 +373,7 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
                 SAVE {discount}%
               </div>
             )}
+            <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
@@ -430,6 +433,7 @@ function StandardCard({
                 {badge}
               </div>
             )}
+            <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>

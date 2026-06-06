@@ -55,22 +55,20 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const productIds = store.products?.map((p: { id: string }) => p.id) || []
-    const productCount = productIds.length
-
-    // Get verification application status
-    const application = await getPrisma().vendorVerificationApplication.findUnique({
-      where: { vendorId: payload.userId },
-      select: { status: true }
-    })
+const productIds = store.products?.map((p: { id: string }) => p.id) || []
 
     // Include store onboarding status in response
     const hasStore = true
     const hasCategory = !!store.categoryId
+    const productCount = store.products?.length ?? 0
 
     if (productIds.length === 0) {
       // Still fetch payout info
       const payouts = await getPrisma().vendorPayout.findMany({
+        where: { vendorId: payload.userId },
+      })
+      
+      const verificationApp = await getPrisma().vendorVerificationApplication.findUnique({
         where: { vendorId: payload.userId },
       })
       
@@ -85,15 +83,15 @@ export async function GET(request: NextRequest) {
         totalPaidOrders: 0,
         hasStore,
         hasCategory,
-        totalOrders: 0,
-        completedOrders: 0,
-        pendingOrders: 0,
-        cancelledOrders: 0,
+        fulfillment: {
+          preorder: { total: 0, byStatus: [] },
+          backorder: { total: 0, byStatus: [] },
+        },
         grossRevenue: 0,
         totalPayouts: payouts.filter((p: any) => p.status === 'PAID').reduce((sum: number, p: any) => sum + p.amount, 0),
         outstandingBalance: 0,
         lastPayoutDate: payouts.filter((p: any) => p.status === 'PAID').sort((a: any, b: any) => b.paidAt - a.paidAt)[0]?.paidAt || null,
-        verificationStatus: application?.status || 'NOT_APPLIED',
+        verificationStatus: verificationApp?.status || 'NOT_APPLIED',
       })
     }
 
@@ -111,6 +109,8 @@ export async function GET(request: NextRequest) {
         id: true,
         status: true,
         total: true,
+        orderType: true,
+        fulfillmentStatus: true,
       }
     })
 
@@ -222,6 +222,23 @@ export async function GET(request: NextRequest) {
       totalSold: b._sum.quantity || 0
     }))
 
+    // Get fulfillment analytics for pre-orders and backorders
+    const preorderOrders = vendorOrders.filter((o: any) => o.orderType === 'PREORDER')
+    const backorderOrders = vendorOrders.filter((o: any) => o.orderType === 'BACKORDER')
+
+    const groupByFulfillmentStatus = (orders: { fulfillmentStatus: string }[]) => {
+      const statusCounts: Record<string, number> = {}
+      for (const order of orders) {
+        statusCounts[order.fulfillmentStatus] = (statusCounts[order.fulfillmentStatus] || 0) + 1
+      }
+      return Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+    }
+
+    // Get verification application status
+    const verificationApp = await getPrisma().vendorVerificationApplication.findUnique({
+      where: { vendorId: payload.userId },
+    })
+
     return NextResponse.json({
       productCount,
       activeOrderCount,
@@ -241,7 +258,17 @@ export async function GET(request: NextRequest) {
       totalPayouts,
       outstandingBalance,
       lastPayoutDate,
-      verificationStatus: application?.status || 'NOT_APPLIED',
+      verificationStatus: verificationApp?.status || 'NOT_APPLIED',
+      fulfillment: {
+        preorder: {
+          total: preorderOrders.length,
+          byStatus: groupByFulfillmentStatus(preorderOrders),
+        },
+        backorder: {
+          total: backorderOrders.length,
+          byStatus: groupByFulfillmentStatus(backorderOrders),
+        },
+      },
     })
   } catch (error) {
     console.error('Error fetching vendor metrics:', error)
