@@ -114,6 +114,7 @@ function MarketplaceContent() {
     fetchCategories()
     fetchVendorCategories()
     fetchCounts()
+    fetchVendors()
   }, [])
 
   useEffect(() => {
@@ -122,7 +123,7 @@ function MarketplaceContent() {
 
   useEffect(() => {
     fetchVendors()
-  }, [vendorPagination.page])
+  }, [vendorPagination.page, selectedVendorCategory])
 
   useEffect(() => {
     setVendorPagination({ page: 1, limit: 20, totalPages: vendorPagination.totalPages })
@@ -378,12 +379,7 @@ const fetchVendors = async () => {
     return true
   })
 
-  const filteredVendors = vendors.filter(vendor => {
-    if (selectedVendorCategory && vendor.category?.id !== selectedVendorCategory) {
-      return false
-    }
-    return true
-  })
+  const filteredVendors = vendors
 
   if (loading) {
     return (
