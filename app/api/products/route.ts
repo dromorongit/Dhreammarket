@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const sortBy = url.searchParams.get('sortBy') || 'createdAt'
     const sortOrder = url.searchParams.get('sortOrder') || 'desc'
+    const page = parseInt(url.searchParams.get('page') || '1', 10)
     const limit = parseInt(url.searchParams.get('limit') || '50', 10)
     const createdAtMin = url.searchParams.get('createdAtMin')
 
@@ -38,13 +39,16 @@ export async function GET(request: NextRequest) {
       })
 
       if (!store) {
-        const response = NextResponse.json({ products: [] })
+        const response = NextResponse.json({ products: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } })
         response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         response.headers.set('Pragma', 'no-cache')
         return response
       }
 
-      const response = NextResponse.json({ products: store.products })
+      const response = NextResponse.json({ 
+        products: store.products,
+        pagination: { page, limit, total: store.products.length, totalPages: 1 }
+      })
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       response.headers.set('Pragma', 'no-cache')
       return response
@@ -62,10 +66,16 @@ export async function GET(request: NextRequest) {
       whereClause.createdAt = { gte: new Date(createdAtMin) }
     }
 
+    const skip = (page - 1) * limit
+
+    // Get total count for pagination
+    const total = await getPrisma().product.count({ where: whereClause })
+
     // For marketplace browsing (public or authenticated non-vendors), get all products
     // Use cached averageRating and reviewCount from Product model
     const products = await getPrisma().product.findMany({
       where: whereClause,
+      skip,
       take: limit,
       orderBy: {
         [sortBy]: sortOrder,
@@ -115,7 +125,12 @@ export async function GET(request: NextRequest) {
     // Products already include averageRating and reviewCount from select
     const productsWithCachedRatings = products
 
-    const response = NextResponse.json({ products: productsWithCachedRatings })
+    const totalPages = Math.ceil(total / limit)
+
+    const response = NextResponse.json({ 
+      products: productsWithCachedRatings,
+      pagination: { page, limit, total, totalPages }
+    })
     // Prevent caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')

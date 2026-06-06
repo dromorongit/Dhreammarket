@@ -93,6 +93,8 @@ function MarketplaceContent() {
   const [totalProductCategoryCount, setTotalProductCategoryCount] = useState(0)
   const [totalVendorCount, setTotalVendorCount] = useState(0)
   const [totalVendorCategoryCount, setTotalVendorCategoryCount] = useState(0)
+  const [productPagination, setProductPagination] = useState({ page: 1, limit: 50, totalPages: 0 })
+  const [vendorPagination, setVendorPagination] = useState({ page: 1, limit: 20, totalPages: 0 })
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
@@ -109,25 +111,43 @@ function MarketplaceContent() {
   }, [viewMode])
 
   useEffect(() => {
+    fetchCategories()
+    fetchVendorCategories()
+    fetchCounts()
+  }, [])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [productPagination.page])
+
+  useEffect(() => {
+    fetchVendors()
+  }, [vendorPagination.page])
+
+  useEffect(() => {
+    setVendorPagination({ page: 1, limit: 20, totalPages: vendorPagination.totalPages })
+  }, [selectedVendorCategory])
+
+  useEffect(() => {
+    setProductPagination({ page: 1, limit: 50, totalPages: productPagination.totalPages })
+  }, [selectedCategory])
+
+  useEffect(() => {
     const categoryParam = searchParams.get('category') || ''
     const vendorCategoryParam = searchParams.get('vendorCategory') || ''
     const brandParam = searchParams.get('brand') || ''
     setSelectedCategory(categoryParam)
-    setSelectedVendorCategory(vendorCategoryParam)
     setSelectedBrand(brandParam)
-    fetchProducts()
-    fetchCategories()
-    fetchVendorCategories()
-    fetchVendors()
-    fetchCounts()
+    setSelectedVendorCategory(vendorCategoryParam)
   }, [searchParams])
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products')
+      const response = await fetch(`/api/products?page=${productPagination.page}&limit=${productPagination.limit}`)
       if (response.ok) {
         const data = await response.json()
         setProducts(data.products)
+        setProductPagination(prev => ({ ...prev, totalPages: data.pagination?.totalPages || 0 }))
       }
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -160,9 +180,9 @@ function MarketplaceContent() {
     }
   }
 
-  const fetchVendors = async () => {
+const fetchVendors = async () => {
     try {
-      const response = await fetch('/api/vendors')
+      const response = await fetch(`/api/vendors?page=${vendorPagination.page}&limit=${vendorPagination.limit}${selectedVendorCategory ? `&vendorCategoryId=${selectedVendorCategory}` : ''}`)
       if (response.ok) {
         const data = await response.json()
         const sortedVendors = data.vendors.sort((a: Vendor, b: Vendor) => {
@@ -172,6 +192,7 @@ function MarketplaceContent() {
           return b.productCount - a.productCount
         })
         setVendors(sortedVendors)
+        setVendorPagination(prev => ({ ...prev, totalPages: data.pagination?.totalPages || 0 }))
       }
     } catch (error) {
       console.error('Error fetching vendors:', error)
@@ -180,11 +201,21 @@ function MarketplaceContent() {
 
   const fetchCounts = async () => {
     try {
-      const productsResponse = await fetch('/api/products')
-      if (productsResponse.ok) {
-        const productsData = await productsResponse.json()
-        setTotalProductCount(productsData.products?.length || 0)
+      // Get total count for products (without limit)
+      const countResponse = await fetch('/api/products/count')
+      let totalProducts = 0
+      if (countResponse.ok) {
+        const countData = await countResponse.json()
+        totalProducts = countData.count || 0
+      } else {
+        // Fallback: make a request with limit=1 to get total
+        const productsResponse = await fetch('/api/products?limit=1')
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json()
+          totalProducts = productsData.pagination?.total || 0
+        }
       }
+      setTotalProductCount(totalProducts)
 
       const categoriesResponse = await fetch('/api/categories')
       if (categoriesResponse.ok) {
@@ -203,7 +234,7 @@ function MarketplaceContent() {
         setTotalVendorCount(vendorsData.pagination?.total || 0)
       }
 
-const vendorCategoriesResponse = await fetch('/api/vendor-categories')
+      const vendorCategoriesResponse = await fetch('/api/vendor-categories')
       if (vendorCategoriesResponse.ok) {
         const vendorCategoriesData = await vendorCategoriesResponse.json()
         const totalVendorCats = vendorCategoriesData.categories?.reduce((sum: number, cat: any) => sum + (cat.productCount || 0), 0) || 0
@@ -627,64 +658,113 @@ const vendorCategoriesResponse = await fetch('/api/vendor-categories')
               />
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredVendors.map((vendor) => (
-                  <Card
-                    key={vendor.id}
-                    variant="elevated"
-                    className="group overflow-hidden cursor-pointer"
-                  >
-                    <Link href={`/vendor/${vendor.id}`} className="block">
-                      <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-                        {vendor.logo ? (
-                          <img
-                            src={vendor.logo}
-                            alt={`${vendor.name} logo`}
-                            className="absolute inset-0 w-full h-full object-cover opacity-50"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-4xl font-bold text-white opacity-30">
-                              {vendor.name.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                        {vendor.isFeatured && (
-                          <div className="absolute top-3 left-3">
-                            <Badge variant="premium" size="sm">
-                              Featured
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-4 min-w-0">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                            {truncateVendorName(vendor.name)}
-                          </h3>
-                          {vendor.isVerified && (
-                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                          )}
-                        </div>
-                        {vendor.category && (
-                          <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                            {vendor.category.name}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-400">★</span>
-                            <span className="font-medium">{vendor.rating}</span>
-                          </div>
-                          <span className="text-slate-500">
-                            {vendor.productCount} products
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Link>
-                  </Card>
-                ))}
+{filteredVendors.map((vendor) => (
+                   <Card
+                     key={vendor.id}
+                     variant="elevated"
+                     className="group overflow-hidden cursor-pointer"
+                   >
+                     <Link href={`/vendor/${vendor.id}`} className="block">
+                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+                         {vendor.logo ? (
+                           <img
+                             src={vendor.logo}
+                             alt={`${vendor.name} logo`}
+                             className="absolute inset-0 w-full h-full object-cover opacity-50"
+                           />
+                         ) : (
+                           <div className="absolute inset-0 flex items-center justify-center">
+                             <span className="text-4xl font-bold text-white opacity-30">
+                               {vendor.name.charAt(0)}
+                             </span>
+                           </div>
+                         )}
+                         {vendor.isFeatured && (
+                           <div className="absolute top-3 left-3">
+                             <Badge variant="premium" size="sm">
+                               Featured
+                             </Badge>
+                           </div>
+                         )}
+                       </div>
+                       <CardContent className="p-4 min-w-0">
+                         <div className="flex items-center gap-1 min-w-0">
+                           <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                             {truncateVendorName(vendor.name)}
+                           </h3>
+                           {vendor.isVerified && (
+                             <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                           )}
+                         </div>
+                         {vendor.category && (
+                           <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                             {vendor.category.name}
+                           </p>
+                         )}
+                         <div className="flex items-center justify-between text-sm">
+                           <div className="flex items-center gap-1">
+                             <span className="text-yellow-400">★</span>
+                             <span className="font-medium">{vendor.rating}</span>
+                           </div>
+                           <span className="text-slate-500">
+                             {vendor.productCount} products
+                           </span>
+                         </div>
+                       </CardContent>
+                     </Link>
+                   </Card>
+                 ))}
+               </div>
+             )
+           )}
+
+          {/* Pagination Controls */}
+          {viewMode === 'products' && productPagination.totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-between border-t pt-6">
+              <div className="text-sm text-slate-600">
+                Page {productPagination.page} of {productPagination.totalPages}
               </div>
-            )
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setProductPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                  disabled={productPagination.page === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setProductPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={productPagination.page >= productPagination.totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'vendors' && vendorPagination.totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-between border-t pt-6">
+              <div className="text-sm text-slate-600">
+                Page {vendorPagination.page} of {vendorPagination.totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setVendorPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                  disabled={vendorPagination.page === 1}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setVendorPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={vendorPagination.page >= vendorPagination.totalPages}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
