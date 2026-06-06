@@ -23,6 +23,7 @@ interface PlatformStats {
   totalReviews: number
   totalCategories: number
   paidOrderCount: number
+  pendingVerifications: number
 }
 
 interface RecentItem {
@@ -322,34 +323,49 @@ export default function AdminDashboard() {
            </CardContent>
          </Card>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-500 mb-1">Categories</p>
-              <p className="text-3xl font-bold text-deep-navy">{stats?.totalCategories.toLocaleString() || 0}</p>
-              <p className="text-sm text-slate-500 mt-1">Product categories</p>
-            </CardContent>
-          </Card>
+{/* Quick Stats Row */}
+         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+             <CardContent className="p-6">
+               <p className="text-sm text-slate-500 mb-1">Categories</p>
+               <p className="text-3xl font-bold text-deep-navy">{stats?.totalCategories.toLocaleString() || 0}</p>
+               <p className="text-sm text-slate-500 mt-1">Product categories</p>
+             </CardContent>
+           </Card>
 
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-500 mb-1">Reviews</p>
-              <p className="text-3xl font-bold text-deep-navy">{stats?.totalReviews.toLocaleString() || 0}</p>
-              <p className="text-sm text-slate-500 mt-1">Customer reviews</p>
-            </CardContent>
-          </Card>
+           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+             <CardContent className="p-6">
+               <p className="text-sm text-slate-500 mb-1">Reviews</p>
+               <p className="text-3xl font-bold text-deep-navy">{stats?.totalReviews.toLocaleString() || 0}</p>
+               <p className="text-sm text-slate-500 mt-1">Customer reviews</p>
+             </CardContent>
+           </Card>
 
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-6">
-              <p className="text-sm text-slate-500 mb-1">Verified Vendors</p>
-              <p className="text-3xl font-bold text-deep-navy">{stats?.verifiedVendors.toLocaleString() || 0}</p>
-              <p className="text-sm text-slate-500 mt-1">
-                {stats?.totalVendors ? Math.round((stats.verifiedVendors / stats.totalVendors) * 100) : 0}% of vendors
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+           <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+             <CardContent className="p-6">
+               <p className="text-sm text-slate-500 mb-1">Verified Vendors</p>
+               <p className="text-3xl font-bold text-deep-navy">{stats?.verifiedVendors.toLocaleString() || 0}</p>
+               <p className="text-sm text-slate-500 mt-1">
+                 {stats?.totalVendors ? Math.round((stats.verifiedVendors / stats.totalVendors) * 100) : 0}% of vendors
+               </p>
+             </CardContent>
+           </Card>
+
+<Link href="/dashboard/admin/verification-applications">
+              <Card variant="outline" className="hover:border-royal-blue/30 transition-colors cursor-pointer">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-slate-500">Pending Verifications</p>
+                    {(stats?.pendingVerifications ?? 0) > 0 && (
+                      <Badge variant="warning" size="sm">{stats?.pendingVerifications}</Badge>
+                    )}
+                  </div>
+                  <p className="text-3xl font-bold text-deep-navy">{(stats?.pendingVerifications ?? 0).toLocaleString()}</p>
+                  <p className="text-sm text-slate-500 mt-1">Awaiting review</p>
+                </CardContent>
+              </Card>
+            </Link>
+         </div>
 
         {/* Quick Links & Platform Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

@@ -160,20 +160,20 @@ export default function VendorDashboard() {
 
     try {
       setActionLoading(true)
-      const response = await fetch('/api/vendor/verification/apply', {
+
+      const paymentResponse = await fetch('/api/verification-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
 
-      const data = await response.json()
+      const data = await paymentResponse.json()
 
-      if (!response.ok) {
-        alert(data.error || 'Failed to apply for verification')
+      if (!paymentResponse.ok) {
+        alert(data.error || 'Failed to start verification payment')
         return
       }
 
-      // Redirect to verification page to start payment flow
-      window.location.href = '/dashboard/vendor/verification'
+      window.location.href = data.authorizationUrl
     } catch (error) {
       console.error('Error applying for verification:', error)
       alert('Error applying for verification')

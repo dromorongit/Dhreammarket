@@ -12,7 +12,7 @@ interface EmailParams {
   textContent?: string
 }
 
-async function sendEmail({ to, subject, htmlContent, textContent }: EmailParams) {
+export async function sendEmail({ to, subject, htmlContent, textContent }: EmailParams) {
   if (!BREVO_API_KEY) {
     console.log(`[Email Mock] Would send to ${to}: ${subject}`)
     return { success: false, reason: 'Brevo API key not configured' }

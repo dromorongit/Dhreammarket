@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { sendEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -116,6 +117,67 @@ export async function POST(request: NextRequest) {
           action: 'KYC_SUBMITTED',
         }
       })
+
+      const store = await getPrisma().store.findUnique({
+        where: { userId: payload.userId },
+        select: { name: true },
+      })
+
+      const adminSubject = `New Vendor Verification Request - ${store?.name || 'Unknown Store'}`
+      const adminContent = `
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Vendor Verification Request</h2>
+        <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">A vendor has submitted their verification application.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Store Name</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${store?.name || 'Unknown'}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Business Name</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${kycInfo.businessName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Full Name</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${kycInfo.fullName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Email</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${kycInfo.email}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Phone</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${kycInfo.phoneNumber}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Business Type</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${kycInfo.businessType.replace(/_/g, ' ')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Documents</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${documents?.length || 0} document(s) uploaded</td>
+          </tr>
+        </table>
+        <p style="margin: 0; font-size: 14px; color: #6b7280;">
+          Review this application in the admin dashboard: <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin/verification-applications" style="color: #3b82f6;">View Verification Applications</a>
+        </p>
+      `
+      const adminHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Verification Request</title></head>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px;">
+    <tr><td style="padding: 32px 24px;">${adminContent}</td></tr>
+  </table>
+</body></html>`
+
+      try {
+        await sendEmail({
+          to: 'business@dhreamarket.com',
+          subject: adminSubject,
+          htmlContent: adminHtml,
+        })
+      } catch (emailError) {
+        console.error('Failed to send admin email:', emailError)
+      }
 
       return NextResponse.json({ application: updatedApplication })
     }

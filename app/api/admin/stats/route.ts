@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       totalOrders,
       paidOrders,
       verifiedVendors,
+      pendingVerifications,
       recentOrders,
       recentUsers,
       recentVendors,
@@ -43,6 +44,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.store.count({ where: { isVerified: true } }),
+      prisma.vendorVerificationApplication.count({ where: { status: 'PENDING_REVIEW' } }),
       prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
@@ -134,6 +136,7 @@ export async function GET(request: NextRequest) {
         totalProductCategories,
         totalVendorCategories,
         paidOrderCount: paidOrders.length,
+        pendingVerifications,
       },
       recentOrders,
       recentUsers,
