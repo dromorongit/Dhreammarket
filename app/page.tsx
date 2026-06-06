@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
+import { AvailabilityBadge } from '@/components/AvailabilityBadge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { useState, useEffect, useMemo } from 'react'
@@ -932,6 +933,7 @@ interface Product {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
+  availabilityType?: string
   category?: {
     id: string
     name: string
@@ -958,20 +960,20 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
     fetchProducts()
   }, [excludeKey])
 
-  const fetchProducts = async () => {
-     try {
-       const response = await fetch('/api/products')
-       if (response.ok) {
-         const data = await response.json()
-         const availableProducts = (data.products || [])
-           .filter((p: Product) => p.stock > 0 && !excludeIds?.has(p.id))
-           .slice(0, 20)
-         setProducts(availableProducts)
-       }
-     } catch (error) {
-       console.error('Error fetching products:', error)
-     } finally {
-       setLoading(false)
+const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products')
+        if (response.ok) {
+          const data = await response.json()
+          const availableProducts = (data.products || [])
+            .filter((p: Product) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+            .slice(0, 20)
+          setProducts(availableProducts)
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
      }
    }
 
@@ -1037,38 +1039,34 @@ const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flash
              >
                <Link href={`/marketplace/product/${product.id}`} className="block">
                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                   {(product.images?.length ?? 0) > 0 ? (
-                     <img
-                       src={product.images?.[0]?.url}
-                       alt={product.images?.[0]?.alt || product.name}
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                       loading="lazy"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                       <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                       </svg>
-                     </div>
-                   )}
-                   {discountPercentage > 0 && (
-                     <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                       -{discountPercentage}%
-                     </div>
-                   )}
-                   {product.stock === 0 && (
-                     <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                       Sold Out
-                     </div>
-                   )}
-                 </div>
-               </Link>
-              <div className="p-2 space-y-1 flex-1 flex flex-col">
-                <Link href={`/marketplace/product/${product.id}`} className="block">
-                  <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                    {product.name}
-                  </h3>
+{(product.images?.length ?? 0) > 0 ? (
+                      <img
+                        src={product.images?.[0]?.url}
+                        alt={product.images?.[0]?.alt || product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    {discountPercentage > 0 && (
+                      <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                        -{discountPercentage}%
+                      </div>
+                    )}
+                    <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+                  </div>
                 </Link>
+               <div className="p-2 space-y-1 flex-1 flex flex-col">
+                 <Link href={`/marketplace/product/${product.id}`} className="block">
+                   <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                     {product.name}
+                   </h3>
+                 </Link>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-royal-blue">
                     {formatPrice(effectivePrice)}
@@ -1124,38 +1122,34 @@ const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flash
              >
                <Link href={`/marketplace/product/${product.id}`} className="block">
                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                   {(product.images?.length ?? 0) > 0 ? (
-                     <img
-                       src={product.images?.[0]?.url}
-                       alt={product.images?.[0]?.alt || product.name}
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                       loading="lazy"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                       <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                       </svg>
-                     </div>
-                   )}
-                   {discountPercentage > 0 && (
-                     <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                       -{discountPercentage}%
-                     </div>
-                   )}
-                   {product.stock === 0 && (
-                     <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                       Sold Out
-                     </div>
-                   )}
-                 </div>
-               </Link>
-              <div className="p-2 space-y-1 flex-1 flex flex-col">
-                <Link href={`/marketplace/product/${product.id}`} className="block">
-                  <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                    {product.name}
-                  </h3>
+{(product.images?.length ?? 0) > 0 ? (
+                      <img
+                        src={product.images?.[0]?.url}
+                        alt={product.images?.[0]?.alt || product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    {discountPercentage > 0 && (
+                      <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                        -{discountPercentage}%
+                      </div>
+                    )}
+                    <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+                  </div>
                 </Link>
+               <div className="p-2 space-y-1 flex-1 flex flex-col">
+                 <Link href={`/marketplace/product/${product.id}`} className="block">
+                   <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                     {product.name}
+                   </h3>
+                 </Link>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-royal-blue">
                     {formatPrice(effectivePrice)}
@@ -1211,38 +1205,34 @@ const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flash
              >
                <Link href={`/marketplace/product/${product.id}`} className="block">
                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                   {(product.images?.length ?? 0) > 0 ? (
-                     <img
-                       src={product.images?.[0]?.url}
-                       alt={product.images?.[0]?.alt || product.name}
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                       loading="lazy"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                       <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                       </svg>
-                     </div>
-                   )}
-                   {discountPercentage > 0 && (
-                     <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                       -{discountPercentage}%
-                     </div>
-                   )}
-                   {product.stock === 0 && (
-                     <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                       Sold Out
-                     </div>
-                   )}
-                 </div>
-               </Link>
-              <div className="p-2 space-y-1 flex-1 flex flex-col">
-                <Link href={`/marketplace/product/${product.id}`} className="block">
-                  <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                    {product.name}
-                  </h3>
+{(product.images?.length ?? 0) > 0 ? (
+                      <img
+                        src={product.images?.[0]?.url}
+                        alt={product.images?.[0]?.alt || product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    {discountPercentage > 0 && (
+                      <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
+                        -{discountPercentage}%
+                      </div>
+                    )}
+                    <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+                  </div>
                 </Link>
+               <div className="p-2 space-y-1 flex-1 flex flex-col">
+                 <Link href={`/marketplace/product/${product.id}`} className="block">
+                   <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                     {product.name}
+                   </h3>
+                 </Link>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-royal-blue">
                     {formatPrice(effectivePrice)}
