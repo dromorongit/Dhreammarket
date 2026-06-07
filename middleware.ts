@@ -21,7 +21,9 @@ export async function middleware(request: NextRequest) {
   )
 
   if (protectedRoute) {
+    console.log('PATHNAME:', pathname)
     const token = request.cookies.get('token')?.value
+    console.log('TOKEN EXISTS:', !!token)
 
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url))

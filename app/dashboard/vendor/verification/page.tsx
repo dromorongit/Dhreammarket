@@ -146,10 +146,11 @@ function VendorVerificationContent() {
   useEffect(() => {
     fetchData()
     
-    const reference = searchParams.get('reference')
-    const status = searchParams.get('status')
+    const reference =
+      searchParams.get('reference') ||
+      searchParams.get('trxref')
 
-    if (reference && status === 'success') {
+    if (reference) {
       verifyPayment(reference)
       router.replace('/dashboard/vendor/verification')
     }
