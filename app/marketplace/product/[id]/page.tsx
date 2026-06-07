@@ -237,7 +237,7 @@ export default function ProductDetail() {
   }, [product?.variants])
 
   // Find selected variant when options change
-useEffect(() => {
+  useEffect(() => {
      if (!product?.variants?.length) {
        setSelectedVariant(null)
        return
@@ -279,7 +279,7 @@ useEffect(() => {
     return product?.stock || 0
   }, [selectedVariant, product?.stock])
 
-const addToCart = async () => {
+  const addToCart = async () => {
      if (!product || addingToCart) return
 
      const hasVariants = product.variants && product.variants.length > 0
@@ -483,9 +483,9 @@ const addToCart = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-20 lg:pb-0">
       {/* Header */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <button
           onClick={() => router.push('/marketplace')}
           className="text-slate-600 hover:text-deep-navy inline-flex items-center gap-2 transition-colors"
@@ -498,8 +498,8 @@ const addToCart = async () => {
       </div>
 
       {/* Product Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
           {/* Product Images */}
           <div className="space-y-4">
             <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 shadow-lg">
@@ -538,117 +538,116 @@ const addToCart = async () => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             <div>
-              <div className="flex items-start justify-between mb-3">
-                <h1 className="text-3xl sm:text-4xl font-bold text-deep-navy leading-tight">
+              <div className="flex items-start justify-between mb-3 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy leading-tight break-words min-w-0">
                   {product.name}
                 </h1>
                 {product.store?.isVerified && (
-                  <MdVerified className="w-6 h-6 text-sky-500 flex-shrink-0" />
+                  <MdVerified className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 flex-shrink-0 ml-2" />
                 )}
               </div>
-              <p className="text-slate-600 mb-4 flex items-center gap-2">
-                <span className="text-slate-400">by</span>
-                <span className="font-medium text-deep-navy flex items-center gap-1">
+              <p className="text-slate-600 mb-4 flex items-center gap-2 min-w-0">
+                <span className="text-slate-400 flex-shrink-0">by</span>
+                <span className="font-medium text-deep-navy flex items-center gap-1 min-w-0 overflow-hidden text-ellipsis">
                   {product.store?.name || 'Unknown Store'}
                   {product.store?.isVerified && (
-                    <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                    <MdVerified className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500 flex-shrink-0 inline-block" />
                   )}
                 </span>
               </p>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 sm:gap-4 mb-6">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                   {renderStars(Math.round(averageRating))}
-                  <span className="text-slate-600">
+                  <span className="text-slate-600 text-sm sm:text-base">
                     {averageRating > 0 ? `${averageRating.toFixed(1)} (${totalReviews} review${totalReviews !== 1 ? 's' : ''})` : 'No reviews yet'}
                   </span>
                 </div>
               </div>
-<div className="flex items-baseline gap-3 mb-6">
-                 {hasDiscount && (
-                   <>
-                     <span className="text-lg text-slate-400 line-through">
-                       {formatPrice(product.price)}
-                     </span>
-                     <Badge variant="success" size="sm" className="text-xs">
-                       -{discountPercentage}%
-                     </Badge>
-                   </>
-                 )}
-                 <span className="text-4xl sm:text-5xl font-bold text-royal-blue">
-                   {formatPrice(displayPrice)}
-                 </span>
-{product.availabilityType === 'PREORDER' && (
-                    <Badge variant="preorder">
-                      Pre-order Available
+              <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 mb-6 min-w-0">
+                {hasDiscount && (
+                  <>
+                    <span className="text-base sm:text-lg text-slate-400 line-through">
+                      {formatPrice(product.price)}
+                    </span>
+                    <Badge variant="success" size="sm" className="text-xs">
+                      -{discountPercentage}%
                     </Badge>
-                  )}
-                  {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                    <Badge variant="backorder">
-                      Backorder
-                    </Badge>
-                  )}
-                 {product.availabilityType === 'IN_STOCK' && (
-                   <Badge variant={availableStock > 0 ? 'success' : 'danger'}>
-                     {availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}
-                   </Badge>
-                 )}
-               </div>
-{product.category && (
-                 <div className="mb-6">
-                   <Badge variant="default" size="md">
-                     {product.category.name}
-                   </Badge>
-                 </div>
-               )}
+                  </>
+                )}
+                <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-royal-blue break-words">
+                  {formatPrice(displayPrice)}
+                </span>
+                {product.availabilityType === 'PREORDER' && (
+                  <Badge variant="preorder">
+                    Pre-order Available
+                  </Badge>
+                )}
+                {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
+                  <Badge variant="backorder">
+                    Backorder
+                  </Badge>
+                )}
+                {product.availabilityType === 'IN_STOCK' && (
+                  <Badge variant={availableStock > 0 ? 'success' : 'danger'}>
+                    {availableStock > 0 ? `${availableStock} in stock` : 'Out of stock'}
+                  </Badge>
+                )}
+              </div>
+              {product.category && (
+                <div className="mb-6 min-w-0">
+                  <Badge variant="default" size="md" className="break-words">
+                    {product.category.name}
+                  </Badge>
+                </div>
+              )}
 
-               {(product.availabilityType === 'PREORDER' || product.availabilityType === 'BACKORDER') && (
-                 <Card variant="elevated" className="mb-6">
-                   <CardContent className="pt-6">
-                     <h3 className="text-lg font-semibold text-deep-navy mb-3">
-                       {product.availabilityType === 'PREORDER' ? 'Pre-order Information' : 'Backorder Information'}
-                     </h3>
-                     {product.availabilityType === 'PREORDER' && product.expectedArrivalDate && (
-                       <p className="text-sm text-slate-600 mb-2">
-                         Expected arrival: {new Date(product.expectedArrivalDate).toLocaleDateString('en-US', {
-                           year: 'numeric',
-                           month: 'long',
-                           day: 'numeric',
-                         })}
-                       </p>
-                     )}
-                     {product.availabilityType === 'PREORDER' && product.estimatedFulfillmentDays && (
-                       <p className="text-sm text-slate-600 mb-2">
-                         Estimated fulfillment: {product.estimatedFulfillmentDays} days
-                       </p>
-                     )}
-                     {product.availabilityType === 'BACKORDER' && product.expectedRestockDate && (
-                       <p className="text-sm text-slate-600 mb-2">
-                         Expected restock: {new Date(product.expectedRestockDate).toLocaleDateString('en-US', {
-                           year: 'numeric',
-                           month: 'long',
-                           day: 'numeric',
-                         })}
-                       </p>
-                     )}
-                     {product.availabilityType === 'PREORDER' && product.preOrderNotes && (
-                       <p className="text-sm text-slate-600 mt-2">{product.preOrderNotes}</p>
-                     )}
-                     {product.availabilityType === 'BACKORDER' && product.backOrderNotes && (
-                       <p className="text-sm text-slate-600 mt-2">{product.backOrderNotes}</p>
-                     )}
-                   </CardContent>
-                 </Card>
-               )}
-
-             </div>
+              {(product.availabilityType === 'PREORDER' || product.availabilityType === 'BACKORDER') && (
+                <Card variant="elevated" className="mb-6">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold text-deep-navy mb-3 break-words">
+                      {product.availabilityType === 'PREORDER' ? 'Pre-order Information' : 'Backorder Information'}
+                    </h3>
+                    {product.availabilityType === 'PREORDER' && product.expectedArrivalDate && (
+                      <p className="text-sm text-slate-600 mb-2 break-words">
+                        Expected arrival: {new Date(product.expectedArrivalDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    )}
+                    {product.availabilityType === 'PREORDER' && product.estimatedFulfillmentDays && (
+                      <p className="text-sm text-slate-600 mb-2 break-words">
+                        Estimated fulfillment: {product.estimatedFulfillmentDays} days
+                      </p>
+                    )}
+                    {product.availabilityType === 'BACKORDER' && product.expectedRestockDate && (
+                      <p className="text-sm text-slate-600 mb-2 break-words">
+                        Expected restock: {new Date(product.expectedRestockDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    )}
+                    {product.availabilityType === 'PREORDER' && product.preOrderNotes && (
+                      <p className="text-sm text-slate-600 mt-2 break-words">{product.preOrderNotes}</p>
+                    )}
+                    {product.availabilityType === 'BACKORDER' && product.backOrderNotes && (
+                      <p className="text-sm text-slate-600 mt-2 break-words">{product.backOrderNotes}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
             {product.description && (
               <Card variant="outline">
                 <CardContent className="pt-6">
-                  <h3 className="text-lg font-semibold text-deep-navy mb-3">Description</h3>
-                  <p className="text-slate-600 leading-relaxed">{product.description}</p>
+                  <h3 className="text-lg font-semibold text-deep-navy mb-3 break-words">Description</h3>
+                  <p className="text-slate-600 leading-relaxed break-words">{product.description}</p>
                 </CardContent>
               </Card>
             )}
@@ -660,9 +659,9 @@ const addToCart = async () => {
                   <h3 className="text-lg font-semibold text-deep-navy mb-4">Select Variant</h3>
                   
                   {availableColors.length > 0 && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Color</label>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="mb-4 min-w-0">
+                      <label className="block text-sm font-medium text-slate-700 mb-2 break-words">Color</label>
+                      <div className="flex flex-wrap gap-2 min-w-0">
                         {availableColors.map((color) => {
                           const isActive = product.variants?.some(v => v.color === color && v.active)
                           const isInStock = selectedColor === color ? availableStock > 0 : false
@@ -676,7 +675,7 @@ const addToCart = async () => {
                                 setSelectedAge('')
                               }}
                               disabled={!isActive}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all break-words min-w-0 ${
                                 selectedColor === color
                                   ? 'bg-royal-blue text-white'
                                   : isActive
@@ -693,9 +692,9 @@ const addToCart = async () => {
                   )}
 
                   {availableSizes.length > 0 && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Size</label>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="mb-4 min-w-0">
+                      <label className="block text-sm font-medium text-slate-700 mb-2 break-words">Size</label>
+                      <div className="flex flex-wrap gap-2 min-w-0">
                         {availableSizes.map((size) => {
                           const isAvailable = product.variants?.some(v => 
                             v.size === size && v.active && 
@@ -707,7 +706,7 @@ const addToCart = async () => {
                               type="button"
                               onClick={() => setSelectedSize(size)}
                               disabled={!isAvailable}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all break-words min-w-0 ${
                                 selectedSize === size
                                   ? 'bg-royal-blue text-white'
                                   : isAvailable
@@ -724,9 +723,9 @@ const addToCart = async () => {
                   )}
 
                   {availableAges.length > 0 && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-2">Age</label>
-                      <div className="flex flex-wrap gap-2">
+                    <div className="mb-4 min-w-0">
+                      <label className="block text-sm font-medium text-slate-700 mb-2 break-words">Age</label>
+                      <div className="flex flex-wrap gap-2 min-w-0">
                         {availableAges.map((age) => {
                           const isAvailable = product.variants?.some(v => 
                             v.age === age && v.active && 
@@ -739,7 +738,7 @@ const addToCart = async () => {
                               type="button"
                               onClick={() => setSelectedAge(age)}
                               disabled={!isAvailable}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all break-words min-w-0 ${
                                 selectedAge === age
                                   ? 'bg-royal-blue text-white'
                                   : isAvailable
@@ -764,37 +763,37 @@ const addToCart = async () => {
 
             <Card variant="elevated">
               <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold text-deep-navy mb-4">Product Details</h3>
+                <h3 className="text-lg font-semibold text-deep-navy mb-4 break-words">Product Details</h3>
                 <div className="space-y-3">
                   {product.brand && (
-                    <div className="flex justify-between py-2 border-b border-slate-100">
-                      <span className="text-slate-600">Brand</span>
-                      <span className="font-medium text-deep-navy">{product.brand.name}</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-100 gap-1 sm:gap-0">
+                      <span className="text-slate-600 flex-shrink-0">Brand</span>
+                      <span className="font-medium text-deep-navy break-words min-w-0">{product.brand.name}</span>
                     </div>
                   )}
-                  <div className="flex justify-between py-2 border-b border-slate-100">
-                    <span className="text-slate-600">Store</span>
-                    <span className="font-medium text-deep-navy flex items-center gap-1">
+                  <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-100 gap-1 sm:gap-0">
+                    <span className="text-slate-600 flex-shrink-0">Store</span>
+                    <span className="font-medium text-deep-navy flex items-center gap-1 min-w-0 flex-1 flex-wrap">
                       {product.store?.name || 'Unknown Store'}
                       {product.store?.isVerified && (
-                        <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                        <MdVerified className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500 flex-shrink-0 inline-block" />
                       )}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-slate-100">
-                    <span className="text-slate-600">Category</span>
-                    <span className="font-medium text-deep-navy">{product.category?.name || 'Unknown Category'}</span>
+                  <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-100 gap-1 sm:gap-0">
+                    <span className="text-slate-600 flex-shrink-0">Category</span>
+                    <span className="font-medium text-deep-navy break-words min-w-0">{product.category?.name || 'Unknown Category'}</span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-slate-100">
-                    <span className="text-slate-600">Stock Status</span>
-                    <span className={`font-medium ${availableStock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-100 gap-1 sm:gap-0">
+                    <span className="text-slate-600 flex-shrink-0">Stock Status</span>
+                    <span className={`font-medium break-words min-w-0 ${availableStock > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {availableStock > 0 ? `${availableStock} units available` : 'Out of stock'}
                     </span>
                   </div>
                   {hasVariants && (
-                    <div className="flex justify-between py-2 border-b border-slate-100">
-                      <span className="text-slate-600">Variants</span>
-                      <span className="font-medium text-deep-navy">{product.variants.length} option{product.variants.length !== 1 ? 's' : ''}</span>
+                    <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-100 gap-1 sm:gap-0">
+                      <span className="text-slate-600 flex-shrink-0">Variants</span>
+                      <span className="font-medium text-deep-navy break-words min-w-0">{product.variants.length} option{product.variants.length !== 1 ? 's' : ''}</span>
                     </div>
                   )}
                 </div>
@@ -885,40 +884,69 @@ const addToCart = async () => {
               </div>
             )}
 
-<div className="space-y-3">
-               <Button
-                 size="lg"
-                 className="w-full shadow-lg shadow-royal-blue/20"
-                 disabled={(product.availabilityType === 'IN_STOCK' && availableStock === 0) || addingToCart || (hasVariants && !selectedVariant)}
-                 onClick={addToCart}
-               >
-                 {addingToCart
-                   ? 'Adding to Cart...'
-                   : product.availabilityType === 'PREORDER'
-                   ? 'Pre-order Now'
-                   : product.availabilityType === 'BACKORDER'
-                   ? 'Backorder Request'
-                   : availableStock > 0
-                   ? 'Add to Cart'
-                   : 'Out of Stock'}
-               </Button>
-             </div>
+            <div className="space-y-3">
+              <Button
+                size="lg"
+                className="w-full min-h-[48px] shadow-lg shadow-royal-blue/20"
+                disabled={(product.availabilityType === 'IN_STOCK' && availableStock === 0) || addingToCart || (hasVariants && !selectedVariant)}
+                onClick={addToCart}
+              >
+                {addingToCart
+                  ? 'Adding to Cart...'
+                  : product.availabilityType === 'PREORDER'
+                  ? 'Pre-order Now'
+                  : product.availabilityType === 'BACKORDER'
+                  ? 'Backorder Request'
+                  : availableStock > 0
+                  ? 'Add to Cart'
+                  : 'Out of Stock'}
+              </Button>
+            </div>
+
+            {/* Mobile Sticky Purchase Bar */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-slate-200 p-4 z-40 pb-safe">
+              <div className="max-w-4xl mx-auto px-4 flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-slate-500 text-xs">Price</p>
+                  <p className="text-xl font-bold text-royal-blue break-words">{formatPrice(displayPrice)}</p>
+                  {hasDiscount && (
+                    <p className="text-slate-400 text-sm line-through">{formatPrice(product.price)}</p>
+                  )}
+                </div>
+                <Button
+                  size="lg"
+                  className="min-h-[48px] px-6 whitespace-nowrap"
+                  disabled={(product.availabilityType === 'IN_STOCK' && availableStock === 0) || addingToCart || (hasVariants && !selectedVariant)}
+                  onClick={addToCart}
+                >
+                  {addingToCart
+                    ? 'Adding...'
+                    : product.availabilityType === 'PREORDER'
+                    ? 'Pre-order Now'
+                    : product.availabilityType === 'BACKORDER'
+                    ? 'Backorder Request'
+                    : availableStock > 0
+                    ? 'Add to Cart'
+                    : 'Out of Stock'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Reviews Section */}
-        <div className="mt-16">
-          <div className="flex items-center justify-between mb-8">
+        <div className="mt-16 lg:mt-20 pb-20 lg:pb-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-deep-navy">Customer Reviews</h2>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-deep-navy">Customer Reviews</h2>
               {totalReviews > 0 && (
-                <p className="text-slate-600 mt-1">
+                <p className="text-slate-600 mt-1 text-sm sm:text-base">
                   {averageRating.toFixed(1)} out of 5 ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
                 </p>
               )}
             </div>
             {user && user.role === 'CUSTOMER' && !showReviewForm && canReview && (
-              <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+              <Button variant="outline" size="sm" className="sm:size-md min-h-[44px]">
                 Write a Review
               </Button>
             )}
@@ -1048,7 +1076,7 @@ const addToCart = async () => {
                       </div>
                     </div>
                     {review.comment && (
-                      <p className="text-slate-700 leading-relaxed">{review.comment}</p>
+                      <p className="text-slate-700 leading-relaxed break-words">{review.comment}</p>
                     )}
                   </CardContent>
                 </Card>
