@@ -115,13 +115,15 @@ export async function POST(request: NextRequest) {
         data: {
           applicationId: application.id,
           action: 'KYC_SUBMITTED',
-        }
+        },
       })
 
       const store = await getPrisma().store.findUnique({
         where: { userId: payload.userId },
         select: { name: true },
       })
+
+      const APP_URL_ADMIN = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000'
 
       const adminSubject = `New Vendor Verification Request - ${store?.name || 'Unknown Store'}`
       const adminContent = `
@@ -157,8 +159,8 @@ export async function POST(request: NextRequest) {
             <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${documents?.length || 0} document(s) uploaded</td>
           </tr>
         </table>
-        <p style="margin: 0; font-size: 14px; color: #6b7280;">
-          Review this application in the admin dashboard: <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/admin/verification-applications" style="color: #3b82f6;">View Verification Applications</a>
+<p style="margin: 0; font-size: 14px; color: #6b7280;">
+          Review this application in the admin dashboard: <a href="${APP_URL_ADMIN}/dashboard/admin/verification-applications" style="color: #3b82f6;">View Verification Applications</a>
         </p>
       `
       const adminHtml = `<!DOCTYPE html>

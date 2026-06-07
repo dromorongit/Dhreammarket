@@ -226,9 +226,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Paystack payment
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://dhreamarket-production.up.railway.app'}/checkout?reference=${reference}`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
+    const callbackUrl = `${appUrl}/checkout?reference=${reference}`
     console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
-    
+
+    if (!appUrl) {
+      console.error('[Checkout API] CRITICAL ERROR: APP_URL is not configured. Set NEXT_PUBLIC_APP_URL or APP_URL environment variable.')
+    }
+
     try {
       const paystackResponse = await initializePaystackPayment(
         user.email,

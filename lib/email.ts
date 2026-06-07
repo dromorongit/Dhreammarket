@@ -4,6 +4,14 @@
 const BREVO_API_KEY = process.env.BREVO_API_KEY
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@dhreamarket.com'
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Dhream Market'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
+
+function getAppUrl(): string {
+  if (!APP_URL) {
+    console.error('[Email] CRITICAL ERROR: APP_URL is not configured. Set NEXT_PUBLIC_APP_URL or APP_URL environment variable.')
+  }
+  return APP_URL || 'http://localhost:3000'
+}
 
 interface EmailParams {
   to: string
@@ -270,7 +278,7 @@ export async function sendPasswordResetEmail(
   resetToken: string,
   expiresAt: Date
 ) {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password/${resetToken}`
+  const resetUrl = `${getAppUrl()}/reset-password/${resetToken}`
   const expiryHours = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60))
   
   const subject = 'Reset Your Dhream Market Password'

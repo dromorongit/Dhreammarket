@@ -76,7 +76,12 @@ export async function POST(request: NextRequest) {
 
     // Generate payment reference
     const paymentReference = generateVerificationReference()
-    const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/vendor/verification`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
+    const callbackUrl = `${appUrl}/dashboard/vendor/verification`
+
+    if (!appUrl) {
+      console.error('[Verification Payment API] CRITICAL ERROR: APP_URL is not configured. Set NEXT_PUBLIC_APP_URL or APP_URL environment variable.')
+    }
 
     if (!application) {
       // Create new application in UNPAID state
