@@ -128,10 +128,6 @@ function VendorVerificationContent() {
       }
     }
     
-    if (!kycDocuments['business_registration_certificate']) {
-      return false
-    }
-    
     return true
   }, [kycData.nationalIdType, kycDocuments, getDocumentKeysForType])
 
@@ -284,14 +280,12 @@ function VendorVerificationContent() {
       }
     }
 
-    if (!kycDocuments['business_registration_certificate']) {
-      alert('Please upload the Business Registration Certificate before submitting.')
-      return
-    }
-
     setSubmitting(true)
     try {
-      const allDocKeys = [...idDocKeys, 'business_registration_certificate']
+      const allDocKeys = [...idDocKeys]
+      if (kycDocuments['business_registration_certificate']) {
+        allDocKeys.push('business_registration_certificate')
+      }
       const documents = allDocKeys
         .filter(key => kycDocuments[key])
         .map(key => ({
@@ -665,14 +659,14 @@ function VendorVerificationContent() {
                 <div className="border-t pt-4">
                   <h3 className="font-medium text-gray-900 mb-3">Business Verification Documents</h3>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Business Registration Certificate Upload *</label>
-                    <ImageUpload
-                      value={kycDocuments['business_registration_certificate'] ? [kycDocuments['business_registration_certificate']] : []}
-                      onChange={(urls) => setKycDocuments(prev => ({ ...prev, business_registration_certificate: urls[0] || '' }))}
-                      folder="verification"
-                      maxFiles={1}
-                      maxSizeMB={5}
-                    />
+<label className="block text-sm font-medium text-gray-700 mb-1">Business Registration Certificate Upload (Optional)</label>
+                     <ImageUpload
+                       value={kycDocuments['business_registration_certificate'] ? [kycDocuments['business_registration_certificate']] : []}
+                       onChange={(urls) => setKycDocuments(prev => ({ ...prev, business_registration_certificate: urls[0] || '' }))}
+                       folder="verification"
+                       maxFiles={1}
+                       maxSizeMB={5}
+                     />
                   </div>
                 </div>
 
