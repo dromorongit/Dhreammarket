@@ -32,6 +32,8 @@ interface PlatformStats {
     total: number
     byStatus: Array<{ status: string; count: number }>
   }
+  overdueOrders?: number
+  avgFulfillmentDays?: number
 }
 
 interface RecentItem {
@@ -371,6 +373,29 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </Link>
+            
+            {(stats?.overdueOrders ?? 0) > 0 && (
+              <Link href="/dashboard/admin/orders">
+                <Card variant="outline" className="hover:border-red-300 transition-colors cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-slate-500">Overdue Orders</p>
+                      <Badge variant="danger" size="sm">{stats?.overdueOrders}</Badge>
+                    </div>
+                    <p className="text-3xl font-bold text-red-600">{(stats?.overdueOrders ?? 0).toLocaleString()}</p>
+                    <p className="text-sm text-slate-500 mt-1">Needs attention</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            )}
+            
+            <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
+              <CardContent className="p-6">
+                <p className="text-sm text-slate-500 mb-1">Avg. Fulfillment</p>
+                <p className="text-3xl font-bold text-indigo-600">{stats?.avgFulfillmentDays ?? 0}d</p>
+                <p className="text-sm text-slate-500 mt-1">For pre/backorders</p>
+              </CardContent>
+            </Card>
           </div>
 
         {/* Quick Links & Platform Status */}

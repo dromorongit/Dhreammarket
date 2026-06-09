@@ -59,10 +59,29 @@ export default function VendorFulfillmentPage() {
   const [error, setError] = useState<string | null>(null)
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState('all')
+  const [analytics, setAnalytics] = useState<{
+    preorderCount: number
+    backorderCount: number
+    overdueCount: number
+    avgFulfillmentDays: number
+  } | null>(null)
 
   useEffect(() => {
     fetchFulfillmentOrders()
+    fetchAnalytics()
   }, [filter])
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch('/api/vendor/fulfillment/analytics')
+      if (response.ok) {
+        const data = await response.json()
+        setAnalytics(data)
+      }
+    } catch (err) {
+      console.error('Error fetching fulfillment analytics:', err)
+    }
+  }
 
   const fetchFulfillmentOrders = async () => {
     try {
@@ -172,6 +191,38 @@ export default function VendorFulfillmentPage() {
           <h1 className="text-2xl font-bold text-gray-900">Pre-orders & Backorders</h1>
           <p className="text-gray-600 mt-1">Manage your pre-order and backorder fulfillment</p>
         </div>
+
+        {/* Fulfillment Alerts */}
+        {analytics && (
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-cyan-50 border-cyan-200">
+              <CardContent className="p-4">
+                <p className="text-sm text-cyan-600 font-medium">Pre-orders</p>
+                <p className="text-2xl font-bold text-cyan-700">{analytics.preorderCount}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4">
+                <p className="text-sm text-orange-600 font-medium">Backorders</p>
+                <p className="text-2xl font-bold text-orange-700">{analytics.backorderCount}</p>
+              </CardContent>
+            </Card>
+            {analytics.overdueCount > 0 && (
+              <Card className="bg-red-50 border-red-200">
+                <CardContent className="p-4">
+                  <p className="text-sm text-red-600 font-medium">Overdue</p>
+                  <p className="text-2xl font-bold text-red-700">{analytics.overdueCount}</p>
+                </CardContent>
+              </Card>
+            )}
+            <Card className="bg-slate-50 border-slate-200">
+              <CardContent className="p-4">
+                <p className="text-sm text-slate-600 font-medium">Avg. Fulfillment</p>
+                <p className="text-2xl font-bold text-slate-700">{analytics.avgFulfillmentDays}d</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="mb-6">

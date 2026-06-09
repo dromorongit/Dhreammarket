@@ -268,6 +268,7 @@ model Order {
   payment                  Payment?
   productReviews           ProductReview[]
   vendorReviews            VendorReview[]
+  fulfillmentEvents        FulfillmentEvent[]
 
   @@map("orders")
 }
@@ -704,4 +705,20 @@ enum OrderFulfillmentStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+model FulfillmentEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  eventType   String
+  title       String
+  description String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("fulfillment_events")
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,16 @@ const VALID_FULFILLMENT_TRANSITIONS: Record<string, string[]> = {
 // Get only the next valid status for display
 const getNext_FULFILLMENT_STATUS = (currentStatus: string): string | null => {
   return VALID_FULFILLMENT_TRANSITIONS[currentStatus]?.[0] || null
+}
+
+const EVENT_DESCRIPTIONS: Record<string, string> = {
+  STOCK_RECEIVED: 'Pre-ordered item is now in stock and ready for processing.',
+  RESTOCK_RECEIVED: 'Backordered item has been restocked and is ready for processing.',
+  READY_TO_FULFILL: 'Order is ready to be fulfilled.',
+  PROCESSING: 'Order is being processed.',
+  SHIPPED: 'Order has been shipped.',
+  DELIVERED: 'Order has been delivered.',
+  CANCELLED: 'Order has been cancelled.',
 }
 
 export async function GET(request: NextRequest) {
@@ -212,6 +223,13 @@ export async function PATCH(request: NextRequest) {
           },
         },
       },
+      include: {
+        items: {
+          include: {
+            product: { select: { name: true } },
+          },
+        },
+      },
     })
 
     if (!existingOrder) {
@@ -233,6 +251,24 @@ export async function PATCH(request: NextRequest) {
       where: { id: orderId },
       data: { fulfillmentStatus },
     })
+
+    // Map fulfillment status to event type
+    const eventMap: Record<string, 'STOCK_RECEIVED' | 'RESTOCK_RECEIVED' | 'READY_TO_FULFILL' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'> = {
+      READY_TO_FULFILL: existingOrder.orderType === 'PREORDER' ? 'STOCK_RECEIVED' : 'RESTOCK_RECEIVED',
+      PROCESSING: 'PROCESSING',
+      SHIPPED: 'SHIPPED',
+      DELIVERED: 'DELIVERED',
+      CANCELLED: 'CANCELLED',
+    }
+
+    const eventType = eventMap[fulfillmentStatus]
+    if (eventType) {
+      const item = existingOrder.items?.[0]
+      recordFulfillmentEvent(orderId, eventType, payload.userId, {
+        productName: item?.product.name,
+        description: EVENT_DESCRIPTIONS[eventType],
+      }).catch(err => console.error('Failed to record fulfillment event:', err))
+    }
 
     return NextResponse.json({
       order: {

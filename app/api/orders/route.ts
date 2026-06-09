@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 
 export async function GET(request: NextRequest) {
   try {
@@ -116,6 +117,11 @@ export async function POST(request: NextRequest) {
       })
 
       return order
+    })
+
+    // Record ORDER_CREATED event for NORMAL orders
+    recordFulfillmentEvent(result.id, 'ORDER_CREATED', payload.userId).catch(err => {
+      console.error('Failed to record order created event:', err)
     })
 
     return NextResponse.json({

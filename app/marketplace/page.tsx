@@ -569,16 +569,23 @@ const fetchVendors = async () => {
                                 -{discountPercentage}%
                               </div>
                             )}
-{product.availabilityType === 'PREORDER' && (
-                               <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                 Pre-order
-                               </Badge>
-                             )}
-                             {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                               <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                 Backorder
-                               </Badge>
-                             )}
+{(product.availabilityType === 'PREORDER' || product.availabilityType === 'BACKORDER') && (
+    <div className="absolute top-2 right-2 flex flex-col gap-1 items-end z-10">
+      <Badge variant={product.availabilityType === 'PREORDER' ? 'preorder' : 'backorder'} size="sm" className="text-[10px] px-1.5 py-0.5">
+        {product.availabilityType === 'PREORDER' ? 'Pre-order' : 'Backorder'}
+      </Badge>
+      {product.availabilityType === 'PREORDER' && product.expectedArrivalDate && (
+        <div className="bg-amber-50 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-200">
+          Arrives {new Date(product.expectedArrivalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </div>
+      )}
+      {product.availabilityType === 'BACKORDER' && product.expectedRestockDate && (
+        <div className="bg-orange-50 text-orange-800 text-[10px] px-1.5 py-0.5 rounded-full border border-orange-200">
+          Restocks {new Date(product.expectedRestockDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+        </div>
+      )}
+    </div>
+  )}
                             {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
                               <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                                 Sold Out

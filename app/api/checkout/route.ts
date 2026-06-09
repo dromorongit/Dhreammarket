@@ -3,7 +3,8 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { initializePaystackPayment, isPaystackConfigured } from '@/lib/paystack'
 import { sendOrderConfirmationEmail } from '@/lib/email'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, formatNotificationMessage } from '@/lib/notifications'
+import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import crypto from 'crypto'
 
 // PRODUCTION RUNTIME HARDENING
@@ -264,10 +265,23 @@ export async function POST(request: NextRequest) {
         console.error('Failed to send order confirmation email:', err)
       })
 
-      // Create in-app notification
-      createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: GHS ${total.toFixed(2)}`).catch(err => {
-        console.error('Failed to create notification:', err)
-      })
+// Create in-app notification
+       createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: GHS ${total.toFixed(2)}`).catch(err => {
+         console.error('Failed to create notification:', err)
+       })
+
+       // Record fulfillment events
+       if (orderType === 'PREORDER') {
+         const firstItem = cart.items[0]
+         recordFulfillmentEvent(result.order.id, 'PREORDER_PLACED', payload.userId, {
+           productName: firstItem?.product?.name,
+         }).catch(err => console.error('Failed to record preorder event:', err))
+       } else if (orderType === 'BACKORDER') {
+         const firstItem = cart.items[0]
+         recordFulfillmentEvent(result.order.id, 'BACKORDER_PLACED', payload.userId, {
+           productName: firstItem?.product?.name,
+         }).catch(err => console.error('Failed to record backorder event:', err))
+       }
 
       return NextResponse.json({
         orderId: result.order.id,

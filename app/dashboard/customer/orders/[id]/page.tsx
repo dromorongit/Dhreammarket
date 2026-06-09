@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import { EventTimeline } from '@/components/OrderTimeline'
 
 interface OrderItem {
   id: string
@@ -61,14 +62,32 @@ interface Order {
   }
 }
 
+interface FulfillmentEvent {
+  id: string
+  eventType: string
+  title: string
+  description: string | null
+  createdAt: string
+}
+
 // Order status configuration for timeline display
 const ORDER_STATUS_CONFIG = {
-  PENDING: { label: 'Pending', color: 'bg-amber-100 text-amber-700', step: 0 },
+  PENDING: { label: 'Order Placed', color: 'bg-amber-100 text-amber-700', step: 0 },
   PROCESSING: { label: 'Processing', color: 'bg-blue-100 text-blue-700', step: 1 },
   SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-700', step: 2 },
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-700', step: 3 },
   COMPLETED: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700', step: 4 },
   CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700', step: -1 },
+}
+
+const FULFILLMENT_STEPS: Record<string, { label: string; percentage: number }> = {
+  PENDING: { label: 'Order Placed', percentage: 5 },
+  AWAITING_STOCK: { label: 'Awaiting Stock', percentage: 15 },
+  AWAITING_RESTOCK: { label: 'Awaiting Restock', percentage: 15 },
+  READY_TO_FULFILL: { label: 'Ready to Fulfill', percentage: 35 },
+  PROCESSING: { label: 'Processing', percentage: 55 },
+  SHIPPED: { label: 'Shipped', percentage: 75 },
+  DELIVERED: { label: 'Delivered', percentage: 90 },
 }
 
 // Fulfillment status configuration
@@ -96,12 +115,15 @@ export default function CustomerOrderDetailPage() {
   const params = useParams()
   const orderId = params.id as string
   const [order, setOrder] = useState<Order | null>(null)
+  const [events, setEvents] = useState<FulfillmentEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingEvents, setLoadingEvents] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetail()
+      fetchEvents()
     }
   }, [orderId])
 
@@ -127,8 +149,23 @@ export default function CustomerOrderDetailPage() {
     }
   }
 
-  // Render order status timeline/progress
-  const renderOrderProgress = () => {
+  const fetchEvents = async () => {
+    try {
+      setLoadingEvents(true)
+      const response = await fetch(`/api/orders/${orderId}/events`)
+      if (response.ok) {
+        const data = await response.json()
+        setEvents(data.events)
+      }
+    } catch (err) {
+      console.error('Error fetching fulfillment events:', err)
+    } finally {
+      setLoadingEvents(false)
+    }
+  }
+
+// Render order status timeline/progress
+   const renderOrderProgress = () => {
     if (!order) return null
     
     const statusConfig = ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]
@@ -139,7 +176,6 @@ export default function CustomerOrderDetailPage() {
       { key: 'PROCESSING', ...ORDER_STATUS_CONFIG.PROCESSING },
       { key: 'SHIPPED', ...ORDER_STATUS_CONFIG.SHIPPED },
       { key: 'DELIVERED', ...ORDER_STATUS_CONFIG.DELIVERED },
-      { key: 'COMPLETED', ...ORDER_STATUS_CONFIG.COMPLETED },
     ]
 
     return (
@@ -172,6 +208,29 @@ export default function CustomerOrderDetailPage() {
             </div>
           ))}
         </div>
+      </div>
+    )
+  }
+
+  const renderFulfillmentProgress = () => {
+    if (!order || order.orderType === 'NORMAL') return null
+    
+    const fulfillmentStep = FULFILLMENT_STEPS[order.fulfillmentStatus as keyof typeof FULFILLMENT_STEPS]
+    if (!fulfillmentStep) return null
+    
+    return (
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">Fulfillment Progress</span>
+          <span className="text-sm font-semibold text-orange-600">{fulfillmentStep.percentage}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transition-all duration-500"
+            style={{ width: `${fulfillmentStep.percentage}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">{fulfillmentStep.label}</p>
       </div>
     )
   }
@@ -355,6 +414,9 @@ export default function CustomerOrderDetailPage() {
 
             {/* Order Progress Timeline */}
             {renderOrderProgress()}
+            
+            {/* Fulfillment Progress for Pre-orders/Backorders */}
+            {renderFulfillmentProgress()}
 
             {/* Order Summary */}
             <div className="border-t pt-4 mt-4">
@@ -480,6 +542,22 @@ export default function CustomerOrderDetailPage() {
                   </span>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Fulfillment Events Timeline */}
+        {(order.orderType === 'PREORDER' || order.orderType === 'BACKORDER') && (
+          <Card className="mb-6">
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Fulfillment Events</h2>
+            </CardHeader>
+            <CardContent>
+              {loadingEvents ? (
+                <p className="text-sm text-gray-500">Loading events...</p>
+              ) : (
+                <EventTimeline events={events} />
+              )}
             </CardContent>
           </Card>
         )}

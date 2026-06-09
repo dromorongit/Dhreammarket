@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
       recentVendors,
       preorderOrders,
       backorderOrders,
+      overdueOrders,
+      completedPreorderOrders,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'VENDOR' } }),
@@ -83,6 +85,40 @@ export async function GET(request: NextRequest) {
         where: { orderType: 'BACKORDER', paymentStatus: 'PAID' },
         select: { fulfillmentStatus: true },
       }),
+      prisma.order.count({
+        where: {
+          orderType: { in: ['PREORDER', 'BACKORDER'] },
+          paymentStatus: 'PAID',
+          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
+          OR: [
+            {
+              items: {
+                some: {
+                  expectedArrivalDate: { lt: new Date() },
+                },
+              },
+            },
+            {
+              items: {
+                some: {
+                  expectedRestockDate: { lt: new Date() },
+                },
+              },
+            },
+          ],
+        },
+      }),
+      prisma.order.findMany({
+        where: {
+          orderType: { in: ['PREORDER', 'BACKORDER'] },
+          paymentStatus: 'PAID',
+          status: { in: ['DELIVERED', 'COMPLETED'] },
+        },
+        select: {
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
     ])
 
     // Calculate financial totals from paid orders
@@ -137,6 +173,19 @@ export async function GET(request: NextRequest) {
       return Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
     }
 
+    // Calculate average fulfillment days
+    let avgFulfillmentDays = 0
+    if (completedPreorderOrders.length > 0) {
+      const totalDays = completedPreorderOrders.reduce((sum, order) => {
+        const days = Math.floor(
+          (new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()) /
+          (1000 * 60 * 60 * 24)
+        )
+        return sum + days
+      }, 0)
+      avgFulfillmentDays = Math.round(totalDays / completedPreorderOrders.length)
+    }
+
     return NextResponse.json({
       stats: {
         totalUsers,
@@ -149,9 +198,9 @@ export async function GET(request: NextRequest) {
         totalNetAmount,
         totalPlatformCommission,
         totalVendorEarnings,
-        totalRevenue, // Keep for backward compatibility
+        totalRevenue,
         totalReviews,
-        totalCategories: totalProductCategories, // Product categories count for frontend compatibility
+        totalCategories: totalProductCategories,
         totalProductCategories,
         totalVendorCategories,
         paidOrderCount: paidOrders.length,
@@ -164,6 +213,8 @@ export async function GET(request: NextRequest) {
           total: backorderOrders.length,
           byStatus: groupByFulfillmentStatus(backorderOrders),
         },
+        overdueOrders,
+        avgFulfillmentDays,
       },
       recentOrders,
       recentUsers,

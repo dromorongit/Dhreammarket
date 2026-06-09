@@ -14,17 +14,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notifications = await getPrisma().notification.findMany({
-      where: { userId: payload.userId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    })
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
 
-    const unreadCount = notifications.filter((n: { isRead: boolean }) => !n.isRead).length
+    const skip = (page - 1) * limit
+
+    const [notifications, total, unreadCount] = await Promise.all([
+      getPrisma().notification.findMany({
+        where: { userId: payload.userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      getPrisma().notification.count({ where: { userId: payload.userId } }),
+      getPrisma().notification.count({ where: { userId: payload.userId, isRead: false } }),
+    ])
 
     return NextResponse.json({
       notifications,
       unreadCount,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
     })
   } catch (error) {
     console.error('Error fetching notifications:', error)
