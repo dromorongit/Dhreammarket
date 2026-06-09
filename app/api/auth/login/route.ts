@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
     // If checked: 30 days, otherwise: 7 days (default session)
     const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7
 
+    console.log('Setting token cookie')
+    console.log('NODE_ENV:', process.env.NODE_ENV)
+    console.log('Cookie secure flag:', process.env.NODE_ENV === 'production')
+    
     const response = NextResponse.json({ message: 'Login successful', user: { id: user.id, email: user.email, role: user.role } })
     response.cookies.set('token', token, {
       httpOnly: true,
@@ -38,6 +42,8 @@ export async function POST(request: NextRequest) {
       maxAge: cookieMaxAge,
       path: '/',
     })
+
+    console.log('Response Set-Cookie header:', response.headers.get('set-cookie'))
 
     return response
   } catch (error) {
