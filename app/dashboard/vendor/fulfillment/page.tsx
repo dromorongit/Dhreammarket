@@ -64,6 +64,8 @@ export default function VendorFulfillmentPage() {
     backorderCount: number
     overdueCount: number
     avgFulfillmentDays: number
+    readyToFulfillCount: number
+    allocatedToday: number
   } | null>(null)
 
   useEffect(() => {
@@ -193,36 +195,42 @@ export default function VendorFulfillmentPage() {
         </div>
 
         {/* Fulfillment Alerts */}
-        {analytics && (
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-cyan-50 border-cyan-200">
-              <CardContent className="p-4">
-                <p className="text-sm text-cyan-600 font-medium">Pre-orders</p>
-                <p className="text-2xl font-bold text-cyan-700">{analytics.preorderCount}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-orange-50 border-orange-200">
-              <CardContent className="p-4">
-                <p className="text-sm text-orange-600 font-medium">Backorders</p>
-                <p className="text-2xl font-bold text-orange-700">{analytics.backorderCount}</p>
-              </CardContent>
-            </Card>
-            {analytics.overdueCount > 0 && (
-              <Card className="bg-red-50 border-red-200">
-                <CardContent className="p-4">
-                  <p className="text-sm text-red-600 font-medium">Overdue</p>
-                  <p className="text-2xl font-bold text-red-700">{analytics.overdueCount}</p>
-                </CardContent>
-              </Card>
-            )}
-            <Card className="bg-slate-50 border-slate-200">
-              <CardContent className="p-4">
-                <p className="text-sm text-slate-600 font-medium">Avg. Fulfillment</p>
-                <p className="text-2xl font-bold text-slate-700">{analytics.avgFulfillmentDays}d</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+{analytics && (
+           <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-6">
+             <Card className="bg-cyan-50 border-cyan-200">
+               <CardContent className="p-4">
+                 <p className="text-sm text-cyan-600 font-medium">Pre-orders</p>
+                 <p className="text-2xl font-bold text-cyan-700">{analytics.preorderCount}</p>
+               </CardContent>
+             </Card>
+             <Card className="bg-orange-50 border-orange-200">
+               <CardContent className="p-4">
+                 <p className="text-sm text-orange-600 font-medium">Backorders</p>
+                 <p className="text-2xl font-bold text-orange-700">{analytics.backorderCount}</p>
+               </CardContent>
+             </Card>
+             <Card className="bg-emerald-50 border-emerald-200">
+               <CardContent className="p-4">
+                 <p className="text-sm text-emerald-600 font-medium">Ready to Fulfill</p>
+                 <p className="text-2xl font-bold text-emerald-700">{analytics.readyToFulfillCount}</p>
+               </CardContent>
+             </Card>
+             {analytics.overdueCount > 0 && (
+               <Card className="bg-red-50 border-red-200">
+                 <CardContent className="p-4">
+                   <p className="text-sm text-red-600 font-medium">Overdue</p>
+                   <p className="text-2xl font-bold text-red-700">{analytics.overdueCount}</p>
+                 </CardContent>
+               </Card>
+             )}
+             <Card className="bg-slate-50 border-slate-200">
+               <CardContent className="p-4">
+                 <p className="text-sm text-slate-600 font-medium">Avg. Fulfillment</p>
+                 <p className="text-2xl font-bold text-slate-700">{analytics.avgFulfillmentDays}d</p>
+               </CardContent>
+             </Card>
+           </div>
+         )}
 
         {/* Filters */}
         <Card className="mb-6">

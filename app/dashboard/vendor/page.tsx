@@ -54,6 +54,18 @@ interface VendorMetrics {
     preorder: { total: number; byStatus: Array<{ status: string; count: number }> }
     backorder: { total: number; byStatus: Array<{ status: string; count: number }> }
   }
+  lowStockProducts?: Array<{
+    productId: string
+    availableStock: number
+    threshold: number
+  }>
+  demandAnalytics?: {
+    mostRequested: Array<{ productId: string; productName: string; totalDemand: number }>
+    lowStockProducts: Array<{ productId: string; productName: string; availableStock: number; threshold: number }>
+    outOfStockProducts: Array<{ productId: string; productName: string; availableStock: number }>
+    recommendedRestocks: Array<{ productId: string; productName: string; recommendedQuantity: number; daysUntilStockout: number | null }>
+    demandRankings: Array<{ productId: string; productName: string; totalDemand: number; avgDailySales: number }>
+  }
 }
 
 interface OnboardingStep {
@@ -86,10 +98,25 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true)
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
   const [actionLoading, setActionLoading] = useState(false)
+  const [restockOrders, setRestockOrders] = useState<Array<{
+    id: string
+    productId: string
+    productName: string
+    quantityOrdered: number
+    quantityReceived: number
+    status: string
+    expectedArrivalDate: string | null
+    isOverdue: boolean
+    daysUntilArrival: number | null
+  }>>([])
+  const [showCreateRestock, setShowCreateRestock] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<string>('')
+  const [quantityToOrder, setQuantityToOrder] = useState<number>(0)
 
   useEffect(() => {
     fetchVendorOrders()
     fetchMetrics()
+    fetchRestockOrders()
   }, [])
 
   const fetchVendorOrders = async () => {
@@ -150,7 +177,9 @@ export default function VendorDashboard() {
           totalPayouts: data?.totalPayouts ?? prev.totalPayouts ?? 0,
           outstandingBalance: data?.outstandingBalance ?? prev.outstandingBalance ?? 0,
           verificationStatus: data?.verificationStatus ?? prev.verificationStatus ?? 'NOT_APPLIED',
-          fulfillment: data?.fulfillment || { preorder: { total: 0, byStatus: [] }, backorder: { total: 0, byStatus: [] } }
+          fulfillment: data?.fulfillment || { preorder: { total: 0, byStatus: [] }, backorder: { total: 0, byStatus: [] } },
+          lowStockProducts: Array.isArray(data?.lowStockProducts) ? data.lowStockProducts : [],
+          demandAnalytics: data?.demandAnalytics || null,
         }))
       }
     } catch (error) {
@@ -236,6 +265,46 @@ export default function VendorDashboard() {
     }
   }
 
+  const fetchRestockOrders = async () => {
+    try {
+      const response = await fetch('/api/vendor/restock-orders')
+      if (response.ok) {
+        const data = await response.json()
+        setRestockOrders(data.restockOrders || [])
+      }
+    } catch (error) {
+      console.error('Error fetching restock orders:', error)
+    }
+  }
+
+  const createRestockOrderHandler = async () => {
+    if (!selectedProduct || quantityToOrder <= 0) return
+
+    try {
+      const response = await fetch('/api/vendor/restock-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: selectedProduct,
+          quantityOrdered: quantityToOrder,
+        }),
+      })
+
+      if (response.ok) {
+        setShowCreateRestock(false)
+        setSelectedProduct('')
+        setQuantityToOrder(0)
+        fetchRestockOrders()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to create restock order')
+      }
+    } catch (error) {
+      console.error('Error creating restock order:', error)
+      alert('Failed to create restock order')
+    }
+  }
+
   const renderStars = (rating: number) => {
     return (
       <div className="flex gap-0.5">
@@ -313,355 +382,89 @@ export default function VendorDashboard() {
             </h1>
             <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
               Manage your products, track orders, and grow your business with powerful seller tools.
-            </p>
-          </div>
-        </div>
-      </div>
+</p>
+           </div>
+         </div>
+       </div>
    
-      {/* Onboarding Banner */}
-      {onboardingSteps.length > 0 && !onboardingSteps[0].completed && (
-        <div className="mb-6">
-          <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-l-4 border-amber-500 p-6 rounded-lg">
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0">
-                <svg className="w-5 h-5 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-amber-800">
-                  Complete your store setup to start selling
-                </p>
-                <Link
-                  href="/dashboard/vendor/store"
-                  className="mt-1 inline-flex items-center px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700"
-                >
-                  Complete Setup
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-   
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
-        {/* Onboarding Progress */}
-        {!isFullyOnboarded && (
-          <div className="mb-8 animate-fade-in-up">
-            <Card variant="elevated">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex flex-col sm:flex-row items-start gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-deep-navy mb-2">Get Started on Dhream Market</h2>
-                    <p className="text-slate-600 mb-4">
-                      Complete these steps to maximize your store&apos;s potential and start selling.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {onboardingSteps.map((step) => (
-                        <div
-                          key={step.id}
-                          className={`p-4 rounded-xl border-2 transition-all ${
-                            step.completed
-                              ? 'border-emerald-200 bg-emerald-50'
-                              : 'border-amber-200 bg-amber-50'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
-                              step.completed ? 'bg-emerald-600' : 'bg-amber-600'
-                            }`}>
-                              {step.completed ? (
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              ) : (
-                                <span className="text-white text-sm font-bold">{step.id === 'store' ? '1' : step.id === 'products' ? '2' : step.id === 'orders' ? '3' : '4'}</span>
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className={`text-sm font-semibold ${
-                                step.completed ? 'text-emerald-800' : 'text-amber-900'
-                              }`}>{step.title}</h3>
-                              <p className="text-xs text-slate-500 mt-1">{step.description}</p>
-                              <Link
-                                href={step.href}
-                                className={`inline-block mt-2 text-xs font-medium ${
-                                  step.completed ? 'text-emerald-700 hover:text-emerald-800' : 'text-amber-700 hover:text-amber-800'
-                                }`}
-                              >
-                                {step.action} →
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-amber-500 to-orange-600 transition-all duration-500"
-                          style={{ width: `${(completedSteps / onboardingSteps.length) * 100}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-medium text-slate-600">
-                        {completedSteps} of {onboardingSteps.length} steps
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+       {/* Onboarding Banner */}
+       {onboardingSteps.length > 0 && !onboardingSteps[0].completed && (
+         <div className="mb-6">
+           <div className="bg-gradient-to-r from-amber-50 to-orange-100 border-l-4 border-amber-500 p-6 rounded-lg">
+             <div className="flex items-center gap-4">
+               <div className="flex-shrink-0">
+                 <svg className="w-5 h-5 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
+                 </svg>
+               </div>
+               <div>
+                 <p className="text-sm font-medium text-amber-800">
+                   Complete your store setup to start selling
+                 </p>
+                 <Link
+                   href="/dashboard/vendor/store"
+                   className="mt-1 inline-flex items-center px-3 py-1 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700"
+                 >
+                   Complete Setup
+                 </Link>
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
 
-        {isFullyOnboarded && (
-          <div className="mb-8 animate-fade-in-up">
-            <Card variant="elevated">
-              <CardContent className="p-6 sm:p-8">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        {/* Open Restock Orders Section */}
+        {!loading && restockOrders.length > 0 && (
+          <div className="mb-8">
+            <Card variant="elevated" className="border-2 border-blue-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
+                    <h3 className="text-lg font-semibold text-deep-navy">Open Restock Orders</h3>
                   </div>
-                  <div className="flex-1 text-center sm:text-left">
-                    <h2 className="text-2xl font-bold text-deep-navy mb-2">Welcome to Your Store!</h2>
-                    <p className="text-slate-600">
-                      Your store is fully set up and ready to sell. You&apos;ve completed all onboarding steps!
-                    </p>
-                  </div>
-                  <Link href="/marketplace">
-                    <Button variant="outline">
-                      View Marketplace
+                  <Link href="/dashboard/vendor/restock">
+                    <Button variant="outline" size="sm">
+                      View All
                     </Button>
                   </Link>
                 </div>
+                <p className="text-sm text-slate-600 mb-4">
+                  Track your incoming inventory from active restock orders.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').slice(0, 4).map((order) => (
+                    <div key={order.id} className={`flex items-center justify-between p-3 rounded-lg border ${order.isOverdue ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+                      <div>
+                        <p className="font-medium text-deep-navy">{order.productName}</p>
+                        <p className="text-sm text-slate-600">
+                          {order.quantityOrdered} units • Status: <span className="font-semibold">{order.status.replace(/_/g, ' ')}</span>
+                        </p>
+                        {order.expectedArrivalDate && (
+                          <p className={`text-xs mt-1 ${order.isOverdue ? 'text-red-600' : 'text-slate-500'}`}>
+                            Expected: {order.expectedArrivalDate}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant={order.isOverdue ? 'danger' : 'info'} size="sm">
+                        {order.isOverdue ? 'Overdue' : order.daysUntilArrival !== null ? `${order.daysUntilArrival}d left` : 'Pending'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+                {restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').length > 4 && (
+                  <Link href="/dashboard/vendor/restock" className="block mt-4 text-center">
+                    <Button variant="outline" size="sm">
+                      View All {restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').length} Open Orders
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           </div>
         )}
-
-         {/* Key Metrics */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-           <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-             <CardContent className="p-6">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                   </svg>
-                 </div>
-                 <div>
-                   <p className="text-sm text-slate-500">Products Listed</p>
-                   <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-16" /> : metrics.productCount}</p>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
- 
-           <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-             <CardContent className="p-6">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                   </svg>
-                 </div>
-                 <div>
-                   <p className="text-sm text-slate-500">Active Orders</p>
-                   <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-16" /> : metrics.activeOrderCount}</p>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
- 
-           <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-             <CardContent className="p-6">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                   </svg>
-                 </div>
-                 <div>
-                   <p className="text-sm text-slate-500">Total Revenue</p>
-                   <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-20" /> : formatPrice(metrics.revenue)}</p>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
- 
-           <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-             <CardContent className="p-6">
-               <div className="flex items-center gap-4">
-                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                   </svg>
-                 </div>
-                 <div>
-                   <p className="text-sm text-slate-500">Vendor Earnings</p>
-                   <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-20" /> : formatPrice(metrics.vendorEarnings)}</p>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
- 
-<Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Pre-orders</p>
-                    <p className="text-2xl font-bold text-deep-navy">
-                      {loading ? <Skeleton className="h-8 w-16" /> : metrics.fulfillment?.preorder.total ?? 0}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Backorders</p>
-                    <p className="text-2xl font-bold text-deep-navy">
-                      {loading ? <Skeleton className="h-8 w-16" /> : metrics.fulfillment?.backorder.total ?? 0}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-500">Rating</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-12" /> : metrics.averageRating.toFixed(1)}</p>
-                      {!loading && metrics.totalReviews > 0 && renderStars(metrics.averageRating)}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-        {/* Store Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Reviews Card */}
-          <Card variant="elevated">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-deep-navy mb-4">Customer Reviews</h3>
-              {loading ? (
-                <SkeletonCard />
-              ) : metrics.totalReviews === 0 ? (
-                <EmptyState
-                  icon={
-                    <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                  }
-                  title="No reviews yet"
-                  description="Reviews will appear here when customers rate your products."
-                />
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <p className="text-4xl font-bold text-deep-navy">{metrics.averageRating.toFixed(1)}</p>
-                      <div className="flex gap-1 mt-1">{renderStars(metrics.averageRating)}</div>
-                    </div>
-                    <div className="border-l border-slate-200 pl-4">
-                      <p className="text-2xl font-bold text-deep-navy">{metrics.totalReviews}</p>
-                      <p className="text-sm text-slate-500">Total Reviews</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Best Sellers Card */}
-          <Card variant="elevated">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-deep-navy mb-4">Best Sellers</h3>
-              {loading ? (
-                <SkeletonCard />
-              ) : metrics.bestSellers.length === 0 ? (
-                <EmptyState
-                  icon={
-                    <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  }
-                  title="No sales yet"
-                  description="Best-selling products will appear here once you start making sales."
-                />
-              ) : (
-                <div className="space-y-3">
-                  {metrics.bestSellers.map((seller, index) => (
-                    <div key={seller.productId} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <span className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {index + 1}
-                        </span>
-                        <span className="font-medium text-deep-navy truncate max-w-[150px]">{seller.productName}</span>
-                      </div>
-                      <span className="text-sm text-slate-600 font-medium">{seller.totalSold} sold</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-4">
-              <p className="text-sm text-slate-500 mb-1">Total Paid Orders</p>
-              <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-16" /> : metrics.totalPaidOrders}</p>
-            </CardContent>
-          </Card>
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-4">
-              <p className="text-sm text-slate-500 mb-1">Total Revenue</p>
-              <p className="text-2xl font-bold text-emerald-600">{loading ? <Skeleton className="h-8 w-20" /> : formatPrice(metrics.revenue)}</p>
-            </CardContent>
-          </Card>
-          <Card variant="outline" className="hover:border-royal-blue/30 transition-colors">
-            <CardContent className="p-4">
-              <p className="text-sm text-slate-500 mb-1">Average Rating</p>
-              <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold text-deep-navy">{loading ? <Skeleton className="h-8 w-12" /> : metrics.averageRating.toFixed(1)}</p>
-                {!loading && metrics.totalReviews > 0 && renderStars(metrics.averageRating)}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Recent Orders */}
         <Card variant="elevated" className="mb-8">
@@ -838,9 +641,8 @@ export default function VendorDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+</Card>
       </div>
-    </div>
     </ErrorBoundary>
   )
 }

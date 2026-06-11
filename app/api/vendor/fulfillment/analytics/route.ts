@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
         backorderCount: 0,
         overdueCount: 0,
         avgFulfillmentDays: 0,
+        readyToFulfillCount: 0,
+        allocatedToday: 0,
       }, { status: 403 })
     }
 
@@ -41,12 +43,19 @@ export async function GET(request: NextRequest) {
         backorderCount: 0,
         overdueCount: 0,
         avgFulfillmentDays: 0,
+        readyToFulfillCount: 0,
+        allocatedToday: 0,
       })
     }
 
     const productIds = store.products?.map((p) => p.id) || []
 
-    const [preorderOrders, backorderOrders, overdueOrders, completedOrders] = await Promise.all([
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    const [preorderOrders, backorderOrders, overdueOrders, completedOrders, readyToFulfillOrders, allocatedTodayOrders] = await Promise.all([
       getPrisma().order.count({
         where: {
           paymentStatus: 'PAID',
@@ -97,6 +106,22 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
         },
       }),
+      getPrisma().order.count({
+        where: {
+          paymentStatus: 'PAID',
+          orderType: { in: ['PREORDER', 'BACKORDER'] },
+          items: { some: { productId: { in: productIds } } },
+          fulfillmentStatus: 'READY_TO_FULFILL',
+        },
+      }),
+      getPrisma().order.count({
+        where: {
+          paymentStatus: 'PAID',
+          orderType: { in: ['PREORDER', 'BACKORDER'] },
+          items: { some: { productId: { in: productIds } } },
+          allocatedAt: { gte: today, lt: tomorrow },
+        },
+      }),
     ])
 
     let avgFulfillmentDays = 0
@@ -119,6 +144,8 @@ export async function GET(request: NextRequest) {
       backorderCount: backorderOrders,
       overdueCount: overdueOrders,
       avgFulfillmentDays,
+      readyToFulfillCount: readyToFulfillOrders,
+      allocatedToday: allocatedTodayOrders,
       alerts: demandAlerts.alerts,
     })
   } catch (error) {

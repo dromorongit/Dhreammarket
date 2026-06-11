@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-allocation-engine'
 
 export async function GET(
   request: NextRequest,
@@ -56,6 +57,7 @@ export async function GET(
       ...product,
       averageRating: parseFloat(avgRating.toFixed(1)),
       reviewCount: reviews.length,
+      availableQuantity: product.stock - product.reservedQuantity,
     }
 
     return NextResponse.json({ product: productWithRating })
@@ -84,7 +86,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
+    const { name, description, price, stock, lowStockThreshold, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -220,6 +222,7 @@ export async function PUT(
         description: description?.trim() || null,
         price: parseFloat(price),
         stock: parseInt(stock),
+        lowStockThreshold: lowStockThreshold !== undefined ? parseInt(lowStockThreshold) : 5,
         brandId: brandId || null,
         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
@@ -274,26 +277,74 @@ export async function PUT(
       }
     }
 
-    // Handle variants update
+    // Handle variants update incrementally to track stock changes and trigger allocation
     if (variants !== undefined) {
-      // Delete existing variants
-      await getPrisma().productVariant.deleteMany({
+      // Get existing variants to compare stock changes
+      const existingVariants = await getPrisma().productVariant.findMany({
         where: { productId: params.id },
+        select: { id: true, stock: true },
       })
 
-      // Create new variants if provided
-      if (Array.isArray(variants) && variants.length > 0) {
-        await getPrisma().productVariant.createMany({
-          data: variants.map((variant: any) => ({
-            productId: params.id,
-            color: variant.color || null,
-            size: variant.size || null,
-            age: variant.age || null,
-            sku: variant.sku || null,
-            stock: variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock) : 0,
-            active: variant.active !== undefined ? variant.active : true,
-          })),
+      const existingVariantMap = new Map(existingVariants.map(v => [v.id, v.stock]))
+      const incomingVariants = variants as any[]
+
+      // Delete variants that are no longer present
+      const incomingIds = incomingVariants.filter(v => v.id).map(v => v.id)
+      if (incomingIds.length > 0) {
+        await getPrisma().productVariant.deleteMany({
+          where: { productId: params.id, id: { notIn: incomingIds } },
         })
+      } else {
+        await getPrisma().productVariant.deleteMany({
+          where: { productId: params.id },
+        })
+      }
+
+      // Process updates and creates
+      for (const variant of incomingVariants) {
+        const variantStock = variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock) : 0
+
+        if (variant.id) {
+          // Update existing variant
+          const previousStock = existingVariantMap.get(variant.id) ?? 0
+
+          await getPrisma().productVariant.update({
+            where: { id: variant.id },
+            data: {
+              productId: params.id,
+              color: variant.color || null,
+              size: variant.size || null,
+              age: variant.age || null,
+              sku: variant.sku || null,
+              stock: variantStock,
+              active: variant.active !== undefined ? variant.active : true,
+            },
+          })
+
+          // Trigger allocation if stock increased
+          if (variantStock > previousStock) {
+            allocateForVariantStock(variant.id, previousStock, variantStock, payload.userId).then(result => {
+              if (result.success && result.allocatedOrders.length > 0) {
+                console.log(`[Stock Allocation] Allocated ${result.allocatedOrders.length} orders for variant ${variant.id}`)
+              }
+            }).catch(err => {
+              console.error('Failed to allocate variant stock:', err)
+            })
+          }
+        } else {
+          // Create new variant - no need to trigger allocation as it's new
+          await getPrisma().productVariant.create({
+            data: {
+              productId: params.id,
+              color: variant.color || null,
+              size: variant.size || null,
+              age: variant.age || null,
+              sku: variant.sku || null,
+              stock: variantStock,
+              active: variant.active !== undefined ? variant.active : true,
+            },
+          })
+        }
       }
     }
 

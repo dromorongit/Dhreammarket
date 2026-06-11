@@ -45,9 +45,15 @@ export async function GET(request: NextRequest) {
         return response
       }
 
+      // Transform products to include availableStock
+      const productsWithStock = store.products.map((p: any) => ({
+        ...p,
+        availableStock: p.stock - (p.reservedQuantity || 0),
+      }))
+
       const response = NextResponse.json({ 
-        products: store.products,
-        pagination: { page, limit, total: store.products.length, totalPages: 1 }
+        products: productsWithStock,
+        pagination: { page, limit, total: productsWithStock.length, totalPages: 1 }
       })
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       response.headers.set('Pragma', 'no-cache')
@@ -90,6 +96,7 @@ export async function GET(request: NextRequest) {
         salesPrice: true,
         dealsPrice: true,
         stock: true,
+        reservedQuantity: true,
         salesCount: true,
         isSponsored: true,
         brand: true,
@@ -123,7 +130,11 @@ export async function GET(request: NextRequest) {
     })
 
     // Products already include averageRating and reviewCount from select
-    const productsWithCachedRatings = products
+    // Add computed availableQuantity
+    const productsWithCachedRatings = products.map((p: any) => ({
+      ...p,
+      availableQuantity: p.stock - p.reservedQuantity,
+    }))
 
     const totalPages = Math.ceil(total / limit)
 

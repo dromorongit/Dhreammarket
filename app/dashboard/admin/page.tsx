@@ -36,6 +36,14 @@ interface PlatformStats {
   avgFulfillmentDays?: number
 }
 
+interface DemandAnalytics {
+  mostPreorderedProducts: Array<{ productId: string; productName: string; preorderCount: number }>
+  mostBackorderedProducts: Array<{ productId: string; productName: string; backorderCount: number }>
+  topDemandCategories: Array<{ categoryId: string; categoryName: string; demandCount: number }>
+  topDemandVendors: Array<{ vendorId: string; vendorName: string; demandCount: number }>
+  stockoutFrequency: Array<{ productId: string; productName: string; stockoutCount: number }>
+}
+
 interface RecentItem {
   id: string
   createdAt: string
@@ -79,6 +87,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [demandAnalytics, setDemandAnalytics] = useState<DemandAnalytics | null>(null)
   const [recentOrders, setRecentOrders] = useState<Array<{
     id: string
     createdAt: string
@@ -116,6 +125,7 @@ export default function AdminDashboard() {
       }
       
       setStats(data.stats)
+      setDemandAnalytics(data.demandAnalytics || null)
       setRecentOrders(data.recentOrders)
       setRecentUsers(data.recentUsers)
       setRecentVendors(data.recentVendors)
@@ -307,8 +317,111 @@ export default function AdminDashboard() {
                    <div>
                      <p className="text-sm font-medium">Vendor Earnings</p>
                      <p className="text-2xl font-bold text-white">{formatCurrency(stats?.totalVendorEarnings || 0)}</p>
-                   </div>
-                 </div>
+</div>
+        </div>
+
+        {/* Demand Analytics Section */}
+        {!loading && demandAnalytics && (
+          <div className="mb-8">
+            <Card variant="elevated">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-deep-navy mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6m0 0V5m0 6h6m0 0v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h2m2-2h6a2 2 0 012 2v10a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v10zM9 19v2m0 0v-2m0 0h6m0 0v2m0-2v-2" />
+                  </svg>
+                  Demand Analytics
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Most Preordered Products */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-600 mb-3">Most Preordered Products</h4>
+                    {demandAnalytics.mostPreorderedProducts.length === 0 ? (
+                      <p className="text-sm text-slate-500">No preorders yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {demandAnalytics.mostPreorderedProducts.slice(0, 5).map((p) => (
+                          <div key={p.productId} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                            <span className="text-sm text-deep-navy truncate max-w-[120px]">{p.productName}</span>
+                            <Badge variant="info" size="sm">{p.preorderCount} orders</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Most Backordered Products */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-600 mb-3">Most Backordered Products</h4>
+                    {demandAnalytics.mostBackorderedProducts.length === 0 ? (
+                      <p className="text-sm text-slate-500">No backorders yet</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {demandAnalytics.mostBackorderedProducts.slice(0, 5).map((p) => (
+                          <div key={p.productId} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                            <span className="text-sm text-deep-navy truncate max-w-[120px]">{p.productName}</span>
+                            <Badge variant="warning" size="sm">{p.backorderCount} orders</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Top Demand Categories */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-600 mb-3">Top Demand Categories</h4>
+                    {demandAnalytics.topDemandCategories.length === 0 ? (
+                      <p className="text-sm text-slate-500">No demand data</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {demandAnalytics.topDemandCategories.slice(0, 5).map((c) => (
+                          <div key={c.categoryId} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                            <span className="text-sm text-deep-navy truncate max-w-[120px]">{c.categoryName}</span>
+                            <Badge variant="success" size="sm">{c.demandCount} units</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Top Demand Vendors */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-600 mb-3">Top Demand Vendors</h4>
+                    {demandAnalytics.topDemandVendors.length === 0 ? (
+                      <p className="text-sm text-slate-500">No vendor demand data</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {demandAnalytics.topDemandVendors.slice(0, 5).map((v) => (
+                          <div key={v.vendorId} className="flex justify-between items-center p-2 bg-slate-50 rounded">
+                            <span className="text-sm text-deep-navy truncate max-w-[120px]">{v.vendorName}</span>
+                            <Badge variant="default" size="sm">{v.demandCount} units</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Stockout Frequency */}
+                  <div>
+                    <h4 className="text-sm font-medium text-slate-600 mb-3">Out of Stock Products</h4>
+                    {demandAnalytics.stockoutFrequency.length === 0 ? (
+                      <p className="text-sm text-slate-500">All products in stock</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {demandAnalytics.stockoutFrequency.slice(0, 5).map((p) => (
+                          <div key={p.productId} className="flex justify-between items-center p-2 bg-rose-50 rounded">
+                            <span className="text-sm text-deep-navy truncate max-w-[120px]">{p.productName}</span>
+                            <Badge variant="danger" size="sm">Out of Stock</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
                </div>
                <div className="flex justify-between items-center">
                  <div>

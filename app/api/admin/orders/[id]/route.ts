@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
+import { releaseStock, consumeInventory } from '@/lib/stock-reservation'
+import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 
 const prisma = getPrisma()
 
@@ -123,5 +125,90 @@ return NextResponse.json({
   } catch (error) {
     console.error('Admin order detail error:', error)
     return NextResponse.json({ error: 'Failed to fetch order details' }, { status: 500 })
+  }
+}
+
+// PATCH - Update order status (e.g., cancel order)
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const authCheck = requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
+    }
+
+    const orderId = params.id
+    const body = await request.json()
+    const { status, paymentStatus, reason } = body
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId, deletedAt: null },
+      select: { orderType: true },
+    })
+
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    const updateData: any = {}
+    
+    if (status && ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].includes(status)) {
+      updateData.status = status
+      if (status === 'CANCELLED') {
+        recordFulfillmentEvent(orderId, 'CANCELLED', undefined, {
+          description: reason || 'Order cancelled by administrator',
+        }).catch(err => console.error('Failed to record cancellation event:', err))
+      }
+    }
+
+    if (paymentStatus && ['PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED'].includes(paymentStatus)) {
+      updateData.paymentStatus = paymentStatus
+      if (paymentStatus === 'REFUNDED') {
+        recordFulfillmentEvent(orderId, 'REFUNDED', undefined, {
+          description: reason || 'Order refunded',
+        }).catch(err => console.error('Failed to record refund event:', err))
+      }
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: orderId },
+      data: updateData,
+    })
+
+    if ((status === 'DELIVERED' || status === 'COMPLETED') && order.orderType === 'NORMAL') {
+      const consumptionResult = await consumeInventory(orderId)
+      if (!consumptionResult.success && consumptionResult.error) {
+        console.error('Inventory consumption failed:', consumptionResult.error)
+      } else if (consumptionResult.consumedItems && consumptionResult.consumedItems.length > 0) {
+        for (const item of consumptionResult.consumedItems) {
+          recordFulfillmentEvent(orderId, 'INVENTORY_CONSUMED', undefined, {
+            productName: item.productId,
+            description: `Consumed ${item.quantity} units of inventory.`,
+          }).catch(err => console.error('Failed to record inventory consumed event:', err))
+        }
+      }
+    }
+
+    // Release stock for cancelled/refunded NORMAL orders
+    if ((status === 'CANCELLED' || paymentStatus === 'REFUNDED') && order.orderType === 'NORMAL') {
+      releaseStock(orderId).catch(err => {
+        console.error('Failed to release stock:', err)
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      order: {
+        id: updatedOrder.id,
+        status: updatedOrder.status,
+        paymentStatus: updatedOrder.paymentStatus,
+      },
+    })
+  } catch (error) {
+    console.error('Admin order update error:', error)
+    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
+import { getAdminDemandAnalytics } from '@/lib/demand-forecast'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,9 @@ export async function GET(request: NextRequest) {
       backorderOrders,
       overdueOrders,
       completedPreorderOrders,
+      readyToFulfillOrders,
+      waitingPreorders,
+      waitingBackorders,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'VENDOR' } }),
@@ -119,6 +123,27 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
         },
       }),
+      prisma.order.count({
+        where: {
+          paymentStatus: 'PAID',
+          orderType: { in: ['PREORDER', 'BACKORDER'] },
+          fulfillmentStatus: 'READY_TO_FULFILL',
+        },
+      }),
+      prisma.order.count({
+        where: {
+          paymentStatus: 'PAID',
+          orderType: 'PREORDER',
+          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
+        },
+      }),
+      prisma.order.count({
+        where: {
+          paymentStatus: 'PAID',
+          orderType: 'BACKORDER',
+          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
+        },
+      }),
     ])
 
     // Calculate financial totals from paid orders
@@ -173,6 +198,27 @@ export async function GET(request: NextRequest) {
       return Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
     }
 
+    // Calculate average waiting days
+    let avgWaitingDays = 0
+    if (waitingPreorders > 0 || waitingBackorders > 0) {
+      const waitingOrders = await prisma.order.findMany({
+        where: {
+          paymentStatus: 'PAID',
+          orderType: { in: ['PREORDER', 'BACKORDER'] },
+          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
+        },
+        select: { createdAt: true },
+      })
+      
+      if (waitingOrders.length > 0) {
+        const totalDays = waitingOrders.reduce((sum, order) => {
+          const days = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          return sum + days
+        }, 0)
+        avgWaitingDays = Math.round(totalDays / waitingOrders.length)
+      }
+    }
+
     // Calculate average fulfillment days
     let avgFulfillmentDays = 0
     if (completedPreorderOrders.length > 0) {
@@ -185,6 +231,23 @@ export async function GET(request: NextRequest) {
       }, 0)
       avgFulfillmentDays = Math.round(totalDays / completedPreorderOrders.length)
     }
+
+    // Calculate allocated today
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+const allocatedToday = await prisma.order.count({
+       where: {
+         paymentStatus: 'PAID',
+         orderType: { in: ['PREORDER', 'BACKORDER'] },
+         allocatedAt: { gte: today, lt: tomorrow },
+       },
+     })
+
+    // Get demand analytics
+    const demandAnalytics = await getAdminDemandAnalytics()
 
     return NextResponse.json({
       stats: {
@@ -215,7 +278,13 @@ export async function GET(request: NextRequest) {
         },
         overdueOrders,
         avgFulfillmentDays,
+        readyToFulfill: readyToFulfillOrders,
+        waitingPreorders,
+        waitingBackorders,
+        avgWaitingDays,
+        allocatedToday,
       },
+      demandAnalytics,
       recentOrders,
       recentUsers,
       recentVendors,

@@ -10,6 +10,7 @@ import { Skeleton, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
+import { getWaitingCustomerCount } from '@/lib/demand-forecast'
 
 interface CartResponse {
   cart: {
@@ -114,9 +115,12 @@ export default function ProductDetail() {
   const [starDistribution, setStarDistribution] = useState({ 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
   const [reviewsLoading, setReviewsLoading] = useState(true)
   
-  // User state
-  const [user, setUser] = useState<User | null>(null)
-  const [canReview, setCanReview] = useState(false)
+// User state
+   const [user, setUser] = useState<User | null>(null)
+   const [canReview, setCanReview] = useState(false)
+
+   // Waiting customer count for preorder/backorder
+   const [waitingCustomerCount, setWaitingCustomerCount] = useState(0)
   
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false)
@@ -161,6 +165,16 @@ export default function ProductDetail() {
           if (p.variants[0].color) setSelectedColor(p.variants[0].color)
           if (p.variants[0].size) setSelectedSize(p.variants[0].size)
           if (p.variants[0].age) setSelectedAge(p.variants[0].age)
+        }
+        
+        // Fetch waiting customer count for preorder/backorder products
+        if (p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') {
+          try {
+            const count = await getWaitingCustomerCount(productId, p.availabilityType)
+            setWaitingCustomerCount(count)
+          } catch (e) {
+            console.error('Error fetching waiting count:', e)
+          }
         }
       } else {
         alert('Product not found')
@@ -603,44 +617,49 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {(product.availabilityType === 'PREORDER' || product.availabilityType === 'BACKORDER') && (
-                <Card variant="elevated" className="mb-6">
-                  <CardContent className="pt-6">
-                    <h3 className="text-lg font-semibold text-deep-navy mb-3 break-words">
-                      {product.availabilityType === 'PREORDER' ? 'Pre-order Information' : 'Backorder Information'}
-                    </h3>
-                    {product.availabilityType === 'PREORDER' && product.expectedArrivalDate && (
-                      <p className="text-sm text-slate-600 mb-2 break-words">
-                        Expected arrival: {new Date(product.expectedArrivalDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    )}
-                    {product.availabilityType === 'PREORDER' && product.estimatedFulfillmentDays && (
-                      <p className="text-sm text-slate-600 mb-2 break-words">
-                        Estimated fulfillment: {product.estimatedFulfillmentDays} days
-                      </p>
-                    )}
-                    {product.availabilityType === 'BACKORDER' && product.expectedRestockDate && (
-                      <p className="text-sm text-slate-600 mb-2 break-words">
-                        Expected restock: {new Date(product.expectedRestockDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                    )}
-                    {product.availabilityType === 'PREORDER' && product.preOrderNotes && (
-                      <p className="text-sm text-slate-600 mt-2 break-words">{product.preOrderNotes}</p>
-                    )}
-                    {product.availabilityType === 'BACKORDER' && product.backOrderNotes && (
-                      <p className="text-sm text-slate-600 mt-2 break-words">{product.backOrderNotes}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+{(product.availabilityType === 'PREORDER' || product.availabilityType === 'BACKORDER') && (
+                 <Card variant="elevated" className="mb-6">
+                   <CardContent className="pt-6">
+                     <h3 className="text-lg font-semibold text-deep-navy mb-3 break-words">
+                       {product.availabilityType === 'PREORDER' ? 'Pre-order Information' : 'Backorder Information'}
+                     </h3>
+                     {product.availabilityType === 'PREORDER' && product.expectedArrivalDate && (
+                       <p className="text-sm text-slate-600 mb-2 break-words">
+                         Expected arrival: {new Date(product.expectedArrivalDate).toLocaleDateString('en-US', {
+                           year: 'numeric',
+                           month: 'long',
+                           day: 'numeric',
+                         })}
+                       </p>
+                     )}
+                     {product.availabilityType === 'PREORDER' && product.estimatedFulfillmentDays && (
+                       <p className="text-sm text-slate-600 mb-2 break-words">
+                         Estimated fulfillment: {product.estimatedFulfillmentDays} days
+                       </p>
+                     )}
+                     {product.availabilityType === 'BACKORDER' && product.expectedRestockDate && (
+                       <p className="text-sm text-slate-600 mb-2 break-words">
+                         Expected restock: {new Date(product.expectedRestockDate).toLocaleDateString('en-US', {
+                           year: 'numeric',
+                           month: 'long',
+                           day: 'numeric',
+                         })}
+                       </p>
+                     )}
+                     {waitingCustomerCount > 0 && (
+                       <p className="text-sm text-royal-blue font-medium mb-2 break-words">
+                         {waitingCustomerCount} customer{waitingCustomerCount !== 1 ? 's' : ''} waiting for this product
+                       </p>
+                     )}
+                     {product.availabilityType === 'PREORDER' && product.preOrderNotes && (
+                       <p className="text-sm text-slate-600 mt-2 break-words">{product.preOrderNotes}</p>
+                     )}
+                     {product.availabilityType === 'BACKORDER' && product.backOrderNotes && (
+                       <p className="text-sm text-slate-600 mt-2 break-words">{product.backOrderNotes}</p>
+                     )}
+                   </CardContent>
+                 </Card>
+               )}
             </div>
 
             {product.description && (

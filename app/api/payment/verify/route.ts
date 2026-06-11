@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
 import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
+import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -75,44 +76,55 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // Check if payment was abandoned, cancelled, or failed
+// Check if payment was abandoned, cancelled, or failed
     if (paymentStatus !== 'success') {
-       // Payment failed, abandoned, or cancelled - mark as failed/cancelled
+       // Payment failed, abandoned, or cancelled - mark as failed/cancelled and release any reserved stock
        const isAbandoned = paymentStatus === 'abandoned'
        const failedStatus = isAbandoned ? 'CANCELLED' : 'FAILED'
-       
-       console.log('[Payment Verify API] Payment not successful - status:', paymentStatus, 'marking as:', failedStatus)
-       
-       await getPrisma().$transaction(async (prisma: any) => {
-         // Update payment status to FAILED or CANCELLED
-         await prisma.payment.update({
-           where: { id: payment.id },
-           data: {
-             status: failedStatus,
-             message: isAbandoned ? 'Payment abandoned by user' : paymentStatus || 'Payment verification failed',
-           },
-         })
+      
+      console.log('[Payment Verify API] Payment not successful - status:', paymentStatus, 'marking as:', failedStatus)
+      
+      await getPrisma().$transaction(async (prisma: any) => {
+        // Update payment status to FAILED or CANCELLED
+        await prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: failedStatus,
+            message: isAbandoned ? 'Payment abandoned by user' : paymentStatus || 'Payment verification failed',
+          },
+        })
 
-         // Update order payment status to match
-         await prisma.order.update({
-           where: { id: payment.orderId },
-           data: {
-             paymentStatus: failedStatus,
-             status: 'CANCELLED', // Also cancel the order
-           },
-         })
-       })
+        // Update order payment status to match
+        await prisma.order.update({
+          where: { id: payment.orderId },
+          data: {
+            paymentStatus: failedStatus,
+            status: 'CANCELLED',
+          },
+        })
+      })
 
-       return NextResponse.json({
-         success: false,
-         error: isAbandoned ? 'Payment was cancelled' : 'Payment verification failed',
-       }, { status: 400 })
+      // Release reserved stock for NORMAL orders (must run after transaction commits)
+      const orderForRelease = await getPrisma().order.findUnique({
+        where: { id: payment.orderId },
+      })
+
+      if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
+        releaseStock(payment.orderId).catch(err => {
+          console.error('Failed to release stock for failed payment:', err)
+        })
+      }
+
+      return NextResponse.json({
+        success: false,
+        error: isAbandoned ? 'Payment was cancelled' : 'Payment verification failed',
+      }, { status: 400 })
     }
 
     // Payment was successful - update payment and order status, and calculate financials
     console.log('[Payment Verify API] Payment successful - processing order')
     
-    await getPrisma().$transaction(async (prisma: any) => {
+    const transactionResult = await getPrisma().$transaction(async (prisma: any) => {
         // Update payment status to PAID
         await prisma.payment.update({
           where: { id: payment.id },
@@ -154,11 +166,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Determine processor fee from Paystack response (if available)
-        // Note: The current Paystack verification response does not include fee details.
-        // We'll set processorFee to null if not available.
         let processorFee: number | null = null
-        // If Paystack response includes fee, we would use it. For now, we leave it null.
-        // Example: if (paystackResponse.data.fee) { processorFee = paystackResponse.data.fee / 100; }
 
         // Use centralized revenue calculation logic
         const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
@@ -173,21 +181,18 @@ export async function POST(request: NextRequest) {
             platformCommission: financialBreakdown.platformCommission,
             vendorEarnings: financialBreakdown.vendorEarnings,
             commissionRate: financialBreakdown.commissionRate,
-            // Keep existing total field for backward compatibility (optional)
-            total: grossAmount, // Assuming total should reflect gross amount
+            total: grossAmount,
           },
         })
 
         // Update each order item with financials
         for (const item of orderItems) {
           const itemGross = item.price * item.quantity
-          // Estimate processor fee per item apportioned by gross amount (if fee known)
           let itemProcessorFee: number | null = null
           if (processorFee !== null && grossAmount > 0) {
             itemProcessorFee = (itemGross / grossAmount) * processorFee
           }
           
-          // Calculate item-level financials using centralized logic
           const itemFinancialBreakdown = calculateFinancialBreakdown(
             itemGross,
             itemProcessorFee
@@ -206,20 +211,6 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        // Deduct stock for the order items
-        for (const item of orderItems) {
-          const product = await prisma.product.findUnique({
-            where: { id: item.productId },
-          })
-
-          if (product && product.stock >= item.quantity) {
-            await prisma.product.update({
-              where: { id: item.productId },
-              data: { stock: product.stock - item.quantity },
-            })
-          }
-        }
-
         // Clear the user's cart after successful payment
         const cart = await prisma.cart.findUnique({
           where: { userId: payload.userId },
@@ -229,7 +220,29 @@ export async function POST(request: NextRequest) {
             where: { cartId: cart.id },
           })
         }
+
+        return { orderItems }
       })
+
+    // Reserve stock for NORMAL orders only (outside transaction to avoid long locks)
+    const order = await getPrisma().order.findUnique({
+      where: { id: payment.orderId },
+    })
+
+    if (order && order.orderType === 'NORMAL') {
+      const reservationItems = transactionResult.orderItems
+        .filter((item: any) => item.availabilityType === 'IN_STOCK' || !item.availabilityType)
+        .map((item: any) => ({
+          productId: item.productId,
+          productVariantId: item.productVariantId || undefined,
+          quantity: item.quantity,
+          availabilityType: (item.availabilityType || 'IN_STOCK') as 'IN_STOCK' | 'PREORDER' | 'BACKORDER',
+        }))
+
+      if (reservationItems.length > 0) {
+        await reserveStock(payment.orderId, reservationItems)
+      }
+    }
 
     // Send payment confirmation email (non-blocking)
     const user = await getPrisma().user.findUnique({

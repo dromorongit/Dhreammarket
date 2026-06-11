@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { getVendorStockMetrics, getProductReservationMetrics } from '@/lib/stock-reservation'
+import { getVendorDemandAnalytics, getAvailableStock } from '@/lib/demand-forecast'
+import { getVendorProcurementDashboard } from '@/lib/supplier-procurement'
 
 export const dynamic = 'force-dynamic'
 
@@ -239,6 +242,22 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
       where: { vendorId: payload.userId },
     })
 
+    const stockMetrics = await getVendorStockMetrics(payload.userId)
+
+    const lowStockProducts = await Promise.all(
+      (store.products || []).map(async (p: { id: string }) => {
+        const metrics = await getProductReservationMetrics(p.id)
+        return {
+          productId: p.id,
+          availableStock: metrics.availableQuantity,
+          threshold: 5,
+        }
+      })
+    ).then(results => results.filter((r: { availableStock: number; threshold: number }) => r.availableStock <= r.threshold))
+
+    const vendorAnalytics = await getVendorDemandAnalytics(payload.userId)
+    const procurementDashboard = await getVendorProcurementDashboard(payload.userId)
+
     return NextResponse.json({
       productCount,
       activeOrderCount,
@@ -269,6 +288,10 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
           byStatus: groupByFulfillmentStatus(backorderOrders),
         },
       },
+      stock: stockMetrics,
+      lowStockProducts,
+      demandAnalytics: vendorAnalytics,
+      procurement: procurementDashboard,
     })
   } catch (error) {
     console.error('Error fetching vendor metrics:', error)

@@ -47,6 +47,8 @@ interface Product {
     name: string
   } | null
   stock: number
+  reservedQuantity?: number
+  lowStockThreshold?: number
   categoryId: string
   availabilityType?: string
   expectedArrivalDate?: string | null
@@ -91,6 +93,7 @@ export default function EditProduct() {
     description: '',
     price: '',
     stock: '',
+    lowStockThreshold: '',
     salesPrice: '',
     dealsPrice: '',
     brandId: '',
@@ -184,6 +187,7 @@ export default function EditProduct() {
           description: p.description || '',
           price: p.price.toString(),
           stock: p.stock.toString(),
+          lowStockThreshold: p.lowStockThreshold !== undefined && p.lowStockThreshold !== null ? p.lowStockThreshold.toString() : '5',
           salesPrice: p.salesPrice ? p.salesPrice.toString() : '',
           dealsPrice: p.dealsPrice ? p.dealsPrice.toString() : '',
           brandId: p.brandId || '',
@@ -255,22 +259,23 @@ export default function EditProduct() {
       return
     }
 
-    try {
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        stock: parseInt(formData.stock),
-        salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
-        dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
-        brandId: formData.brandId || null,
-        imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
-        variants: formData.variants.filter(v => v.color || v.size || v.age),
-        expectedArrivalDate: formData.expectedArrivalDate || null,
-        estimatedFulfillmentDays: formData.estimatedFulfillmentDays || null,
-        preOrderNotes: formData.preOrderNotes || null,
-        expectedRestockDate: formData.expectedRestockDate || null,
-        backOrderNotes: formData.backOrderNotes || null,
-      }
+try {
+       const productData = {
+         ...formData,
+         price: parseFloat(formData.price),
+         stock: parseInt(formData.stock),
+         lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
+         salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
+         dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
+         brandId: formData.brandId || null,
+         imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
+         variants: formData.variants.filter(v => v.color || v.size || v.age),
+         expectedArrivalDate: formData.expectedArrivalDate || null,
+         estimatedFulfillmentDays: formData.estimatedFulfillmentDays || null,
+         preOrderNotes: formData.preOrderNotes || null,
+         expectedRestockDate: formData.expectedRestockDate || null,
+         backOrderNotes: formData.backOrderNotes || null,
+       }
 
       const response = await fetch(`/api/products/${productId}`, {
         method: 'PUT',
@@ -416,22 +421,37 @@ export default function EditProduct() {
                     placeholder="0.00"
                   />
                 </div>
-                <div>
-                  <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Quantity *
-                  </label>
-                  <Input
-                    id="stock"
-                    name="stock"
-                    type="number"
-                    min="0"
-                    required
-                    value={formData.stock}
-                    onChange={handleChange}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
+<div>
+                   <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
+                     Stock Quantity *
+                   </label>
+                   <Input
+                     id="stock"
+                     name="stock"
+                     type="number"
+                     min="0"
+                     required
+                     value={formData.stock}
+                     onChange={handleChange}
+                     placeholder="0"
+                   />
+                 </div>
+                 <div>
+                   <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 mb-2">
+                     Low Stock Threshold
+                   </label>
+                   <Input
+                     id="lowStockThreshold"
+                     name="lowStockThreshold"
+                     type="number"
+                     min="0"
+                     value={formData.lowStockThreshold}
+                     onChange={handleChange}
+                     placeholder="5"
+                   />
+                   <p className="text-xs text-gray-500 mt-1">Alert when stock falls to this level</p>
+                 </div>
+               </div>
 
               <div>
                 <label htmlFor="availabilityType" className="block text-sm font-medium text-gray-700 mb-2">

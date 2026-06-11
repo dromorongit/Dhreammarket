@@ -31,6 +31,8 @@ model User {
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication?
   auditLogs                VerificationAuditLog[]
+  restockOrders            RestockOrder[]
+  purchaseOrders           PurchaseOrder[]
 
   @@map("users")
 }
@@ -131,6 +133,8 @@ model Product {
   brand               String?
   price               Float
   stock               Int                         @default(0)
+  reservedQuantity    Int                         @default(0)
+  lowStockThreshold   Int                         @default(5)
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
   averageRating       Float                       @default(0)
@@ -159,6 +163,8 @@ model Product {
   brandRelation       Brand?                      @relation(fields: [brandId], references: [id])
   category            ProductCategory             @relation(fields: [categoryId], references: [id])
   store               Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  restockOrders       RestockOrder[]
+  purchaseOrderItems  PurchaseOrderItem[]
 
   @@map("products")
 }
@@ -171,6 +177,7 @@ model ProductVariant {
   age        String?
   sku        String?
   stock      Int         @default(0)
+  reservedQuantity Int   @default(0)
   active     Boolean     @default(true)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -263,6 +270,8 @@ model Order {
   tax                      Float?
   orderType                OrderType                  @default(NORMAL)
   fulfillmentStatus        OrderFulfillmentStatus     @default(PENDING)
+  inventoryConsumedAt      DateTime?
+  allocatedAt              DateTime?
   items                    OrderItem[]
   user                     User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment                  Payment?
@@ -293,6 +302,7 @@ model OrderItem {
   availabilityType   ProductAvailabilityType?
   expectedArrivalDate DateTime?
   expectedRestockDate DateTime?
+  allocatedQuantity  Int                    @default(0)
   order              Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product            Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
   productVariant     ProductVariant?        @relation(fields: [productVariantId], references: [id])
@@ -608,6 +618,9 @@ enum NotificationType {
   SUPPORT_TICKET_CREATED
   SUPPORT_TICKET_REPLIED
   SUPPORT_TICKET_STATUS_UPDATED
+  RESTOCK_ORDER_CREATED
+  RESTOCK_ORDER_OVERDUE
+  RESTOCK_INVENTORY_RECEIVED
 }
 
 enum FeedbackType {
@@ -705,6 +718,136 @@ enum OrderFulfillmentStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum RestockOrderStatus {
+  ORDERED
+  SHIPPED
+  ARRIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  ORDERED
+  SHIPPED
+  ARRIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+  DISABLED
+}
+
+enum SupplierDocumentType {
+  CONTRACT
+  INVOICE
+  QUOTATION
+  AGREEMENT
+}
+
+model RestockOrder {
+  id                  String          @id @default(cuid())
+  productId           String
+  vendorId            String
+  quantityOrdered     Int             @default(0)
+  quantityReceived    Int             @default(0)
+  status              RestockOrderStatus @default(ORDERED)
+  expectedArrivalDate DateTime?
+  actualArrivalDate   DateTime?
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  product             Product         @relation(fields: [productId], references: [id])
+  vendor              User            @relation(fields: [vendorId], references: [id])
+  purchaseOrder       PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId     String?
+
+  @@index([vendorId])
+  @@index([productId])
+  @@index([status])
+  @@map("restock_orders")
+}
+
+model Supplier {
+  id           String           @id @default(cuid())
+  companyName  String
+  contactPerson String?
+  email        String?
+  phone        String?
+  address      String?
+  country      String?
+  notes        String?
+  status       SupplierStatus   @default(ACTIVE)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  purchaseOrders PurchaseOrder[]
+  documents    SupplierDocument[]
+
+  @@map("suppliers")
+}
+
+model SupplierDocument {
+  id          String              @id @default(cuid())
+  supplierId  String
+  documentType SupplierDocumentType
+  documentUrl String
+  fileName    String?
+  fileSize    Int?
+  mimeType    String?
+  metadata    Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  supplier    Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@index([documentType])
+  @@map("supplier_documents")
+}
+
+model PurchaseOrder {
+  id                  String             @id @default(cuid())
+  supplierId          String
+  vendorId            String
+  poNumber            String?            @unique
+  expectedArrivalDate DateTime?
+  notes               String?
+  status              PurchaseOrderStatus  @default(DRAFT)
+  totalCost           Float              @default(0)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  actualArrivalDate   DateTime?
+  receivedAt          DateTime?
+  supplier            Supplier           @relation(fields: [supplierId], references: [id])
+  vendor              User               @relation(fields: [vendorId], references: [id])
+  items               PurchaseOrderItem[]
+  restockOrders       RestockOrder[]
+
+  @@index([supplierId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  productId       String
+  quantity        Int           @default(1)
+  unitCost        Float         @default(0)
+  totalCost       Float         @default(0)
+  createdAt       DateTime      @default(now())
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
 }
 
 model FulfillmentEvent {

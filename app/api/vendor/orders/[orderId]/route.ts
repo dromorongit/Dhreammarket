@@ -3,6 +3,8 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sendOrderStatusUpdateEmail } from '@/lib/email'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { recordFulfillmentEvent, FulfillmentEventType } from '@/lib/fulfillment-events'
+import { consumeInventory } from '@/lib/stock-reservation'
 
 export const dynamic = 'force-dynamic'
 
@@ -195,6 +197,8 @@ export async function PATCH(
       updateData.status = status
     }
 
+    const isConsumptionStatus = fulfillmentStatus === 'DELIVERED' || fulfillmentStatus === 'COMPLETED' || status === 'DELIVERED' || status === 'COMPLETED'
+
     if (fulfillmentStatus !== undefined) {
       const validTransitions: Record<string, string[]> = {
         AWAITING_STOCK: ['READY_TO_FULFILL'],
@@ -218,6 +222,47 @@ export async function PATCH(
       where: { id: orderId },
       data: updateData,
     })
+
+    if (isConsumptionStatus && existingOrder.orderType === 'NORMAL') {
+      const consumptionResult = await consumeInventory(orderId, payload.userId)
+      if (!consumptionResult.success && consumptionResult.error) {
+        console.error('Inventory consumption failed:', consumptionResult.error)
+      } else if (consumptionResult.consumedItems && consumptionResult.consumedItems.length > 0) {
+        for (const item of consumptionResult.consumedItems) {
+          recordFulfillmentEvent(orderId, 'INVENTORY_CONSUMED', payload.userId, {
+            productName: item.productId,
+            description: `Consumed ${item.quantity} units of inventory.`,
+          }).catch(err => console.error('Failed to record inventory consumed event:', err))
+        }
+      }
+    }
+
+    const eventMapForFulfillment: Record<string, FulfillmentEventType> = {
+      READY_TO_FULFILL: 'READY_TO_FULFILL',
+      PROCESSING: 'PROCESSING',
+      SHIPPED: 'SHIPPED',
+      DELIVERED: 'DELIVERED',
+      CANCELLED: 'CANCELLED',
+    }
+
+    const eventMapForStatus: Record<string, FulfillmentEventType> = {
+      PROCESSING: 'PROCESSING',
+      SHIPPED: 'SHIPPED',
+      DELIVERED: 'DELIVERED',
+      COMPLETED: 'DELIVERED',
+    }
+
+    const eventType = fulfillmentStatus ? eventMapForFulfillment[fulfillmentStatus] : eventMapForStatus[status]
+    if (eventType) {
+      const orderWithItems = await getPrisma().order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { product: true } } },
+      })
+      const item = orderWithItems?.items?.[0]
+      recordFulfillmentEvent(orderId, eventType, payload.userId, {
+        productName: item?.product?.name,
+      }).catch(err => console.error('Failed to record fulfillment event:', err))
+    }
 
     const orderWithUser = await getPrisma().order.findUnique({
       where: { id: orderId },

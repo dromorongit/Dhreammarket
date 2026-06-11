@@ -15,6 +15,16 @@ export type FulfillmentEventType =
   | 'SHIPPED'
   | 'DELIVERED'
   | 'CANCELLED'
+  | 'REFUNDED'
+  | 'STOCK_RESERVED'
+  | 'STOCK_RELEASED'
+  | 'STOCK_ADJUSTED'
+  | 'INVENTORY_CONSUMED'
+  | 'INVENTORY_ALLOCATED'
+  | 'PROCUREMENT_ORDER_CREATED'
+  | 'PROCUREMENT_SHIPPED'
+  | 'PROCUREMENT_ARRIVED'
+  | 'PROCUREMENT_INVENTORY_RECEIVED'
 
 interface EventMetadata {
   productName?: string
@@ -39,6 +49,16 @@ const EVENT_TITLES: Record<FulfillmentEventType, string> = {
   SHIPPED: 'Shipped',
   DELIVERED: 'Delivered',
   CANCELLED: 'Cancelled',
+  REFUNDED: 'Refunded',
+  STOCK_RESERVED: 'Stock Reserved',
+  STOCK_RELEASED: 'Stock Released',
+  STOCK_ADJUSTED: 'Stock Adjusted',
+  INVENTORY_CONSUMED: 'Inventory Consumed',
+  INVENTORY_ALLOCATED: 'Inventory Allocated',
+  PROCUREMENT_ORDER_CREATED: 'Procurement Order Created',
+  PROCUREMENT_SHIPPED: 'Procurement Shipped',
+  PROCUREMENT_ARRIVED: 'Procurement Arrived',
+  PROCUREMENT_INVENTORY_RECEIVED: 'Procurement Inventory Received',
 }
 
 const EVENT_DESCRIPTIONS: Record<FulfillmentEventType, string> = {
@@ -53,6 +73,16 @@ const EVENT_DESCRIPTIONS: Record<FulfillmentEventType, string> = {
   SHIPPED: 'Order has been shipped.',
   DELIVERED: 'Order has been delivered.',
   CANCELLED: 'Order has been cancelled.',
+  REFUNDED: 'Order has been refunded and stock released.',
+  STOCK_RESERVED: 'Stock has been reserved for your order.',
+  STOCK_RELEASED: 'Reserved stock has been released.',
+  STOCK_ADJUSTED: 'Stock reservation was manually adjusted.',
+  INVENTORY_CONSUMED: 'Reserved inventory has been consumed for fulfilled items.',
+  INVENTORY_ALLOCATED: 'Inventory has been allocated to your order.',
+  PROCUREMENT_ORDER_CREATED: 'A procurement order has been created for this product.',
+  PROCUREMENT_SHIPPED: 'The procurement order has been shipped by the supplier.',
+  PROCUREMENT_ARRIVED: 'The procurement order has arrived at your location.',
+  PROCUREMENT_INVENTORY_RECEIVED: 'Procurement inventory has been received and processed.',
 }
 
 const EMAIL_TEMPLATES: Record<FulfillmentEventType, { subject: string; message: string } | null> = {
@@ -68,8 +98,14 @@ const EMAIL_TEMPLATES: Record<FulfillmentEventType, { subject: string; message: 
     subject: 'Your Backorder Item Has Been Restocked',
     message: 'Your backordered item {productName} is now available.',
   },
-  READY_TO_FULFILL: null,
-  PROCESSING: null,
+  READY_TO_FULFILL: {
+    subject: 'Order Ready for Fulfillment',
+    message: 'Your order for {productName} is now ready to be fulfilled.',
+  },
+  PROCESSING: {
+    subject: 'Your Order Has Been Shipped',
+    message: 'Your order #{orderId} has been shipped.',
+  },
   SHIPPED: {
     subject: 'Your Order Has Been Shipped',
     message: 'Your order #{orderId} has been shipped.',
@@ -79,6 +115,19 @@ const EMAIL_TEMPLATES: Record<FulfillmentEventType, { subject: string; message: 
     message: 'Your order #{orderId} has been delivered.',
   },
   CANCELLED: null,
+  REFUNDED: null,
+  STOCK_RESERVED: null,
+  STOCK_RELEASED: null,
+  STOCK_ADJUSTED: null,
+  INVENTORY_CONSUMED: null,
+  INVENTORY_ALLOCATED: {
+    subject: 'Inventory Allocated to Your Order',
+    message: 'Inventory has been allocated to your order. Your item {productName} is now ready for fulfillment.',
+  },
+  PROCUREMENT_ORDER_CREATED: null,
+  PROCUREMENT_SHIPPED: null,
+  PROCUREMENT_ARRIVED: null,
+  PROCUREMENT_INVENTORY_RECEIVED: null,
 }
 
 export async function recordFulfillmentEvent(
@@ -88,6 +137,46 @@ export async function recordFulfillmentEvent(
   metadata?: EventMetadata
 ) {
   try {
+    if (!orderId) {
+      console.log(`Stock adjustment recorded: ${eventType}`, metadata)
+      return { eventType, title: EVENT_TITLES[eventType], description: metadata?.description }
+    }
+
+    const isRestockEvent = [
+      'PROCUREMENT_ORDER_CREATED',
+      'PROCUREMENT_SHIPPED',
+      'PROCUREMENT_ARRIVED',
+      'PROCUREMENT_INVENTORY_RECEIVED',
+    ].includes(eventType)
+
+    if (isRestockEvent) {
+      const title = EVENT_TITLES[eventType]
+      const description = metadata?.productName 
+        ? `${metadata.productName} - ${EVENT_DESCRIPTIONS[eventType]}`
+        : EVENT_DESCRIPTIONS[eventType]
+
+      const event = await getPrisma().fulfillmentEvent.create({
+        data: {
+          orderId,
+          eventType,
+          title,
+          description: metadata?.description || description,
+          createdBy,
+        },
+      })
+
+      if (createdBy && metadata?.vendorId) {
+        await createNotification(
+          metadata.vendorId,
+          'RESTOCK_ORDER_CREATED',
+          title,
+          description
+        ).catch(err => console.error('Failed to create notification:', err))
+      }
+
+      return event
+    }
+
     const order = await getPrisma().order.findUnique({
       where: { id: orderId },
       include: {
@@ -144,6 +233,16 @@ async function sendEventNotification(
     SHIPPED: 'ORDER_STATUS_UPDATED',
     DELIVERED: 'ORDER_STATUS_UPDATED',
     CANCELLED: 'ORDER_STATUS_UPDATED',
+    REFUNDED: 'ORDER_STATUS_UPDATED',
+    STOCK_RESERVED: 'ORDER_STATUS_UPDATED',
+    STOCK_RELEASED: 'ORDER_STATUS_UPDATED',
+    STOCK_ADJUSTED: 'ORDER_STATUS_UPDATED',
+    INVENTORY_CONSUMED: 'ORDER_STATUS_UPDATED',
+    INVENTORY_ALLOCATED: 'ORDER_STATUS_UPDATED',
+    PROCUREMENT_ORDER_CREATED: 'RESTOCK_ORDER_CREATED',
+    PROCUREMENT_SHIPPED: 'RESTOCK_ORDER_CREATED',
+    PROCUREMENT_ARRIVED: 'RESTOCK_ORDER_CREATED',
+    PROCUREMENT_INVENTORY_RECEIVED: 'RESTOCK_INVENTORY_RECEIVED',
   }
 
   const title = EVENT_TITLES[eventType]

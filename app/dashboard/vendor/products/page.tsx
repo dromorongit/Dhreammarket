@@ -15,6 +15,10 @@ interface Product {
   description: string | null
   price: number
   stock: number
+  reservedQuantity?: number
+  lowStockThreshold?: number
+  availableStock?: number
+  waitingCount?: number
   category: {
     id: string
     name: string
@@ -60,7 +64,15 @@ export default function VendorProducts() {
       if (response.ok) {
         const data = await response.json()
         // Apply null safety - use optional chaining and default to empty array
-        setProducts(Array.isArray(data?.products) ? data.products : [])
+        const rawProducts = Array.isArray(data?.products) ? data.products : []
+        
+        // Enrich products with available stock (stock - reserved)
+        const enrichedProducts = rawProducts.map((product: any) => ({
+          ...product,
+          availableStock: product.stock - (product.reservedQuantity || 0),
+        }))
+        
+        setProducts(enrichedProducts)
       }
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -193,21 +205,39 @@ export default function VendorProducts() {
                       {product.description || 'No description'}
                     </p>
 <div className="flex justify-between items-center mb-3">
-                       <span className="text-lg font-bold text-blue-600">
-                         {formatPrice(product.price)}
-                       </span>
-                       <div className="flex items-center gap-2">
-                         {product.availabilityType === 'PREORDER' && (
-                           <Badge variant="info" size="sm">Pre-order</Badge>
-                         )}
-                         {product.availabilityType === 'BACKORDER' && (
-                           <Badge variant="warning" size="sm">Backorder</Badge>
-                         )}
-                         <span className="text-sm text-gray-500">
-                           Stock: {product.stock}
-                         </span>
-                       </div>
-                     </div>
+                      <span className="text-lg font-bold text-blue-600">
+                        {formatPrice(product.price)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {product.availabilityType === 'PREORDER' && (
+                          <Badge variant="info" size="sm">Pre-order</Badge>
+                        )}
+                        {product.availabilityType === 'BACKORDER' && (
+                          <Badge variant="warning" size="sm">Backorder</Badge>
+                        )}
+                        <span className="text-sm text-gray-500">
+                          Available: {(product as any).availableStock ?? (product.stock - (product.reservedQuantity || 0))}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      {(product as any).availableStock !== undefined && (product as any).availableStock <= 5 && (
+                        <Badge variant="warning" size="sm" className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
+                          </svg>
+                          Low Stock
+                        </Badge>
+                      )}
+                      {(product as any).availableStock === 0 && (
+                        <Badge variant="danger" size="sm" className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Out of Stock
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 mb-4">
                       Category: {product.category.name}
                     </p>
