@@ -71,6 +71,44 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { type } = await request.json()
+
+    if (type === 'waiting-customers') {
+      const prisma = getPrisma()
+      const product = await prisma.product.findUnique({
+        where: { id: params.id },
+        select: { availabilityType: true },
+      })
+
+      if (!product || !product.availabilityType) {
+        return NextResponse.json({ count: 0 })
+      }
+
+      const orderType = product.availabilityType === 'PREORDER' ? 'PREORDER' : 'BACKORDER'
+      const count = await prisma.order.count({
+        where: {
+          orderType,
+          paymentStatus: 'PAID',
+          status: { in: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'] },
+          items: { some: { productId: params.id } },
+        },
+      })
+
+      return NextResponse.json({ count })
+    }
+
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+  } catch (error) {
+    console.error('Error fetching waiting customers:', error)
+    return NextResponse.json({ count: 0 }, { status: 500 })
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }

@@ -10,7 +10,6 @@ import { Skeleton, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
-import { getWaitingCustomerCount } from '@/lib/demand-forecast'
 
 interface CartResponse {
   cart: {
@@ -167,15 +166,22 @@ export default function ProductDetail() {
           if (p.variants[0].age) setSelectedAge(p.variants[0].age)
         }
         
-        // Fetch waiting customer count for preorder/backorder products
-        if (p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') {
-          try {
-            const count = await getWaitingCustomerCount(productId, p.availabilityType)
-            setWaitingCustomerCount(count)
-          } catch (e) {
-            console.error('Error fetching waiting count:', e)
-          }
-        }
+// Fetch waiting customer count for preorder/backorder products
+         if (p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') {
+           try {
+             const countRes = await fetch(`/api/products/${productId}`, {
+               method: 'PATCH',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ type: 'waiting-customers' }),
+             })
+             if (countRes.ok) {
+               const countData = await countRes.json()
+               setWaitingCustomerCount(countData.count)
+             }
+           } catch (e) {
+             console.error('Error fetching waiting count:', e)
+           }
+         }
       } else {
         alert('Product not found')
         router.push('/marketplace')
