@@ -4,6 +4,7 @@ import { Pool } from 'pg'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  pool: Pool | undefined
 }
 
 export function getPrisma(): PrismaClient {
@@ -12,8 +13,15 @@ export function getPrisma(): PrismaClient {
     
     // Use PostgreSQL adapter if DATABASE_URL is provided, otherwise use default SQLite
     if (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) {
-      const pool = new Pool({ connectionString: databaseUrl })
+      const pool = new Pool({ 
+        connectionString: databaseUrl,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+        maxUses: 7500,
+      })
       const adapter = new PrismaPg(pool)
+      globalForPrisma.pool = pool
       globalForPrisma.prisma = new PrismaClient({ adapter })
     } else {
       // Fallback to default SQLite connection
