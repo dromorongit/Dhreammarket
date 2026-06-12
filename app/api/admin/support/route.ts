@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/support - Fetch all support tickets with filtering
 export async function GET(request: NextRequest) {
   try {

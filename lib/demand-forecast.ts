@@ -339,14 +339,14 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     }),
   ])
 
-  const productIds = [
+  const productIds = Array.from(new Set([
     ...mostPreordered.map((p) => p.productId),
     ...mostBackordered.map((p) => p.productId),
     ...categoryDemand.map((c) => c.productId),
-  ]
+  ]))
 
   const products = await prisma.product.findMany({
-    where: { id: { in: [...new Set(productIds)] } },
+    where: { id: { in: productIds } },
     select: { id: true, name: true, categoryId: true, storeId: true },
   })
 
@@ -373,7 +373,7 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
   }
 
   const categories = await prisma.productCategory.findMany({
-    where: { id: { in: [...categoryMap.keys()] } },
+    where: { id: { in: Array.from(categoryMap.keys()) } },
     select: { id: true, name: true },
   })
 

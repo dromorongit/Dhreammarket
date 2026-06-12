@@ -4,6 +4,8 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-allocation-engine'
 
+export const runtime = 'nodejs'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
