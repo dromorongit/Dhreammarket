@@ -63,6 +63,12 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Transform to handle nullable user
+    const transformedTickets = tickets.map(ticket => ({
+      ...ticket,
+      user: ticket.user || undefined
+    }))
+
     // Get counts by status
     const counts = await getPrisma().supportTicket.groupBy({
       by: ['status'],
@@ -74,7 +80,7 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, number>)
 
-    return NextResponse.json({ tickets, statusCounts })
+    return NextResponse.json({ tickets: transformedTickets, statusCounts })
   } catch (error) {
     console.error('Error fetching admin support tickets:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

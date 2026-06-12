@@ -510,7 +510,7 @@ model VerificationAuditLog {
 
 model SupportTicket {
   id         String                @id @default(cuid())
-  userId     String
+  userId     String?
   subject    String
   message    String
   type       SupportTicketType
@@ -519,7 +519,7 @@ model SupportTicket {
   adminReply String?
   createdAt  DateTime              @default(now())
   updatedAt  DateTime              @updatedAt
-  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("support_tickets")
 }

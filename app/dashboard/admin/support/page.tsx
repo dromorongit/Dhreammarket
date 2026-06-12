@@ -18,14 +18,14 @@ interface SupportTicket {
   adminReply: string | null
   createdAt: string
   updatedAt: string
-  user: {
+  user?: {
     id: string
     email: string
     profile: {
       firstName: string | null
       lastName: string | null
     } | null
-  }
+  } | null
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -149,6 +149,9 @@ export default function AdminSupportPage() {
   }
 
   const getUserName = (ticket: SupportTicket) => {
+    if (!ticket.user) {
+      return 'Guest'
+    }
     if (ticket.user.profile?.firstName) {
       return `${ticket.user.profile.firstName} ${ticket.user.profile.lastName || ''}`.trim()
     }

@@ -53,22 +53,19 @@ export async function PATCH(
       },
     })
 
-    // Create notification for the user
-    let notificationTitle = 'Support Ticket Updated'
-    let notificationMessage = ''
-
-    if (status && status !== existingTicket.status) {
-      notificationMessage = `Your support ticket "${existingTicket.subject}" status has been updated to ${status}.`
+    // Create notification for the user (only if user exists)
+    if (ticket.user && status && status !== existingTicket.status) {
+      const notificationMessage = `Your support ticket "${existingTicket.subject}" status has been updated to ${status}.`
       await createNotification(
         ticket.user.id,
         'SUPPORT_TICKET_STATUS_UPDATED',
-        notificationTitle,
+        'Support Ticket Updated',
         notificationMessage
       )
     }
 
-    if (adminReply && adminReply !== existingTicket.adminReply) {
-      notificationMessage = `Admin has replied to your support ticket: "${existingTicket.subject}"`
+    if (ticket.user && adminReply && adminReply !== existingTicket.adminReply) {
+      const notificationMessage = `Admin has replied to your support ticket: "${existingTicket.subject}"`
       await createNotification(
         ticket.user.id,
         'SUPPORT_TICKET_REPLIED',
