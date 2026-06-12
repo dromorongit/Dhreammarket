@@ -136,7 +136,7 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
         </Card>
         <p className="mt-4 text-center text-sm text-gray-600">
           Need help?{' '}
-          <Link href="/help-center" className="font-medium text-blue-600 hover:text-blue-500">
+          <Link href="/help" className="font-medium text-blue-600 hover:text-blue-500">
             Contact support
           </Link>
         </p>

@@ -382,7 +382,7 @@ export default function FAQPage() {
               <Button
                 variant="secondary"
                 size="lg"
-                onClick={() => window.location.href = '/help-center'}
+                onClick={() => window.location.href = '/help'}
               >
                 Contact Support
               </Button>

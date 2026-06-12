@@ -23,7 +23,7 @@ export default function NeedHelpButton({
   const router = useRouter()
 
   const handleClick = () => {
-    const helpCenterUrl = `/help-center?type=${encodeURIComponent(category)}`
+    const helpCenterUrl = `/help?type=${encodeURIComponent(category)}`
     router.push(helpCenterUrl)
   }
 

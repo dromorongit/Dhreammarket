@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -139,6 +140,8 @@ export default function HelpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
+  const searchParams = useSearchParams()
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -163,6 +166,18 @@ export default function HelpPage() {
     }
     checkAuth()
   }, [])
+
+  useEffect(() => {
+    const typeParam = searchParams.get('type')
+    if (typeParam) {
+      const validCategories = ['Customer', 'Vendor', 'Payments', 'Orders', 'Verification', 'Preorders', 'Backorders']
+      if (validCategories.includes(typeParam)) {
+        setSelectedFAQCategory(typeParam)
+      } else if (contactCategories.includes(typeParam)) {
+        setContactForm(prev => ({ ...prev, category: typeParam }))
+      }
+    }
+  }, [searchParams])
 
   const filteredFAQs = faqData.filter(faq => {
     const matchesCategory = selectedFAQCategory === 'All' || faq.category === selectedFAQCategory

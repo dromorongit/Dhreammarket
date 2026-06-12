@@ -285,7 +285,7 @@ export function Navbar() {
               <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
             <Link
-              href="/help-center"
+              href="/help"
               className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
             >
               <span>Support</span>
@@ -530,7 +530,7 @@ export function Navbar() {
           <Link href="/contact" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
             Contact
           </Link>
-          <Link href="/help-center" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+          <Link href="/help" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
             Support
           </Link>
           {user && (
