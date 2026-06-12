@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -123,7 +122,7 @@ const contactCategories = [
   'Other'
 ]
 
-export default function HelpPage() {
+export default function HelpPage({ searchParams }: { searchParams: { type?: string } }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFAQCategory, setSelectedFAQCategory] = useState<string>('All')
   const [expandedFAQId, setExpandedFAQId] = useState<string | null>(null)
@@ -139,8 +138,6 @@ export default function HelpPage() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -168,7 +165,7 @@ export default function HelpPage() {
   }, [])
 
   useEffect(() => {
-    const typeParam = searchParams.get('type')
+    const typeParam = searchParams?.type
     if (typeParam) {
       const validCategories = ['Customer', 'Vendor', 'Payments', 'Orders', 'Verification', 'Preorders', 'Backorders']
       if (validCategories.includes(typeParam)) {
