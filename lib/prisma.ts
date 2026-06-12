@@ -15,10 +15,11 @@ export function getPrisma(): PrismaClient {
     if (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) {
       const pool = new Pool({ 
         connectionString: databaseUrl,
-        max: 20,
+        max: 10,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
+        connectionTimeoutMillis: 5000,
         maxUses: 7500,
+        ssl: { rejectUnauthorized: false },
       })
       const adapter = new PrismaPg(pool)
       globalForPrisma.pool = pool
@@ -29,4 +30,19 @@ export function getPrisma(): PrismaClient {
     }
   }
   return globalForPrisma.prisma
+}
+
+declare global {
+  function onTerminate(): void
+}
+
+if (typeof onTerminate !== 'undefined') {
+  process.on('SIGTERM', () => {
+    globalForPrisma.pool?.end()
+    globalForPrisma.prisma?.$disconnect()
+  })
+  process.on('SIGINT', () => {
+    globalForPrisma.pool?.end()
+    globalForPrisma.prisma?.$disconnect()
+  })
 }
