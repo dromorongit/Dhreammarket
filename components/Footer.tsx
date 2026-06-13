@@ -104,43 +104,68 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Legal */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-4 tracking-wider uppercase">Legal</h4>
-            <ul className="space-y-3">
-              <li>
-                <Link href="/privacy" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                  <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                  <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                 <Link href="/refund" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+{/* Legal */}
+           <div>
+             <h4 className="text-sm font-semibold text-white mb-4 tracking-wider uppercase">Legal</h4>
+             <ul className="space-y-3">
+               <li>
+                 <Link href="/privacy" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                   Refund Policy
+                   Privacy Policy
                  </Link>
                </li>
                <li>
-                 <Link href="/payment-policy" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                  <Link href="/terms" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/refund" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Refund Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/payment-policy" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Payment Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    Cookies
+                  </Link>
+                </li>
+             </ul>
+           </div>
+
+           {/* Contact */}
+           <div>
+             <h4 className="text-sm font-semibold text-white mb-4 tracking-wider uppercase">Contact</h4>
+             <ul className="space-y-3">
+               <li>
+                 <a href="tel:+233596522239" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                   Payment Policy
-                 </Link>
+                   +233 59 652 2239
+                 </a>
                </li>
                <li>
-                 <Link href="/contact" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                 <a href="tel:+233508548181" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
                    <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                   Cookies
-                 </Link>
+                   +233 50 854 8181
+                 </a>
                </li>
-            </ul>
-          </div>
-        </div>
+               <li>
+                 <a href="tel:+233279354362" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                   +233 27 935 4362
+                 </a>
+               </li>
+             </ul>
+           </div>
+         </div>
 
         {/* Trust badges */}
          <div className="relative border-t border-slate-700/50 pt-8 mb-8">

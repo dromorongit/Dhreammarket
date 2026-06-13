@@ -203,17 +203,19 @@ export default function ContactPage() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.505a1 1 0 01-.502 1.21l-2.257 1.13a11 11 0 005.516.516l1.13-2.257a1 1 0 011.21-.502l4.505 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-deep-navy">Business Inquiries</h3>
-                  <p className="text-sm text-slate-500">For vendor partnerships and business</p>
+                  <h3 className="text-lg font-semibold text-deep-navy">Phone Support</h3>
+                  <p className="text-sm text-slate-500">Available Monday to Friday, 9:00 AM - 6:00 PM (GMT)</p>
                 </div>
               </div>
-              <a href="mailto:business@dhreamarket.com" className="text-royal-blue hover:text-royal-blue/80 font-medium">
-                business@dhreamarket.com
-              </a>
+              <div className="space-y-1">
+                <a href="tel:+233596522239" className="block text-royal-blue hover:text-royal-blue/80 font-medium">+233 59 652 2239</a>
+                <a href="tel:+233508548181" className="block text-royal-blue hover:text-royal-blue/80 font-medium">+233 50 854 8181</a>
+                <a href="tel:+233279354362" className="block text-royal-blue hover:text-royal-blue/80 font-medium">+233 27 935 4362</a>
+              </div>
             </CardContent>
           </Card>
         </div>

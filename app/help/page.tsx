@@ -14,27 +14,27 @@ interface FAQ {
 }
 
 const customerGuides = [
-  { title: 'Creating an Account', href: '/register', icon: '👤' },
+  { title: 'Creating an Account', href: '/help/creating-account', icon: '👤' },
   { title: 'Placing Orders', href: '/help/placing-orders', icon: '🛒' },
   { title: 'Making Payments', href: '/help/making-payments', icon: '💳' },
-  { title: 'Tracking Orders', href: '/dashboard/customer/orders', icon: '📍' },
+  { title: 'Tracking Orders', href: '/help/tracking-orders', icon: '📍' },
   { title: 'Understanding Preorders', href: '/help/preorders', icon: '⏳' },
   { title: 'Understanding Backorders', href: '/help/backorders', icon: '↩️' },
-  { title: 'Refunds', href: '/refund', icon: '💰' },
+  { title: 'Refunds', href: '/help/refunds', icon: '💰' },
   { title: 'Returns', href: '/help/returns', icon: '🔄' },
 ]
 
 const vendorGuides = [
-  { title: 'Creating a Store', href: '/dashboard/vendor/store', icon: '🏪' },
-  { title: 'Vendor Verification', href: '/dashboard/vendor/verification', icon: '✅' },
-  { title: 'KYC Submission', href: '/dashboard/vendor/verification', icon: '📄' },
-  { title: 'Managing Products', href: '/dashboard/vendor/products', icon: '📦' },
-  { title: 'Managing Inventory', href: '/dashboard/vendor/products', icon: '📊' },
+  { title: 'Creating a Store', href: '/help/creating-store', icon: '🏪' },
+  { title: 'Vendor Verification', href: '/help/vendor-verification', icon: '✅' },
+  { title: 'KYC Submission', href: '/help/kyc-submission', icon: '📄' },
+  { title: 'Managing Products', href: '/help/managing-products', icon: '📦' },
+  { title: 'Managing Inventory', href: '/help/managing-inventory', icon: '📊' },
   { title: 'Preorders', href: '/help/preorders', icon: '⏳' },
   { title: 'Backorders', href: '/help/backorders', icon: '↩️' },
-  { title: 'Fulfillment Workflow', href: '/dashboard/vendor/fulfillment', icon: '🚚' },
-  { title: 'Restock Orders', href: '/dashboard/vendor/restock', icon: '📥' },
-  { title: 'Purchase Orders', href: '/dashboard/vendor/purchase-orders', icon: '📋' },
+  { title: 'Fulfillment Workflow', href: '/help/fulfillment-workflow', icon: '🚚' },
+  { title: 'Restock Orders', href: '/help/restock-orders', icon: '📥' },
+  { title: 'Purchase Orders', href: '/help/purchase-orders', icon: '📋' },
 ]
 
 const faqData: FAQ[] = [
@@ -435,7 +435,11 @@ export default function HelpPage({ searchParams }: { searchParams: { type?: stri
                   </svg>
                 </div>
                 <p className="font-medium text-slate-700">Customer Support</p>
-                <p className="text-2xl font-bold text-deep-navy">0596522239</p>
+                <a href="tel:+233596522239" className="text-2xl font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 59 652 2239</a>
+                <br />
+                <a href="tel:+233508548181" className="text-lg font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 50 854 8181</a>
+                <br />
+                <a href="tel:+233279354362" className="text-lg font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 27 935 4362</a>
               </CardContent>
             </Card>
             <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
@@ -446,7 +450,11 @@ export default function HelpPage({ searchParams }: { searchParams: { type?: stri
                   </svg>
                 </div>
                 <p className="font-medium text-slate-700">Vendor Support</p>
-                <p className="text-2xl font-bold text-deep-navy">0508548181</p>
+                <a href="tel:+233596522239" className="text-2xl font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 59 652 2239</a>
+                <br />
+                <a href="tel:+233508548181" className="text-lg font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 50 854 8181</a>
+                <br />
+                <a href="tel:+233279354362" className="text-lg font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 27 935 4362</a>
               </CardContent>
             </Card>
             <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
@@ -457,7 +465,11 @@ export default function HelpPage({ searchParams }: { searchParams: { type?: stri
                   </svg>
                 </div>
                 <p className="font-medium text-slate-700">Technical Support</p>
-                <p className="text-2xl font-bold text-deep-navy">0279354362</p>
+                <a href="tel:+233596522239" className="text-2xl font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 59 652 2239</a>
+                <br />
+                <a href="tel:+233508548181" className="text-lg font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 50 854 8181</a>
+                <br />
+                <a href="tel:+233279354362" className="text-lg font-bold text-deep-navy hover:text-royal-blue transition-colors">+233 27 935 4362</a>
               </CardContent>
             </Card>
           </div>
