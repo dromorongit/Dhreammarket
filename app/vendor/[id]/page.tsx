@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink, getWhatsAppLinks } from '@/lib/phone'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
+import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
 interface VendorProduct {
   id: string
@@ -556,12 +557,19 @@ fetchVendor()
                />
 </Card>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
 {vendor.products.map((product) => {
                     const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                    const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null
-                    const discountPercentage = hasDiscount && product.price > effectivePrice
-                      ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+                    const badgeData = calculateProductBadges({
+                      price: product.price,
+                      flashSalePrice: product.flashSalePrice,
+                      salesPrice: product.salesPrice,
+                      dealsPrice: product.dealsPrice,
+                      stock: product.stock,
+                      availabilityType: product.availabilityType,
+                      expectedArrivalDate: product.expectedArrivalDate,
+                      expectedRestockDate: product.expectedRestockDate,
+                    })
                     return (
                     <Card
                       key={product.id}
@@ -582,58 +590,39 @@ fetchVendor()
                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                              </svg>
                            </div>
-                         )}
-{discountPercentage > 0 && (
-                            <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                              -{discountPercentage}%
-                            </div>
                           )}
-                          {product.availabilityType === 'PREORDER' && (
-                            <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                              Pre-order
-                            </Badge>
-                          )}
-                          {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                            <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                              Backorder
-                            </Badge>
-                          )}
-                          {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
-                            <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              Sold Out
-                            </div>
-                          )}
-                       </div>
-                     </Link>
+                          <ProductBadges product={badgeData} />
+                        </div>
+                      </Link>
 <div className="p-2 space-y-1 flex-1 flex flex-col">
-                       <Link href={`/marketplace/product/${product.id}`} className="block">
-                         <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                           {product.name}
-                         </h3>
-                       </Link>
-                       <div className="flex items-center gap-1.5 flex-wrap">
-                         <span className="text-[11px] font-bold text-royal-blue">
-                           {formatPrice(effectivePrice)}
-                         </span>
-{discountPercentage > 0 && (
+                        <Link href={`/marketplace/product/${product.id}`} className="block">
+                          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                            {product.name}
+                          </h3>
+                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[11px] font-bold text-royal-blue">
+                            {formatPrice(effectivePrice)}
+                          </span>
+                          {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
                             <span className="text-[10px] text-slate-400 line-through">
                               {formatPrice(product.price)}
                             </span>
                           )}
-                       </div>
-                       <div className="flex items-center gap-1 min-w-0">
-                         <p className="text-[10px] text-slate-500 truncate">
-                           {vendor.name}
-                         </p>
-                         {vendor.isVerified && (
-                           <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                         )}
-                       </div>
-                     </div>
-                   </Card>
-                 )})}
-               </div>
-             )}
+                        </div>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <p className="text-[10px] text-slate-500 truncate">
+                            {vendor.name}
+                          </p>
+                          {vendor.isVerified && (
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  )})}
+                </div>
+              )}
          </section>
 
 {/* Vendor Reviews Section */}

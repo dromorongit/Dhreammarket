@@ -5,23 +5,12 @@ import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge'
-import { AvailabilityBadge } from '@/components/AvailabilityBadge';
 import { SkeletonCard } from '@/components/Skeleton';
 import { formatPrice } from '@/lib/currency';
 import { truncateVendorName } from '@/lib/utils';
 import { MdVerified } from 'react-icons/md';
-import {
-  type EnterpriseProduct,
-  type EnterpriseBrand,
-  type EnterpriseHomepageData,
-  getDiscountPercent,
-  getEffectivePrice,
-  getDiscountedPrice,
-  dedupeProducts,
-  collectProductIds,
-  normalizeBrand,
-  EMPTY_ENTERPRISE_DATA,
-} from '@/lib/homepage-product-utils';
+import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageData, getDiscountPercent, getEffectivePrice, getDiscountedPrice, dedupeProducts, collectProductIds, normalizeBrand, EMPTY_ENTERPRISE_DATA } from '@/lib/homepage-product-utils'
+import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 
 export function useEnterpriseHomepageData() {
   const [data, setData] = useState<EnterpriseHomepageData>(
@@ -232,7 +221,7 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
   const salePrice = discountedPrice ?? product.price
   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
-return (
+  return (
     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
         variant='elevated'
@@ -244,11 +233,6 @@ return (
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
             />
-            {discount > 0 && (
-              <div className='absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg'>
-                -{discount}%
-              </div>
-            )}
             {product.flashSaleEnd && (
               <div className='absolute top-2 right-2 bg-deep-navy/90 text-white px-2 py-1 rounded-full flex items-center gap-1'>
                 <svg
@@ -267,7 +251,16 @@ return (
                 <CountdownTimer endTime={product.flashSaleEnd} />
               </div>
             )}
-            <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+            <ProductBadges product={calculateProductBadges({
+              price: product.price,
+              flashSalePrice: product.flashSalePrice,
+              salesPrice: product.salesPrice,
+              dealsPrice: product.dealsPrice,
+              stock: product.stock,
+              availabilityType: product.availabilityType,
+              expectedArrivalDate: product.expectedArrivalDate,
+              expectedRestockDate: product.expectedRestockDate,
+            })} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
@@ -302,7 +295,6 @@ return (
 
 function SponsoredCard({ product }: { product: EnterpriseProduct }) {
   const discountedPrice = getDiscountedPrice(product)
-  const hasDiscount = discountedPrice != null && discountedPrice < product.price
 
   return (
     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -316,9 +308,17 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
             />
-            <div className='absolute top-2 left-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide'>
-              Sponsored
-            </div>
+            <ProductBadges product={calculateProductBadges({
+              price: product.price,
+              flashSalePrice: product.flashSalePrice,
+              salesPrice: product.salesPrice,
+              dealsPrice: product.dealsPrice,
+              stock: product.stock,
+              availabilityType: product.availabilityType,
+              expectedArrivalDate: product.expectedArrivalDate,
+              expectedRestockDate: product.expectedRestockDate,
+              isSponsored: true,
+            })} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
@@ -329,7 +329,7 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
             <span className='text-[11px] font-bold text-royal-blue'>
               {formatPrice(getEffectivePrice(product))}
             </span>
-            {hasDiscount && (
+            {discountedPrice && discountedPrice < product.price && (
               <span className='text-[10px] text-slate-400 line-through'>
                 {formatPrice(product.price)}
               </span>
@@ -354,7 +354,6 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
 function DealCard({ product }: { product: EnterpriseProduct }) {
   const discountedPrice = getDiscountedPrice(product)
   const salePrice = discountedPrice ?? product.price
-  const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
   return (
     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -368,12 +367,16 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
             />
-            {discount > 0 && (
-              <div className='absolute top-2 left-2 bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-lg'>
-                SAVE {discount}%
-              </div>
-            )}
-            <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+            <ProductBadges product={calculateProductBadges({
+              price: product.price,
+              flashSalePrice: product.flashSalePrice,
+              salesPrice: product.salesPrice,
+              dealsPrice: product.dealsPrice,
+              stock: product.stock,
+              availabilityType: product.availabilityType,
+              expectedArrivalDate: product.expectedArrivalDate,
+              expectedRestockDate: product.expectedRestockDate,
+            })} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
@@ -384,7 +387,7 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
             <span className='text-sm font-bold text-rose-600'>
               {formatPrice(salePrice)}
             </span>
-            {discount > 0 && (
+            {discountedPrice && discountedPrice < product.price && (
               <span className='text-[11px] text-slate-400 line-through'>
                 {formatPrice(product.price)}
               </span>
@@ -413,9 +416,6 @@ function StandardCard({
   product: EnterpriseProduct;
   badge?: string;
 }) {
-  const discountedPrice = getDiscountedPrice(product)
-  const hasDiscount = discountedPrice != null && discountedPrice < product.price
-
   return (
     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
       <Card
@@ -428,12 +428,16 @@ function StandardCard({
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
             />
-            {badge && (
-              <div className='absolute top-2 left-2 bg-royal-blue text-white text-[10px] font-bold px-2 py-1 rounded-full'>
-                {badge}
-              </div>
-            )}
-            <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+            <ProductBadges product={calculateProductBadges({
+              price: product.price,
+              flashSalePrice: product.flashSalePrice,
+              salesPrice: product.salesPrice,
+              dealsPrice: product.dealsPrice,
+              stock: product.stock,
+              availabilityType: product.availabilityType,
+              expectedArrivalDate: product.expectedArrivalDate,
+              expectedRestockDate: product.expectedRestockDate,
+            })} />
           </div>
         </Link>
         <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
@@ -444,7 +448,7 @@ function StandardCard({
             <span className='text-[11px] font-bold text-royal-blue'>
               {formatPrice(getEffectivePrice(product))}
             </span>
-            {hasDiscount && (
+            {getDiscountedPrice(product) && getDiscountedPrice(product)! < product.price && (
               <span className='text-[10px] text-slate-400 line-through'>
                 {formatPrice(product.price)}
               </span>

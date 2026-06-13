@@ -5,12 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
-import { AvailabilityBadge } from '@/components/AvailabilityBadge'
 import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { MdVerified } from 'react-icons/md'
+import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
 type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands'
 
@@ -487,9 +487,17 @@ function SearchPageSkeleton() {
 /* ─── Compact Product Card (inline for search page) ─── */
 function CompactProductCard({ product }: { product: SearchProduct }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
-  const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null
-  const discountPercentage = hasDiscount && product.price > effectivePrice
-    ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+
+  const badgeData = calculateProductBadges({
+    price: product.price,
+    flashSalePrice: null,
+    salesPrice: product.salesPrice,
+    dealsPrice: product.dealsPrice,
+    stock: product.stock,
+    availabilityType: product.availabilityType,
+    expectedArrivalDate: (product as any).expectedArrivalDate ?? null,
+    expectedRestockDate: (product as any).expectedRestockDate ?? null,
+  })
 
   return (
     <Link href={`/marketplace/product/${product.id}`} className="block">
@@ -509,12 +517,7 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
               </svg>
             </div>
           )}
-          {discountPercentage > 0 && (
-            <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-              -{discountPercentage}%
-            </div>
-          )}
-          <AvailabilityBadge availabilityType={product.availabilityType} stock={product.stock} />
+          <ProductBadges product={badgeData} />
         </div>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
           <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 leading-tight">
@@ -524,7 +527,7 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
             <span className="text-[11px] font-bold text-royal-blue">
               {formatPrice(effectivePrice)}
             </span>
-            {(product.dealsPrice ?? product.salesPrice) && (
+            {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
               <span className="text-[10px] text-slate-400 line-through">
                 {formatPrice(product.price)}
               </span>

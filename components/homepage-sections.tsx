@@ -10,6 +10,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
+import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
 export function HomepageSectionSkeleton() {
   return (
@@ -53,6 +54,8 @@ interface Product {
   dealsPrice?: number | null
   stock: number
   availabilityType?: string
+  expectedArrivalDate?: string | null
+  expectedRestockDate?: string | null
   images: Array<{ id: string; url: string; alt: string | null }>
   store?: { id: string; name: string; isVerified: boolean }
   category?: { id: string; name: string }
@@ -74,10 +77,16 @@ interface HomepageSectionProps {
 
 function CompactProductCard({ product }: { product: Product }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-  const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null
-  const discountPercentage = hasDiscount && product.price > effectivePrice
-    ? Math.round(((product.price - effectivePrice) / product.price) * 100)
-    : 0
+  const badgeData = calculateProductBadges({
+    price: product.price,
+    flashSalePrice: product.flashSalePrice,
+    salesPrice: product.salesPrice,
+    dealsPrice: product.dealsPrice,
+    stock: product.stock,
+    availabilityType: product.availabilityType,
+    expectedArrivalDate: product.expectedArrivalDate,
+    expectedRestockDate: product.expectedRestockDate,
+  })
 
   return (
     <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
@@ -98,26 +107,7 @@ function CompactProductCard({ product }: { product: Product }) {
                 </svg>
               </div>
             )}
-{discountPercentage > 0 && (
-               <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                 -{discountPercentage}%
-               </div>
-             )}
-{product.availabilityType === 'PREORDER' && (
-                <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                  Pre-order
-                </Badge>
-              )}
-              {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                  Backorder
-                </Badge>
-              )}
-             {product.availabilityType === 'IN_STOCK' && product.stock === 0 && (
-               <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                 Sold Out
-               </div>
-             )}
+            <ProductBadges product={badgeData} />
           </div>
         </Link>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
@@ -128,11 +118,11 @@ function CompactProductCard({ product }: { product: Product }) {
             <span className="text-[11px] font-bold text-royal-blue">
               {formatPrice(effectivePrice)}
             </span>
-{discountPercentage > 0 && (
-               <span className="text-[10px] text-slate-400 line-through">
-                 {formatPrice(product.price)}
-               </span>
-             )}
+            {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
+              <span className="text-[10px] text-slate-400 line-through">
+                {formatPrice(product.price)}
+              </span>
+            )}
           </div>
           {product.store && (
             <div className="flex items-center gap-1 min-w-0">
@@ -467,51 +457,44 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        <div className="hidden lg:grid grid-cols-2 gap-6">
-          {products.slice(0, 4).map((product) => {
-            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-            const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-            const discountPercentage = hasDiscount && product.price > effectivePrice
-              ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-            return (
-              <Link key={product.id} href={`/marketplace/product/${product.id}`}>
-                <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
-                  <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                    {product.images?.[0] ? (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.images[0].alt || product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
-                        </svg>
-                      </div>
-                    )}
-{discountPercentage > 0 && (
-                       <div className="absolute top-2 left-2 bg-rose-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                         -{discountPercentage}%
+<div className="hidden lg:grid grid-cols-2 gap-6">
+           {products.slice(0, 4).map((product) => {
+             const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+             const badgeData = calculateProductBadges({
+               price: product.price,
+               flashSalePrice: product.flashSalePrice,
+               salesPrice: product.salesPrice,
+               dealsPrice: product.dealsPrice,
+               stock: product.stock,
+               availabilityType: product.availabilityType,
+               expectedArrivalDate: product.expectedArrivalDate,
+               expectedRestockDate: product.expectedRestockDate,
+             })
+             return (
+               <Link key={product.id} href={`/marketplace/product/${product.id}`}>
+                 <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
+                   <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                     {product.images?.[0] ? (
+                       <img
+                         src={product.images[0].url}
+                         alt={product.images[0].alt || product.name}
+                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                       />
+                     ) : (
+                       <div className="w-full h-full flex items-center justify-center">
+                         <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
+                         </svg>
                        </div>
                      )}
-{product.availabilityType === 'PREORDER' && (
-                        <Badge variant="preorder" size="sm" className="absolute top-2 right-2">
-                          Pre-order
-                        </Badge>
-                      )}
-                      {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                        <Badge variant="backorder" size="sm" className="absolute top-2 right-2">
-                          Backorder
-                        </Badge>
-                      )}
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                     <ProductBadges product={badgeData} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                       <Badge variant="premium" size="sm" className="mb-2">Featured</Badge>
+                       <Badge variant="premium" size="sm" className="mb-2">Tech</Badge>
                        <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
                        <p className="text-white/80 text-sm mb-3">{product.store?.name}</p>
                       <div className="flex items-baseline gap-2">
-                        {hasDiscount && (
+                        {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
                           <span className="text-lg text-white/60 line-through">
                             {formatPrice(product.price)}
                           </span>
@@ -523,67 +506,60 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                 </Card>
               </Link>
             )
-          })}
-        </div>
+           })}
+         </div>
 
-        <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-            {products.slice(0, 6).map((product) => {
-              const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-              const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-              const discountPercentage = hasDiscount && product.price > effectivePrice
-                ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-              return (
-                <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
-                  <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                    <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                      {product.images?.[0] ? (
-                        <img
-                          src={product.images[0].url}
-                          alt={product.images[0].alt || product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
-                          </svg>
-                        </div>
-                      )}
-{discountPercentage > 0 && (
-                         <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                           -{discountPercentage}%
+<div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
+           <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+             {products.slice(0, 6).map((product) => {
+               const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+               const badgeData = calculateProductBadges({
+                 price: product.price,
+                 flashSalePrice: product.flashSalePrice,
+                 salesPrice: product.salesPrice,
+                 dealsPrice: product.dealsPrice,
+                 stock: product.stock,
+                 availabilityType: product.availabilityType,
+                 expectedArrivalDate: product.expectedArrivalDate,
+                 expectedRestockDate: product.expectedRestockDate,
+               })
+               return (
+                 <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
+                   <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+                     <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                       {product.images?.[0] ? (
+                         <img
+                           src={product.images[0].url}
+                           alt={product.images[0].alt || product.name}
+                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                         />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center">
+                           <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
+                           </svg>
                          </div>
                        )}
-{product.availabilityType === 'PREORDER' && (
-                          <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                            Pre-order
-                          </Badge>
-                        )}
-                        {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                          <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                            Backorder
-                          </Badge>
-                        )}
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                       <div className="absolute bottom-0 left-0 right-0 p-4">
-                         <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
-                        <div className="flex items-baseline gap-1">
-                          {hasDiscount && (
-                            <span className="text-xs text-white/60 line-through">
-                              {formatPrice(product.price)}
-                            </span>
-                          )}
-                          <span className="text-lg font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
+                     <ProductBadges product={badgeData} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
+                          <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
+                         <div className="flex items-baseline gap-1">
+                           {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
+                             <span className="text-xs text-white/60 line-through">
+                               {formatPrice(product.price)}
+                             </span>
+                           )}
+                           <span className="text-lg font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                         </div>
+                       </div>
+                     </div>
+                   </Card>
+                 </Link>
+               )
+             })}
+           </div>
+         </div>
       </div>
     </section>
   )
@@ -718,132 +694,120 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
         </div>
 
         <div className="space-y-4">
-          {topRowProducts.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-              <div className="flex gap-4">
-                {topRowProducts.map((product) => {
-                  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                  const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-                  const discountPercentage = hasDiscount && product.price > effectivePrice
-                    ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-                  return (
-                    <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                      <Link href={`/marketplace/product/${product.id}`}>
-                        <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-                          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                            {product.images?.[0] ? (
-                              <img
-                                src={product.images[0].url}
-                                alt={product.images[0].alt || product.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-{discountPercentage > 0 && (
-                               <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                                 -{discountPercentage}%
+{topRowProducts.length > 0 && (
+             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+               <div className="flex gap-4">
+                 {topRowProducts.map((product) => {
+                   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+                   const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
+                   const badgeData = calculateProductBadges({
+                     price: product.price,
+                     flashSalePrice: product.flashSalePrice,
+                     salesPrice: product.salesPrice,
+                     dealsPrice: product.dealsPrice,
+                     stock: product.stock,
+                     availabilityType: product.availabilityType,
+                     expectedArrivalDate: product.expectedArrivalDate,
+                     expectedRestockDate: product.expectedRestockDate,
+                   })
+                   return (
+                     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                       <Link href={`/marketplace/product/${product.id}`}>
+                         <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
+                           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                             {product.images?.[0] ? (
+                               <img
+                                 src={product.images[0].url}
+                                 alt={product.images[0].alt || product.name}
+                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy"
+                               />
+                             ) : (
+                               <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                 </svg>
                                </div>
                              )}
-{product.availabilityType === 'PREORDER' && (
-                                <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                  Pre-order
-                                </Badge>
-                              )}
-                              {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                                <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                  Backorder
-                                </Badge>
-                              )}
-                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                             <div className="absolute bottom-0 left-0 right-0 p-3">
-                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                              <div className="flex items-baseline gap-1">
-                                {hasDiscount && (
-                                  <span className="text-xs text-white/60 line-through">
-                                    {formatPrice(product.price)}
-                                  </span>
-                                )}
-                                <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      </Link>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-          {bottomRowProducts.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-              <div className="flex gap-4">
-                {bottomRowProducts.map((product) => {
-                  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                  const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-                  const discountPercentage = hasDiscount && product.price > effectivePrice
-                    ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-                  return (
-                    <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                      <Link href={`/marketplace/product/${product.id}`}>
-                        <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-                          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                            {product.images?.[0] ? (
-                              <img
-                                src={product.images[0].url}
-                                alt={product.images[0].alt || product.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-{discountPercentage > 0 && (
-                               <div className="absolute top-2 left-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                                 -{discountPercentage}%
+                            <ProductBadges product={badgeData} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                              <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                             <div className="flex items-baseline gap-1">
+                               {hasDiscount && (
+                                 <span className="text-xs text-white/60 line-through">
+                                   {formatPrice(product.price)}
+                                 </span>
+                               )}
+                               <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                             </div>
+                           </div>
+                           </div>
+                         </Card>
+                       </Link>
+                     </div>
+                   )
+                 })}
+               </div>
+             </div>
+           )}
+           {bottomRowProducts.length > 0 && (
+             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+               <div className="flex gap-4">
+                 {bottomRowProducts.map((product) => {
+                   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+                   const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
+                   const badgeData = calculateProductBadges({
+                     price: product.price,
+                     flashSalePrice: product.flashSalePrice,
+                     salesPrice: product.salesPrice,
+                     dealsPrice: product.dealsPrice,
+                     stock: product.stock,
+                     availabilityType: product.availabilityType,
+                     expectedArrivalDate: product.expectedArrivalDate,
+                     expectedRestockDate: product.expectedRestockDate,
+                   })
+                   return (
+                     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                       <Link href={`/marketplace/product/${product.id}`}>
+                         <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
+                           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                             {product.images?.[0] ? (
+                               <img
+                                 src={product.images[0].url}
+                                 alt={product.images[0].alt || product.name}
+                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                 loading="lazy"
+                               />
+                             ) : (
+                               <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                 </svg>
                                </div>
                              )}
-{product.availabilityType === 'PREORDER' && (
-                                <Badge variant="preorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                  Pre-order
-                                </Badge>
-                              )}
-                              {product.availabilityType === 'BACKORDER' && product.stock === 0 && (
-                                <Badge variant="backorder" size="sm" className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5">
-                                  Backorder
-                                </Badge>
-                              )}
-                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                             <div className="absolute bottom-0 left-0 right-0 p-3">
-                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                              <div className="flex items-baseline gap-1">
-                                {hasDiscount && (
-                                  <span className="text-xs text-white/60 line-through">
-                                    {formatPrice(product.price)}
-                                  </span>
-                                )}
-                                <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      </Link>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+                            <ProductBadges product={badgeData} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                              <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                             <div className="flex items-baseline gap-1">
+                               {hasDiscount && (
+                                 <span className="text-xs text-white/60 line-through">
+                                   {formatPrice(product.price)}
+                                 </span>
+                               )}
+                               <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                             </div>
+                           </div>
+                           </div>
+                         </Card>
+                       </Link>
+                     </div>
+                   )
+                 })}
+               </div>
+             </div>
+           )}
         </div>
 
         <div className="mt-8 text-center">
