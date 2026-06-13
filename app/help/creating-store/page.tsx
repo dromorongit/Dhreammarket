@@ -35,10 +35,10 @@ export default function CreatingStoreGuide() {
                   Getting Started
                 </h2>
                 <p className="text-slate-600 mb-4">
-                  To create a store, you must first register as a vendor on Dhream Market. During registration, select "Vendor" as your role.
+                  To create a store, you must first register as a vendor on Dhream Market. During registration, select &quot;Vendor&quot; as your role.
                 </p>
                 <p className="text-slate-600">
-                  Navigate to your Vendor Dashboard and click "Store Setup" to begin the process.
+                  Navigate to your Vendor Dashboard and click &quot;Store Setup&quot; to begin the process.
                 </p>
               </section>
 
@@ -87,7 +87,7 @@ export default function CreatingStoreGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long does store verification take?</h3>
-                <p className="text-slate-600">Verification typically takes 1-2 business days. You'll receive email updates on your status.</p>
+                <p className="text-slate-600">Verification typically takes 1-2 business days. You&apos;ll receive email updates on your status.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">What documents are required?</h3>
@@ -135,3 +135,6 @@ export default function CreatingStoreGuide() {
     </div>
   )
 }
+
+
+

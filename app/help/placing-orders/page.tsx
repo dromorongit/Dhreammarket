@@ -45,7 +45,7 @@ export default function PlacingOrdersGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 3: Add to Cart</h3>
                 <p className="text-slate-600 mb-4">
-                  Select quantity and click "Add to Cart". You can continue shopping or proceed to checkout immediately.
+                  Select quantity and click &quot;Add to Cart&quot;. You can continue shopping or proceed to checkout immediately.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Review Cart</h3>
                 <p className="text-slate-600 mb-4">
@@ -53,7 +53,7 @@ export default function PlacingOrdersGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 5: Proceed to Checkout</h3>
                 <p className="text-slate-600 mb-4">
-                  Click "Checkout" to enter shipping details and select your payment method through Paystack.
+                  Click &quot;Checkout&quot; to enter shipping details and select your payment method through Paystack.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 6: Complete Payment</h3>
                 <p className="text-slate-600 mb-4">
@@ -79,7 +79,7 @@ export default function PlacingOrdersGuide() {
                   Order Confirmation
                 </h2>
                 <p className="text-slate-600 mb-4">
-                  After payment, you'll receive an order confirmation via email with your order number and summary.
+                  After payment, you&apos;ll receive an order confirmation via email with your order number and summary.
                 </p>
                 <p className="text-slate-600">
                   You can track your order status anytime through your Dashboard under Orders.
@@ -98,7 +98,7 @@ export default function PlacingOrdersGuide() {
                 <p className="text-slate-600">Orders can be modified before shipment. Contact the vendor immediately for any changes.</p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-deep-navy mb-2">What if I don't receive order confirmation?</h3>
+                <h3 className="text-lg font-medium text-deep-navy mb-2">What if I don&apos;t receive order confirmation?</h3>
                 <p className="text-slate-600">Check your spam folder or your Dashboard Orders section to verify your order was placed.</p>
               </div>
               <div>
@@ -124,7 +124,7 @@ export default function PlacingOrdersGuide() {
            <CardContent className="p-6 sm:p-8">
              <h2 className="text-2xl font-semibold text-deep-navy mb-4">Need Help?</h2>
              <p className="text-slate-600 mb-4">
-               If you're experiencing issues with placing orders, our support team is here to help.
+               If you&apos;re experiencing issues with placing orders, our support team is here to help.
              </p>
              <div className="flex flex-col sm:flex-row gap-4">
                <a href="/help" className="text-royal-blue hover:underline">Visit Help Center</a>
@@ -143,3 +143,5 @@ export default function PlacingOrdersGuide() {
     </div>
   )
 }
+
+

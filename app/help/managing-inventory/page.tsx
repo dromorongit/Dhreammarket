@@ -44,7 +44,7 @@ export default function ManagingInventoryGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Bulk Updates</h3>
                 <p className="text-slate-600">
-                  Update multiple products' stock levels simultaneously through the bulk edit feature.
+                  Update multiple products&apos; stock levels simultaneously through the bulk edit feature.
                 </p>
               </section>
 
@@ -55,7 +55,7 @@ export default function ManagingInventoryGuide() {
                 </h2>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Manual Updates</h3>
                 <p className="text-slate-600 mb-3">
-                  Navigate to Vendor Dashboard &gt; Products, click "Edit" and update stock quantities.
+                  Navigate to Vendor Dashboard &gt; Products, click &quot;Edit&quot; and update stock quantities.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Inventory History</h3>
                 <p className="text-slate-600 mb-3">
@@ -135,3 +135,4 @@ export default function ManagingInventoryGuide() {
     </div>
   )
 }
+

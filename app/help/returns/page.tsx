@@ -71,7 +71,7 @@ export default function ReturnsGuide() {
                   Eligible for Return
                 </h2>
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Product doesn't match description or images</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Product doesn&apos;t match description or images</span></li>
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Product arrived damaged or defective</span></li>
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Wrong item received</span></li>
                 </ul>
@@ -93,8 +93,8 @@ export default function ReturnsGuide() {
                 <p className="text-slate-600">Vendor covers shipping for defective/damaged items. Customer covers shipping for change of mind.</p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn't respond?</h3>
-                <p className="text-slate-600">Contact our support team to open a dispute if the vendor doesn't respond within 3 business days.</p>
+                <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn&apos;t respond?</h3>
+                <p className="text-slate-600">Contact our support team to open a dispute if the vendor doesn&apos;t respond within 3 business days.</p>
               </div>
             </div>
           </CardContent>

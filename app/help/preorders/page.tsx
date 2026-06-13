@@ -38,7 +38,7 @@ export default function PreordersGuide() {
                   Preorder items are products that will be available in the future. They allow vendors to gauge demand and ensure adequate stock.
                 </p>
                 <p className="text-slate-600">
-                  When you place a preorder, you'll be charged immediately and the item will ship once it arrives at the vendor's warehouse.
+                  When you place a preorder, you&apos;ll be charged immediately and the item will ship once it arrives at the vendor&apos;s warehouse.
                 </p>
               </section>
 

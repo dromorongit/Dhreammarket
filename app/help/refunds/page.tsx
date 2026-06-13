@@ -92,7 +92,7 @@ export default function RefundsGuide() {
                 <p className="text-slate-600">Full refunds for defective items. Shipping costs may apply for other returns.</p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn't respond?</h3>
+                <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn&apos;t respond?</h3>
                 <p className="text-slate-600">Contact support through the Help Center to open a dispute if unresolved.</p>
               </div>
             </div>

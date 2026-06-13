@@ -89,7 +89,7 @@ export default function RestockOrdersGuide() {
                 <p className="text-slate-600">Payments are processed immediately. Funds are held until the order ships.</p>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-deep-navy mb-2">What if I can't fulfill all backorders?</h3>
+                <h3 className="text-lg font-medium text-deep-navy mb-2">What if I can&apos;t fulfill all backorders?</h3>
                 <p className="text-slate-600">Prioritize based on order date. Contact customers to offer alternatives or full refunds.</p>
               </div>
             </div>
@@ -130,3 +130,4 @@ export default function RestockOrdersGuide() {
     </div>
   )
 }
+

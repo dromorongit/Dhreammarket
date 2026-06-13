@@ -49,7 +49,7 @@ export default function KYCSubmissionGuide() {
                 </h2>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Primary Documents</h3>
                 <ul className="space-y-2 mb-4">
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Government-issued photo ID (passport, driver's license, or national ID)</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Government-issued photo ID (passport, driver&apos;s license, or national ID)</span></li>
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Proof of address (utility bill or bank statement)</span></li>
                 </ul>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">For Businesses</h3>
@@ -81,11 +81,11 @@ export default function KYCSubmissionGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">What if my document is rejected?</h3>
-                <p className="text-slate-600">You'll receive specific reasons. Correct the issues and resubmit within 7 days.</p>
+                <p className="text-slate-600">You&apos;ll receive specific reasons. Correct the issues and resubmit within 7 days.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long does KYC review take?</h3>
-                <p className="text-slate-600">KYC review takes 1-2 business days. You'll receive email notification of status.</p>
+                <p className="text-slate-600">KYC review takes 1-2 business days. You&apos;ll receive email notification of status.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Is my information secure?</h3>
@@ -128,3 +128,6 @@ export default function KYCSubmissionGuide() {
     </div>
   )
 }
+
+
+

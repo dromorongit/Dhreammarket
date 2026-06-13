@@ -49,7 +49,7 @@ export default function PurchaseOrdersGuide() {
                 </h2>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 1: Access Purchase Orders</h3>
                 <p className="text-slate-600 mb-3">
-                  Navigate to Vendor Dashboard &gt; Purchase Orders and click "Create Order".
+                  Navigate to Vendor Dashboard &gt; Purchase Orders and click &quot;Create Order&quot;.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Select Supplier</h3>
                 <p className="text-slate-600 mb-3">

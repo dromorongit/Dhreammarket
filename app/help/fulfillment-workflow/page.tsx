@@ -86,7 +86,7 @@ export default function FulfillmentWorkflowGuide() {
             <h2 className="text-2xl font-semibold text-deep-navy mb-4">FAQ</h2>
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium text-deep-navy mb-2">What if I can't ship on time?</h3>
+                <h3 className="text-lg font-medium text-deep-navy mb-2">What if I can&apos;t ship on time?</h3>
                 <p className="text-slate-600">Notify the customer immediately and update the expected shipping date in the order.</p>
               </div>
               <div>
@@ -135,3 +135,5 @@ export default function FulfillmentWorkflowGuide() {
     </div>
   )
 }
+
+

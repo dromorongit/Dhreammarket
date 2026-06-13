@@ -70,7 +70,7 @@ export default function VendorVerificationGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Review</h3>
                 <p className="text-slate-600 mb-3">
-                  Our team reviews your submission within 1-2 business days. You'll receive email updates.
+                  Our team reviews your submission within 1-2 business days. You&apos;ll receive email updates.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 3: Approval</h3>
                 <p className="text-slate-600">
@@ -99,7 +99,7 @@ export default function VendorVerificationGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">What if verification is rejected?</h3>
-                <p className="text-slate-600">You'll receive specific reasons and can resubmit corrected documents within 7 days.</p>
+                <p className="text-slate-600">You&apos;ll receive specific reasons and can resubmit corrected documents within 7 days.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long is verification valid?</h3>
@@ -147,3 +147,4 @@ export default function VendorVerificationGuide() {
     </div>
   )
 }
+

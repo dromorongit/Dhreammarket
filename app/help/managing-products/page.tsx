@@ -36,7 +36,7 @@ export default function ManagingProductsGuide() {
                 </h2>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 1: Access Products Page</h3>
                 <p className="text-slate-600 mb-3">
-                  Navigate to Vendor Dashboard &gt; Products and click "Add Product".
+                  Navigate to Vendor Dashboard &gt; Products and click &quot;Add Product&quot;.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Enter Product Details</h3>
                 <p className="text-slate-600 mb-3">
@@ -48,7 +48,7 @@ export default function ManagingProductsGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Set Stock and Pricing</h3>
                 <p className="text-slate-600">
-                  Set initial stock quantity and confirm pricing. Toggle "Publish" to make product live.
+                  Set initial stock quantity and confirm pricing. Toggle &quot;Publish&quot; to make product live.
                 </p>
               </section>
 
@@ -59,7 +59,7 @@ export default function ManagingProductsGuide() {
                 </h2>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Editing Products</h3>
                 <p className="text-slate-600 mb-3">
-                  Click "Edit" on any product to modify details, pricing, or images.
+                  Click &quot;Edit&quot; on any product to modify details, pricing, or images.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Stock Management</h3>
                 <p className="text-slate-600 mb-3">
@@ -67,7 +67,7 @@ export default function ManagingProductsGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Status Control</h3>
                 <p className="text-slate-600">
-                  Toggle "Published" to hide/show products. Deleted products can be recovered within 30 days.
+                  Toggle &quot;Published&quot; to hide/show products. Deleted products can be recovered within 30 days.
                 </p>
               </section>
 
@@ -141,3 +141,4 @@ export default function ManagingProductsGuide() {
     </div>
   )
 }
+

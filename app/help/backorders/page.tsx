@@ -38,7 +38,7 @@ export default function BackordersGuide() {
                   Backorder items are temporarily out of stock but will be restocked soon. This allows you to reserve items in advance.
                 </p>
                 <p className="text-slate-600">
-                  When you place a backorder, you'll be charged immediately and the item will ship once inventory is replenished.
+                  When you place a backorder, you&apos;ll be charged immediately and the item will ship once inventory is replenished.
                 </p>
               </section>
 
@@ -57,7 +57,7 @@ export default function BackordersGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 3: Restock Notification</h3>
                 <p className="text-slate-600 mb-3">
-                  You'll receive a notification when the item is back in stock.
+                  You&apos;ll receive a notification when the item is back in stock.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Shipment</h3>
                 <p className="text-slate-600">
@@ -93,7 +93,7 @@ export default function BackordersGuide() {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Will I be notified when stock arrives?</h3>
-                <p className="text-slate-600">Yes, you'll receive email notifications about your backorder status.</p>
+                <p className="text-slate-600">Yes, you&apos;ll receive email notifications about your backorder status.</p>
               </div>
             </div>
           </CardContent>
@@ -133,3 +133,5 @@ export default function BackordersGuide() {
     </div>
   )
 }
+
+
