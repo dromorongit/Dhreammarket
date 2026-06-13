@@ -133,7 +133,7 @@ export function ProductBadges({ product, className, size = 'sm' }: ProductBadges
       )}
 
       {rightBadges.length > 0 && (
-        <div className={`absolute ${leftBadges.length > 0 && discountPercentage ? 'top-10' : 'top-2'} right-2 flex flex-col gap-1 items-end z-10`}>
+        <div className="absolute top-2 right-2 flex flex-col gap-1 items-end z-10">
           {rightBadges.map(badge => {
             if (badge.type === 'sold-out') {
               return (
