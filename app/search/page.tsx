@@ -527,10 +527,10 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
             <span className="text-[11px] font-bold text-royal-blue">
               {formatPrice(effectivePrice)}
             </span>
-            {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
-              <span className="text-[10px] text-slate-400 line-through">
-                {formatPrice(product.price)}
-              </span>
+{badgeData.discountPercentage > 0 && (
+               <span className="text-[10px] text-slate-400 line-through">
+                 {formatPrice(product.price)}
+               </span>
             )}
           </div>
           {product.store && (

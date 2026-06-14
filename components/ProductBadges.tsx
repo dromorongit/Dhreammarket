@@ -29,14 +29,14 @@ export function ProductBadges({ product, className, size = 'sm' }: ProductBadges
     stock,
   } = product
 
-  if (!discountPercentage && !isFlashSale && !isSponsored && !isFeatured &&
-      !availabilityType && !(availabilityType === 'IN_STOCK' && (stock ?? 0) === 0)) {
-    return null
-  }
+if (!discountPercentage && !isFlashSale && !isSponsored && !isFeatured &&
+    !availabilityType && !(availabilityType === 'IN_STOCK' && (stock ?? 0) === 0)) {
+  return null
+}
 
   const leftBadges = []
 
-  if (discountPercentage && discountPercentage > 0) {
+  if (discountPercentage > 0) {
     leftBadges.push({
       key: 'discount',
       type: 'discount',

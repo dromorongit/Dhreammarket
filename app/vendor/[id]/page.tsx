@@ -604,11 +604,11 @@ fetchVendor()
                           <span className="text-[11px] font-bold text-royal-blue">
                             {formatPrice(effectivePrice)}
                           </span>
-                          {badgeData.discountPercentage && badgeData.discountPercentage > 0 && (
-                            <span className="text-[10px] text-slate-400 line-through">
-                              {formatPrice(product.price)}
-                            </span>
-                          )}
+{badgeData.discountPercentage > 0 && (
+                             <span className="text-[10px] text-slate-400 line-through">
+                               {formatPrice(product.price)}
+                             </span>
+                           )}
                         </div>
                         <div className="flex items-center gap-1 min-w-0">
                           <p className="text-[10px] text-slate-500 truncate">
