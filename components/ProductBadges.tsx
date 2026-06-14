@@ -36,7 +36,7 @@ if (!discountPercentage && !isFlashSale && !isSponsored && !isFeatured &&
 
   const leftBadges = []
 
-  if (discountPercentage > 0) {
+  if ((discountPercentage ?? 0) > 0) {
     leftBadges.push({
       key: 'discount',
       type: 'discount',

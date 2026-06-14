@@ -604,7 +604,7 @@ fetchVendor()
                           <span className="text-[11px] font-bold text-royal-blue">
                             {formatPrice(effectivePrice)}
                           </span>
-{badgeData.discountPercentage > 0 && (
+{(badgeData.discountPercentage ?? 0) > 0 && (
                              <span className="text-[10px] text-slate-400 line-through">
                                {formatPrice(product.price)}
                              </span>

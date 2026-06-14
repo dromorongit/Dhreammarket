@@ -118,7 +118,7 @@ function CompactProductCard({ product }: { product: Product }) {
             <span className="text-[11px] font-bold text-royal-blue">
               {formatPrice(effectivePrice)}
             </span>
-{badgeData.discountPercentage > 0 && (
+{(badgeData.discountPercentage ?? 0) > 0 && (
                <span className="text-[10px] text-slate-400 line-through">
                  {formatPrice(product.price)}
                </span>
@@ -494,7 +494,7 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                        <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
                        <p className="text-white/80 text-sm mb-3">{product.store?.name}</p>
                       <div className="flex items-baseline gap-2">
-{badgeData.discountPercentage > 0 && (
+{(badgeData.discountPercentage ?? 0) > 0 && (
                            <span className="text-lg text-white/60 line-through">
                              {formatPrice(product.price)}
                            </span>
@@ -545,7 +545,7 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                         <div className="absolute bottom-0 left-0 right-0 p-4">
                           <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
                          <div className="flex items-baseline gap-1">
-{badgeData.discountPercentage > 0 && (
+{(badgeData.discountPercentage ?? 0) > 0 && (
                               <span className="text-xs text-white/60 line-through">
                                 {formatPrice(product.price)}
                               </span>
