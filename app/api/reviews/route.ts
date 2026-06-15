@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncProductRating } from '@/lib/rating-sync'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 // Valid order statuses for review eligibility
 const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
@@ -214,12 +215,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create review
+    const sanitizedComment = sanitizeUserContent(comment, { maxLength: 2000 })
     const review = await getPrisma().productReview.create({
       data: {
         productId,
         userId: payload.userId,
         rating,
-        comment: comment?.trim() || null,
+        comment: sanitizedComment || null,
       },
     })
 

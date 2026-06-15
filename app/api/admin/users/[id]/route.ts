@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 const prisma = getPrisma()
 import { requireAdmin, type AdminUser } from '@/lib/adminAuth'
+import { createAuditLog } from '@/lib/audit-log'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -77,64 +78,58 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    let updatedUser
+let updatedUser
 
     switch (action) {
-      case 'ban':
-        if (user.role === 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Cannot ban a SUPER_ADMIN' }, { status: 403 })
-        }
-        if (user.role === 'ADMIN' && requestingUser.role !== 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Only SUPER_ADMIN can ban ADMIN accounts' }, { status: 403 })
-        }
-        updatedUser = await prisma.user.update({
-          where: { id },
-          data: { status: 'BANNED' },
-        })
-        break
+       case 'ban':
+       case 'disable':
+         if (user.role === 'SUPER_ADMIN') {
+           return NextResponse.json({ error: 'Cannot ban a SUPER_ADMIN' }, { status: 403 })
+         }
+         if (user.role === 'ADMIN' && requestingUser.role !== 'SUPER_ADMIN') {
+           return NextResponse.json({ error: 'Only SUPER_ADMIN can ban ADMIN accounts' }, { status: 403 })
+         }
+         updatedUser = await prisma.user.update({
+           where: { id },
+           data: { status: action === 'ban' ? 'BANNED' : 'DISABLED' },
+         })
+         createAuditLog({
+           userId: requestingUser.userId,
+           userRole: requestingUser.role,
+           action: 'USER_SUSPENDED',
+           entityType: 'USER',
+           entityId: id,
+           beforeData: { status: user.status, role: user.role },
+           afterData: { status: action === 'ban' ? 'BANNED' : 'DISABLED', role: user.role },
+         }).catch(err => console.error('Failed to create audit log:', err))
+         break
 
-      case 'unban':
-        if (user.role === 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Cannot unban a SUPER_ADMIN' }, { status: 403 })
-        }
-        if (user.role === 'ADMIN' && requestingUser.role !== 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Only SUPER_ADMIN can unban ADMIN accounts' }, { status: 403 })
-        }
-        updatedUser = await prisma.user.update({
-          where: { id },
-          data: { status: 'ACTIVE' },
-        })
-        break
+       case 'unban':
+       case 'reactivate':
+         if (user.role === 'SUPER_ADMIN') {
+           return NextResponse.json({ error: 'Cannot unban a SUPER_ADMIN' }, { status: 403 })
+         }
+         if (user.role === 'ADMIN' && requestingUser.role !== 'SUPER_ADMIN') {
+           return NextResponse.json({ error: 'Only SUPER_ADMIN can unban ADMIN accounts' }, { status: 403 })
+         }
+         updatedUser = await prisma.user.update({
+           where: { id },
+           data: { status: 'ACTIVE' },
+         })
+         createAuditLog({
+           userId: requestingUser.userId,
+           userRole: requestingUser.role,
+           action: 'USER_REACTIVATED',
+           entityType: 'USER',
+           entityId: id,
+           beforeData: { status: user.status, role: user.role },
+           afterData: { status: 'ACTIVE', role: user.role },
+         }).catch(err => console.error('Failed to create audit log:', err))
+         break
 
-      case 'disable':
-        if (user.role === 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Cannot disable a SUPER_ADMIN' }, { status: 403 })
-        }
-        if (user.role === 'ADMIN' && requestingUser.role !== 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Only SUPER_ADMIN can disable ADMIN accounts' }, { status: 403 })
-        }
-        updatedUser = await prisma.user.update({
-          where: { id },
-          data: { status: 'DISABLED' },
-        })
-        break
-
-      case 'reactivate':
-        if (user.role === 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Cannot reactivate a SUPER_ADMIN' }, { status: 403 })
-        }
-        if (user.role === 'ADMIN' && requestingUser.role !== 'SUPER_ADMIN') {
-          return NextResponse.json({ error: 'Only SUPER_ADMIN can reactivate ADMIN accounts' }, { status: 403 })
-        }
-        updatedUser = await prisma.user.update({
-          where: { id },
-          data: { status: 'ACTIVE' },
-        })
-        break
-
-      default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-    }
+       default:
+         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+     }
 
     // Remove password from response
     const { password, ...userWithoutPassword } = updatedUser

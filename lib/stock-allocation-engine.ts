@@ -1,6 +1,7 @@
 import { getPrisma } from '@/lib/prisma'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createNotification } from '@/lib/notifications'
+import { createAuditLog } from '@/lib/audit-log'
 
 export interface AllocationResult {
   success: boolean
@@ -177,12 +178,22 @@ export async function runAllocationEngine(
         description: 'Stock received for pre-ordered/backordered item.',
       }).catch(err => console.error('Failed to record stock received event:', err))
 
-      recordFulfillmentEvent(orderId, 'INVENTORY_ALLOCATED', createdBy, {
-        productName,
-        description: 'Inventory allocated via stock arrival',
-      }).catch(err => console.error('Failed to record allocation event:', err))
+recordFulfillmentEvent(orderId, 'INVENTORY_ALLOCATED', createdBy, {
+         productName,
+         description: 'Inventory allocated via stock arrival',
+       }).catch(err => console.error('Failed to record allocation event:', err))
 
-      recordFulfillmentEvent(orderId, 'READY_TO_FULFILL', createdBy, {
+       createAuditLog({
+         userId: createdBy || orderId,
+         userRole: 'SYSTEM',
+         action: 'INVENTORY_ALLOCATED',
+         entityType: 'ORDER',
+         entityId: orderId,
+         beforeData: { fulfillmentStatus: 'AWAITING_STOCK' },
+         afterData: { fulfillmentStatus: 'READY_TO_FULFILL' },
+       }).catch(err => console.error('Failed to create audit log:', err))
+
+       recordFulfillmentEvent(orderId, 'READY_TO_FULFILL', createdBy, {
         productName,
         description: 'Order is ready to be fulfilled.',
       }).catch(err => console.error('Failed to record ready_to_fulfill event:', err))

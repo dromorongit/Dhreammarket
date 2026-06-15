@@ -4,6 +4,7 @@ import { verifyPaystackPayment } from '@/lib/paystack'
 import { calculateFinancialBreakdown } from '@/lib/revenue'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
+import { createAuditLog } from '@/lib/audit-log'
 
 // This endpoint is called by Paystack after a payment attempt
 // It serves as a webhook for payment status updates
@@ -45,37 +46,51 @@ export async function POST(request: NextRequest) {
        const isAbandoned = paymentStatus === 'abandoned'
        const failedStatus = isAbandoned ? 'CANCELLED' : 'FAILED'
 
-      await getPrisma().$transaction(async (prisma: any) => {
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: failedStatus,
-            message: isAbandoned ? 'Payment abandoned via webhook' : 'Payment failed via webhook',
-          },
-        })
+       await getPrisma().$transaction(async (prisma: any) => {
+         await prisma.payment.update({
+           where: { id: payment.id },
+           data: {
+             status: failedStatus,
+             message: isAbandoned ? 'Payment abandoned via webhook' : 'Payment failed via webhook',
+           },
+         })
 
-        await prisma.order.update({
-          where: { id: payment.orderId },
-          data: {
-            paymentStatus: failedStatus,
-            status: 'CANCELLED',
-          },
-        })
-      })
+         await prisma.order.update({
+           where: { id: payment.orderId },
+           data: {
+             paymentStatus: failedStatus,
+             status: 'CANCELLED',
+           },
+         })
+       })
 
-      // Release reserved stock for NORMAL orders
-      const orderForRelease = await getPrisma().order.findUnique({
-        where: { id: payment.orderId },
-      })
+       // Create audit log for payment failure
+       await createAuditLog({
+         userId: payment.userId,
+         userRole: 'SYSTEM',
+         action: 'PAYMENT_FAILED',
+         entityType: 'ORDER',
+         entityId: payment.orderId,
+         afterData: {
+           paymentId: payment.id,
+           reference: payment.reference,
+           status: failedStatus,
+         },
+       })
 
-      if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
-        releaseStock(payment.orderId).catch(err => {
-          console.error('Failed to release stock for failed payment:', err)
-        })
-      }
+       // Release reserved stock for NORMAL orders
+       const orderForRelease = await getPrisma().order.findUnique({
+         where: { id: payment.orderId },
+       })
 
-      return NextResponse.json({ received: true })
-    }
+       if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
+         releaseStock(payment.orderId).catch(err => {
+           console.error('Failed to release stock for failed payment:', err)
+         })
+       }
+
+       return NextResponse.json({ received: true })
+     }
 
     // Payment was successful - update payment and order status, and calculate financials
     const transactionResult = await getPrisma().$transaction(async (prisma: any) => {
@@ -191,6 +206,20 @@ export async function POST(request: NextRequest) {
     // Record PAYMENT_CONFIRMED event
     recordFulfillmentEvent(payment.orderId, 'PAYMENT_CONFIRMED').catch(err => {
       console.error('Failed to record payment confirmed event:', err)
+    })
+
+    // Create audit log for payment confirmation
+    await createAuditLog({
+      userId: payment.userId,
+      userRole: 'SYSTEM',
+      action: 'PAYMENT_CONFIRMED',
+      entityType: 'ORDER',
+      entityId: payment.orderId,
+      afterData: {
+        paymentId: payment.id,
+        reference: payment.reference,
+        amount: payment.amount,
+      },
     })
 
     return NextResponse.json({ received: true })

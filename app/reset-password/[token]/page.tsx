@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
-import { Input } from '@/components/Input'
+import { PasswordInput } from '@/components/PasswordInput'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 
 export default function ResetPasswordPage({ params }: { params: { token: string } }) {
@@ -109,17 +109,15 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
           </CardHeader>
           <CardContent>
             <form className="space-y-6" onSubmit={handleSubmit}>
-              <Input
+              <PasswordInput
                 label="New Password"
-                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Enter new password"
               />
-              <Input
+              <PasswordInput
                 label="Confirm New Password"
-                type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

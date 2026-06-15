@@ -6,12 +6,19 @@ import { sendOrderConfirmationEmail } from '@/lib/email'
 import { createNotification, formatNotificationMessage } from '@/lib/notifications'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import crypto from 'crypto'
+import { rateLimit } from '@/lib/rate-limit'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('checkout')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   console.log('[Checkout API] Request received')
   
   try {

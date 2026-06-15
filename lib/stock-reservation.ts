@@ -1,5 +1,6 @@
 import { getPrisma } from '@/lib/prisma'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 export interface ReservationItem {
   productId: string
@@ -29,6 +30,7 @@ export async function reserveStock(
 
   try {
     const reservedItems: Array<{ productId: string; productVariantId?: string; reserved: number }> = []
+    const beforeStockData: Array<{ productId: string; stock: number; reservedQuantity: number }> = []
 
     await prisma.$transaction(async (tx) => {
       for (const item of items) {
@@ -43,6 +45,8 @@ export async function reserveStock(
         if (!product) {
           throw new Error(`Product ${item.productId} not found`)
         }
+
+        beforeStockData.push({ productId: item.productId, stock: product.stock, reservedQuantity: product.reservedQuantity })
 
         const availableStock = product.stock - product.reservedQuantity
 
@@ -90,13 +94,26 @@ export async function reserveStock(
       }
     })
 
-    for (const reservedItem of reservedItems) {
+    for (let i = 0; i < reservedItems.length; i++) {
+      const reservedItem = reservedItems[i]
+      const beforeData = beforeStockData[i]
+
       recordFulfillmentEvent(orderId, 'STOCK_RESERVED', createdBy, {
         productName: reservedItem.productId,
         description: `Reserved ${reservedItem.reserved} units of stock.`,
       }).catch(err => {
         console.error('Failed to record reservation event:', err)
       })
+
+      createAuditLog({
+        userId: createdBy || orderId,
+        userRole: 'SYSTEM',
+        action: 'STOCK_RESERVED',
+        entityType: 'PRODUCT',
+        entityId: reservedItem.productId,
+        beforeData: { stock: beforeData.stock, reservedQuantity: beforeData.reservedQuantity },
+        afterData: { stock: beforeData.stock, reservedQuantity: beforeData.reservedQuantity + reservedItem.reserved },
+      }).catch(err => console.error('Failed to create audit log:', err))
     }
 
     return { success: true, reservedItems }
@@ -131,7 +148,7 @@ export async function releaseStock(
       return { success: false, error: 'Order not found' }
     }
 
-    const releasedItems: Array<{ productId: string; productVariantId?: string; released: number }> = []
+    const releasedItems: Array<{ productId: string; productVariantId?: string; released: number; beforeData?: { stock: number; reservedQuantity: number } }> = []
 
     await prisma.$transaction(async (tx) => {
       for (const item of order.items) {
@@ -148,6 +165,7 @@ export async function releaseStock(
           const releaseQuantity = Math.min(product.reservedQuantity, item.quantity)
 
           if (releaseQuantity > 0) {
+            const beforeReserved = product.reservedQuantity
             const newReserved = product.reservedQuantity - releaseQuantity
             await tx.product.update({
               where: { id: item.productId },
@@ -158,6 +176,7 @@ export async function releaseStock(
               productId: item.productId,
               productVariantId: item.productVariantId || undefined,
               released: releaseQuantity,
+              beforeData: { stock: product.stock, reservedQuantity: beforeReserved },
             })
           }
         }
@@ -171,12 +190,6 @@ export async function releaseStock(
             const releaseQuantity = Math.min(variant.reservedQuantity, item.quantity)
 
             if (releaseQuantity > 0) {
-              const newReserved = variant.reservedQuantity - releaseQuantity
-              await tx.productVariant.update({
-                where: { id: item.productVariantId },
-                data: { reservedQuantity: Math.max(0, newReserved) },
-              })
-
               const existingIndex = releasedItems.findIndex(
                 (i) => i.productId === item.productId && i.productVariantId === item.productVariantId
               )
@@ -202,6 +215,18 @@ export async function releaseStock(
       }).catch(err => {
         console.error('Failed to record release event:', err)
       })
+
+      if (releasedItem.beforeData) {
+        createAuditLog({
+          userId: createdBy || orderId,
+          userRole: 'SYSTEM',
+          action: 'STOCK_RELEASED',
+          entityType: 'PRODUCT',
+          entityId: releasedItem.productId,
+          beforeData: { stock: releasedItem.beforeData.stock, reservedQuantity: releasedItem.beforeData.reservedQuantity },
+          afterData: { stock: releasedItem.beforeData.stock, reservedQuantity: releasedItem.beforeData.reservedQuantity - releasedItem.released },
+        }).catch(err => console.error('Failed to create audit log:', err))
+      }
     }
 
     return { success: true, releasedItems }
@@ -366,6 +391,7 @@ export async function consumeInventory(
       }
 
       const consumedItems: Array<{ productId: string; variantId?: string; quantity: number; timestamp: Date }> = []
+      const beforeStockData: Array<{ productId: string; stock: number; reservedQuantity: number }> = []
       const timestamp = new Date()
 
       for (const item of order.items) {
@@ -381,6 +407,8 @@ export async function consumeInventory(
         if (!product) {
           throw new Error(`Product ${item.productId} not found for inventory consumption`)
         }
+
+        beforeStockData.push({ productId: item.productId, stock: product.stock, reservedQuantity: product.reservedQuantity })
 
         if (product.reservedQuantity < item.quantity) {
           throw new Error(
@@ -451,6 +479,21 @@ export async function consumeInventory(
         where: { id: orderId },
         data: { inventoryConsumedAt: timestamp },
       })
+
+      for (let i = 0; i < consumedItems.length; i++) {
+        const consumedItem = consumedItems[i]
+        const beforeData = beforeStockData[i]
+
+        createAuditLog({
+          userId: createdBy || orderId,
+          userRole: 'SYSTEM',
+          action: 'INVENTORY_CONSUMED',
+          entityType: 'PRODUCT',
+          entityId: consumedItem.productId,
+          beforeData: { stock: beforeData.stock, reservedQuantity: beforeData.reservedQuantity },
+          afterData: { stock: beforeData.stock - consumedItem.quantity, reservedQuantity: beforeData.reservedQuantity - consumedItem.quantity },
+        }).catch(err => console.error('Failed to create audit log:', err))
+      }
 
       return { success: true, consumedItems }
     })

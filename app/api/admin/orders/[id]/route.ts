@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { releaseStock, consumeInventory } from '@/lib/stock-reservation'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 const prisma = getPrisma()
 
@@ -136,21 +137,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return authCheck
     }
 
+    const adminUser = authCheck
     const orderId = params.id
     const body = await request.json()
     const { status, paymentStatus, reason } = body
 
-    const order = await prisma.order.findUnique({
+    // Get existing order for before data
+    const existingOrder = await prisma.order.findUnique({
       where: { id: orderId, deletedAt: null },
-      select: { orderType: true },
+      select: { orderType: true, status: true, paymentStatus: true },
     })
 
-    if (!order) {
+    if (!existingOrder) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
     const updateData: any = {}
-    
+
     if (status && ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].includes(status)) {
       updateData.status = status
       if (status === 'CANCELLED') {
@@ -178,7 +181,35 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       data: updateData,
     })
 
-    if ((status === 'DELIVERED' || status === 'COMPLETED') && order.orderType === 'NORMAL') {
+    // Create audit log for order cancellation
+    if (status === 'CANCELLED') {
+      await createAuditLog({
+        userId: adminUser.userId,
+        userRole: adminUser.role,
+        action: 'ORDER_CANCELLED',
+        entityType: 'ORDER',
+        entityId: orderId,
+        beforeData: { status: existingOrder.status },
+        afterData: { status: updatedOrder.status, reason },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+      })
+    }
+
+    // Create audit log for order refund
+    if (paymentStatus === 'REFUNDED') {
+      await createAuditLog({
+        userId: adminUser.userId,
+        userRole: adminUser.role,
+        action: 'ORDER_REFUNDED',
+        entityType: 'ORDER',
+        entityId: orderId,
+        beforeData: { paymentStatus: existingOrder.paymentStatus },
+        afterData: { paymentStatus: updatedOrder.paymentStatus, reason },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+      })
+    }
+
+    if ((status === 'DELIVERED' || status === 'COMPLETED') && existingOrder.orderType === 'NORMAL') {
       const consumptionResult = await consumeInventory(orderId)
       if (!consumptionResult.success && consumptionResult.error) {
         console.error('Inventory consumption failed:', consumptionResult.error)
@@ -193,7 +224,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     // Release stock for cancelled/refunded NORMAL orders
-    if ((status === 'CANCELLED' || paymentStatus === 'REFUNDED') && order.orderType === 'NORMAL') {
+    if ((status === 'CANCELLED' || paymentStatus === 'REFUNDED') && existingOrder.orderType === 'NORMAL') {
       releaseStock(orderId).catch(err => {
         console.error('Failed to release stock:', err)
       })

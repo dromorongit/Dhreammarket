@@ -1,5 +1,6 @@
 import { getPrisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
+import { createAuditLog } from '@/lib/audit-log'
 
 type PurchaseOrderStatus = 'DRAFT' | 'ORDERED' | 'SHIPPED' | 'ARRIVED' | 'RECEIVED' | 'CANCELLED'
 type SupplierDocumentType = 'CONTRACT' | 'INVOICE' | 'QUOTATION' | 'AGREEMENT'
@@ -282,14 +283,33 @@ export async function createPurchaseOrder(
       },
     })
 
-    await createNotification(
-      data.vendorId,
-      'RESTOCK_ORDER_CREATED',
-      'Purchase Order Created',
-      `Purchase order ${poNumber} has been created with ${data.items.length} items.`
-    ).catch((err: Error) => console.error('Failed to notify vendor:', err))
+await createNotification(
+       data.vendorId,
+       'RESTOCK_ORDER_CREATED',
+       'Purchase Order Created',
+       `Purchase order ${poNumber} has been created with ${data.items.length} items.`
+     ).catch((err: Error) => console.error('Failed to notify vendor:', err))
 
-    return { success: true, purchaseOrder }
+     createAuditLog({
+       userId: data.vendorId,
+       userRole: 'VENDOR',
+       action: 'PURCHASE_ORDER_CREATED',
+       entityType: 'PURCHASE_ORDER',
+       entityId: purchaseOrder.id,
+       beforeData: null,
+       afterData: {
+         poNumber,
+         supplierId: data.supplierId,
+         vendorId: data.vendorId,
+         totalCost,
+         status: data.status || 'DRAFT',
+         items: data.items,
+         expectedArrivalDate: data.expectedArrivalDate,
+         notes: data.notes,
+       },
+     }).catch((err: Error) => console.error('Failed to create audit log:', err))
+
+     return { success: true, purchaseOrder }
   } catch (error) {
     console.error('Error creating purchase order:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Failed to create purchase order' }
@@ -344,14 +364,24 @@ export async function updatePurchaseOrderStatus(
       },
     })
 
-    await createNotification(
-      vendorId,
-      'RESTOCK_ORDER_CREATED',
-      `Purchase Order ${newStatus}`,
-      `Purchase order ${purchaseOrder.poNumber} status updated to ${newStatus}.`
-    ).catch((err: Error) => console.error('Failed to notify vendor:', err))
+await createNotification(
+       vendorId,
+       'RESTOCK_ORDER_CREATED',
+       `Purchase Order ${newStatus}`,
+       `Purchase order ${purchaseOrder.poNumber} status updated to ${newStatus}.`
+     ).catch((err: Error) => console.error('Failed to notify vendor:', err))
 
-    return { success: true, purchaseOrder: updatedOrder }
+     createAuditLog({
+       userId: vendorId,
+       userRole: 'VENDOR',
+       action: 'PURCHASE_ORDER_UPDATED',
+       entityType: 'PURCHASE_ORDER',
+       entityId: purchaseOrderId,
+       beforeData: { status: purchaseOrder.status },
+       afterData: { status: newStatus },
+     }).catch((err: Error) => console.error('Failed to create audit log:', err))
+
+     return { success: true, purchaseOrder: updatedOrder }
   } catch (error) {
     console.error('Error updating purchase order status:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Failed to update purchase order status' }

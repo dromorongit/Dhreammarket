@@ -30,7 +30,8 @@ model User {
   vendorPayouts            VendorPayout[]                 @relation("VendorPayoutVendor")
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication?
-  auditLogs                VerificationAuditLog[]
+  verificationAuditLogs    VerificationAuditLog[]
+  auditLogs                AuditLog[]
   restockOrders            RestockOrder[]
   purchaseOrders           PurchaseOrder[]
 
@@ -748,6 +749,28 @@ enum SupplierDocumentType {
   INVOICE
   QUOTATION
   AGREEMENT
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userRole    String
+  action      String
+  entityType  String
+  entityId    String?
+  beforeData  Json?
+  afterData   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model RestockOrder {

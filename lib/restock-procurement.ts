@@ -2,6 +2,7 @@ import { getPrisma } from '@/lib/prisma'
 import { runAllocationEngine, AllocationItem } from '@/lib/stock-allocation-engine'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createNotification } from '@/lib/notifications'
+import { createAuditLog } from '@/lib/audit-log'
 
 export async function createRestockOrder(
   productId: string,
@@ -31,39 +32,56 @@ export async function createRestockOrder(
       return { success: false, error: 'Unauthorized: Product does not belong to vendor' }
     }
 
-    const restockOrder = await prisma.restockOrder.create({
-      data: {
-        productId,
-        vendorId,
-        quantityOrdered,
-        status: 'ORDERED',
-        expectedArrivalDate,
-        notes,
-      },
-      include: {
-        product: {
-          select: { name: true, stock: true },
-        },
-      },
-    })
+const restockOrder = await prisma.restockOrder.create({
+       data: {
+         productId,
+         vendorId,
+         quantityOrdered,
+         status: 'ORDERED',
+         expectedArrivalDate,
+         notes,
+       },
+       include: {
+         product: {
+           select: { name: true, stock: true },
+         },
+       },
+     })
 
-    await recordFulfillmentEvent(
-      restockOrder.id,
-      'PROCUREMENT_ORDER_CREATED',
-      vendorId,
-      {
-        productName: product.name,
-        vendorId,
-        description: `Procurement order created for ${quantityOrdered} units. Expected arrival: ${expectedArrivalDate?.toLocaleDateString() || 'Not specified'}`,
-      }
-    ).catch(err => console.error('Failed to record procurement order event:', err))
+     await recordFulfillmentEvent(
+       restockOrder.id,
+       'PROCUREMENT_ORDER_CREATED',
+       vendorId,
+       {
+         productName: product.name,
+         vendorId,
+         description: `Procurement order created for ${quantityOrdered} units. Expected arrival: ${expectedArrivalDate?.toLocaleDateString() || 'Not specified'}`,
+       }
+     ).catch(err => console.error('Failed to record procurement order event:', err))
 
-    await createNotification(
-      vendorId,
-      'RESTOCK_ORDER_CREATED',
-      'Restock Order Created',
-      `Restock order for ${quantityOrdered} units of ${product.name} has been created.`
-    ).catch(err => console.error('Failed to notify vendor:', err))
+     createAuditLog({
+       userId: vendorId,
+       userRole: 'VENDOR',
+       action: 'RESTOCK_ORDER_CREATED',
+       entityType: 'RESTOCK_ORDER',
+       entityId: restockOrder.id,
+       beforeData: null,
+       afterData: {
+         productId,
+         vendorId,
+         quantityOrdered,
+         status: 'ORDERED',
+         expectedArrivalDate,
+         notes,
+       },
+     }).catch(err => console.error('Failed to create audit log:', err))
+
+     await createNotification(
+       vendorId,
+       'RESTOCK_ORDER_CREATED',
+       'Restock Order Created',
+       `Restock order for ${quantityOrdered} units of ${product.name} has been created.`
+     ).catch(err => console.error('Failed to notify vendor:', err))
 
     return { success: true, restockOrder }
   } catch (error) {
@@ -106,23 +124,34 @@ export async function updateRestockOrderStatus(
       return { success: false, error: 'Unauthorized: Not your restock order' }
     }
 
-    const currentStatus = restockOrder.status as string
+const currentStatus = restockOrder.status as string
     if (!validTransitions[currentStatus]?.includes(newStatus)) {
       return { success: false, error: `Invalid status transition from ${currentStatus} to ${newStatus}` }
     }
 
+    const previousStatus = restockOrder.status
     const updatedOrder = await prisma.restockOrder.update({
-      where: { id: restockOrderId },
-      data: {
-        status: newStatus as any,
-        actualArrivalDate: newStatus === 'RECEIVED' ? (actualArrivalDate || new Date()) : restockOrder.actualArrivalDate,
-      },
-      include: {
-        product: {
-          select: { name: true, stock: true },
-        },
-      },
-    })
+       where: { id: restockOrderId },
+       data: {
+         status: newStatus as any,
+         actualArrivalDate: newStatus === 'RECEIVED' ? (actualArrivalDate || new Date()) : restockOrder.actualArrivalDate,
+       },
+       include: {
+         product: {
+           select: { name: true, stock: true },
+         },
+       },
+     })
+
+    createAuditLog({
+      userId: vendorId,
+      userRole: 'VENDOR',
+      action: 'RESTOCK_ORDER_UPDATED',
+      entityType: 'RESTOCK_ORDER',
+      entityId: restockOrderId,
+      beforeData: { status: previousStatus },
+      afterData: { status: newStatus },
+    }).catch(err => console.error('Failed to create audit log:', err))
 
     if (newStatus === 'RECEIVED') {
       const previousStock = restockOrder.product.stock

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { createAuditLog } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -361,8 +362,42 @@ export async function POST(request: NextRequest) {
         },
       })
 
+      // Create audit log for product creation
+      await createAuditLog({
+        userId: payload.userId,
+        userRole: payload.role,
+        action: 'PRODUCT_CREATED',
+        entityType: 'PRODUCT',
+        entityId: product.id,
+        afterData: {
+          name: productWithImages?.name,
+          price: productWithImages?.price,
+          stock: productWithImages?.stock,
+          categoryId: productWithImages?.categoryId,
+          storeId: productWithImages?.storeId,
+        },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+      })
+
       return NextResponse.json({ product: productWithImages }, { status: 201 })
     }
+
+    // Create audit log for product creation
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action: 'PRODUCT_CREATED',
+      entityType: 'PRODUCT',
+      entityId: product.id,
+      afterData: {
+        name: product.name,
+        price: product.price,
+        stock: product.stock,
+        categoryId: product.categoryId,
+        storeId: product.storeId,
+      },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+    })
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (error) {

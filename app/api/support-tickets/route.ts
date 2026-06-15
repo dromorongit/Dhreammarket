@@ -2,8 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { SupportTicketType, SupportTicketStatus, SupportTicketPriority } from '@prisma/client'
+import { rateLimit } from '@/lib/rate-limit'
+import { sanitizeUserContent } from '@/lib/sanitize'
+import { createAuditLog } from '@/lib/audit-log'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('support-ticket')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     let userId: string | null = null
@@ -23,11 +32,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Subject and message are required' }, { status: 400 })
     }
 
-    if (subject.length < 5) {
+    // Input sanitization - security hardening
+    const sanitizedSubject = sanitizeUserContent(subject, { maxLength: 200 })
+    const sanitizedMessage = sanitizeUserContent(message, { maxLength: 5000 })
+
+    if (sanitizedSubject.length < 5) {
       return NextResponse.json({ error: 'Subject must be at least 5 characters' }, { status: 400 })
     }
 
-    if (message.length < 10) {
+    if (sanitizedMessage.length < 10) {
       return NextResponse.json({ error: 'Message must be at least 10 characters' }, { status: 400 })
     }
 
@@ -43,8 +56,8 @@ export async function POST(request: NextRequest) {
 
     // Build ticket data - include userId if authenticated, otherwise store contact info in message
     const ticketData: any = {
-      subject: subject.trim(),
-      message: message.trim(),
+      subject: sanitizedSubject,
+      message: sanitizedMessage,
       type: ticketTypeMap[category] || 'GENERAL',
       status: 'OPEN',
       priority: 'MEDIUM',
@@ -58,6 +71,24 @@ export async function POST(request: NextRequest) {
     const ticket = await getPrisma().supportTicket.create({
       data: ticketData,
     })
+
+    // Create audit log for support ticket creation
+    if (userId) {
+      const userRecord = await getPrisma().user.findUnique({ where: { id: userId } })
+      await createAuditLog({
+        userId: userId,
+        userRole: userRecord?.role || 'CUSTOMER',
+        action: 'SUPPORT_TICKET_CREATED',
+        entityType: 'SUPPORT_TICKET',
+        entityId: ticket.id,
+        afterData: {
+          subject: ticket.subject,
+          type: ticket.type,
+          status: ticket.status,
+        },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+      })
+    }
 
     return NextResponse.json({ ticket }, { status: 201 })
   } catch (error) {

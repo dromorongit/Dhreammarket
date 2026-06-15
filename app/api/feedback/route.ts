@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,6 +41,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('contact-form')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -56,11 +64,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
     }
 
-    if (subject.length < 5) {
+    // Input sanitization - security hardening
+    const sanitizedSubject = sanitizeUserContent(subject, { maxLength: 200 })
+    const sanitizedMessage = sanitizeUserContent(message, { maxLength: 5000 })
+
+    if (sanitizedSubject.length < 5) {
       return NextResponse.json({ error: 'Subject must be at least 5 characters' }, { status: 400 })
     }
 
-    if (message.length < 10) {
+    if (sanitizedMessage.length < 10) {
       return NextResponse.json({ error: 'Message must be at least 10 characters' }, { status: 400 })
     }
 
@@ -68,8 +80,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId: payload.userId,
         type,
-        subject: subject.trim(),
-        message: message.trim(),
+        subject: sanitizedSubject,
+        message: sanitizedMessage,
         status: 'OPEN',
       },
       include: {

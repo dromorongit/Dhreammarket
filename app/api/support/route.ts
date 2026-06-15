@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { getUserFromToken } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
+import { rateLimit } from '@/lib/rate-limit'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 // GET /api/support - Fetch user's support tickets
 export async function GET(request: NextRequest) {
@@ -44,6 +46,12 @@ export async function GET(request: NextRequest) {
 
 // POST /api/support - Create a new support ticket
 export async function POST(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('support-ticket')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const user = getUserFromToken()
     if (!user) {
@@ -57,6 +65,18 @@ export async function POST(request: NextRequest) {
         { error: 'Subject, message, and type are required' },
         { status: 400 }
       )
+    }
+
+    // Input sanitization - security hardening
+    const sanitizedSubject = sanitizeUserContent(subject, { maxLength: 200 })
+    const sanitizedMessage = sanitizeUserContent(message, { maxLength: 5000 })
+
+    if (sanitizedSubject.length < 5) {
+      return NextResponse.json({ error: 'Subject must be at least 5 characters' }, { status: 400 })
+    }
+
+    if (sanitizedMessage.length < 10) {
+      return NextResponse.json({ error: 'Message must be at least 10 characters' }, { status: 400 })
     }
 
     const validTypes = ['GENERAL', 'PAYMENT', 'ORDER', 'VENDOR', 'ACCOUNT', 'TECHNICAL', 'REPORT']
@@ -73,8 +93,8 @@ export async function POST(request: NextRequest) {
     const ticket = await getPrisma().supportTicket.create({
       data: {
         userId: user.userId,
-        subject: subject.trim(),
-        message: message.trim(),
+        subject: sanitizedSubject,
+        message: sanitizedMessage,
         type: type as any,
         priority: (priority as any) || 'MEDIUM',
       },
@@ -102,7 +122,7 @@ export async function POST(request: NextRequest) {
         admin.id,
         'SUPPORT_TICKET_CREATED',
         'New Support Ticket',
-        `A new support ticket has been submitted: "${subject}"`
+        `A new support ticket has been submitted: "${sanitizedSubject}"`
       )
     }
 

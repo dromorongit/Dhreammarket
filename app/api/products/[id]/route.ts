@@ -3,6 +3,8 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-allocation-engine'
+import { sanitizeUserContent } from '@/lib/sanitize'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 export const runtime = 'nodejs'
 
@@ -254,12 +256,27 @@ export async function PUT(
 
     // Update product - use first category as primary
     const primaryCategoryId = uniqueCategoryIds[0]
+    const sanitizedDescription = sanitizeUserContent(description, { maxLength: 5000 })
+    const sanitizedPreOrderNotes = sanitizeUserContent(preOrderNotes, { maxLength: 1000 })
+    const sanitizedBackOrderNotes = sanitizeUserContent(backOrderNotes, { maxLength: 1000 })
+
+    // Capture before data for audit
+    const beforeData = {
+      name: existingProduct.name,
+      price: existingProduct.price,
+      stock: existingProduct.stock,
+      lowStockThreshold: existingProduct.lowStockThreshold,
+      categoryId: existingProduct.categoryId,
+      brandId: existingProduct.brandId,
+      availabilityType: existingProduct.availabilityType,
+    }
+
     const product = await getPrisma().product.update({
       where: { id: params.id },
       data: {
         categoryId: primaryCategoryId,
         name: name.trim(),
-        description: description?.trim() || null,
+        description: sanitizedDescription || null,
         price: parseFloat(price),
         stock: parseInt(stock),
         lowStockThreshold: lowStockThreshold !== undefined ? parseInt(lowStockThreshold) : 5,
@@ -269,15 +286,35 @@ export async function PUT(
         availabilityType: finalAvailabilityType as any,
         expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
         estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays) : null,
-        preOrderNotes: preOrderNotes || null,
+        preOrderNotes: sanitizedPreOrderNotes || null,
         expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
-        backOrderNotes: backOrderNotes || null,
+        backOrderNotes: sanitizedBackOrderNotes || null,
       },
       include: {
         category: true,
         images: true,
         variants: true,
       },
+    })
+
+    // Create audit log for product update
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action: 'PRODUCT_UPDATED',
+      entityType: 'PRODUCT',
+      entityId: params.id,
+      beforeData,
+      afterData: {
+        name: product.name,
+        price: product.price,
+        stock: product.stock,
+        lowStockThreshold: product.lowStockThreshold,
+        categoryId: product.categoryId,
+        brandId: product.brandId,
+        availabilityType: product.availabilityType,
+      },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
     })
 
     // Update category assignments
@@ -452,6 +489,23 @@ export async function DELETE(
     if (product.storeId !== store.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+
+    // Create audit log before deletion
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action: 'PRODUCT_DELETED',
+      entityType: 'PRODUCT',
+      entityId: params.id,
+      beforeData: {
+        id: product.id,
+        name: product.name,
+        storeId: product.storeId,
+        price: product.price,
+        stock: product.stock,
+      },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+    })
 
     // Delete product (cascade will handle images)
     await getPrisma().product.delete({

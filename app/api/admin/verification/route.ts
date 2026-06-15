@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { createAuditLog } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -188,7 +189,19 @@ export async function PATCH(request: NextRequest) {
       })
     }
 
-    // Create audit log
+    // Create audit log (platform-level)
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action: action === 'approve' ? 'KYC_APPROVED' : action === 'reject' || action === 'revoke' ? 'KYC_REJECTED' : 'SUPPORT_TICKET_UPDATED',
+      entityType: 'KYC_APPLICATION',
+      entityId: applicationId,
+      beforeData: { status: application.status },
+      afterData: { status: newStatus, note },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+    })
+
+    // Create audit log (verification-specific)
     await getPrisma().verificationAuditLog.create({
       data: {
         applicationId,

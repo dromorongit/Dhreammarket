@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { allocateForProductStock } from '@/lib/stock-allocation-engine'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 interface RouteParams {
   params: { id: string }
@@ -61,9 +62,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // DELETE - Remove/delete product (moderation)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
-    if (authCheck instanceof NextResponse) {
-      return authCheck
+    const adminUser = requireAdmin()
+    if (adminUser instanceof NextResponse) {
+      return adminUser
     }
 
     const { id } = await params
@@ -76,6 +77,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
+
+    // Create audit log before deletion
+    await createAuditLog({
+      userId: adminUser.userId,
+      userRole: adminUser.role,
+      action: 'PRODUCT_REMOVED',
+      entityType: 'PRODUCT',
+      entityId: id,
+      beforeData: {
+        id: product.id,
+        name: product.name,
+        storeId: product.storeId,
+        price: product.price,
+        stock: product.stock,
+      },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+    })
 
     // Delete the product and all related data (cascade will handle related records)
     await prisma.product.delete({
@@ -92,9 +110,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 // PATCH - Update product (including reserved stock correction)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
-    if (authCheck instanceof NextResponse) {
-      return authCheck
+    const adminUser = requireAdmin()
+    if (adminUser instanceof NextResponse) {
+      return adminUser
     }
 
     const { id } = await params
@@ -144,6 +162,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         console.log(`[Stock Allocation] Allocated ${allocationResult.allocatedOrders.length} orders for product ${product.name}`)
       }
     }
+
+    const { beforeData, afterData } = captureBeforeAfter(
+      { stock: product.stock, reservedQuantity: product.reservedQuantity },
+      { stock: updatedProduct.stock, reservedQuantity: updatedProduct.reservedQuantity }
+    )
+    createAuditLog({
+      userId: adminUser.userId,
+      userRole: adminUser.role,
+      action: 'INVENTORY_UPDATED',
+      entityType: 'PRODUCT',
+      entityId: id,
+      beforeData,
+      afterData,
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+    }).catch(err => console.error('Failed to create audit log:', err))
 
     console.log(`[Admin Stock Adjustment] Product ${product.name} reservedQuantity adjusted to ${reservedQty}`)
 

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-const prisma = getPrisma()
 import { requireAdmin } from '@/lib/adminAuth'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
+
+const prisma = getPrisma()
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -85,6 +87,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return authCheck
     }
 
+    const adminUser = authCheck
     const { id } = await params
     const body = await request.json()
     const { action, value, duration } = body
@@ -126,6 +129,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             },
           },
         })
+        // Create audit log for vendor approval
+        await createAuditLog({
+          userId: adminUser.userId,
+          userRole: adminUser.role,
+          action: 'VENDOR_APPROVED',
+          entityType: 'VENDOR',
+          entityId: id,
+          beforeData: { isVerified: existingStore.isVerified, isFeatured: existingStore.isFeatured },
+          afterData: { isVerified: updatedStore.isVerified, isFeatured: updatedStore.isFeatured },
+          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+        })
         break
 
       case 'revoke':
@@ -147,10 +161,25 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             },
           },
         })
+        // Create audit log for vendor rejection
+        await createAuditLog({
+          userId: adminUser.userId,
+          userRole: adminUser.role,
+          action: 'VENDOR_REJECTED',
+          entityType: 'VENDOR',
+          entityId: id,
+          beforeData: { isVerified: existingStore.isVerified, isFeatured: existingStore.isFeatured },
+          afterData: { isVerified: updatedStore.isVerified, isFeatured: updatedStore.isFeatured },
+          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+        })
         break
 
       case 'disable':
         // Disable vendor by setting isVerified and isFeatured to false
+        const { beforeData, afterData } = captureBeforeAfter(
+          { isVerified: existingStore.isVerified, isFeatured: existingStore.isFeatured },
+          { isVerified: false, isFeatured: false }
+        )
         updatedStore = await prisma.store.update({
           where: { id },
           data: { isVerified: false, isFeatured: false, featuredUntil: null },
@@ -168,11 +197,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             },
           },
         })
-        
         // Also update the user role to CUSTOMER
         await prisma.user.update({
           where: { id: updatedStore.userId },
           data: { role: 'CUSTOMER' },
+        })
+        // Create audit log for vendor rejection
+        await createAuditLog({
+          userId: adminUser.userId,
+          userRole: adminUser.role,
+          action: 'VENDOR_REJECTED',
+          entityType: 'VENDOR',
+          entityId: id,
+          beforeData,
+          afterData,
+          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
         })
         break
 
@@ -195,11 +234,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             },
           },
         })
-        
         // Also update the user role to VENDOR
         await prisma.user.update({
           where: { id: updatedStore.userId },
           data: { role: 'VENDOR' },
+        })
+        // Create audit log for vendor approval
+        await createAuditLog({
+          userId: adminUser.userId,
+          userRole: adminUser.role,
+          action: 'VENDOR_APPROVED',
+          entityType: 'VENDOR',
+          entityId: id,
+          beforeData: { isVerified: existingStore.isVerified },
+          afterData: { isVerified: updatedStore.isVerified },
+          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
         })
         break
 

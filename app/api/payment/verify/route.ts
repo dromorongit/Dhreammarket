@@ -5,12 +5,19 @@ import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
 import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
+import { rateLimit } from '@/lib/rate-limit'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('payment-verification')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   console.log('[Payment Verify API] Request received')
   
   try {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { createNotification } from '@/lib/notifications'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 // PATCH /api/admin/support/[id] - Update ticket status and add admin reply
 export async function PATCH(
@@ -9,9 +10,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = requireAdmin()
-    if (auth instanceof NextResponse) {
-      return auth
+    const adminUser = requireAdmin()
+    if (adminUser instanceof NextResponse) {
+      return adminUser
     }
 
     const { id } = await params
@@ -52,6 +53,25 @@ export async function PATCH(
         },
       },
     })
+
+    // Create audit log for support ticket update
+    const { beforeData, afterData } = captureBeforeAfter(
+      { status: existingTicket.status, priority: existingTicket.priority, adminReply: existingTicket.adminReply },
+      { status: ticket.status, priority: ticket.priority, adminReply: ticket.adminReply }
+    )
+
+    if (beforeData !== afterData) {
+      await createAuditLog({
+        userId: adminUser.userId,
+        userRole: adminUser.role,
+        action: 'SUPPORT_TICKET_UPDATED',
+        entityType: 'SUPPORT_TICKET',
+        entityId: id,
+        beforeData,
+        afterData,
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+      })
+    }
 
     // Create notification for the user (only if user exists)
     if (ticket.user && status && status !== existingTicket.status) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 
 const prisma = getPrisma()
 
@@ -8,6 +9,12 @@ export const dynamic = 'force-dynamic'
 const LIMIT_PER_TYPE = 5
 
 export async function GET(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('search')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get('q')?.trim()

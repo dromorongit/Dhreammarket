@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { normalizeGhanaPhoneNumber } from '@/lib/phone'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - security hardening
+  const rateLimitCheck = rateLimit('register')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const { email, password, role, position, mobileNumber, name } = await request.json()
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +47,11 @@ export async function PUT(request: NextRequest) {
 
     const { firstName, lastName, phone, address } = await request.json()
 
+    // Fetch current profile for beforeData
+    const currentProfile = await getPrisma().profile.findUnique({
+      where: { userId: payload.userId },
+    })
+
     // Update user profile
     const profile = await getPrisma().profile.upsert({
       where: { userId: payload.userId },
@@ -63,6 +69,21 @@ export async function PUT(request: NextRequest) {
         address: address || null,
       },
     })
+
+    // Create audit log for profile update
+    const { beforeData, afterData } = captureBeforeAfter(
+      currentProfile ? { firstName: currentProfile.firstName, lastName: currentProfile.lastName, phone: currentProfile.phone, address: currentProfile.address } : null,
+      { firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone, address: profile.address }
+    )
+    createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role || 'USER',
+      action: 'PROFILE_UPDATED',
+      entityType: 'USER',
+      entityId: payload.userId,
+      beforeData,
+      afterData,
+    }).catch(err => console.error('Failed to create audit log:', err))
 
     return NextResponse.json({ profile, message: 'Profile updated successfully' })
   } catch (error) {
