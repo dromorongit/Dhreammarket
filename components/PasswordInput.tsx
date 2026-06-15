@@ -1,8 +1,18 @@
 import { useState, forwardRef } from 'react'
-import { Input, InputProps } from './Input'
+import { Input } from './Input'
 
-interface PasswordInputProps extends Omit<InputProps, 'type'> {
+interface PasswordInputProps {
   label?: string
+  value?: string
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  required?: boolean
+  placeholder?: string
+  disabled?: boolean
+  error?: string
+  name?: string
+  id?: string
+  autoComplete?: string
+  className?: string
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
