@@ -26,6 +26,7 @@ export async function GET(
       where: {
         id: orderId,
         userId: payload.userId,
+        deletedAt: null, // Exclude soft-deleted orders
       },
       include: {
         items: {

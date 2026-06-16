@@ -57,6 +57,7 @@ export async function GET(
     const order = await getPrisma().order.findFirst({
       where: {
         id: orderId,
+        deletedAt: null, // Exclude soft-deleted orders
         paymentStatus: 'PAID', // Only paid orders
         items: {
           some: {
@@ -169,6 +170,7 @@ export async function PATCH(
     const existingOrder = await getPrisma().order.findFirst({
       where: {
         id: orderId,
+        deletedAt: null, // Exclude soft-deleted orders
         paymentStatus: 'PAID',
         items: {
           some: {

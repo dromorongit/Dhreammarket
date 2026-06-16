@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
     // Get user's orders including all payment statuses
     // This shows customers their order history including pending, paid, failed, and cancelled orders
     const orders = await getPrisma().order.findMany({
-      where: { userId: payload.userId },
+      where: { 
+        userId: payload.userId,
+        deletedAt: null, // Exclude soft-deleted orders
+      },
       include: {
         items: {
           include: {

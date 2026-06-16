@@ -57,6 +57,7 @@ const skip = (page - 1) * limit
 
     // Build where clause for orders
     const orderWhere: Record<string, unknown> = {
+      deletedAt: null, // Exclude soft-deleted orders
       paymentStatus: { in: ['PAID', 'PENDING'] }, // Show both paid and pending orders to vendors
     }
 
