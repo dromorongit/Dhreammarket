@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
 import { Textarea } from '@/components/Textarea'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import { Badge } from '@/components/Badge'
 
 interface OrderItem {
   id: string
@@ -60,6 +61,24 @@ interface Order {
   }
 }
 
+interface OrderMessage {
+  id: string
+  userId: string
+  userRole: string
+  message: string
+  messageType: string
+  isRead: boolean
+  createdAt: string
+  user: {
+    id: string
+    email: string
+    profile?: {
+      firstName: string | null
+      lastName: string | null
+    } | null
+  }
+}
+
 // Order status configuration for vendor fulfillment workflow
 const ORDER_STATUS_CONFIG = {
   PENDING: { label: 'Pending', description: 'Awaiting processing', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
@@ -102,16 +121,21 @@ export default function VendorOrderDetailPage() {
   const params = useParams()
   const orderId = params.id as string
   const [order, setOrder] = useState<Order | null>(null)
+  const [messages, setMessages] = useState<OrderMessage[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [acceptanceAction, setAcceptanceAction] = useState<'accept' | 'reject' | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [showRejectionDialog, setShowRejectionDialog] = useState(false)
+  const [vendorReply, setVendorReply] = useState('')
+  const [respondingToRefund, setRespondingToRefund] = useState<string | null>(null)
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetail()
+      fetchMessages()
     }
   }, [orderId])
 
@@ -134,6 +158,21 @@ export default function VendorOrderDetailPage() {
       setError('An error occurred while loading the order')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchMessages = async () => {
+    try {
+      setLoadingMessages(true)
+      const response = await fetch(`/api/orders/${orderId}/messages`)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages)
+      }
+    } catch (err) {
+      console.error('Error fetching messages:', err)
+    } finally {
+      setLoadingMessages(false)
     }
   }
 
@@ -237,6 +276,35 @@ export default function VendorOrderDetailPage() {
     if (order.vendorAccepted) return 'ACCEPTED'
     if (order.vendorRejected) return 'REJECTED'
     return 'PENDING'
+  }
+
+  const handleSendReply = async (messageType: 'GENERAL' | 'REFUND_APPROVAL' | 'REFUND_REJECTION') => {
+    if (!vendorReply.trim() || !respondingToRefund) return
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: vendorReply,
+          messageType,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to send reply')
+        return
+      }
+
+      const data = await response.json()
+      setMessages(prev => [...prev, data.message])
+      setVendorReply('')
+      setRespondingToRefund(null)
+    } catch (err) {
+      console.error('Error sending reply:', err)
+      alert('Failed to send reply')
+    }
   }
 
 // Render fulfillment status progression
@@ -402,6 +470,74 @@ export default function VendorOrderDetailPage() {
     )
   }
 
+  const renderVariantInfo = (item: OrderItem) => {
+    const parts = []
+    if (item.color) parts.push(`Color: ${item.color}`)
+    if (item.size) parts.push(`Size: ${item.size}`)
+    if (item.age) parts.push(`Age: ${item.age}`)
+    return parts.length > 0 ? ` (${parts.join(', ')})` : ''
+  }
+
+  const renderMessages = () => {
+    if (loadingMessages) {
+      return <p className="text-sm text-gray-500">Loading messages...</p>
+    }
+
+    const refundRequests = messages.filter(msg => msg.messageType === 'REFUND_REQUEST')
+
+    return (
+      <div className="space-y-4">
+        {messages.length === 0 ? (
+          <p className="text-sm text-gray-500">No messages from customer.</p>
+        ) : (
+          <>
+            {refundRequests.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Refund Requests</h4>
+                {refundRequests.map((msg) => (
+                  <div key={msg.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-2">
+                    <p className="text-xs font-medium text-yellow-800 mb-1">Customer Request:</p>
+                    <p className="text-sm text-gray-900">{msg.message.replace('Refund Request: ', '')}</p>
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => setRespondingToRefund(msg.id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRespondingToRefund(msg.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="max-h-48 overflow-y-auto space-y-2">
+              {messages.filter(msg => msg.messageType === 'GENERAL').map((msg) => {
+                const userName = msg.user.profile?.firstName 
+                  ? `${msg.user.profile.firstName} ${msg.user.profile.lastName || ''}`.trim()
+                  : msg.user.email.split('@')[0]
+                
+                return (
+                  <div key={msg.id} className="p-2 bg-gray-50 rounded">
+                    <p className="text-xs font-medium text-gray-700">{userName}</p>
+                    <p className="text-sm text-gray-900">{msg.message}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -465,14 +601,6 @@ export default function VendorOrderDetailPage() {
     hour: '2-digit',
     minute: '2-digit',
   })
-
-  const renderVariantInfo = (item: OrderItem) => {
-    const parts = []
-    if (item.color) parts.push(`Color: ${item.color}`)
-    if (item.size) parts.push(`Size: ${item.size}`)
-    if (item.age) parts.push(`Age: ${item.age}`)
-    return parts.length > 0 ? ` (${parts.join(', ')})` : ''
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -703,6 +831,55 @@ export default function VendorOrderDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Messages Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-gray-900">Messages from Customer</h2>
+          </CardHeader>
+          <CardContent>
+            {renderMessages()}
+          </CardContent>
+        </Card>
+
+        {/* Refund Response Dialog */}
+        {respondingToRefund && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Respond to Refund Request</h3>
+<p className="text-sm text-gray-600 mb-4">
+                   Please provide a response to the customer&apos;s refund request.
+                 </p>
+                <Textarea
+                  value={vendorReply}
+                  onChange={(e) => setVendorReply(e.target.value)}
+                  placeholder="Provide your response (e.g., reason for approval/rejection, next steps, etc.)"
+                  rows={4}
+                />
+                <div className="flex gap-3 justify-end mt-4">
+                  <Button
+                    onClick={() => setRespondingToRefund(null)}
+                    variant="outline"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => handleSendReply('REFUND_REJECTION')}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Reject Refund
+                  </Button>
+                  <Button
+                    onClick={() => handleSendReply('REFUND_APPROVAL')}
+                  >
+                    Approve Refund
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col gap-4">

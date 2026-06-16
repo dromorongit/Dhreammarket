@@ -34,6 +34,7 @@ model User {
   auditLogs                AuditLog[]
   restockOrders            RestockOrder[]
   purchaseOrders           PurchaseOrder[]
+  orderMessages            OrderMessage[]
 
   @@map("users")
 }
@@ -283,6 +284,7 @@ model Order {
   productReviews        ProductReview[]
   vendorReviews         VendorReview[]
   fulfillmentEvents     FulfillmentEvent[]
+  orderMessages         OrderMessage[]
 
   @@map("orders")
 }
@@ -891,4 +893,29 @@ model FulfillmentEvent {
   @@index([eventType])
   @@index([createdAt])
   @@map("fulfillment_events")
+}
+
+model OrderMessage {
+  id          String   @id @default(cuid())
+  orderId     String
+  userId      String
+  userRole    String
+  message     String
+  messageType MessageType @default(GENERAL)
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([isRead])
+  @@map("order_messages")
+}
+
+enum MessageType {
+  GENERAL
+  REFUND_REQUEST
+  REFUND_APPROVAL
+  REFUND_REJECTION
 }

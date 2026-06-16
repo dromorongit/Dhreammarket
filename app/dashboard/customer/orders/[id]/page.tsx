@@ -8,6 +8,8 @@ import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { EventTimeline } from '@/components/OrderTimeline'
+import { Textarea } from '@/components/Textarea'
+import { Badge } from '@/components/Badge'
 
 interface OrderItem {
   id: string
@@ -73,6 +75,24 @@ interface FulfillmentEvent {
   createdAt: string
 }
 
+interface OrderMessage {
+  id: string
+  userId: string
+  userRole: string
+  message: string
+  messageType: string
+  isRead: boolean
+  createdAt: string
+  user: {
+    id: string
+    email: string
+    profile?: {
+      firstName: string | null
+      lastName: string | null
+    } | null
+  }
+}
+
 const VENDOR_ACCEPTANCE_CONFIG = {
   ACCEPTED: { label: 'Accepted by Vendor', color: 'bg-green-100 text-green-800' },
   REJECTED: { label: 'Rejected by Vendor', color: 'bg-red-100 text-red-800' },
@@ -86,7 +106,7 @@ const ORDER_STATUS_CONFIG = {
   SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-700', step: 2 },
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-700', step: 3 },
   COMPLETED: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700', step: 4 },
-  CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700', step: -1 },
+  CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-800', step: -1 },
 }
 
 const FULFILLMENT_STEPS: Record<string, { label: string; percentage: number }> = {
@@ -125,14 +145,21 @@ export default function CustomerOrderDetailPage() {
   const orderId = params.id as string
   const [order, setOrder] = useState<Order | null>(null)
   const [events, setEvents] = useState<FulfillmentEvent[]>([])
+  const [messages, setMessages] = useState<OrderMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingEvents, setLoadingEvents] = useState(true)
+  const [loadingMessages, setLoadingMessages] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [newMessage, setNewMessage] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
+  const [refundReason, setRefundReason] = useState('')
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetail()
       fetchEvents()
+      fetchMessages()
     }
   }, [orderId])
 
@@ -171,6 +198,110 @@ export default function CustomerOrderDetailPage() {
     } finally {
       setLoadingEvents(false)
     }
+  }
+
+  const fetchMessages = async () => {
+    try {
+      setLoadingMessages(true)
+      const response = await fetch(`/api/orders/${orderId}/messages`)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages)
+      }
+    } catch (err) {
+      console.error('Error fetching messages:', err)
+    } finally {
+      setLoadingMessages(false)
+    }
+  }
+
+  const handleSendMessage = async (type: 'GENERAL' | 'REFUND_REQUEST' = 'GENERAL', messageContent?: string) => {
+    const contentToSend = messageContent || newMessage
+    if (!contentToSend.trim()) return
+
+    setSendingMessage(true)
+    try {
+      const response = await fetch(`/api/orders/${orderId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: contentToSend,
+          messageType: type,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to send message')
+        return
+      }
+
+      const data = await response.json()
+      setMessages(prev => [...prev, data.message])
+      setNewMessage('')
+      setShowRefundDialog(false)
+      setRefundReason('')
+    } catch (err) {
+      console.error('Error sending message:', err)
+      alert('Failed to send message')
+    } finally {
+      setSendingMessage(false)
+    }
+  }
+
+  const handleRefundRequest = () => {
+    if (!refundReason.trim()) return
+    handleSendMessage('REFUND_REQUEST', `Refund Request: ${refundReason}`)
+  }
+
+  const renderMessages = () => {
+    if (loadingMessages) {
+      return <p className="text-sm text-gray-500">Loading messages...</p>
+    }
+
+    return (
+      <div className="space-y-4">
+        {messages.length === 0 ? (
+          <p className="text-sm text-gray-500">No messages yet. Contact the vendor below.</p>
+        ) : (
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {messages.map((msg) => {
+              const userName = msg.user.profile?.firstName 
+                ? `${msg.user.profile.firstName} ${msg.user.profile.lastName || ''}`.trim()
+                : msg.user.email.split('@')[0]
+              const isCustomer = msg.userRole === 'CUSTOMER'
+              
+              return (
+                <div key={msg.id} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] p-3 rounded-lg ${
+                    isCustomer ? 'bg-royal-blue text-white' : 'bg-gray-100 text-gray-900'
+                  }`}>
+                    <p className="text-xs font-medium mb-1">{userName}</p>
+                    <p className="text-sm">{msg.message}</p>
+                    {msg.messageType !== 'GENERAL' && (
+                      <Badge 
+                        variant={msg.messageType === 'REFUND_REQUEST' ? 'warning' : msg.messageType === 'REFUND_APPROVAL' ? 'success' : 'danger'} 
+                        size="sm" 
+                        className="mt-1"
+                      >
+                        {msg.messageType === 'REFUND_REQUEST' ? 'Refund Request' : 
+                         msg.messageType === 'REFUND_APPROVAL' ? 'Refund Approved' : 'Refund Rejected'}
+                      </Badge>
+                    )}
+                    <p className="text-xs opacity-70 mt-1">
+                      {new Date(msg.createdAt).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
   }
 
 // Render order status timeline/progress
@@ -318,6 +449,9 @@ export default function CustomerOrderDetailPage() {
     hour: '2-digit',
     minute: '2-digit',
   })
+
+  const canRequestRefund = order.vendorAccepted && (order.status === 'DELIVERED' || order.status === 'COMPLETED')
+  const isRejected = order.vendorRejected && order.status === 'CANCELLED'
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -583,6 +717,80 @@ export default function CustomerOrderDetailPage() {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Contact Vendor / Refund Request Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-gray-900">Contact Vendor</h2>
+          </CardHeader>
+          <CardContent>
+            {renderMessages()}
+            
+            {/* Message Input */}
+            <div className="mt-4 pt-4 border-t">
+              <Textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message to the vendor..."
+                rows={3}
+                disabled={sendingMessage}
+              />
+              <div className="flex gap-2 mt-3">
+                <Button
+                  onClick={() => handleSendMessage('GENERAL')}
+                  disabled={sendingMessage || !newMessage.trim()}
+                  size="sm"
+                >
+                  {sendingMessage ? 'Sending...' : 'Send Message'}
+                </Button>
+                {(canRequestRefund || isRejected) && (
+                  <Button
+                    onClick={() => setShowRefundDialog(true)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Request Refund
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Refund Request Dialog */}
+        {showRefundDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Request Refund</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Please provide a reason for your refund request. The vendor will review your request.
+                </p>
+                <Textarea
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="Describe why you're requesting a refund (e.g., defective item, wrong item received, etc.)"
+                  rows={4}
+                />
+                <div className="flex gap-3 justify-end mt-4">
+                  <Button
+                    onClick={() => setShowRefundDialog(false)}
+                    variant="outline"
+                    disabled={sendingMessage}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleRefundRequest}
+                    disabled={sendingMessage || !refundReason.trim()}
+                  >
+                    {sendingMessage ? 'Sending...' : 'Send Request'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Actions */}
