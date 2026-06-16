@@ -34,9 +34,14 @@ export default function RefundsGuide() {
                   <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white text-sm font-bold">1</span>
                   How to Request a Refund
                 </h2>
-                <h3 className="text-xl font-medium text-deep-navy mb-3">Step 1: Contact Vendor</h3>
+<h3 className="text-xl font-medium text-deep-navy mb-3">Step 1: Contact Vendor</h3>
                 <p className="text-slate-600 mb-3">
                   Contact the vendor directly through your order to initiate a refund request.
+                </p>
+                <h3 className="text-xl font-medium text-deep-navy mb-3">Step 1 (Alternative): Cancel Before Shipping</h3>
+                <p className="text-slate-600 mb-3">
+                  If your order hasn't been shipped yet, you can cancel it directly from your order details page.
+                  For paid orders, you can also request a refund during cancellation.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Provide Details</h3>
                 <p className="text-slate-600 mb-3">

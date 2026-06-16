@@ -154,6 +154,10 @@ export default function CustomerOrderDetailPage() {
   const [sendingMessage, setSendingMessage] = useState(false)
   const [showRefundDialog, setShowRefundDialog] = useState(false)
   const [refundReason, setRefundReason] = useState('')
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelWithRefund, setCancelWithRefund] = useState(false)
+  const [cancellingOrder, setCancellingOrder] = useState(false)
 
   useEffect(() => {
     if (orderId) {
@@ -162,6 +166,21 @@ export default function CustomerOrderDetailPage() {
       fetchMessages()
     }
   }, [orderId])
+
+  const fetchEvents = async () => {
+    try {
+      setLoadingEvents(true)
+      const response = await fetch(`/api/orders/${orderId}/events`)
+      if (response.ok) {
+        const data = await response.json()
+        setEvents(data.events)
+      }
+    } catch (err) {
+      console.error('Error fetching fulfillment events:', err)
+    } finally {
+      setLoadingEvents(false)
+    }
+  }
 
   const fetchOrderDetail = async () => {
     try {
@@ -182,21 +201,6 @@ export default function CustomerOrderDetailPage() {
       setError('An error occurred while loading the order')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchEvents = async () => {
-    try {
-      setLoadingEvents(true)
-      const response = await fetch(`/api/orders/${orderId}/events`)
-      if (response.ok) {
-        const data = await response.json()
-        setEvents(data.events)
-      }
-    } catch (err) {
-      console.error('Error fetching fulfillment events:', err)
-    } finally {
-      setLoadingEvents(false)
     }
   }
 
@@ -252,6 +256,43 @@ export default function CustomerOrderDetailPage() {
   const handleRefundRequest = () => {
     if (!refundReason.trim()) return
     handleSendMessage('REFUND_REQUEST', `Refund Request: ${refundReason}`)
+  }
+
+  const handleCancelOrder = async () => {
+    if (!cancelReason.trim()) {
+      alert('Please provide a reason for cancellation')
+      return
+    }
+
+    setCancellingOrder(true)
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: cancelReason,
+          requestRefund: cancelWithRefund && order?.paymentStatus === 'PAID',
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to cancel order')
+        return
+      }
+
+      const data = await response.json()
+      setOrder(prev => prev ? { ...prev, status: 'CANCELLED', fulfillmentStatus: 'CANCELLED', paymentStatus: data.refundRequested ? 'REFUNDED' : prev.paymentStatus, vendorRejected: true } : null)
+      setShowCancelDialog(false)
+      setCancelReason('')
+      setCancelWithRefund(false)
+      alert(data.refundRequested ? 'Order cancelled and refund requested successfully' : 'Order cancelled successfully')
+    } catch (err) {
+      console.error('Error cancelling order:', err)
+      alert('Failed to cancel order')
+    } finally {
+      setCancellingOrder(false)
+    }
   }
 
   const renderMessages = () => {
@@ -452,6 +493,10 @@ export default function CustomerOrderDetailPage() {
 
   const canRequestRefund = order.vendorAccepted && (order.status === 'DELIVERED' || order.status === 'COMPLETED')
   const isRejected = order.vendorRejected && order.status === 'CANCELLED'
+  const canCancelOrder = order.status !== 'CANCELLED' && order.status !== 'COMPLETED' && 
+    (order.status === 'PENDING' || order.status === 'PROCESSING' || 
+     order.fulfillmentStatus === 'PENDING' || order.fulfillmentStatus === 'AWAITING_STOCK' || 
+     order.fulfillmentStatus === 'AWAITING_RESTOCK')
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -793,8 +838,74 @@ export default function CustomerOrderDetailPage() {
           </div>
         )}
 
+        {/* Cancel Order Dialog */}
+        {showCancelDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancel Order</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Please provide a reason for cancelling this order. Orders can only be cancelled before they are shipped.
+                </p>
+                <Textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Reason for cancellation (e.g., changed my mind, ordered wrong item, etc.)"
+                  rows={3}
+                />
+                {order.paymentStatus === 'PAID' && (
+                  <div className="mt-3 flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      id="cancel-with-refund"
+                      checked={cancelWithRefund}
+                      onChange={(e) => setCancelWithRefund(e.target.checked)}
+                      className="mt-1"
+                    />
+                    <label htmlFor="cancel-with-refund" className="text-sm text-gray-600">
+                      Request refund for this cancelled order (only available for paid orders)
+                    </label>
+                  </div>
+                )}
+                <div className="flex gap-3 justify-end mt-4">
+                  <Button
+                    onClick={() => {
+                      setShowCancelDialog(false)
+                      setCancelReason('')
+                      setCancelWithRefund(false)
+                    }}
+                    variant="outline"
+                    disabled={cancellingOrder}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleCancelOrder}
+                    disabled={cancellingOrder || !cancelReason.trim()}
+                    variant="danger"
+                  >
+                    {cancellingOrder ? 'Cancelling...' : cancelWithRefund ? 'Cancel & Request Refund' : 'Cancel Order'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex flex-col gap-4">
+          {canCancelOrder && (
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setShowCancelDialog(true)}
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                Cancel Order
+              </Button>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row gap-4">
             <Link href="/dashboard/customer" className="flex-1">
               <Button variant="outline" className="w-full">
