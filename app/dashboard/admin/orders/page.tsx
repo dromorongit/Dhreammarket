@@ -16,6 +16,9 @@ interface Order {
   storeNames: string[] | null
   vendorContact: string | null
   daysOutstanding?: number
+  vendorAccepted: boolean
+  vendorRejected: boolean
+  vendorRejectionReason?: string | null
   user: {
     id: string
     email: string
@@ -34,7 +37,13 @@ interface Order {
     status: string
     amount: number
     reference: string
-  }
+  } | null
+}
+
+const VENDOR_ACCEPTANCE_CONFIG = {
+  ACCEPTED: { label: 'Accepted', color: 'bg-green-100 text-green-800' },
+  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
+  PENDING: { label: 'Pending Acceptance', color: 'bg-yellow-100 text-yellow-800' },
 }
 
 export default function AdminOrdersPage() {

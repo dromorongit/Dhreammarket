@@ -45,28 +45,20 @@ interface Order {
   createdAt: string
   updatedAt: string
   customerName: string
-  storeNames: string[] | null
-  vendorContact: string | null
-  daysOutstanding?: number
-  user: {
-    id: string
-    email: string
-    role: string
-    profile?: {
-      firstName: string | null
-      lastName: string | null
-      phone: string | null
-    }
-  }
-  _count: {
-    items: number
-  }
+  customerEmail: string
+  customerPhone: string | null
+  customerAddress: string | null
+  customerCity: string | null
+  customerRegion: string | null
+  storeGroups: StoreGroup[]
   payment?: {
     id: string
-    status: string
     amount: number
+    status: string
     reference: string
-  }
+    paystackRef?: string | null
+    createdAt: string
+  } | null
 }
 
 const ORDER_STATUS_CONFIG = {
