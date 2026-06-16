@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
 // Notify vendors that payment was successful and order is confirmed
         const orderItems = transactionResult.orderItems
-        const vendorStoreIds = Array.from(new Set(orderItems.map((item: any) => item.product?.storeId).filter(Boolean)))
+        const vendorStoreIds = Array.from(new Set(orderItems.map((item: any) => item.product?.storeId).filter(Boolean))) as string[]
        for (const storeId of vendorStoreIds) {
          const store = await getPrisma().store.findUnique({
            where: { id: storeId },
