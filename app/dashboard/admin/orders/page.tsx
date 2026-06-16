@@ -87,6 +87,12 @@ export default function AdminOrdersPage() {
     }).format(amount)
   }
 
+  const getVendorAcceptanceStatus = (vendorAccepted: boolean, vendorRejected: boolean) => {
+    if (vendorAccepted) return 'ACCEPTED'
+    if (vendorRejected) return 'REJECTED'
+    return 'PENDING'
+  }
+
   const getStatusBadge = (status: string, type: 'order' | 'payment' | 'fulfillment') => {
     if (type === 'order') {
       const colors: Record<string, string> = {
@@ -305,18 +311,30 @@ export default function AdminOrdersPage() {
                         </span>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <span className="text-gray-500">Total:</span>
-                          <span className="ml-1 font-medium">{formatCurrency(order.total)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Items:</span>
-                          <span className="ml-1">{order._count.items}</span>
-                        </div>
-                      </div>
-                      
-                      {order.storeNames && (
+<div className="grid grid-cols-2 gap-2 text-sm">
+                         <div>
+                           <span className="text-gray-500">Total:</span>
+                           <span className="ml-1 font-medium">{formatCurrency(order.total)}</span>
+                         </div>
+                         <div>
+                           <span className="text-gray-500">Items:</span>
+                           <span className="ml-1">{order._count.items}</span>
+                         </div>
+                       </div>
+                       
+                       <div>
+                         <span className="text-gray-500 text-sm">Vendor Status:</span>
+                         <span className={`inline-flex px-2 py-1 ml-2 text-xs font-medium rounded-full ${
+                           VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.color || 'bg-gray-100 text-gray-800'
+                         }`}>
+                           {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label || 'Pending'}
+                         </span>
+                         {order.vendorRejected && order.vendorRejectionReason && (
+                           <p className="text-xs text-red-600 mt-1">{order.vendorRejectionReason}</p>
+                         )}
+                       </div>
+                       
+                       {order.storeNames && (
                         <div>
                           <span className="text-gray-500 text-sm">Store(s):</span>
                           <p className="text-gray-900 text-sm font-medium">
@@ -353,20 +371,21 @@ export default function AdminOrdersPage() {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
 <thead className="bg-gray-50 border-b">
-                   <tr>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store(s)</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Order Status</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfillment</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days Outstanding</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                   </tr>
-                 </thead>
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store(s)</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Order Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfillment</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days Outstanding</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-200">
                     {orders.map((order) => (
                       <tr key={order.id} className="hover:bg-gray-50">
@@ -399,6 +418,13 @@ export default function AdminOrdersPage() {
                         </td>
                         <td className="px-4 py-4">
                           <span className="text-sm text-gray-600">{order._count.items}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.color || 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label || 'Pending'}
+                          </span>
                         </td>
                         <td className="px-4 py-4">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(order.status, 'order')}`}>

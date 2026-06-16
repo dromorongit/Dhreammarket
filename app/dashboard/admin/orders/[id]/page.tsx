@@ -39,16 +39,34 @@ interface Order {
   paymentStatus: string
   orderType: string
   fulfillmentStatus: string
+  vendorAccepted: boolean
+  vendorRejected: boolean
+  vendorRejectionReason?: string | null
   createdAt: string
   updatedAt: string
   customerName: string
-  customerEmail: string
-  customerPhone?: string | null
-  customerAddress?: string | null
-  customerCity?: string | null
-  customerRegion?: string | null
-  storeGroups: StoreGroup[]
-  payment: Payment | null
+  storeNames: string[] | null
+  vendorContact: string | null
+  daysOutstanding?: number
+  user: {
+    id: string
+    email: string
+    role: string
+    profile?: {
+      firstName: string | null
+      lastName: string | null
+      phone: string | null
+    }
+  }
+  _count: {
+    items: number
+  }
+  payment?: {
+    id: string
+    status: string
+    amount: number
+    reference: string
+  }
 }
 
 const ORDER_STATUS_CONFIG = {
@@ -58,6 +76,12 @@ const ORDER_STATUS_CONFIG = {
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
   COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-800' },
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+}
+
+const VENDOR_ACCEPTANCE_CONFIG = {
+  ACCEPTED: { label: 'Accepted', color: 'bg-green-100 text-green-800' },
+  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
+  PENDING: { label: 'Pending Acceptance', color: 'bg-yellow-100 text-yellow-800' },
 }
 
 const FULFILLMENT_STATUS_CONFIG = {
@@ -250,6 +274,20 @@ export default function AdminOrderDetailPage() {
                   {orderStatusConfig.label}
                 </span>
               </div>
+              <div>
+                <p className="text-sm text-gray-500">Vendor Status</p>
+                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                  VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.color || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label || 'Pending'}
+                </span>
+              </div>
+              {order.vendorRejected && order.vendorRejectionReason && (
+                <div className="sm:col-span-2">
+                  <p className="text-sm text-gray-500">Rejection Reason</p>
+                  <p className="text-sm text-red-700">{order.vendorRejectionReason}</p>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-gray-500">Payment Status</p>
                 <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${paymentStatusConfig.color}`}>

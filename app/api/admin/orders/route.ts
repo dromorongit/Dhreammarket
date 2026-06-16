@@ -119,28 +119,30 @@ const [orders, total] = await Promise.all([
     })
 
 return NextResponse.json({
-       orders: ordersWithDaysOutstanding.map((order) => {
-         // Extract unique store names from order items
-         const storeNames = Array.from(new Set(
-           order.items.map(item => item.product?.store?.name).filter(Boolean)
-         ))
-         
-         // Get customer name with fallback hierarchy
-         const customerName = [
-           order.user.profile?.firstName,
-           order.user.profile?.lastName,
-         ].filter(Boolean).join(' ') || order.user.email
-         
-         // Get vendor contact from first item's store
-         const vendorContact = order.items[0]?.product?.store?.mainPhoneNumber || null
-         
-         return {
-           ...order,
-           customerName,
-           storeNames: storeNames.length > 0 ? storeNames : null,
-           vendorContact,
-         }
-       }),
+      orders: ordersWithDaysOutstanding.map((order) => {
+        // Extract unique store names from order items
+        const storeNames = Array.from(new Set(
+          order.items.map(item => item.product?.store?.name).filter(Boolean)
+        ))
+        
+        // Get customer name with fallback hierarchy
+        const customerName = [
+          order.user.profile?.firstName,
+          order.user.profile?.lastName,
+        ].filter(Boolean).join(' ') || order.user.email
+        
+        // Get vendor contact from first item's store
+        const vendorContact = order.items[0]?.product?.store?.mainPhoneNumber || null
+        
+        return {
+          ...order,
+          vendorAccepted: order.vendorAccepted,
+          vendorRejected: order.vendorRejected,
+          customerName,
+          storeNames: storeNames.length > 0 ? storeNames : null,
+          vendorContact,
+        }
+      }),
        pagination: {
          page,
          limit,

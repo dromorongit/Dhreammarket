@@ -126,65 +126,65 @@ model Brand {
 }
 
 model Product {
-  id                  String                      @id @default(cuid())
-  storeId             String
-  categoryId          String
-  name                String
-  description         String?
-  brand               String?
-  price               Float
-  stock               Int                         @default(0)
-  reservedQuantity    Int                         @default(0)
-  lowStockThreshold   Int                         @default(5)
-  createdAt           DateTime                    @default(now())
-  updatedAt           DateTime                    @updatedAt
-  averageRating       Float                       @default(0)
-  reviewCount         Int                         @default(0)
-  flashSalePrice      Float?
-  flashSaleStart      DateTime?
-  flashSaleEnd        DateTime?
-  salesCount          Int                         @default(0)
-  isSponsored         Boolean                     @default(false)
-  brandId             String?
-  dealsPrice          Float?
-  salesPrice          Float?
-  availabilityType    ProductAvailabilityType     @default(IN_STOCK)
-  expectedArrivalDate DateTime?
+  id                       String                      @id @default(cuid())
+  storeId                  String
+  categoryId               String
+  name                     String
+  description              String?
+  brand                    String?
+  price                    Float
+  stock                    Int                         @default(0)
+  reservedQuantity         Int                         @default(0)
+  lowStockThreshold        Int                         @default(5)
+  createdAt                DateTime                    @default(now())
+  updatedAt                DateTime                    @updatedAt
+  averageRating            Float                       @default(0)
+  reviewCount              Int                         @default(0)
+  flashSalePrice           Float?
+  flashSaleStart           DateTime?
+  flashSaleEnd             DateTime?
+  salesCount               Int                         @default(0)
+  isSponsored              Boolean                     @default(false)
+  brandId                  String?
+  dealsPrice               Float?
+  salesPrice               Float?
+  availabilityType         ProductAvailabilityType     @default(IN_STOCK)
+  expectedArrivalDate      DateTime?
   estimatedFulfillmentDays Int?
-  preOrderNotes       String?
-  expectedRestockDate  DateTime?
-  backOrderNotes      String?
-  cartItems           CartItem[]
-  homepageSections    HomepageSectionProduct[]
-  orderItems          OrderItem[]
-  categoryAssignments ProductCategoryAssignment[]
-  images              ProductImage[]
-  productReviews      ProductReview[]
-  variants            ProductVariant[]            @relation("ProductVariants")
-  brandRelation       Brand?                      @relation(fields: [brandId], references: [id])
-  category            ProductCategory             @relation(fields: [categoryId], references: [id])
-  store               Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  restockOrders       RestockOrder[]
-  purchaseOrderItems  PurchaseOrderItem[]
+  preOrderNotes            String?
+  expectedRestockDate      DateTime?
+  backOrderNotes           String?
+  cartItems                CartItem[]
+  homepageSections         HomepageSectionProduct[]
+  orderItems               OrderItem[]
+  categoryAssignments      ProductCategoryAssignment[]
+  images                   ProductImage[]
+  productReviews           ProductReview[]
+  variants                 ProductVariant[]            @relation("ProductVariants")
+  brandRelation            Brand?                      @relation(fields: [brandId], references: [id])
+  category                 ProductCategory             @relation(fields: [categoryId], references: [id])
+  store                    Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  restockOrders            RestockOrder[]
+  purchaseOrderItems       PurchaseOrderItem[]
 
   @@map("products")
 }
 
 model ProductVariant {
-  id         String      @id @default(cuid())
-  productId  String
-  color      String?
-  size       String?
-  age        String?
-  sku        String?
-  stock      Int         @default(0)
-  reservedQuantity Int   @default(0)
-  active     Boolean     @default(true)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-  product    Product     @relation("ProductVariants", fields: [productId], references: [id], onDelete: Cascade)
+  id               String      @id @default(cuid())
+  productId        String
+  color            String?
+  size             String?
+  age              String?
+  sku              String?
+  stock            Int         @default(0)
+  reservedQuantity Int         @default(0)
+  active           Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  product          Product     @relation("ProductVariants", fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variants")
 }
@@ -243,71 +243,74 @@ model CartItem {
 }
 
 model Order {
-  id                       String                      @id @default(cuid())
-  userId                     String
-  grossAmount                Float?
-  processorFee               Float?
-  netAmount                  Float?
-  platformCommission         Float?
-  vendorEarnings              Float?
-  commissionRate             Float?
-  total                      Float
-  status                     OrderStatus                @default(PENDING)
-  paymentStatus              PaymentStatus              @default(PENDING)
-  deletedAt                DateTime?
-  createdAt                DateTime                   @default(now())
-  updatedAt                DateTime                   @updatedAt
-customerAddress          String?
-   customerCity             String?
-   customerEmail            String?
-   customerFirstName        String?
-   customerLastName         String?
-   customerPhone            String?
-   customerRegion           String?
-  shipping                 Float?
-  shippingDaysMax          Int?
-  shippingDaysMin          Int?
-  shippingZone             String?
-  subtotal                 Float?
-  tax                      Float?
-  orderType                OrderType                  @default(NORMAL)
-  fulfillmentStatus        OrderFulfillmentStatus     @default(PENDING)
-  inventoryConsumedAt      DateTime?
-  allocatedAt              DateTime?
-  items                    OrderItem[]
-  user                     User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payment                  Payment?
-  productReviews           ProductReview[]
-  vendorReviews            VendorReview[]
-  fulfillmentEvents        FulfillmentEvent[]
+  id                    String                 @id @default(cuid())
+  userId                String
+  grossAmount           Float?
+  processorFee          Float?
+  netAmount             Float?
+  platformCommission    Float?
+  vendorEarnings        Float?
+  commissionRate        Float?
+  total                 Float
+  status                OrderStatus            @default(PENDING)
+  paymentStatus         PaymentStatus          @default(PENDING)
+  vendorAccepted        Boolean                @default(false)
+  vendorRejected        Boolean                @default(false)
+  vendorRejectionReason String?
+  deletedAt             DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  customerAddress       String?
+  customerCity          String?
+  customerEmail         String?
+  customerFirstName     String?
+  customerLastName      String?
+  customerPhone         String?
+  customerRegion        String?
+  shipping              Float?
+  shippingDaysMax       Int?
+  shippingDaysMin       Int?
+  shippingZone          String?
+  subtotal              Float?
+  tax                   Float?
+  orderType             OrderType              @default(NORMAL)
+  fulfillmentStatus     OrderFulfillmentStatus @default(PENDING)
+  inventoryConsumedAt   DateTime?
+  allocatedAt           DateTime?
+  items                 OrderItem[]
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment               Payment?
+  productReviews        ProductReview[]
+  vendorReviews         VendorReview[]
+  fulfillmentEvents     FulfillmentEvent[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id                 String                 @id @default(cuid())
-  orderId            String
-  productId          String
-  quantity           Int
-  price              Float
-  grossAmount        Float?
-  processorFee       Float?
-  netAmount          Float?
-  platformCommission Float?
-  vendorEarnings     Float?
-  commissionRate     Float?
-  createdAt          DateTime               @default(now())
-  age                String?
-  color              String?
-  productVariantId   String?
-  size               String?
-  availabilityType   ProductAvailabilityType?
+  id                  String                   @id @default(cuid())
+  orderId             String
+  productId           String
+  quantity            Int
+  price               Float
+  grossAmount         Float?
+  processorFee        Float?
+  netAmount           Float?
+  platformCommission  Float?
+  vendorEarnings      Float?
+  commissionRate      Float?
+  createdAt           DateTime                 @default(now())
+  age                 String?
+  color               String?
+  productVariantId    String?
+  size                String?
+  availabilityType    ProductAvailabilityType?
   expectedArrivalDate DateTime?
   expectedRestockDate DateTime?
-  allocatedQuantity  Int                    @default(0)
-  order              Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product            Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productVariant     ProductVariant?        @relation(fields: [productVariantId], references: [id])
+  allocatedQuantity   Int                      @default(0)
+  order               Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product             Product                  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariant      ProductVariant?          @relation(fields: [productVariantId], references: [id])
 
   @@map("order_items")
 }
@@ -753,18 +756,18 @@ enum SupplierDocumentType {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String
-  userRole    String
-  action      String
-  entityType  String
-  entityId    String?
-  beforeData  Json?
-  afterData   Json?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
+  id         String   @id @default(cuid())
+  userId     String
+  userRole   String
+  action     String
+  entityType String
+  entityId   String?
+  beforeData Json?
+  afterData  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])
@@ -775,20 +778,20 @@ model AuditLog {
 }
 
 model RestockOrder {
-  id                  String          @id @default(cuid())
+  id                  String             @id @default(cuid())
   productId           String
   vendorId            String
-  quantityOrdered     Int             @default(0)
-  quantityReceived    Int             @default(0)
+  quantityOrdered     Int                @default(0)
+  quantityReceived    Int                @default(0)
   status              RestockOrderStatus @default(ORDERED)
   expectedArrivalDate DateTime?
   actualArrivalDate   DateTime?
   notes               String?
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
-  product             Product         @relation(fields: [productId], references: [id])
-  vendor              User            @relation(fields: [vendorId], references: [id])
-  purchaseOrder       PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  product             Product            @relation(fields: [productId], references: [id])
+  vendor              User               @relation(fields: [vendorId], references: [id])
+  purchaseOrder       PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id])
   purchaseOrderId     String?
 
   @@index([vendorId])
@@ -798,35 +801,35 @@ model RestockOrder {
 }
 
 model Supplier {
-  id           String           @id @default(cuid())
-  companyName  String
-  contactPerson String?
-  email        String?
-  phone        String?
-  address      String?
-  country      String?
-  notes        String?
-  status       SupplierStatus   @default(ACTIVE)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id             String             @id @default(cuid())
+  companyName    String
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  country        String?
+  notes          String?
+  status         SupplierStatus     @default(ACTIVE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   purchaseOrders PurchaseOrder[]
-  documents    SupplierDocument[]
+  documents      SupplierDocument[]
 
   @@map("suppliers")
 }
 
 model SupplierDocument {
-  id          String              @id @default(cuid())
-  supplierId  String
+  id           String               @id @default(cuid())
+  supplierId   String
   documentType SupplierDocumentType
-  documentUrl String
-  fileName    String?
-  fileSize    Int?
-  mimeType    String?
-  metadata    Json?
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  supplier    Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  documentUrl  String
+  fileName     String?
+  fileSize     Int?
+  mimeType     String?
+  metadata     Json?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  supplier     Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([supplierId])
   @@index([documentType])
@@ -834,20 +837,20 @@ model SupplierDocument {
 }
 
 model PurchaseOrder {
-  id                  String             @id @default(cuid())
+  id                  String              @id @default(cuid())
   supplierId          String
   vendorId            String
-  poNumber            String?            @unique
+  poNumber            String?             @unique
   expectedArrivalDate DateTime?
   notes               String?
-  status              PurchaseOrderStatus  @default(DRAFT)
-  totalCost           Float              @default(0)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  status              PurchaseOrderStatus @default(DRAFT)
+  totalCost           Float               @default(0)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
   actualArrivalDate   DateTime?
   receivedAt          DateTime?
-  supplier            Supplier           @relation(fields: [supplierId], references: [id])
-  vendor              User               @relation(fields: [vendorId], references: [id])
+  supplier            Supplier            @relation(fields: [supplierId], references: [id])
+  vendor              User                @relation(fields: [vendorId], references: [id])
   items               PurchaseOrderItem[]
   restockOrders       RestockOrder[]
 

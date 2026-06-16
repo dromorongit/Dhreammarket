@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
+import { Textarea } from '@/components/Textarea'
 import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface OrderItem {
@@ -41,6 +42,9 @@ interface Order {
   updatedAt: string
   orderType: string
   fulfillmentStatus: string
+  vendorAccepted: boolean
+  vendorRejected: boolean
+  vendorRejectionReason?: string | null
   items: OrderItem[]
   payment: Payment | null
   vendorTotal: number
@@ -64,6 +68,13 @@ const ORDER_STATUS_CONFIG = {
   DELIVERED: { label: 'Delivered', description: 'Out for delivery', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
   COMPLETED: { label: 'Completed', description: 'Order complete', color: 'bg-green-100 text-green-800 border-green-300' },
   CANCELLED: { label: 'Cancelled', description: 'Order cancelled', color: 'bg-red-100 text-red-800 border-red-300' },
+}
+
+// Vendor acceptance status configuration
+const VENDOR_ACCEPTANCE_CONFIG = {
+  ACCEPTED: { label: 'Accepted', description: 'Order accepted by vendor', color: 'bg-green-100 text-green-800 border-green-300' },
+  REJECTED: { label: 'Rejected', description: 'Order rejected by vendor', color: 'bg-red-100 text-red-800 border-red-300' },
+  PENDING: { label: 'Pending Acceptance', description: 'Awaiting vendor acceptance', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
 }
 
 // Fulfillment status configuration
@@ -94,6 +105,9 @@ export default function VendorOrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [acceptanceAction, setAcceptanceAction] = useState<'accept' | 'reject' | null>(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [showRejectionDialog, setShowRejectionDialog] = useState(false)
 
   useEffect(() => {
     if (orderId) {
@@ -161,6 +175,68 @@ export default function VendorOrderDetailPage() {
     } finally {
       setUpdatingStatus(false)
     }
+  }
+
+  const handleAcceptanceAction = async (action: 'accept' | 'reject') => {
+    if (!order) return
+
+    setAcceptanceAction(action)
+    if (action === 'reject') {
+      setShowRejectionDialog(true)
+      return
+    }
+
+    await submitAcceptanceAction(action, null)
+  }
+
+  const submitAcceptanceAction = async (action: 'accept' | 'reject', reason: string | null) => {
+    if (!order) return
+
+    setUpdatingStatus(true)
+    try {
+      const response = await fetch(`/api/vendor/orders/${order.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          rejectionReason: reason,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || `Failed to ${action} order`)
+        return
+      }
+
+      const data = await response.json()
+      setOrder((prev) => prev ? { 
+        ...prev, 
+        vendorAccepted: data.order.vendorAccepted,
+        vendorRejected: data.order.vendorRejected,
+        vendorRejectionReason: data.order.vendorRejectionReason,
+        status: data.order.status || prev.status,
+        fulfillmentStatus: data.order.fulfillmentStatus || prev.fulfillmentStatus,
+        updatedAt: data.order.updatedAt 
+      } : null)
+      setShowRejectionDialog(false)
+      setRejectionReason('')
+    } catch (err) {
+      console.error(`Error ${action} order:`, err)
+      alert(`Failed to ${action} order`)
+    } finally {
+      setUpdatingStatus(false)
+      setAcceptanceAction(null)
+    }
+  }
+
+  const getVendorAcceptanceStatus = () => {
+    if (!order) return 'PENDING'
+    if (order.vendorAccepted) return 'ACCEPTED'
+    if (order.vendorRejected) return 'REJECTED'
+    return 'PENDING'
   }
 
 // Render fulfillment status progression
@@ -446,7 +522,89 @@ export default function VendorOrderDetailPage() {
                   {ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.label || order.status}
                 </span>
               </div>
+              <div>
+                <span className="text-xs text-gray-500 mr-2">Vendor Status:</span>
+                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                  VENDOR_ACCEPTANCE_CONFIG[getVendorAcceptanceStatus() as keyof typeof VENDOR_ACCEPTANCE_CONFIG]?.color || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {VENDOR_ACCEPTANCE_CONFIG[getVendorAcceptanceStatus() as keyof typeof VENDOR_ACCEPTANCE_CONFIG]?.label || 'Pending'}
+                </span>
+              </div>
             </div>
+
+            {/* Vendor Acceptance/Rejection Actions */}
+            {order.vendorAccepted || order.vendorRejected ? (
+              <div className="mb-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
+                {order.vendorAccepted && (
+                  <p className="text-sm text-green-700">
+                    <span className="font-medium">Order Accepted</span> - You have accepted this order. You can now proceed with processing.
+                  </p>
+                )}
+                {order.vendorRejected && (
+                  <div>
+                    <p className="text-sm text-red-700 font-medium">Order Rejected</p>
+                    {order.vendorRejectionReason && (
+                      <p className="text-sm text-gray-600 mt-1">Reason: {order.vendorRejectionReason}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mb-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                <p className="text-sm text-yellow-800 mb-3 font-medium">This order requires your acceptance</p>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => handleAcceptanceAction('accept')}
+                    disabled={updatingStatus}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {updatingStatus && acceptanceAction === 'accept' ? 'Accepting...' : 'Accept Order'}
+                  </Button>
+                  <Button
+                    onClick={() => handleAcceptanceAction('reject')}
+                    disabled={updatingStatus}
+                    variant="outline"
+                    className="flex-1 sm:flex-none border-red-300 text-red-700 hover:bg-red-50"
+                  >
+                    {updatingStatus && acceptanceAction === 'reject' ? 'Rejecting...' : 'Reject Order'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Rejection Dialog */}
+            {showRejectionDialog && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <Card className="w-full max-w-md">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject Order</h3>
+                    <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting this order. This will cancel the order.</p>
+                    <Textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Enter rejection reason..."
+                      rows={3}
+                    />
+                    <div className="flex gap-3 justify-end mt-4">
+                      <Button
+                        onClick={() => setShowRejectionDialog(false)}
+                        variant="outline"
+                        disabled={updatingStatus}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => submitAcceptanceAction('reject', rejectionReason)}
+                        disabled={updatingStatus || !rejectionReason.trim()}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {updatingStatus ? 'Rejecting...' : 'Reject Order'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Fulfillment Progress */}
             {renderFulfillmentProgress()}

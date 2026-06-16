@@ -37,7 +37,13 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ orders })
+    return NextResponse.json({ 
+      orders: orders.map(order => ({
+        ...order,
+        vendorAccepted: order.vendorAccepted,
+        vendorRejected: order.vendorRejected,
+      })) 
+    })
   } catch (error) {
     console.error('Error fetching orders:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

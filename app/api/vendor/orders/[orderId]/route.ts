@@ -11,6 +11,9 @@ export const dynamic = 'force-dynamic'
 // Valid statuses that vendors can update
 const VENDOR_VALID_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
 
+// Valid acceptance/rejection actions
+const VENDOR_ACCEPTANCE_ACTIONS = ['accept', 'reject']
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { orderId: string } }
@@ -114,6 +117,9 @@ export async function GET(
       order: {
         ...order,
         vendorTotal,
+        vendorAccepted: order.vendorAccepted,
+        vendorRejected: order.vendorRejected,
+        vendorRejectionReason: order.vendorRejectionReason,
       },
     })
   } catch (error) {
@@ -147,7 +153,7 @@ export async function PATCH(
 
     const orderId = params.orderId
     const body = await request.json()
-    const { status, fulfillmentStatus } = body
+    const { status, fulfillmentStatus, action, rejectionReason } = body
 
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
@@ -170,7 +176,7 @@ export async function PATCH(
     const existingOrder = await getPrisma().order.findFirst({
       where: {
         id: orderId,
-        deletedAt: null, // Exclude soft-deleted orders
+        deletedAt: null,
         paymentStatus: 'PAID',
         items: {
           some: {
@@ -189,6 +195,47 @@ export async function PATCH(
 
     const updateData: any = {}
     
+    // Handle acceptance/rejection action
+    if (action !== undefined) {
+      if (!VENDOR_ACCEPTANCE_ACTIONS.includes(action)) {
+        return NextResponse.json(
+          { error: 'Invalid action. Must be one of: ' + VENDOR_ACCEPTANCE_ACTIONS.join(', ') },
+          { status: 400 }
+        )
+      }
+
+      if (action === 'accept') {
+        if (existingOrder.vendorAccepted) {
+          return NextResponse.json(
+            { error: 'Order already accepted' },
+            { status: 400 }
+          )
+        }
+        updateData.vendorAccepted = true
+        updateData.vendorRejected = false
+        updateData.vendorRejectionReason = null
+      } else if (action === 'reject') {
+        if (existingOrder.vendorRejected) {
+          return NextResponse.json(
+            { error: 'Order already rejected' },
+            { status: 400 }
+          )
+        }
+        if (!rejectionReason || rejectionReason.trim().length === 0) {
+          return NextResponse.json(
+            { error: 'Rejection reason is required' },
+            { status: 400 }
+          )
+        }
+        updateData.vendorAccepted = false
+        updateData.vendorRejected = true
+        updateData.vendorRejectionReason = rejectionReason.trim()
+        // Also cancel the order when rejected
+        updateData.status = 'CANCELLED'
+        updateData.fulfillmentStatus = 'CANCELLED'
+      }
+    }
+
     if (status !== undefined) {
       if (!VENDOR_VALID_STATUSES.includes(status)) {
         return NextResponse.json(
@@ -196,7 +243,24 @@ export async function PATCH(
           { status: 400 }
         )
       }
+      // Prevent status updates if order is rejected
+      if (existingOrder.vendorRejected) {
+        return NextResponse.json(
+          { error: 'Cannot update status for a rejected order' },
+          { status: 400 }
+        )
+      }
       updateData.status = status
+    }
+
+    if (fulfillmentStatus !== undefined) {
+      // Prevent fulfillment status updates if order is rejected
+      if (existingOrder.vendorRejected) {
+        return NextResponse.json(
+          { error: 'Cannot update fulfillment status for a rejected order' },
+          { status: 400 }
+        )
+      }
     }
 
     const isConsumptionStatus = fulfillmentStatus === 'DELIVERED' || fulfillmentStatus === 'COMPLETED' || status === 'DELIVERED' || status === 'COMPLETED'
@@ -288,6 +352,9 @@ export async function PATCH(
         id: updatedOrder.id,
         status: updatedOrder.status,
         fulfillmentStatus: updatedOrder.fulfillmentStatus,
+        vendorAccepted: updatedOrder.vendorAccepted,
+        vendorRejected: updatedOrder.vendorRejected,
+        vendorRejectionReason: updatedOrder.vendorRejectionReason,
         updatedAt: updatedOrder.updatedAt,
       },
     })

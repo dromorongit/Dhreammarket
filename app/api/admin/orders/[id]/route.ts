@@ -98,31 +98,34 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const storeGroups = Object.values(itemsByStore)
 
 return NextResponse.json({
-       order: {
-         id: order.id,
-         total: order.total,
-         status: order.status,
-         paymentStatus: order.paymentStatus,
-         orderType: order.orderType,
-         fulfillmentStatus: order.fulfillmentStatus,
-         createdAt: order.createdAt.toISOString(),
-         updatedAt: order.updatedAt.toISOString(),
-         customerName,
-         customerEmail: order.user.email,
-         customerPhone: order.user.profile?.phone || null,
-         customerAddress: order.customerAddress,
-         customerCity: order.customerCity,
-         storeGroups,
-         payment: order.payment ? {
-           id: order.payment.id,
-           amount: order.payment.amount,
-           status: order.payment.status,
-           reference: order.payment.reference,
-           paystackRef: order.payment.paystackRef,
-           createdAt: order.payment.createdAt.toISOString(),
-         } : null,
-       },
-     })
+      order: {
+        id: order.id,
+        total: order.total,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        orderType: order.orderType,
+        fulfillmentStatus: order.fulfillmentStatus,
+        vendorAccepted: order.vendorAccepted,
+        vendorRejected: order.vendorRejected,
+        vendorRejectionReason: order.vendorRejectionReason,
+        createdAt: order.createdAt.toISOString(),
+        updatedAt: order.updatedAt.toISOString(),
+        customerName,
+        customerEmail: order.user.email,
+        customerPhone: order.user.profile?.phone || null,
+        customerAddress: order.customerAddress,
+        customerCity: order.customerCity,
+        storeGroups,
+        payment: order.payment ? {
+          id: order.payment.id,
+          amount: order.payment.amount,
+          status: order.payment.status,
+          reference: order.payment.reference,
+          paystackRef: order.payment.paystackRef,
+          createdAt: order.payment.createdAt.toISOString(),
+        } : null,
+      },
+    })
   } catch (error) {
     console.error('Admin order detail error:', error)
     return NextResponse.json({ error: 'Failed to fetch order details' }, { status: 500 })

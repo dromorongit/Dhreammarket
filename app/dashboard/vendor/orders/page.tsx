@@ -25,6 +25,8 @@ interface Order {
   paymentStatus: string
   createdAt: string
   updatedAt: string
+  vendorAccepted: boolean
+  vendorRejected: boolean
   vendorTotal: number
   items: OrderItem[]
   user: {
@@ -50,6 +52,12 @@ const ORDER_STATUS_CONFIG = {
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
   COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-800' },
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
+}
+
+const VENDOR_ACCEPTANCE_CONFIG = {
+  ACCEPTED: { label: 'Accepted', color: 'bg-green-100 text-green-800' },
+  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
+  PENDING: { label: 'Pending Acceptance', color: 'bg-yellow-100 text-yellow-800' },
 }
 
 export default function VendorOrdersPage() {
@@ -231,43 +239,46 @@ export default function VendorOrdersPage() {
           </Card>
         ) : (
           <>
-            <div className="space-y-4">
-              {orders.map((order) => (
-                <Card key={order.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-gray-500">Order #{order.id.slice(-8).toUpperCase()}</span>
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}`}>
-                            {ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.label || order.status}
-                          </span>
-                        </div>
-                        <p className="font-medium text-gray-900">{getCustomerName(order)}</p>
-                        <p className="text-sm text-gray-600">{order.user.email}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(order.createdAt).toLocaleDateString('en-GH', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Your Total</p>
-                        <p className="text-xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</p>
-                        <p className="text-xs text-gray-500">{order.items.length} item(s)</p>
-                      </div>
-                      <Link href={`/dashboard/vendor/orders/${order.id}`}>
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+<div className="space-y-4">
+               {orders.map((order) => (
+                 <Card key={order.id} className="hover:shadow-md transition-shadow">
+                   <CardContent className="p-6">
+                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                       <div className="flex-1">
+                         <div className="flex items-center gap-3 mb-2">
+                           <span className="text-sm font-medium text-gray-500">Order #{order.id.slice(-8).toUpperCase()}</span>
+                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}`}>
+                             {ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.label || order.status}
+                           </span>
+                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.color || 'bg-gray-100 text-gray-800'}`}>
+                             {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label || 'Pending'}
+                           </span>
+                         </div>
+                         <p className="font-medium text-gray-900">{getCustomerName(order)}</p>
+                         <p className="text-sm text-gray-600">{order.user.email}</p>
+                         <p className="text-xs text-gray-500 mt-1">
+                           {new Date(order.createdAt).toLocaleDateString('en-GH', {
+                             year: 'numeric',
+                             month: 'short',
+                             day: 'numeric',
+                           })}
+                         </p>
+                       </div>
+                       <div className="text-right">
+                         <p className="text-sm text-gray-500">Your Total</p>
+                         <p className="text-xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</p>
+                         <p className="text-xs text-gray-500">{order.items.length} item(s)</p>
+                       </div>
+                       <Link href={`/dashboard/vendor/orders/${order.id}`}>
+                         <Button variant="outline" size="sm">
+                           View Details
+                         </Button>
+                       </Link>
+                     </div>
+                   </CardContent>
+                 </Card>
+               ))}
+             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (

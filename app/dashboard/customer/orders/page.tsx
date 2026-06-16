@@ -42,6 +42,8 @@ interface Order {
   paymentStatus: string
   orderType: string
   fulfillmentStatus: string
+  vendorAccepted: boolean
+  vendorRejected: boolean
   createdAt: string
   updatedAt: string
   items: OrderItem[]
@@ -49,6 +51,12 @@ interface Order {
   shippingZone?: string | null
   shippingDaysMin?: number | null
   shippingDaysMax?: number | null
+}
+
+const VENDOR_ACCEPTANCE_CONFIG = {
+  ACCEPTED: { label: 'Accepted', color: 'bg-green-100 text-green-800' },
+  REJECTED: { label: 'Rejected', color: 'bg-red-100 text-red-800' },
+  PENDING: { label: 'Pending Acceptance', color: 'bg-yellow-100 text-yellow-800' },
 }
 
 const ORDER_STATUS_CONFIG = {
@@ -239,6 +247,12 @@ export default function CustomerOrdersPage() {
                             {FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.label?.split(' ')[0] || order.fulfillmentStatus}
                           </Badge>
                         )}
+                        <Badge 
+                          variant={order.vendorAccepted ? 'success' : order.vendorRejected ? 'danger' : 'warning'} 
+                          size="sm"
+                        >
+                          {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label}
+                        </Badge>
                         <Badge 
                           variant={order.paymentStatus === 'PAID' ? 'success' : order.paymentStatus === 'PENDING' ? 'warning' : 'danger'} 
                           size="sm"

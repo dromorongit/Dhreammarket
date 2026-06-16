@@ -64,7 +64,14 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ order })
+    return NextResponse.json({
+      order: {
+        ...order,
+        vendorAccepted: order.vendorAccepted,
+        vendorRejected: order.vendorRejected,
+        vendorRejectionReason: order.vendorRejectionReason,
+      },
+    })
   } catch (error) {
     console.error('Error fetching customer order detail:', error)
     return NextResponse.json(

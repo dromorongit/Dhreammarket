@@ -46,6 +46,9 @@ interface Order {
   paymentStatus: string
   orderType: string
   fulfillmentStatus: string
+  vendorAccepted: boolean
+  vendorRejected: boolean
+  vendorRejectionReason?: string | null
   createdAt: string
   updatedAt: string
   items: OrderItem[]
@@ -68,6 +71,12 @@ interface FulfillmentEvent {
   title: string
   description: string | null
   createdAt: string
+}
+
+const VENDOR_ACCEPTANCE_CONFIG = {
+  ACCEPTED: { label: 'Accepted by Vendor', color: 'bg-green-100 text-green-800' },
+  REJECTED: { label: 'Rejected by Vendor', color: 'bg-red-100 text-red-800' },
+  PENDING: { label: 'Awaiting Vendor Acceptance', color: 'bg-yellow-100 text-yellow-800' },
 }
 
 // Order status configuration for timeline display
@@ -359,6 +368,20 @@ export default function CustomerOrderDetailPage() {
                   {statusConfig.label}
                 </span>
               </div>
+              <div>
+                <span className="text-xs text-gray-500 mr-2">Vendor Status:</span>
+                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                  VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.color || 'bg-gray-100 text-gray-800'
+                }`}>
+                  {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label || 'Pending'}
+                </span>
+              </div>
+              {order.vendorRejected && order.vendorRejectionReason && (
+                <div className="w-full mt-2">
+                  <p className="text-xs text-gray-500">Rejection Reason:</p>
+                  <p className="text-sm text-red-700">{order.vendorRejectionReason}</p>
+                </div>
+              )}
               {(order.orderType === 'PREORDER' || order.orderType === 'BACKORDER') && (
                 <div>
                   <span className="text-xs text-gray-500 mr-2">Fulfillment:</span>
