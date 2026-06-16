@@ -57,7 +57,7 @@ const skip = (page - 1) * limit
 
     // Build where clause for orders
     const orderWhere: Record<string, unknown> = {
-      paymentStatus: 'PAID', // Only show paid orders to vendors
+      paymentStatus: { in: ['PAID', 'PENDING'] }, // Show both paid and pending orders to vendors
     }
 
     // Filter by order status

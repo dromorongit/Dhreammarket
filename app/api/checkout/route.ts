@@ -272,12 +272,29 @@ export async function POST(request: NextRequest) {
         console.error('Failed to send order confirmation email:', err)
       })
 
-// Create in-app notification
-       createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: GHS ${total.toFixed(2)}`).catch(err => {
-         console.error('Failed to create notification:', err)
-       })
+// Create in-app notification for customer
+        createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: GHS ${total.toFixed(2)}`).catch(err => {
+          console.error('Failed to create notification:', err)
+        })
 
-       // Record fulfillment events
+        // Notify vendors about new orders
+        const vendorStores = new Set<string>()
+        for (const item of cart.items) {
+          vendorStores.add(item.product.storeId)
+        }
+        for (const storeId of vendorStores) {
+          const store = await getPrisma().store.findUnique({
+            where: { id: storeId },
+            select: { userId: true }
+          })
+          if (store?.userId) {
+            createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: GHS ${total.toFixed(2)}`).catch(err => {
+              console.error('Failed to create vendor notification:', err)
+            })
+          }
+        }
+
+        // Record fulfillment events
        if (orderType === 'PREORDER') {
          const firstItem = cart.items[0]
          recordFulfillmentEvent(result.order.id, 'PREORDER_PLACED', payload.userId, {
