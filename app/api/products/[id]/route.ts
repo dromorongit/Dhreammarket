@@ -449,9 +449,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const token = request.cookies.get('token')?.value
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -479,7 +480,7 @@ export async function DELETE(
 
     // Check if product exists and belongs to vendor
     const product = await getPrisma().product.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!product) {
@@ -490,13 +491,33 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Check for existing restock orders
+    const restockOrdersCount = await getPrisma().restockOrder.count({
+      where: { productId: id },
+    })
+    if (restockOrdersCount > 0) {
+      return NextResponse.json({ 
+        error: 'Cannot delete product with pending restock orders. Cancel or wait for them to complete first.' 
+      }, { status: 400 })
+    }
+
+    // Check for existing purchase order items
+    const purchaseOrderItemsCount = await getPrisma().purchaseOrderItem.count({
+      where: { productId: id },
+    })
+    if (purchaseOrderItemsCount > 0) {
+      return NextResponse.json({ 
+        error: 'Cannot delete product linked to purchase orders. Remove from purchase orders first.' 
+      }, { status: 400 })
+    }
+
     // Create audit log before deletion
     await createAuditLog({
       userId: payload.userId,
       userRole: payload.role,
       action: 'PRODUCT_DELETED',
       entityType: 'PRODUCT',
-      entityId: params.id,
+      entityId: id,
       beforeData: {
         id: product.id,
         name: product.name,
@@ -509,12 +530,20 @@ export async function DELETE(
 
     // Delete product (cascade will handle images)
     await getPrisma().product.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Product deleted successfully' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting product:', error)
+    
+    // Handle Prisma foreign key constraint errors
+    if (error.code === 'P2003' || error.code === 'P2006') {
+      return NextResponse.json({ 
+        error: 'Cannot delete product because it is referenced by other records. Please remove related orders, restock orders, or purchase orders first.' 
+      }, { status: 400 })
+    }
+    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
       error: 'Internal server error', 

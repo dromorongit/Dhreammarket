@@ -97,7 +97,8 @@ export default function VendorProducts() {
         alert('Product deleted successfully!')
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to delete product')
+        console.error('[Delete Product] Error response:', error)
+        alert(error.error || error.details || 'Failed to delete product')
       }
     } catch (error) {
       console.error('Error deleting product:', error)
