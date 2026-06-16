@@ -282,7 +282,8 @@ export async function POST(request: NextRequest) {
         for (const item of cart.items) {
           vendorStores.add(item.product.storeId)
         }
-        for (const storeId of vendorStores) {
+        const vendorStoreIds = Array.from(vendorStores)
+        for (const storeId of vendorStoreIds) {
           const store = await getPrisma().store.findUnique({
             where: { id: storeId },
             select: { userId: true }
