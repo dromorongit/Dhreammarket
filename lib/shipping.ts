@@ -144,12 +144,26 @@ export function calculateShipping(items: Array<{ product: { price: number; weigh
 }
 
 // Get all available regions for dropdown
+// Returns the 16 regions of Ghana
 export function getAvailableRegions(): string[] {
-  const regions = new Set<string>()
-  SHIPPING_ZONES.forEach(zone => {
-    zone.regions.forEach(region => regions.add(region))
-  })
-  return Array.from(regions).sort()
+  return [
+    'Ashanti Region',
+    'Brong-Ahafo Region',
+    'Central Region',
+    'Eastern Region',
+    'Greater Accra Region',
+    'Northern Region',
+    'Upper East Region',
+    'Upper West Region',
+    'Volta Region',
+    'Western Region',
+    'Western North Region',
+    'Ahafo Region',
+    'Bono East Region',
+    'Savannah Region',
+    'North East Region',
+    'Oti Region'
+]
 }
 
 // Get all available zones for admin

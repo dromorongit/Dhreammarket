@@ -257,12 +257,13 @@ model Order {
   deletedAt                DateTime?
   createdAt                DateTime                   @default(now())
   updatedAt                DateTime                   @updatedAt
-  customerAddress          String?
-  customerCity             String?
-  customerEmail            String?
-  customerFirstName        String?
-  customerLastName         String?
-  customerPhone            String?
+customerAddress          String?
+   customerCity             String?
+   customerEmail            String?
+   customerFirstName        String?
+   customerLastName         String?
+   customerPhone            String?
+   customerRegion           String?
   shipping                 Float?
   shippingDaysMax          Int?
   shippingDaysMin          Int?
