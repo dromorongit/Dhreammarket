@@ -3,6 +3,7 @@ import './globals.css'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { CartProvider } from '@/lib/CartContext'
+import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 
 export const metadata: Metadata = {
   title: 'Dhream Market - Powering Digital Trade',
@@ -26,6 +27,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <CookieConsentBanner />
         </CartProvider>
       </body>
     </html>

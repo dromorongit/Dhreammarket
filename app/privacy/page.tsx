@@ -224,15 +224,31 @@ export default function PrivacyPolicyPage() {
                 </p>
               </section>
 
-              <section className="mb-8">
+<section className="mb-8">
                 <h2 className="text-2xl font-semibold text-deep-navy mb-4 flex items-center gap-3">
                   <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white text-sm font-bold">7</span>
                   Cookies and Tracking
                 </h2>
+                <p className="text-slate-600 mb-4">
+                  We use cookies and similar tracking technologies to enhance your experience on our platform.
+                </p>
+                <h3 className="text-xl font-medium text-deep-navy mb-3">Types of Cookies We Use</h3>
+                <ul className="space-y-3 mb-4">
+                  <li className="flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-royal-blue mt-2 flex-shrink-0"></span>
+                    <span className="text-slate-600"><span className="font-medium">Necessary Cookies:</span> Essential for the website to function properly. These enable core functionalities like page navigation and access to secure areas. Cannot be disabled.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-royal-blue mt-2 flex-shrink-0"></span>
+                    <span className="text-slate-600"><span className="font-medium">Analytics Cookies:</span> Help us understand how visitors interact with our website by collecting and reporting information anonymously.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-2 h-2 rounded-full bg-royal-blue mt-2 flex-shrink-0"></span>
+                    <span className="text-slate-600"><span className="font-medium">Marketing Cookies:</span> Used to track visitors across websites to deliver personalized advertisements relevant to your interests.</span>
+                  </li>
+                </ul>
                 <p className="text-slate-600">
-                  We use cookies and similar tracking technologies to enhance your experience. You can 
-                  control cookies through your browser settings. Disabling cookies may affect some 
-                  features of our platform.
+                  You can control cookies through your browser settings. Disabling cookies may affect some features of our platform. When you first visit our site, you&apos;ll see a cookie consent banner where you can manage your preferences.
                 </p>
               </section>
 
