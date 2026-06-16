@@ -39,10 +39,10 @@ export default function RefundsGuide() {
                   Contact the vendor directly through your order to initiate a refund request.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 1 (Alternative): Cancel Before Shipping</h3>
-                <p className="text-slate-600 mb-3">
-                  If your order hasn't been shipped yet, you can cancel it directly from your order details page.
-                  For paid orders, you can also request a refund during cancellation.
-                </p>
+<p className="text-slate-600 mb-3">
+                   If your order hasn&apos;t been shipped yet, you can cancel it directly from your order details page.
+                   For paid orders, you can also request a refund during cancellation.
+                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Provide Details</h3>
                 <p className="text-slate-600 mb-3">
                   Explain the issue and provide photos if applicable. Include your order number.
