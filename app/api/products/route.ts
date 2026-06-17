@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
             name: true,
             isVerified: true,
             logo: true,
+            badgeTier: true,
           },
         },
       },
