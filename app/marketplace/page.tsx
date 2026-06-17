@@ -421,7 +421,7 @@ const fetchVendors = async () => {
         </video>
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
-          <div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>
+<div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center text-white">
@@ -434,30 +434,30 @@ const fetchVendors = async () => {
             <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
               Browse our curated selection of quality products from trusted vendors worldwide.
             </p>
-<div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
-               <form 
-                 onSubmit={(e) => {
-                   e.preventDefault()
-                   const input = (e.target as HTMLFormElement).querySelector('input') as HTMLInputElement
-                   const searchQuery = input.value.trim()
-                   if (searchQuery) {
-                     router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
-                   }
-                 }}
-                 className="relative flex-1"
-               >
-                 <input
-                   type="text"
-                   placeholder="Search products, vendors, categories, brands..."
-                   className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-4 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                 />
-                 <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 hover:text-white transition-colors">
-                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                   </svg>
-                 </button>
-               </form>
-             </div>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  const input = (e.target as HTMLFormElement).querySelector('input') as HTMLInputElement
+                  const searchQuery = input.value.trim()
+                  if (searchQuery) {
+                    router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+                  }
+                }}
+                className="relative flex-1"
+              >
+                <input
+                  type="text"
+                  placeholder="Search products, vendors, categories, brands..."
+                  className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-4 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                />
+                <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 hover:text-white transition-colors">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </section>
@@ -552,19 +552,19 @@ const fetchVendors = async () => {
                 onAction={() => setSelectedCategory('')}
               />
 ) : (
-               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                 {filteredProducts.map((product) => {
-                   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                   const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-                   const discountPercentage = hasDiscount ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-                   return (
-                     <Card
-                       key={product.id}
-                       variant="elevated"
-                       className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
-                     >
-                       <Link href={`/marketplace/product/${product.id}`} className="block">
-<div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {filteredProducts.map((product) => {
+                    const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+                    const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
+                    const discountPercentage = hasDiscount ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+                    return (
+                      <Card
+                        key={product.id}
+                        variant="elevated"
+                        className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+                      >
+                        <Link href={`/marketplace/product/${product.id}`} className="block">
+                          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
                             {(product.images?.length ?? 0) > 0 ? (
                               <img
                                 src={product.images![0].url}
@@ -575,67 +575,59 @@ const fetchVendors = async () => {
                             ) : (
                               <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-<ProductBadges product={calculateProductBadges({
-                              price: product.price,
-                              flashSalePrice: product.flashSalePrice,
-                              salesPrice: product.salesPrice,
-                              dealsPrice: product.dealsPrice,
-                              stock: product.stock,
-                              availabilityType: product.availabilityType,
-                              expectedArrivalDate: product.expectedArrivalDate,
-                              expectedRestockDate: product.expectedRestockDate,
-                            })} />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                </div>
+                              )}
+                            <ProductBadges product={calculateProductBadges({
+                                price: product.price,
+                                flashSalePrice: product.flashSalePrice,
+                                salesPrice: product.salesPrice,
+                                dealsPrice: product.dealsPrice,
+                                stock: product.stock,
+                                availabilityType: product.availabilityType,
+                                expectedArrivalDate: product.expectedArrivalDate,
+                                expectedRestockDate: product.expectedRestockDate,
+                              })} />
                           </div>
                         </Link>
-                       <div className="p-2 space-y-1 flex-1 flex flex-col">
-                         <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                           {product.name}
-                         </h3>
-                         <div className="flex items-center gap-1.5 flex-wrap">
-                           <span className="text-[11px] font-bold text-royal-blue">
-                             {formatPrice(effectivePrice)}
-                           </span>
-                           {discountPercentage > 0 && (
-                             <span className="text-[10px] text-slate-400 line-through">
-                               {formatPrice(product.price)}
-                             </span>
-                           )}
-                         </div>
-{product.store && (
-                             <div className="flex items-center gap-1 min-w-0">
-                               <p className="text-[10px] text-slate-500 truncate">
-                                 {product.store.name}
-                               </p>
-                               {(() => {
-                                 const badgeInfo = getVendorBadgeInfo(product.store!.badgeTier as any)
-                                 if (badgeInfo) {
-                                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                                   return (
-                                     <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
-                                   )
-                                 }
-                                 if (product.store!.isVerified) {
-                                   return (
-                                     <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
-                                   )
-                                 }
-                                 return null
-                               })()}
-                               {(() => {
-                                 const badgeInfo = getVendorBadgeInfo(product.store!.badgeTier as any)
-                                 return badgeInfo ? (
-                                   <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
-                                     {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
-                                   </Badge>
-                                 ) : null
-                               })()}
-                             </div>
-                           )}
-                         <div className="flex flex-col gap-1 pt-0.5">
+                        <div className="p-2 space-y-1 flex-1 flex flex-col">
+                          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                            {product.name}
+                          </h3>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[11px] font-bold text-royal-blue">
+                              {formatPrice(effectivePrice)}
+                            </span>
+                            {discountPercentage > 0 && (
+                              <span className="text-[10px] text-slate-400 line-through">
+                                {formatPrice(product.price)}
+                              </span>
+                            )}
+                          </div>
+                          {product.store && (
+                            <div className="flex items-center gap-1 min-w-0">
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {product.store.name}
+                              </p>
+                              {(() => {
+                                const badgeInfo = getVendorBadgeInfo(product.store!.badgeTier as any)
+                                if (badgeInfo) {
+                                  const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                                  return (
+                                    <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                                  )
+                                }
+                                if (product.store!.isVerified) {
+                                  return (
+                                    <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                                  )
+                                }
+                                return null
+                              })()}
+                            </div>
+                          )}
+                          <div className="flex flex-col gap-1 pt-0.5">
 <Button
                               size="sm"
                               className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
@@ -677,58 +669,58 @@ const fetchVendors = async () => {
                 actionLabel="Browse All Vendors"
                 onAction={() => setSelectedVendorCategory('')}
               />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-{filteredVendors.map((vendor) => (
-                   <Card
-                     key={vendor.id}
-                     variant="elevated"
-                     className="group overflow-hidden cursor-pointer"
-                   >
-                     <Link href={`/vendor/${vendor.id}`} className="block">
-                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-                         {vendor.logo ? (
-                           <img
-                             src={vendor.logo}
-                             alt={`${vendor.name} logo`}
-                             className="absolute inset-0 w-full h-full object-cover opacity-50"
-                           />
-                         ) : (
-                           <div className="absolute inset-0 flex items-center justify-center">
-                             <span className="text-4xl font-bold text-white opacity-30">
-                               {vendor.name.charAt(0)}
-                             </span>
-                           </div>
-                         )}
-                         {vendor.isFeatured && (
-                           <div className="absolute top-3 left-3">
-                             <Badge variant="premium" size="sm">
-                               Featured
-                             </Badge>
-                           </div>
-                         )}
-                       </div>
-<CardContent className="p-4 min-w-0">
-<div className="flex items-center gap-1 min-w-0">
+) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredVendors.map((vendor) => (
+                    <Card
+                      key={vendor.id}
+                      variant="elevated"
+                      className="group overflow-hidden cursor-pointer"
+                    >
+                      <Link href={`/vendor/${vendor.id}`} className="block">
+                        <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+                          {vendor.logo ? (
+                            <img
+                              src={vendor.logo}
+                              alt={`${vendor.name} logo`}
+                              className="absolute inset-0 w-full h-full object-cover opacity-50"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-4xl font-bold text-white opacity-30">
+                                {vendor.name.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          {vendor.isFeatured && (
+                            <div className="absolute top-3 left-3">
+                              <Badge variant="premium" size="sm">
+                                Featured
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="p-4 min-w-0">
+                          <div className="flex items-center gap-1 min-w-0">
                             <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {truncateVendorName(vendor.name)}
                             </h3>
-{(() => {
-                                const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                                if (badgeInfo) {
-                                  const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                                  return (
-<MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
-                                  )
-                                }
-                                if (vendor.isVerified) {
-                                  return (
-                                    <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                                  )
-                                }
-                                return null
-                              })()}
-                           </div>
+                            {(() => {
+                              const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                              if (badgeInfo) {
+                                const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                                return (
+                                  <MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
+                                )
+                              }
+                              if (vendor.isVerified) {
+                                return (
+                                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                )
+                              }
+                              return null
+                            })()}
+                          </div>
                           {vendor.category && (
                             <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {vendor.category.name}
