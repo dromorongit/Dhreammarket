@@ -286,7 +286,7 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
 {(() => {
                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                  if (badgeInfo) {
-                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                    return (
                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
                    )
@@ -356,7 +356,7 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
 {(() => {
                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                  if (badgeInfo) {
-                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                    return (
                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
                    )
@@ -426,7 +426,7 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
 {(() => {
                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                  if (badgeInfo) {
-                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                    return (
                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
                    )
@@ -499,7 +499,7 @@ function StandardCard({
 {(() => {
                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                  if (badgeInfo) {
-                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                    return (
                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
                    )

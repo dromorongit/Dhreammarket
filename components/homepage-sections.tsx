@@ -133,7 +133,7 @@ function CompactProductCard({ product }: { product: Product }) {
                {(() => {
                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                  if (badgeInfo) {
-                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                    return (
                      <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
                    )
@@ -308,7 +308,7 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
                      {(() => {
                        const badgeInfo = getVendorBadgeInfo((vendor as any).badgeTier)
                        if (badgeInfo) {
-                         const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                         const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                          return (
                            <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
                          )

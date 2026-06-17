@@ -370,7 +370,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                            {(() => {
                              const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
                              if (badgeInfo) {
-                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                                return (
                                  <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
                                )
@@ -432,7 +432,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                            {(() => {
                              const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
                              if (badgeInfo) {
-                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                                return (
                                  <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
                                )

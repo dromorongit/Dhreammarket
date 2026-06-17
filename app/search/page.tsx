@@ -323,7 +323,7 @@ function SearchPageContent() {
                                 {(() => {
                                   const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
                                   if (badgeInfo) {
-                                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                                     return (
                                       <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
                                     )
@@ -558,7 +558,7 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
                 {(() => {
                   const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                   if (badgeInfo) {
-                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                     return (
                       <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
                     )
