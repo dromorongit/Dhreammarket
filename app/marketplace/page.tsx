@@ -709,20 +709,25 @@ const fetchVendors = async () => {
                          )}
                        </div>
 <CardContent className="p-4 min-w-0">
-                          <div className="flex items-center gap-1 min-w-0">
+<div className="flex items-center gap-1 min-w-0">
                             <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {truncateVendorName(vendor.name)}
                             </h3>
 {(() => {
-                               if (vendor.isVerified) {
-                                 const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                                 const iconColor = badgeInfo ? (badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500') : 'text-sky-500'
-                                 return (
-                                   <MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
-                                 )
-                               }
-                               return null
-                             })()}
+                                const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                                if (badgeInfo) {
+                                  const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                                  return (
+<MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
+                                  )
+                                }
+                                if (vendor.isVerified) {
+                                  return (
+                                    <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                  )
+                                }
+                                return null
+                              })()}
                            </div>
                           {vendor.category && (
                             <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
