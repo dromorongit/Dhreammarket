@@ -17,27 +17,27 @@ model User {
   updatedAt                DateTime                       @updatedAt
   resetPasswordToken       String?
   resetPasswordExpires     DateTime?
-  isEmailVerified          Boolean                        @default(false)
   emailVerifiedAt          DateTime?
+  isEmailVerified          Boolean                        @default(false)
+  auditLogs                AuditLog[]
+  authTokens               AuthToken[]
   cart                     Cart?
   feedbacks                Feedback[]
   homepageSections         HomepageSectionVendor[]
   notifications            Notification[]
+  orderMessages            OrderMessage[]
   orders                   Order[]
   payments                 Payment[]
   productReviews           ProductReview[]
   profile                  Profile?
+  purchaseOrders           PurchaseOrder[]
+  restockOrders            RestockOrder[]
   store                    Store?
   supportTickets           SupportTicket[]
   vendorPayouts            VendorPayout[]                 @relation("VendorPayoutVendor")
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication?
   verificationAuditLogs    VerificationAuditLog[]
-  auditLogs                AuditLog[]
-  restockOrders            RestockOrder[]
-  purchaseOrders           PurchaseOrder[]
-  orderMessages            OrderMessage[]
-  authTokens               AuthToken[]
 
   @@map("users")
 }
@@ -46,27 +46,19 @@ model AuthToken {
   id        String    @id @default(cuid())
   userId    String
   tokenType TokenType
-  selector  String?   @unique
   tokenHash String
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
   ipAddress String?
   userAgent String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selector  String?   @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, tokenType])
   @@index([userId, tokenType, expiresAt])
   @@index([expiresAt])
   @@map("auth_tokens")
-}
-
-enum TokenType {
-  EMAIL_VERIFICATION
-  PASSWORD_RESET
-  OTP_LOGIN
-  OTP_MFA
 }
 
 model Profile {
@@ -94,7 +86,6 @@ model Store {
   logo                     String?
   banner                   String?
   categoryId               String?
-  badgeTier                VendorBadgeTier?
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   alternativePhoneNumber   String?
@@ -104,6 +95,7 @@ model Store {
   reviewCount              Int                             @default(0)
   acceptsPreOrders         Boolean                         @default(false)
   acceptsBackOrders        Boolean                         @default(false)
+  badgeTier                VendorBadgeTier?
   products                 Product[]
   vendor_categories        VendorCategory?                 @relation(fields: [categoryId], references: [id])
   user                     User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -196,8 +188,8 @@ model Product {
   brandRelation            Brand?                      @relation(fields: [brandId], references: [id])
   category                 ProductCategory             @relation(fields: [categoryId], references: [id])
   store                    Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  restockOrders            RestockOrder[]
   purchaseOrderItems       PurchaseOrderItem[]
+  restockOrders            RestockOrder[]
 
   @@map("products")
 }
@@ -309,13 +301,13 @@ model Order {
   fulfillmentStatus     OrderFulfillmentStatus @default(PENDING)
   inventoryConsumedAt   DateTime?
   allocatedAt           DateTime?
+  fulfillmentEvents     FulfillmentEvent[]
   items                 OrderItem[]
+  orderMessages         OrderMessage[]
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment               Payment?
   productReviews        ProductReview[]
   vendorReviews         VendorReview[]
-  fulfillmentEvents     FulfillmentEvent[]
-  orderMessages         OrderMessage[]
 
   @@map("orders")
 }
@@ -379,7 +371,7 @@ model ProductReview {
   updatedAt  DateTime @updatedAt
   order      Order?   @relation(fields: [orderId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("product_reviews")
@@ -398,7 +390,7 @@ model VendorReview {
   updatedAt  DateTime @updatedAt
   order      Order?   @relation(fields: [orderId], references: [id])
   store      Store    @relation(fields: [storeId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
   @@map("vendor_reviews")
@@ -473,8 +465,8 @@ model VendorVerificationApplication {
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
   paystackRef        String?
-  store              Store                  @relation(fields: [storeId], references: [id])
-  vendor             User                   @relation(fields: [vendorId], references: [id])
+  store              Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  vendor             User                   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   kycInfo            VendorVerificationKYC?
   auditLogs          VerificationAuditLog[]
   documents          VerificationDocument[]
@@ -540,7 +532,7 @@ model VerificationAuditLog {
   adminId       String?
   note          String?
   createdAt     DateTime                      @default(now())
-  admin         User?                         @relation(fields: [adminId], references: [id])
+  admin         User?                         @relation(fields: [adminId], references: [id], onDelete: Cascade)
   application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("verification_audit_logs")
@@ -616,6 +608,169 @@ model HomepageSectionBrand {
   @@map("homepage_section_brands")
 }
 
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  userRole   String
+  action     String
+  entityType String
+  entityId   String?
+  beforeData Json?
+  afterData  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model RestockOrder {
+  id                  String             @id @default(cuid())
+  productId           String
+  vendorId            String
+  quantityOrdered     Int                @default(0)
+  quantityReceived    Int                @default(0)
+  status              RestockOrderStatus @default(ORDERED)
+  expectedArrivalDate DateTime?
+  actualArrivalDate   DateTime?
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  purchaseOrderId     String?
+  product             Product            @relation(fields: [productId], references: [id])
+  purchaseOrder       PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id])
+  vendor              User               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([productId])
+  @@index([status])
+  @@map("restock_orders")
+}
+
+model Supplier {
+  id             String             @id @default(cuid())
+  companyName    String
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  country        String?
+  notes          String?
+  status         SupplierStatus     @default(ACTIVE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  purchaseOrders PurchaseOrder[]
+  documents      SupplierDocument[]
+
+  @@map("suppliers")
+}
+
+model SupplierDocument {
+  id           String               @id @default(cuid())
+  supplierId   String
+  documentType SupplierDocumentType
+  documentUrl  String
+  fileName     String?
+  fileSize     Int?
+  mimeType     String?
+  metadata     Json?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  supplier     Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@index([documentType])
+  @@map("supplier_documents")
+}
+
+model PurchaseOrder {
+  id                  String              @id @default(cuid())
+  supplierId          String
+  vendorId            String
+  poNumber            String?             @unique
+  expectedArrivalDate DateTime?
+  notes               String?
+  status              PurchaseOrderStatus @default(DRAFT)
+  totalCost           Float               @default(0)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @default(now())
+  actualArrivalDate   DateTime?
+  receivedAt          DateTime?
+  items               PurchaseOrderItem[]
+  supplier            Supplier            @relation(fields: [supplierId], references: [id])
+  vendor              User                @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  restockOrders       RestockOrder[]
+
+  @@index([supplierId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  productId       String
+  quantity        Int           @default(1)
+  unitCost        Float         @default(0)
+  totalCost       Float         @default(0)
+  createdAt       DateTime      @default(now())
+  product         Product       @relation(fields: [productId], references: [id])
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
+}
+
+model FulfillmentEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  eventType   String
+  title       String
+  description String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("fulfillment_events")
+}
+
+model OrderMessage {
+  id          String      @id @default(cuid())
+  orderId     String
+  userId      String
+  userRole    String
+  message     String
+  messageType MessageType @default(GENERAL)
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([isRead])
+  @@map("order_messages")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  OTP_LOGIN
+  OTP_MFA
+}
+
 enum Role {
   SUPER_ADMIN
   ADMIN
@@ -651,7 +806,6 @@ enum NotificationType {
   ORDER_PLACED
   PAYMENT_SUCCESSFUL
   ORDER_STATUS_UPDATED
-  ORDER_CANCELLED
   REVIEW_SUBMITTED
   REVIEW_RECEIVED
   SUPPORT_TICKET_CREATED
@@ -660,6 +814,7 @@ enum NotificationType {
   RESTOCK_ORDER_CREATED
   RESTOCK_ORDER_OVERDUE
   RESTOCK_INVENTORY_RECEIVED
+  ORDER_CANCELLED
 }
 
 enum FeedbackType {
@@ -793,162 +948,6 @@ enum SupplierDocumentType {
   INVOICE
   QUOTATION
   AGREEMENT
-}
-
-model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String
-  userRole   String
-  action     String
-  entityType String
-  entityId   String?
-  beforeData Json?
-  afterData  Json?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id])
-
-  @@index([userId])
-  @@index([action])
-  @@index([entityType])
-  @@index([entityId])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-model RestockOrder {
-  id                  String             @id @default(cuid())
-  productId           String
-  vendorId            String
-  quantityOrdered     Int                @default(0)
-  quantityReceived    Int                @default(0)
-  status              RestockOrderStatus @default(ORDERED)
-  expectedArrivalDate DateTime?
-  actualArrivalDate   DateTime?
-  notes               String?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  product             Product            @relation(fields: [productId], references: [id])
-  vendor              User               @relation(fields: [vendorId], references: [id])
-  purchaseOrder       PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id])
-  purchaseOrderId     String?
-
-  @@index([vendorId])
-  @@index([productId])
-  @@index([status])
-  @@map("restock_orders")
-}
-
-model Supplier {
-  id             String             @id @default(cuid())
-  companyName    String
-  contactPerson  String?
-  email          String?
-  phone          String?
-  address        String?
-  country        String?
-  notes          String?
-  status         SupplierStatus     @default(ACTIVE)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  purchaseOrders PurchaseOrder[]
-  documents      SupplierDocument[]
-
-  @@map("suppliers")
-}
-
-model SupplierDocument {
-  id           String               @id @default(cuid())
-  supplierId   String
-  documentType SupplierDocumentType
-  documentUrl  String
-  fileName     String?
-  fileSize     Int?
-  mimeType     String?
-  metadata     Json?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  supplier     Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-
-  @@index([supplierId])
-  @@index([documentType])
-  @@map("supplier_documents")
-}
-
-model PurchaseOrder {
-  id                  String              @id @default(cuid())
-  supplierId          String
-  vendorId            String
-  poNumber            String?             @unique
-  expectedArrivalDate DateTime?
-  notes               String?
-  status              PurchaseOrderStatus @default(DRAFT)
-  totalCost           Float               @default(0)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  actualArrivalDate   DateTime?
-  receivedAt          DateTime?
-  supplier            Supplier            @relation(fields: [supplierId], references: [id])
-  vendor              User                @relation(fields: [vendorId], references: [id])
-  items               PurchaseOrderItem[]
-  restockOrders       RestockOrder[]
-
-  @@index([supplierId])
-  @@index([vendorId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("purchase_orders")
-}
-
-model PurchaseOrderItem {
-  id              String        @id @default(cuid())
-  purchaseOrderId String
-  productId       String
-  quantity        Int           @default(1)
-  unitCost        Float         @default(0)
-  totalCost       Float         @default(0)
-  createdAt       DateTime      @default(now())
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  product         Product       @relation(fields: [productId], references: [id])
-
-  @@index([purchaseOrderId])
-  @@index([productId])
-  @@map("purchase_order_items")
-}
-
-model FulfillmentEvent {
-  id          String   @id @default(cuid())
-  orderId     String
-  eventType   String
-  title       String
-  description String?
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@index([eventType])
-  @@index([createdAt])
-  @@map("fulfillment_events")
-}
-
-model OrderMessage {
-  id          String      @id @default(cuid())
-  orderId     String
-  userId      String
-  userRole    String
-  message     String
-  messageType MessageType @default(GENERAL)
-  isRead      Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@index([userId])
-  @@index([isRead])
-  @@map("order_messages")
 }
 
 enum MessageType {
