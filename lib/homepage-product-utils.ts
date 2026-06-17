@@ -18,7 +18,7 @@ export interface EnterpriseProduct {
   expectedRestockDate?: string | null
   backOrderNotes?: string | null
   images: Array<{ id: string; url: string; alt: string | null }>
-  store?: { id: string; name: string; isVerified: boolean; logo?: string | null }
+  store?: { id: string; name: string; isVerified: boolean; badgeTier?: string | null; logo?: string | null }
   category?: { id: string; name: string; slug?: string }
 }
 

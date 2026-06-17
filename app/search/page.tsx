@@ -315,29 +315,36 @@ function SearchPageContent() {
                                 </span>
                               )}
                             </div>
-                            <div className="min-w-0 flex-1">
-<div className="flex items-center gap-1.5">
-                                 <h3 className="text-sm font-semibold text-deep-navy truncate group-hover:text-royal-blue transition-colors">
-                                   {vendor.name}
-                                 </h3>
-                                 {vendor.isVerified && (
-                                   <Badge variant="verified" size="sm" className="text-[9px] px-1 py-0">
-                                     ✓
-                                   </Badge>
-                                 )}
-                               </div>
-                               <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                                 {vendor.productCount} products
-                                 {vendor.category && ` · ${vendor.category.name}`}
-                                 {(() => {
-                                   const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                                   return badgeInfo ? (
-                                     <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
-                                       {badgeInfo.tier === 'PLATINUM' ? 'Platinum' : badgeInfo.tier === 'PREMIUM' ? 'Premium' : 'Trusted'}
-                                     </Badge>
-                                   ) : null
-                                 })()}
-                               </p>
+<div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <h3 className="text-sm font-semibold text-deep-navy truncate group-hover:text-royal-blue transition-colors">
+                                  {vendor.name}
+                                </h3>
+                                {(() => {
+                                  const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                                  if (badgeInfo) {
+                                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                                    return (
+                                      <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                                    )
+                                  }
+                                  if (vendor.isVerified) {
+                                    return (
+                                      <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                                    )
+                                  }
+                                  return null
+                                })()}
+                              </div>
+                              <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                                {vendor.productCount} products
+                                {vendor.category && ` · ${vendor.category.name}`}
+                                {vendor.badgeTier && (
+                                  <Badge variant={getVendorBadgeInfo(vendor.badgeTier as any)?.variant} size="sm" className="text-[8px] px-1 py-0">
+                                    {getVendorBadgeInfo(vendor.badgeTier as any)?.tier === 'PLATINUM' ? 'Platinum' : getVendorBadgeInfo(vendor.badgeTier as any)?.tier === 'PREMIUM' ? 'Premium' : 'Trusted'}
+                                  </Badge>
+                                )}
+                              </p>
                             </div>
                           </div>
                         </Card>
@@ -544,23 +551,27 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
             )}
           </div>
 {product.store && (
-             <div className="flex items-center gap-1 min-w-0">
-               <p className="text-[10px] text-slate-500 truncate">
-                 {product.store.name}
-               </p>
-               {product.store.isVerified && (
-                 <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
-               )}
-               {(() => {
-                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                 return badgeInfo ? (
-                   <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
-                     {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
-                   </Badge>
-                 ) : null
-               })()}
-             </div>
-           )}
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-[10px] text-slate-500 truncate">
+                  {product.store.name}
+                </p>
+                {(() => {
+                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                  if (badgeInfo) {
+                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                    return (
+                      <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                    )
+                  }
+                  if (product.store.isVerified) {
+                    return (
+                      <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                    )
+                  }
+                  return null
+                })()}
+              </div>
+            )}
         </div>
       </Card>
     </Link>

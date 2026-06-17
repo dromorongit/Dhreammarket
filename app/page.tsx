@@ -12,6 +12,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
+import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
@@ -45,16 +46,17 @@ interface Category {
 }
 
 interface FeaturedVendor {
-  id: string
-  name: string
-  description: string | null
-  isVerified: boolean
-  isFeatured: boolean
-  logo: string | null
-  rating: number
-  productCount: number
-  category: { id: string; name: string; slug: string } | null
-}
+   id: string
+   name: string
+   description: string | null
+   isVerified: boolean
+   badgeTier: string | null
+   isFeatured: boolean
+   logo: string | null
+   rating: number
+   productCount: number
+   category: { id: string; name: string; slug: string } | null
+ }
 
 export default function Home() {
   const [featuredVendors, setFeaturedVendors] = useState<FeaturedVendor[]>([])
@@ -671,14 +673,26 @@ function VendorCategorySection() {
                      </span>
                    )}
                  </div>
-                 <div className="flex items-center gap-1 min-w-0 mb-2">
-                    <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                      {truncateVendorName(vendor.name)}
-                    </h3>
-                    {vendor.isVerified && (
-                      <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                    )}
-                  </div>
+<div className="flex items-center gap-1 min-w-0 mb-2">
+                     <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                       {truncateVendorName(vendor.name)}
+                     </h3>
+                     {(() => {
+                       const badgeInfo = getVendorBadgeInfo((vendor as any).badgeTier)
+                       if (badgeInfo) {
+                         const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                         return (
+                           <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                         )
+                       }
+                       if (vendor.isVerified) {
+                         return (
+                           <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                         )
+                       }
+                       return null
+                     })()}
+                   </div>
                   {vendor.vendor_categories && (
                     <Badge variant="default" size="sm" className="mb-3">
                       {vendor.vendor_categories.name}
@@ -750,33 +764,45 @@ function TopVendorsSection() {
                 )}
               </div>
               <div className="flex items-center justify-center gap-1 mb-2">
-                <svg className="w-5 h-5 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <span className="font-bold text-deep-navy">{vendor.rating.toFixed(1)}</span>
-              </div>
-              <div className="flex items-center justify-center gap-1 min-w-0 mb-2">
-                <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                  {truncateVendorName(vendor.name)}
-                </h3>
-                {vendor.isVerified && (
-                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                )}
-              </div>
-              {vendor.vendor_categories && (
-                <Badge variant="default" size="sm" className="mb-2">
-                  {vendor.vendor_categories.name}
-                </Badge>
-              )}
-              <p className="text-sm text-slate-600">
-                {vendor._count?.products || 0} products
-              </p>
-            </Card>
-          </Link>
-        ))}
-      </div>
-    )
-  }
+<svg className="w-5 h-5 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
+                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                 </svg>
+                 <span className="font-bold text-deep-navy">{vendor.rating.toFixed(1)}</span>
+               </div>
+               <div className="flex items-center justify-center gap-1 min-w-0 mb-2">
+                 <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                   {truncateVendorName(vendor.name)}
+                 </h3>
+                 {(() => {
+                   const badgeInfo = getVendorBadgeInfo((vendor as any).badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                     return (
+                       <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                     )
+                   }
+                   if (vendor.isVerified) {
+                     return (
+                       <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                     )
+                   }
+                   return null
+                 })()}
+               </div>
+               {vendor.vendor_categories && (
+                 <Badge variant="default" size="sm" className="mb-2">
+                   {vendor.vendor_categories.name}
+                 </Badge>
+               )}
+               <p className="text-sm text-slate-600">
+                 {vendor._count?.products || 0} products
+               </p>
+             </Card>
+           </Link>
+         ))}
+       </div>
+     )
+   }
 
 // New Vendors Section Component
 function NewVendorsSection() {
@@ -831,28 +857,40 @@ function NewVendorsSection() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center justify-center gap-1 min-w-0 mb-2">
-                <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                  {truncateVendorName(vendor.name)}
-                </h3>
-                {vendor.isVerified && (
-                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                )}
-              </div>
-              {vendor.vendor_categories && (
-                <Badge variant="default" size="sm" className="mb-2">
-                  {vendor.vendor_categories.name}
-                </Badge>
-              )}
-              <div className="flex items-center justify-center gap-1 text-sm text-slate-500 mb-2">
-                <svg className="w-4 h-4 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <span>{vendor.rating.toFixed(1)}</span>
-              </div>
-              <p className="text-xs text-slate-400">
-                Joined {new Date(vendor.createdAt).toLocaleDateString()}
-              </p>
+<div className="flex items-center justify-center gap-1 min-w-0 mb-2">
+                 <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                   {truncateVendorName(vendor.name)}
+                 </h3>
+                 {(() => {
+                   const badgeInfo = getVendorBadgeInfo((vendor as any).badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                     return (
+                       <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                     )
+                   }
+                   if (vendor.isVerified) {
+                     return (
+                       <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                     )
+                   }
+                   return null
+                 })()}
+               </div>
+               {vendor.vendor_categories && (
+                 <Badge variant="default" size="sm" className="mb-2">
+                   {vendor.vendor_categories.name}
+                 </Badge>
+               )}
+               <div className="flex items-center justify-center gap-1 text-sm text-slate-500 mb-2">
+                 <svg className="w-4 h-4 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
+                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                 </svg>
+                 <span>{vendor.rating.toFixed(1)}</span>
+               </div>
+               <p className="text-xs text-slate-400">
+                 Joined {new Date(vendor.createdAt).toLocaleDateString()}
+               </p>
             </Card>
           </Link>
         ))}
@@ -1102,9 +1140,21 @@ const fetchProducts = async () => {
                      <p className="text-[10px] text-slate-500 truncate">
                        {product.store.name}
                      </p>
-                     {product.store.isVerified && (
-                       <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-                     )}
+{(() => {
+                        const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                        if (badgeInfo) {
+                          const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                          return (
+                            <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                          )
+                        }
+                        if (product.store.isVerified) {
+                          return (
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                          )
+                        }
+                        return null
+                      })()}
                    </div>
                  )}
                  <div className="flex flex-col gap-1 pt-0.5">
@@ -1189,9 +1239,21 @@ const fetchProducts = async () => {
                      <p className="text-[10px] text-slate-500 truncate">
                        {product.store.name}
                      </p>
-                     {product.store.isVerified && (
-                       <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-                     )}
+{(() => {
+                        const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                        if (badgeInfo) {
+                          const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                          return (
+                            <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                          )
+                        }
+                        if (product.store.isVerified) {
+                          return (
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                          )
+                        }
+                        return null
+                      })()}
                    </div>
                  )}
                  <div className="flex flex-col gap-1 pt-0.5">
@@ -1276,9 +1338,21 @@ const fetchProducts = async () => {
                      <p className="text-[10px] text-slate-500 truncate">
                        {product.store.name}
                      </p>
-                     {product.store.isVerified && (
-                       <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-                     )}
+{(() => {
+                        const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                        if (badgeInfo) {
+                          const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                          return (
+                            <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                          )
+                        }
+                        if (product.store.isVerified) {
+                          return (
+                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                          )
+                        }
+                        return null
+                      })()}
                    </div>
                  )}
                  <div className="flex flex-col gap-1 pt-0.5">

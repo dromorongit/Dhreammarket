@@ -10,6 +10,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
+import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
 export function HomepageSectionSkeleton() {
@@ -57,7 +58,7 @@ interface Product {
   expectedArrivalDate?: string | null
   expectedRestockDate?: string | null
   images: Array<{ id: string; url: string; alt: string | null }>
-  store?: { id: string; name: string; isVerified: boolean }
+  store?: { id: string; name: string; isVerified: boolean; badgeTier?: string | null }
   category?: { id: string; name: string }
 }
 
@@ -124,16 +125,28 @@ function CompactProductCard({ product }: { product: Product }) {
                </span>
             )}
           </div>
-          {product.store && (
-            <div className="flex items-center gap-1 min-w-0">
-              <p className="text-[10px] text-slate-500 truncate">
-                {product.store.name}
-              </p>
-              {product.store.isVerified && (
-                <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-              )}
-            </div>
-          )}
+{product.store && (
+             <div className="flex items-center gap-1 min-w-0">
+               <p className="text-[10px] text-slate-500 truncate">
+                 {product.store.name}
+               </p>
+               {(() => {
+                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                 if (badgeInfo) {
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   return (
+                     <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                   )
+                 }
+                 if (product.store.isVerified) {
+                   return (
+                     <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                   )
+                 }
+                 return null
+               })()}
+             </div>
+           )}
         </div>
       </div>
     </Card>
@@ -288,14 +301,26 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
                   )}
                 </div>
                 <CardContent className="p-4 min-w-0">
-                  <div className="flex items-center gap-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                      {truncateVendorName(vendor.name)}
-                    </h3>
-                    {vendor.isVerified && (
-                      <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                    )}
-                  </div>
+<div className="flex items-center gap-1 min-w-0">
+                     <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                       {truncateVendorName(vendor.name)}
+                     </h3>
+                     {(() => {
+                       const badgeInfo = getVendorBadgeInfo((vendor as any).badgeTier)
+                       if (badgeInfo) {
+                         const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                         return (
+                           <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                         )
+                       }
+                       if (vendor.isVerified) {
+                         return (
+                           <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                         )
+                       }
+                       return null
+                     })()}
+                   </div>
                   {vendor.category && (
                     <p className="text-sm text-slate-500 mb-2">{vendor.category.name}</p>
                   )}

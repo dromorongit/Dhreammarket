@@ -606,23 +606,35 @@ const fetchVendors = async () => {
                            )}
                          </div>
 {product.store && (
-                            <div className="flex items-center gap-1 min-w-0">
-                              <p className="text-[10px] text-slate-500 truncate">
-                                {product.store.name}
-                              </p>
-                              {product.store.isVerified && (
-                                <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
-                              )}
-                              {(() => {
-                                const badgeInfo = getVendorBadgeInfo(product.store!.badgeTier as any)
-                                return badgeInfo ? (
-                                  <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
-                                    {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
-                                  </Badge>
-                                ) : null
-                              })()}
-                            </div>
-                          )}
+                             <div className="flex items-center gap-1 min-w-0">
+                               <p className="text-[10px] text-slate-500 truncate">
+                                 {product.store.name}
+                               </p>
+                               {(() => {
+                                 const badgeInfo = getVendorBadgeInfo(product.store!.badgeTier as any)
+                                 if (badgeInfo) {
+                                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                                   return (
+                                     <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                                   )
+                                 }
+                                 if (product.store!.isVerified) {
+                                   return (
+                                     <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                                   )
+                                 }
+                                 return null
+                               })()}
+                               {(() => {
+                                 const badgeInfo = getVendorBadgeInfo(product.store!.badgeTier as any)
+                                 return badgeInfo ? (
+                                   <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
+                                     {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
+                                   </Badge>
+                                 ) : null
+                               })()}
+                             </div>
+                           )}
                          <div className="flex flex-col gap-1 pt-0.5">
 <Button
                               size="sm"
@@ -696,14 +708,27 @@ const fetchVendors = async () => {
                            </div>
                          )}
                        </div>
-                       <CardContent className="p-4 min-w-0">
-<div className="flex items-center gap-1 min-w-0">
+<CardContent className="p-4 min-w-0">
+                          <div className="flex items-center gap-1 min-w-0">
                             <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {truncateVendorName(vendor.name)}
                             </h3>
-                            {vendor.isVerified && (
-                              <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                            )}
+                            {(() => {
+                              const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                              if (badgeInfo) {
+                                return (
+                                  <Badge variant={badgeInfo.variant} size="sm" className="flex-shrink-0">
+                                    {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
+                                  </Badge>
+                                )
+                              }
+                              if (vendor.isVerified) {
+                                return (
+                                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                )
+                              }
+                              return null
+                            })()}
                           </div>
                           {vendor.category && (
                             <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
@@ -719,15 +744,15 @@ const fetchVendors = async () => {
                             ) : null
                           })()}
                           <div className="flex items-center justify-between text-sm">
-                           <div className="flex items-center gap-1">
-                             <span className="text-yellow-400">★</span>
-                             <span className="font-medium">{vendor.rating}</span>
-                           </div>
-                           <span className="text-slate-500">
-                             {vendor.productCount} products
-                           </span>
-                         </div>
-                       </CardContent>
+                            <div className="flex items-center gap-1">
+                              <span className="text-yellow-400">★</span>
+                              <span className="font-medium">{vendor.rating}</span>
+                            </div>
+                            <span className="text-slate-500">
+                              {vendor.productCount} products
+                            </span>
+                          </div>
+                        </CardContent>
                      </Link>
                    </Card>
                  ))}

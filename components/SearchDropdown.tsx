@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MdVerified } from 'react-icons/md'
+import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 
 interface SearchProduct {
   id: string
@@ -11,7 +12,7 @@ interface SearchProduct {
   brand: string | null
   price: number
   image: string | null
-  store: { id: string; name: string; isVerified: boolean } | null
+  store: { id: string; name: string; isVerified: boolean; badgeTier?: string | null } | null
   type: string
 }
 
@@ -21,6 +22,7 @@ interface SearchVendor {
   description: string | null
   logo: string | null
   isVerified: boolean
+  badgeTier: string | null
   productCount: number
   type: string
 }
@@ -356,19 +358,31 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                         <p className="text-sm font-medium text-slate-800 truncate">
                           {highlightMatch(product.name, query)}
                         </p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs font-semibold text-royal-blue">
-                            {typeof product.price === 'number'
-                              ? `₵${product.price.toFixed(2)}`
-                              : '₵0.00'}
-                          </span>
-                          {product.brand && (
-                            <span className="text-[10px] text-slate-400">· {highlightMatch(product.brand, query)}</span>
-                          )}
-                          {product.store?.isVerified && (
-                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                          )}
-                        </div>
+<div className="flex items-center gap-1.5 mt-0.5">
+                           <span className="text-xs font-semibold text-royal-blue">
+                             {typeof product.price === 'number'
+                               ? `₵${product.price.toFixed(2)}`
+                               : '₵0.00'}
+                           </span>
+                           {product.brand && (
+                             <span className="text-[10px] text-slate-400">· {highlightMatch(product.brand, query)}</span>
+                           )}
+                           {(() => {
+                             const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
+                             if (badgeInfo) {
+                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                               return (
+                                 <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                               )
+                             }
+                             if (product.store?.isVerified) {
+                               return (
+                                 <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                               )
+                             }
+                             return null
+                           })()}
+                         </div>
                       </div>
                     </Link>
                   )
@@ -410,15 +424,27 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          <p className="text-sm font-medium text-slate-800 truncate">
-                            {highlightMatch(vendor.name, query)}
-                          </p>
-                          {vendor.isVerified && (
-                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                          )}
-                        </div>
+<div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-1">
+                           <p className="text-sm font-medium text-slate-800 truncate">
+                             {highlightMatch(vendor.name, query)}
+                           </p>
+                           {(() => {
+                             const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                             if (badgeInfo) {
+                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                               return (
+                                 <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                               )
+                             }
+                             if (vendor.isVerified) {
+                               return (
+                                 <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                               )
+                             }
+                             return null
+                           })()}
+                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {vendor.productCount} products
                           {vendor.description && ` · ${vendor.description.slice(0, 40)}...`}

@@ -10,6 +10,7 @@ import { Skeleton, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
+import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 
 interface CartResponse {
   cart: {
@@ -561,21 +562,47 @@ export default function ProductDetail() {
           <div className="space-y-6 min-w-0">
             <div>
               <div className="flex items-start justify-between mb-3 min-w-0">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy leading-tight break-words min-w-0">
-                  {product.name}
-                </h1>
-                {product.store?.isVerified && (
-                  <MdVerified className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 flex-shrink-0 ml-2" />
-                )}
-              </div>
+<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy leading-tight break-words min-w-0">
+                   {product.name}
+                 </h1>
+                 {(() => {
+                   const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                     return (
+                       <Badge variant={badgeInfo.variant} size="sm" className="ml-2">
+                         {badgeInfo.displayLabel}
+                       </Badge>
+                     )
+                   }
+                   if (product.store?.isVerified) {
+                     return (
+                       <MdVerified className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 flex-shrink-0 ml-2" />
+                     )
+                   }
+                   return null
+                 })()}
+               </div>
               <p className="text-slate-600 mb-4 flex items-center gap-2 min-w-0">
                 <span className="text-slate-400 flex-shrink-0">by</span>
-                <span className="font-medium text-deep-navy flex items-center gap-1 min-w-0 overflow-hidden text-ellipsis">
-                  {product.store?.name || 'Unknown Store'}
-                  {product.store?.isVerified && (
-                    <MdVerified className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500 flex-shrink-0 inline-block" />
-                  )}
-                </span>
+<span className="font-medium text-deep-navy flex items-center gap-1 min-w-0 overflow-hidden text-ellipsis">
+                   {product.store?.name || 'Unknown Store'}
+                   {(() => {
+                     const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
+                     if (badgeInfo) {
+                       const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                       return (
+                         <MdVerified className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                       )
+                     }
+                     if (product.store?.isVerified) {
+                       return (
+                         <MdVerified className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500 flex-shrink-0 inline-block" />
+                       )
+                     }
+                     return null
+                   })()}
+                 </span>
               </p>
               <div className="flex items-center gap-3 sm:gap-4 mb-6">
                 <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
@@ -800,9 +827,21 @@ export default function ProductDetail() {
                     <span className="text-slate-600 flex-shrink-0">Store</span>
                     <span className="font-medium text-deep-navy flex items-center gap-1 min-w-0 flex-1 flex-wrap">
                       {product.store?.name || 'Unknown Store'}
-                      {product.store?.isVerified && (
-                        <MdVerified className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500 flex-shrink-0 inline-block" />
-                      )}
+                      {(() => {
+                        const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
+                        if (badgeInfo) {
+                          const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                          return (
+                            <MdVerified className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                          )
+                        }
+                        if (product.store?.isVerified) {
+                          return (
+                            <MdVerified className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-500 flex-shrink-0 inline-block" />
+                          )
+                        }
+                        return null
+                      })()}
                     </span>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:justify-between py-2 border-b border-slate-100 gap-1 sm:gap-0">

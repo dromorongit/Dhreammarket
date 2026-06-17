@@ -9,6 +9,7 @@ import { SkeletonCard } from '@/components/Skeleton';
 import { formatPrice } from '@/lib/currency';
 import { truncateVendorName } from '@/lib/utils';
 import { MdVerified } from 'react-icons/md';
+import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageData, getDiscountPercent, getEffectivePrice, getDiscountedPrice, dedupeProducts, collectProductIds, normalizeBrand, EMPTY_ENTERPRISE_DATA } from '@/lib/homepage-product-utils'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 
@@ -282,9 +283,21 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
               <p className='text-[10px] text-slate-500 truncate'>
                 {product.store.name}
               </p>
-              {product.store.isVerified && (
-                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-              )}
+{(() => {
+                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                 if (badgeInfo) {
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   return (
+                     <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                   )
+                 }
+                 if (product.store.isVerified) {
+                   return (
+                     <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                   )
+                 }
+                 return null
+               })()}
             </div>
           )}
         </div>
@@ -340,9 +353,21 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
               <p className='text-[10px] text-slate-500 truncate'>
                 {product.store.name}
               </p>
-              {product.store.isVerified && (
-                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-              )}
+{(() => {
+                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                 if (badgeInfo) {
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   return (
+                     <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                   )
+                 }
+                 if (product.store.isVerified) {
+                   return (
+                     <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                   )
+                 }
+                 return null
+               })()}
             </div>
           )}
         </div>
@@ -398,9 +423,21 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
               <p className='text-[10px] text-slate-500 truncate'>
                 {product.store.name}
               </p>
-              {product.store.isVerified && (
-                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-              )}
+{(() => {
+                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                 if (badgeInfo) {
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   return (
+                     <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                   )
+                 }
+                 if (product.store.isVerified) {
+                   return (
+                     <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                   )
+                 }
+                 return null
+               })()}
             </div>
           )}
         </div>
@@ -459,9 +496,21 @@ function StandardCard({
               <p className='text-[10px] text-slate-500 truncate'>
                 {product.store.name}
               </p>
-              {product.store.isVerified && (
-                <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-              )}
+{(() => {
+                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                 if (badgeInfo) {
+                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                   return (
+                     <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                   )
+                 }
+                 if (product.store.isVerified) {
+                   return (
+                     <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                   )
+                 }
+                 return null
+               })()}
             </div>
           )}
         </div>
