@@ -59,11 +59,12 @@ interface Product {
     id: string
     name: string
   }
-  store?: {
-    id: string
-    name: string
-    isVerified?: boolean
-  }
+store?: {
+     id: string
+     name: string
+     isVerified?: boolean
+     badgeTier?: string | null
+   }
   images: Array<{
     id: string
     url: string
@@ -565,23 +566,22 @@ export default function ProductDetail() {
 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy leading-tight break-words min-w-0">
                    {product.name}
                  </h1>
-                 {(() => {
-                   const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
-                   if (badgeInfo) {
-                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                     return (
-                       <Badge variant={badgeInfo.variant} size="sm" className="ml-2">
-                         {badgeInfo.displayLabel}
-                       </Badge>
-                     )
-                   }
-                   if (product.store?.isVerified) {
-                     return (
-                       <MdVerified className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 flex-shrink-0 ml-2" />
-                     )
-                   }
-                   return null
-                 })()}
+{(() => {
+                    const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
+                    if (badgeInfo) {
+                      return (
+                        <Badge variant={badgeInfo.variant} size="sm" className="ml-2">
+                          {badgeInfo.displayLabel}
+                        </Badge>
+                      )
+                    }
+                    if (product.store?.isVerified) {
+                      return (
+                        <MdVerified className="w-5 h-5 sm:w-6 sm:h-6 text-sky-500 flex-shrink-0 ml-2" />
+                      )
+                    }
+                    return null
+                  })()}
                </div>
               <p className="text-slate-600 mb-4 flex items-center gap-2 min-w-0">
                 <span className="text-slate-400 flex-shrink-0">by</span>
