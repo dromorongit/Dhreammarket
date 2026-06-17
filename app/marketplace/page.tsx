@@ -714,26 +714,16 @@ const fetchVendors = async () => {
                               {truncateVendorName(vendor.name)}
                             </h3>
 {(() => {
-                               const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                               if (badgeInfo) {
-                                 const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
-                                 return (
-                                   <>
-                                     <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
-                                     <Badge variant={badgeInfo.variant} size="sm" className="flex-shrink-0">
-                                       {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
-                                     </Badge>
-                                   </>
-                                 )
-                               }
                                if (vendor.isVerified) {
+                                 const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                                 const iconColor = badgeInfo ? (badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500') : 'text-sky-500'
                                  return (
-                                   <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                   <MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
                                  )
                                }
                                return null
                              })()}
-                          </div>
+                           </div>
                           {vendor.category && (
                             <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {vendor.category.name}
