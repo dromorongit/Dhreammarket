@@ -14,41 +14,66 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
     }
 
-    // Find user by reset token
-    const users = await getPrisma().user.findMany({
-      where: { resetPasswordToken: { not: null } },
+    // Use indexed lookup - query only unused PASSWORD_RESET tokens (filtered by index on [userId, tokenType, expiresAt])
+    const validTokens = await getPrisma().authToken.findMany({
+      where: {
+        tokenType: 'PASSWORD_RESET',
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { user: true },
     })
 
-    // Find matching user by comparing token with stored hash
-    let user = null
-    for (const u of users) {
-      if (u.resetPasswordToken && verifyResetToken(token, u.resetPasswordToken)) {
-        user = u
+    // Find matching token by comparing token with stored hash
+    let authTokenRecord: { id: string; userId: string; tokenType: string; tokenHash: string; expiresAt: Date; usedAt: Date | null; createdAt: Date; ipAddress: string | null; userAgent: string | null; user: { id: string; email: string; role: string; status: string; isEmailVerified: boolean; emailVerifiedAt: Date | null; position: string | null } } | null = null
+    for (const t of validTokens) {
+      if (verifyResetToken(token, t.tokenHash)) {
+        authTokenRecord = t
         break
       }
     }
 
-    if (!user) {
+    if (!authTokenRecord || !authTokenRecord.user) {
       return NextResponse.json({ error: 'Invalid or expired reset token' }, { status: 400 })
-    }
-
-    // Check if token has expired
-    if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
-      return NextResponse.json({ error: 'Reset token has expired' }, { status: 400 })
     }
 
     // Hash the new password
     const hashedPassword = await hashPassword(password)
 
-    // Update password and clear reset token
+    // Update password and mark token as used
     await getPrisma().user.update({
-      where: { id: user.id },
+      where: { id: authTokenRecord.userId },
       data: {
         password: hashedPassword,
-        resetPasswordToken: null,
-        resetPasswordExpires: null,
       },
     })
+
+    // Mark token as used
+    await getPrisma().authToken.update({
+      where: { id: authTokenRecord.id },
+      data: { usedAt: new Date() },
+    })
+
+    // Non-blocking audit log
+    try {
+      const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                        request.headers.get('x-real-ip') || 'unknown'
+      const userAgent = request.headers.get('user-agent') || undefined
+      
+      await getPrisma().auditLog.create({
+        data: {
+          userId: authTokenRecord.userId,
+          userRole: authTokenRecord.user.role,
+          action: 'PASSWORD_RESET_COMPLETED',
+          entityType: 'User',
+          entityId: authTokenRecord.userId,
+          ipAddress,
+          userAgent,
+        },
+      })
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+    }
 
     return NextResponse.json({ message: 'Password reset successfully' }, { status: 200 })
   } catch (error) {

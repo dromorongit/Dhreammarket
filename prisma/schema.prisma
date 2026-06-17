@@ -17,6 +17,8 @@ model User {
   updatedAt                DateTime                       @updatedAt
   resetPasswordToken       String?
   resetPasswordExpires     DateTime?
+  isEmailVerified        Boolean                        @default(false)
+  emailVerifiedAt        DateTime?
   cart                     Cart?
   feedbacks                Feedback[]
   homepageSections         HomepageSectionVendor[]
@@ -35,8 +37,36 @@ model User {
   restockOrders            RestockOrder[]
   purchaseOrders           PurchaseOrder[]
   orderMessages            OrderMessage[]
+  authTokens               AuthToken[]
 
   @@map("users")
+}
+
+model AuthToken {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenType   TokenType
+  tokenHash   String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  ipAddress   String?
+  userAgent   String?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, tokenType])
+  @@index([userId, tokenType, expiresAt])
+  @@index([expiresAt])
+  @@index([tokenHash])
+  @@map("auth_tokens")
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  OTP_LOGIN
+  OTP_MFA
 }
 
 model Profile {

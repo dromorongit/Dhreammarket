@@ -107,8 +107,19 @@ return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900/50"></div>
+        {/* Video background */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          preload="metadata"
+        >
+          <source src="/assets/videos/Homepage.MOV" type="video/mp4" />
+        </video>
+        {/* Overlay gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy/80 via-royal-blue/70 to-purple-900/60"></div>
 
         {/* Decorative elements - positioned below navbar to prevent bleeding */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

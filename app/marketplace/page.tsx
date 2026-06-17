@@ -405,6 +405,17 @@ const fetchVendors = async () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <section className="relative bg-gradient-to-br from-deep-navy to-royal-blue py-20 overflow-hidden">
+        {/* Video background */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          preload="metadata"
+        >
+          <source src="/assets/videos/marketplace.MOV" type="video/mp4" />
+        </video>
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
           <div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>

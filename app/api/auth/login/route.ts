@@ -26,6 +26,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
+    // Check account status
+    if (user.status !== 'ACTIVE') {
+      return NextResponse.json({ error: 'Account is not active' }, { status: 403 })
+    }
+
+    // Check email verification (skip for ADMIN and SUPER_ADMIN)
+    if (!user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ 
+        needsVerification: true,
+        message: 'Please verify your email before logging in' 
+      }, { status: 200 })
+    }
+
     const isValidPassword = await verifyPassword(password, user.password)
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })

@@ -2,7 +2,7 @@
 // Refined professional templates for Dhream Market Phase 8
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY
-const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'noreply@dhreamarket.com'
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'support@dhreamarket.com'
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Dhream Market'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
 
@@ -267,9 +267,52 @@ export async function sendReviewConfirmationEmail(
      to: customerEmail,
      subject,
      htmlContent,
-     textContent: `Thank you for reviewing ${productName}! Your rating: ${rating} stars. Your feedback helps other customers!`
-   })
- }
+textContent: `Thank you for reviewing ${productName}! Your rating: ${rating} stars. Your feedback helps other customers!`
+    })
+  }
+
+// Email verification OTP email
+export async function sendEmailVerificationEmail(
+  userEmail: string,
+  userName: string,
+  otp: string,
+  expiresAt: Date
+) {
+  const expiryMinutes = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60))
+  
+  const subject = 'Your Dhream Market Verification Code'
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Verify Your Email</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${userName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">Thank you for registering with Dhream Market! Please use the verification code below to verify your email address:</p>
+    
+    <div style="background-color: #f3f4f6; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0;">
+      <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #1a1a2e; font-family: 'Courier New', monospace;">${otp}</span>
+    </div>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-size: 14px; color: #92400e;">
+        <strong>Important:</strong> This code will expire in ${expiryMinutes} minute(s). For security reasons, this code can only be used once.
+      </p>
+    </div>
+    
+    <p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280;">
+      If you didn't create an account with us, please ignore this email.
+    </p>
+    
+    <p style="margin: 16px 0 0 0; font-size: 14px; color: #6b7280;">
+      Didn't receive the code? You can request a new one from the verification page.
+    </p>
+  `
+  const htmlContent = getEmailTemplate(content, 'If you need assistance, contact our support team at support@dhreamarket.com')
+  
+  return sendEmail({
+    to: userEmail,
+    subject,
+    htmlContent,
+    textContent: `Your Dhream Market verification code is: ${otp}. This code expires in ${expiryMinutes} minute(s).`
+  })
+}
 
 // Password reset email - professional elite design
 export async function sendPasswordResetEmail(

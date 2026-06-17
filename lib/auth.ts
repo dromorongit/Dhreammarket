@@ -64,3 +64,13 @@ export function hashResetToken(token: string): string {
 export function verifyResetToken(token: string, hashedToken: string): boolean {
   return bcrypt.compareSync(token, hashedToken)
 }
+
+// Generate a 6-digit numeric OTP
+export function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString()
+}
+
+// Hash an OTP for secure storage
+export function hashOTP(otp: string): string {
+  return bcrypt.hashSync(otp, 12)
+}

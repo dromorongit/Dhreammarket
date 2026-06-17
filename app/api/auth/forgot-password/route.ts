@@ -6,7 +6,7 @@ import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   // Rate limiting - security hardening
-  const rateLimitCheck = rateLimit('forgot-password')(request)
+  const rateLimitCheck = rateLimit('password-reset-new')(request)
   if (rateLimitCheck.success !== true) {
     return rateLimitCheck.response
   }
@@ -27,19 +27,30 @@ export async function POST(request: NextRequest) {
     })
 
     if (user) {
+      // Invalidate existing password reset tokens
+      await getPrisma().authToken.updateMany({
+        where: {
+          userId: user.id,
+          tokenType: 'PASSWORD_RESET',
+          usedAt: null,
+        },
+        data: { usedAt: new Date() },
+      })
+
       // Generate secure reset token
       const resetToken = generateResetToken()
       const hashedToken = hashResetToken(resetToken)
 
       // Set expiration (1 hour from now)
-      const resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000)
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
 
-      // Save token and expiration to user record
-      await getPrisma().user.update({
-        where: { id: user.id },
+      // Create AuthToken entry
+      await getPrisma().authToken.create({
         data: {
-          resetPasswordToken: hashedToken,
-          resetPasswordExpires,
+          userId: user.id,
+          tokenType: 'PASSWORD_RESET',
+          tokenHash: hashedToken,
+          expiresAt,
         },
       })
 
@@ -50,11 +61,30 @@ export async function POST(request: NextRequest) {
         ? user.profile.firstName
         : 'Valued Customer'
 
+      // Non-blocking audit log
       try {
-        await sendPasswordResetEmail(user.email, customerName, resetToken, resetPasswordExpires)
+        const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                          request.headers.get('x-real-ip') || 'unknown'
+        
+        await getPrisma().auditLog.create({
+          data: {
+            userId: user.id,
+            userRole: user.role,
+            action: 'PASSWORD_RESET_REQUESTED',
+            entityType: 'User',
+            entityId: user.id,
+            ipAddress,
+          },
+        })
+      } catch (auditError) {
+        console.error('Failed to create audit log:', auditError)
+      }
+
+      // Send email (non-blocking)
+      try {
+        await sendPasswordResetEmail(user.email, customerName, resetToken, expiresAt)
       } catch (emailError) {
         console.error('Failed to send password reset email:', emailError)
-        // Continue even if email fails - security best practice
       }
     }
 

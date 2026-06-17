@@ -34,20 +34,24 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password, rememberMe }),
       })
 
-      const data = await response.json()
+const data = await response.json()
 
-      if (response.ok) {
-        // Redirect based on user role
-        const role = data.user.role
-        const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
-                             role === 'ADMIN' ? '/dashboard/admin' :
-                             role === 'VENDOR' ? '/dashboard/vendor' :
-                             '/dashboard/customer'
-        // Use window.location for full page reload to ensure auth state updates
-        window.location.href = dashboardPath
-      } else {
-        setError(data.error || 'Login failed')
-      }
+       if (response.ok) {
+         if (data.needsVerification) {
+           router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+         } else {
+           // Redirect based on user role
+           const role = data.user.role
+           const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
+                                role === 'ADMIN' ? '/dashboard/admin' :
+                                role === 'VENDOR' ? '/dashboard/vendor' :
+                                '/dashboard/customer'
+           // Use window.location for full page reload to ensure auth state updates
+           window.location.href = dashboardPath
+         }
+       } else {
+         setError(data.error || 'Login failed')
+       }
     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {

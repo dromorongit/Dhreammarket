@@ -70,21 +70,26 @@ export default function RegisterPage() {
       return
     }
 
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role, mobileNumber, name }),
-      })
+try {
+       const response = await fetch('/api/auth/register', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email, password, role, mobileNumber, name }),
+       })
 
-      const data = await response.json()
+       const data = await response.json()
 
-      if (response.ok) {
-        router.push('/login')
-      } else {
-        setError(data.error || 'Registration failed')
-      }
-    } catch (err) {
+       if (response.ok) {
+         // Redirect to verification page if email verification is required
+         if (data.needsVerification) {
+           router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+         } else {
+           router.push('/login')
+         }
+       } else {
+         setError(data.error || 'Registration failed')
+       }
+     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {
       setLoading(false)

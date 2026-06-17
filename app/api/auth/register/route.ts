@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword, generateOTP, hashOTP } from '@/lib/auth'
 import { normalizeGhanaPhoneNumber } from '@/lib/phone'
 import { rateLimit } from '@/lib/rate-limit'
+import { sendEmailVerificationEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   // Rate limiting - security hardening
@@ -65,6 +66,11 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await hashPassword(password)
 
+    // Generate and hash OTP for email verification
+    const otp = generateOTP()
+    const hashedOTP = hashOTP(otp)
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+
     const user = await getPrisma().user.create({
       data: {
         email: normalizedEmail,
@@ -75,6 +81,13 @@ export async function POST(request: NextRequest) {
           create: {
             phone: normalizedPhone,
             firstName: role === 'CUSTOMER' ? name?.trim() : undefined,
+          },
+        },
+        authTokens: {
+          create: {
+            tokenType: 'EMAIL_VERIFICATION',
+            tokenHash: hashedOTP,
+            expiresAt: otpExpiresAt,
           },
         },
       },
@@ -92,7 +105,38 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ message: 'Registration successful', user }, { status: 201 })
+    // Send OTP email (non-blocking)
+    try {
+      await sendEmailVerificationEmail(user.email, user.profile?.firstName || 'User', otp, otpExpiresAt)
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError)
+      // Continue - don't block registration on email failure
+    }
+
+    // Non-blocking audit log
+    try {
+      const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                        request.headers.get('x-real-ip') || 'unknown'
+      
+      await getPrisma().auditLog.create({
+        data: {
+          userId: user.id,
+          userRole: user.role,
+          action: 'OTP_SENT',
+          entityType: 'User',
+          entityId: user.id,
+          ipAddress,
+        },
+      })
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+    }
+
+    return NextResponse.json({ 
+      message: 'Registration successful. Please verify your email.', 
+      needsVerification: true,
+      user: { id: user.id, email: user.email, role: user.role }
+    }, { status: 201 })
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
