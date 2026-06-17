@@ -90,7 +90,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const adminUser = authCheck
     const { id } = await params
     const body = await request.json()
-    const { action, value, duration } = body
+    const { action, value, duration, badgeTier } = body
 
     if (!action) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 })
@@ -110,37 +110,40 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     let updatedStore
 
     switch (action) {
-      case 'verify':
-        // Verify the vendor (set isVerified to true)
-        updatedStore = await prisma.store.update({
-          where: { id },
-          data: { isVerified: value === true },
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                role: true,
-                createdAt: true,
-              },
-            },
-            _count: {
-              select: { products: true },
-            },
-          },
-        })
-        // Create audit log for vendor approval
-        await createAuditLog({
-          userId: adminUser.userId,
-          userRole: adminUser.role,
-          action: 'VENDOR_APPROVED',
-          entityType: 'VENDOR',
-          entityId: id,
-          beforeData: { isVerified: existingStore.isVerified, isFeatured: existingStore.isFeatured },
-          afterData: { isVerified: updatedStore.isVerified, isFeatured: updatedStore.isFeatured },
-          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-        })
-        break
+case 'verify':
+         // Verify the vendor (set isVerified to true) and optionally set badgeTier
+         updatedStore = await prisma.store.update({
+           where: { id },
+           data: { 
+             isVerified: value === true,
+             badgeTier: badgeTier || null,
+           },
+           include: {
+             user: {
+               select: {
+                 id: true,
+                 email: true,
+                 role: true,
+                 createdAt: true,
+               },
+             },
+             _count: {
+               select: { products: true },
+             },
+           },
+         })
+         // Create audit log for vendor approval
+         await createAuditLog({
+           userId: adminUser.userId,
+           userRole: adminUser.role,
+           action: 'VENDOR_APPROVED',
+           entityType: 'VENDOR',
+           entityId: id,
+           beforeData: { isVerified: existingStore.isVerified, isFeatured: existingStore.isFeatured, badgeTier: existingStore.badgeTier },
+           afterData: { isVerified: updatedStore.isVerified, isFeatured: updatedStore.isFeatured, badgeTier: updatedStore.badgeTier },
+           ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+         })
+         break
 
       case 'revoke':
         // Revoke the vendor (set isVerified to false)
@@ -319,6 +322,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       description: updatedStore.description,
       isVerified: updatedStore.isVerified,
       isFeatured: updatedStore.isFeatured,
+      badgeTier: updatedStore.badgeTier,
       featuredUntil: updatedStore.featuredUntil ? updatedStore.featuredUntil.toISOString() : null,
       createdAt: updatedStore.user.createdAt,
       user: {

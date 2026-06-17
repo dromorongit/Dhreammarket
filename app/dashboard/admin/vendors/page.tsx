@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatPrice } from '@/lib/currency'
 import { getVendorBadgeInfo, BADGE_TIERS } from '@/lib/vendor-badge'
+import { EmptyState } from '@/components/EmptyState'
 import Link from 'next/link'
 
 interface Vendor {
@@ -41,6 +42,8 @@ export default function AdminVendorsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [badgeActionLoading, setBadgeActionLoading] = useState<string | null>(null)
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null)
 
   const fetchVendors = useCallback(async () => {
     try {
@@ -131,17 +134,26 @@ export default function AdminVendorsPage() {
     }
   }
 
-  const handleVerify = async (vendorId: string, verify: boolean) => {
+  const handleVerify = async (vendorId: string, verify: boolean, badgeTier?: string | null) => {
     if (actionLoading) return
+    
+    if (verify && badgeTier === undefined && isSuperAdmin) {
+      setSelectedVendorId(vendorId)
+      setShowVerifyModal(true)
+      return
+    }
     
     const action = verify ? 'verify' : 'revoke'
     
     try {
       setActionLoading(vendorId)
+      const body: any = { action, value: verify }
+      if (badgeTier) body.badgeTier = badgeTier
+      
       const response = await fetch(`/api/admin/vendors/${vendorId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, value: verify }),
+        body: JSON.stringify(body),
       })
       
       const data = await response.json()
@@ -157,6 +169,8 @@ export default function AdminVendorsPage() {
       console.error(err)
     } finally {
       setActionLoading(null)
+      setShowVerifyModal(false)
+      setSelectedVendorId(null)
     }
   }
 
@@ -433,7 +447,7 @@ export default function AdminVendorsPage() {
                            {formatPrice(vendor.outstandingBalance || 0)}
                          </span>
                        </div>
-                       <div className="flex flex-wrap gap-2 pt-2">
+<div className="flex flex-wrap gap-2 pt-2">
                         {vendor.isVerified ? (
                           <button
                             onClick={() => handleVerify(vendor.id, false)}
@@ -641,6 +655,44 @@ export default function AdminVendorsPage() {
             </>
           )}
         </Card>
+
+        {/* Verify Modal with Badge Selection (SUPER_ADMIN only) */}
+        {showVerifyModal && selectedVendorId && isSuperAdmin && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Badge Tier (Optional)</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Choose a badge tier to assign when verifying this vendor. You can also verify without assigning a badge.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => handleVerify(selectedVendorId, true, null)}
+                  disabled={actionLoading === selectedVendorId}
+                  className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Verify without badge
+                </button>
+                {BADGE_TIERS.map((tier) => (
+                  <button
+                    key={tier.value}
+                    onClick={() => handleVerify(selectedVendorId, true, tier.value)}
+                    disabled={actionLoading === selectedVendorId}
+                    className="w-full px-4 py-2 text-left border border-gray-300 rounded-lg hover:bg-gray-50 flex flex-col items-start"
+                  >
+                    <span className="font-medium">{tier.label}</span>
+                    <span className="text-xs text-gray-500">{tier.description}</span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => { setShowVerifyModal(false); setSelectedVendorId(null) }}
+                  className="w-full px-4 py-2 text-center text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
