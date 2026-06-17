@@ -46,6 +46,7 @@ model AuthToken {
   id          String    @id @default(cuid())
   userId      String
   tokenType   TokenType
+  selector    String?   @unique
   tokenHash   String
   expiresAt   DateTime
   usedAt      DateTime?
@@ -58,7 +59,6 @@ model AuthToken {
   @@index([userId, tokenType])
   @@index([userId, tokenType, expiresAt])
   @@index([expiresAt])
-  @@index([tokenHash])
   @@map("auth_tokens")
 }
 

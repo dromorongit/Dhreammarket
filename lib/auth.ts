@@ -50,8 +50,13 @@ export function getUserFromToken(): { userId: string; role: Role } | null {
   return verifyToken(token)
 }
 
-// Generate a secure random token for password reset
-export function generateResetToken(): string {
+// Generate a selector (public identifier) for password reset tokens
+export function generateSelector(): string {
+  return randomBytes(16).toString('hex')
+}
+
+// Generate a secure random token (secret) for password reset
+export function generateResetSecret(): string {
   return randomBytes(32).toString('hex')
 }
 

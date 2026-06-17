@@ -318,10 +318,11 @@ export async function sendEmailVerificationEmail(
 export async function sendPasswordResetEmail(
   customerEmail: string,
   customerName: string,
-  resetToken: string,
+  selector: string,
+  secretToken: string,
   expiresAt: Date
 ) {
-  const resetUrl = `${getAppUrl()}/reset-password/${resetToken}`
+  const resetUrl = `${getAppUrl()}/reset-password/${selector}/${secretToken}`
   const expiryHours = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60))
   
   const subject = 'Reset Your Dhream Market Password'

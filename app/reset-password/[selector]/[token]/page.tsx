@@ -7,7 +7,7 @@ import { Button } from '@/components/Button'
 import { PasswordInput } from '@/components/PasswordInput'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 
-export default function ResetPasswordPage({ params }: { params: { token: string } }) {
+export default function ResetPasswordPage({ params }: { params: { selector: string; token: string } }) {
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -15,9 +15,7 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Legacy backward compatibility: if token is 64 hex chars, it's an old-format token
-  // In this case, we pass it as both selector and token (for legacy verification)
-  const isLegacyToken = params.token.length === 64 && /^[a-f0-9]+$/i.test(params.token)
+  const { selector, token } = params
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,11 +38,7 @@ export default function ResetPasswordPage({ params }: { params: { token: string 
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          selector: isLegacyToken ? params.token : params.token,
-          token: params.token,
-          password
-        }),
+        body: JSON.stringify({ selector, token, password }),
       })
 
       const data = await response.json()

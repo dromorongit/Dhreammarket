@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { hashPassword, generateOTP, hashOTP } from '@/lib/auth'
+import { hashPassword, generateOTP, hashOTP, generateSelector } from '@/lib/auth'
 import { normalizeGhanaPhoneNumber } from '@/lib/phone'
 import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
@@ -83,13 +83,14 @@ export async function POST(request: NextRequest) {
             firstName: role === 'CUSTOMER' ? name?.trim() : undefined,
           },
         },
-        authTokens: {
-          create: {
-            tokenType: 'EMAIL_VERIFICATION',
-            tokenHash: hashedOTP,
-            expiresAt: otpExpiresAt,
-          },
-        },
+authTokens: {
+           create: {
+             tokenType: 'EMAIL_VERIFICATION',
+             selector: generateSelector(),
+             tokenHash: hashedOTP,
+             expiresAt: otpExpiresAt,
+           },
+         },
       },
       select: {
         id: true,

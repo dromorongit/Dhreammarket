@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { generateResetToken, hashResetToken } from '@/lib/auth'
+import { generateSelector, generateResetSecret, hashResetToken } from '@/lib/auth'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -37,18 +37,20 @@ export async function POST(request: NextRequest) {
         data: { usedAt: new Date() },
       })
 
-      // Generate secure reset token
-      const resetToken = generateResetToken()
-      const hashedToken = hashResetToken(resetToken)
+      // Generate selector (public identifier) and secret token
+      const selector = generateSelector()
+      const secretToken = generateResetSecret()
+      const hashedToken = hashResetToken(secretToken)
 
       // Set expiration (1 hour from now)
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000)
 
-      // Create AuthToken entry
+      // Create AuthToken entry with selector
       await getPrisma().authToken.create({
         data: {
           userId: user.id,
           tokenType: 'PASSWORD_RESET',
+          selector,
           tokenHash: hashedToken,
           expiresAt,
         },
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       // Send email (non-blocking)
       try {
-        await sendPasswordResetEmail(user.email, customerName, resetToken, expiresAt)
+        await sendPasswordResetEmail(user.email, customerName, selector, secretToken, expiresAt)
       } catch (emailError) {
         console.error('Failed to send password reset email:', emailError)
       }

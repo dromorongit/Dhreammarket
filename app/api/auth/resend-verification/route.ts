@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { generateOTP, hashOTP } from '@/lib/auth'
+import { generateOTP, hashOTP, generateSelector } from '@/lib/auth'
 import { sendEmailVerificationEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         tokenType: 'EMAIL_VERIFICATION',
+        selector: generateSelector(),
         tokenHash: hashedOTP,
         expiresAt: otpExpiresAt,
       },
