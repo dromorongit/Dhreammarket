@@ -713,36 +713,32 @@ const fetchVendors = async () => {
                             <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {truncateVendorName(vendor.name)}
                             </h3>
-                            {(() => {
-                              const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                              if (badgeInfo) {
-                                return (
-                                  <Badge variant={badgeInfo.variant} size="sm" className="flex-shrink-0">
-                                    {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
-                                  </Badge>
-                                )
-                              }
-                              if (vendor.isVerified) {
-                                return (
-                                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                                )
-                              }
-                              return null
-                            })()}
+{(() => {
+                               const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                               if (badgeInfo) {
+                                 const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-amber-500' : 'text-sky-500'
+                                 return (
+                                   <>
+                                     <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                                     <Badge variant={badgeInfo.variant} size="sm" className="flex-shrink-0">
+                                       {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
+                                     </Badge>
+                                   </>
+                                 )
+                               }
+                               if (vendor.isVerified) {
+                                 return (
+                                   <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                 )
+                               }
+                               return null
+                             })()}
                           </div>
                           {vendor.category && (
                             <p className="text-sm text-slate-500 mb-2 min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                               {vendor.category.name}
                             </p>
                           )}
-                          {(() => {
-                            const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                            return badgeInfo ? (
-                              <Badge variant={badgeInfo.variant} size="sm" className="mb-2">
-                                {badgeInfo.displayLabel}
-                              </Badge>
-                            ) : null
-                          })()}
                           <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-1">
                               <span className="text-yellow-400">★</span>
