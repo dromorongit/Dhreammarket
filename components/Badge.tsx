@@ -2,7 +2,7 @@ import { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium' | 'verified' | 'preorder' | 'backorder'
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium' | 'verified' | 'preorder' | 'backorder' | 'trusted-vendor' | 'premium-vendor' | 'platinum-vendor'
   size?: 'sm' | 'md' | 'lg'
   rounded?: boolean
 }
@@ -25,6 +25,9 @@ export function Badge({
     verified: 'bg-gradient-to-r from-royal-blue/20 to-blue-100 text-royal-blue border border-royal-blue/30',
     preorder: 'bg-blue-600 text-white',
     backorder: 'bg-orange-500 text-white',
+    'trusted-vendor': 'bg-blue-100 text-blue-700 border border-blue-200',
+    'premium-vendor': 'bg-gradient-to-r from-yellow-400/20 to-amber-100 text-amber-700 border border-amber-300',
+    'platinum-vendor': 'bg-gradient-to-r from-slate-300/30 to-gray-200 text-slate-700 border border-slate-300',
   }
 
   const sizeClasses = {
@@ -34,6 +37,28 @@ export function Badge({
   }
 
   const roundedClass = rounded ? 'rounded-full' : 'rounded-md'
+
+  const getBadgeIcon = () => {
+    switch (variant) {
+      case 'verified':
+      case 'trusted-vendor':
+      case 'premium-vendor':
+      case 'platinum-vendor':
+        return (
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+          </svg>
+        )
+      case 'premium':
+        return (
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+          </svg>
+        )
+      default:
+        return null
+    }
+  }
 
   return (
     <span
@@ -56,6 +81,7 @@ export function Badge({
           <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
         </svg>
       )}
+      {(variant === 'trusted-vendor' || variant === 'premium-vendor' || variant === 'platinum-vendor') && getBadgeIcon()}
       {children}
     </span>
   )

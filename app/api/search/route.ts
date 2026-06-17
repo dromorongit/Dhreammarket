@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
             { brand: { contains: query, mode: 'insensitive' } },
           ],
         },
-        include: {
-          images: { take: 1 },
-          store: { select: { id: true, name: true, isVerified: true } },
-          category: { select: { id: true, name: true } },
-        },
+include: {
+           images: { take: 1 },
+           store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
+           category: { select: { id: true, name: true } },
+         },
         take: typeFilter === 'products' ? 20 : LIMIT_PER_TYPE,
         orderBy: { createdAt: 'desc' },
       })
@@ -91,17 +91,18 @@ results.products = products.map((p) => ({
         orderBy: { createdAt: 'desc' },
       })
 
-      results.vendors = vendors.map((v) => ({
-        id: v.id,
-        name: v.name,
-        description: v.description,
-        logo: v.logo,
-        isVerified: v.isVerified,
-        isFeatured: v.isFeatured,
-        productCount: v._count?.products || 0,
-        category: v.vendor_categories,
-        type: 'vendor',
-      }))
+results.vendors = vendors.map((v) => ({
+         id: v.id,
+         name: v.name,
+         description: v.description,
+         logo: v.logo,
+         isVerified: v.isVerified,
+         isFeatured: v.isFeatured,
+         badgeTier: v.badgeTier,
+         productCount: v._count?.products || 0,
+         category: v.vendor_categories,
+         type: 'vendor',
+       }))
     }
 
     // Search Product Categories

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatPrice } from '@/lib/currency'
+import { getVendorBadgeInfo, BADGE_TIERS } from '@/lib/vendor-badge'
 import Link from 'next/link'
 
 interface Vendor {
@@ -13,6 +14,7 @@ interface Vendor {
   description: string | null
   isVerified: boolean
   isFeatured: boolean
+  badgeTier: string | null
   featuredUntil: string | null
   createdAt: string
   mobileNumber: string | null
@@ -37,6 +39,8 @@ export default function AdminVendorsPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
   const [filters, setFilters] = useState({ verified: '', search: '' })
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [badgeActionLoading, setBadgeActionLoading] = useState<string | null>(null)
 
   const fetchVendors = useCallback(async () => {
     try {
@@ -67,7 +71,65 @@ export default function AdminVendorsPage() {
 
   useEffect(() => {
     fetchVendors()
+    fetchUserRole()
   }, [fetchVendors])
+
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUserRole(data.user?.role || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch user role:', e)
+    }
+  }
+
+  const isSuperAdmin = userRole === 'SUPER_ADMIN'
+
+  const handleBadgeAction = async (vendorId: string, badgeTier: string | null) => {
+    if (!isSuperAdmin) {
+      alert('Only SUPER_ADMIN can manage vendor badges')
+      return
+    }
+
+    const tier = BADGE_TIERS.find(t => t.value === badgeTier)
+    const confirmMessage = badgeTier
+      ? `Assign ${tier?.label} badge to this vendor?`
+      : 'Remove badge from this vendor?'
+
+    if (!confirm(confirmMessage)) return
+
+    try {
+      setBadgeActionLoading(vendorId)
+      const response = await fetch(`/api/admin/vendors/${vendorId}/badge`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: badgeTier ? 'assign_badge' : 'remove_badge',
+          badgeTier,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to update vendor badge')
+        return
+      }
+
+      // Update vendors list
+      setVendors(prev => prev.map(v =>
+        v.id === vendorId ? { ...v, badgeTier } : v
+      ))
+    } catch (err) {
+      console.error(err)
+      alert('Failed to update vendor badge')
+    } finally {
+      setBadgeActionLoading(null)
+    }
+  }
 
   const handleVerify = async (vendorId: string, verify: boolean) => {
     if (actionLoading) return
@@ -411,10 +473,11 @@ export default function AdminVendorsPage() {
                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gross Revenue</th>
                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payouts</th>
                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Balance</th>
-                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
-                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
-                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Actions</th>
+<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Badge</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Featured</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Actions</th>
                      </tr>
                    </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -448,18 +511,27 @@ export default function AdminVendorsPage() {
                              {formatPrice(vendor.outstandingBalance || 0)}
                            </span>
                          </td>
-                         <td className="px-4 py-4">
-                           {vendor.isVerified ? (
-                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                               Verified
-                             </span>
-                           ) : (
-                             <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                               Pending
-                             </span>
-                           )}
-                         </td>
-                         <td className="px-4 py-4">
+<td className="px-4 py-4">
+                            {vendor.isVerified ? (
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                Pending
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4">
+                            {vendor.badgeTier ? (
+                              <Badge variant={getVendorBadgeInfo(vendor.badgeTier as any)?.variant || 'default'} size="sm">
+                                {getVendorBadgeInfo(vendor.badgeTier as any)?.displayLabel || 'Unknown'}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4">
                            {vendor.isFeatured ? (
                              <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
                                Featured
@@ -507,14 +579,33 @@ export default function AdminVendorsPage() {
                               >
                                 {vendor.isFeatured ? 'Unfeature' : 'Feature'}
                               </button>
-                              <button
-                                onClick={() => handleDeleteVendor(vendor.id, vendor.name)}
-                                className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
-                                title="Delete vendor"
-                              >
-                                Delete
-                              </button>
-                            </div>
+<button
+                                 onClick={() => handleDeleteVendor(vendor.id, vendor.name)}
+                                 className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
+                                 title="Delete vendor"
+                               >
+                                 Delete
+                               </button>
+                               {isSuperAdmin && (
+                                 <>
+                                   {BADGE_TIERS.map((tier) => (
+                                     <button
+                                       key={tier.value}
+                                       onClick={() => handleBadgeAction(vendor.id, tier.value)}
+                                       disabled={badgeActionLoading === vendor.id}
+                                       className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                                         vendor.badgeTier === tier.value
+                                           ? 'bg-slate-200 border-slate-300 text-slate-700 cursor-default'
+                                           : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                                       }`}
+                                       title={`Assign ${tier.label} badge`}
+                                     >
+                                       {tier.label.split(' ')[0]}
+                                     </button>
+                                   ))}
+                                 </>
+                               )}
+                             </div>
                           )}
                         </td>
                       </tr>

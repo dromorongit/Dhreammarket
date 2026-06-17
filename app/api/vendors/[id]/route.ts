@@ -82,7 +82,7 @@ products: {
       store.featuredUntil && 
       new Date(store.featuredUntil) > new Date()
 
-    const vendorData = {
+const vendorData = {
       id: store.id,
       name: store.name,
       description: store.description,
@@ -91,6 +91,7 @@ products: {
       whatsappNumber: store.whatsappNumber,
       isVerified: store.isVerified,
       isFeatured: isCurrentlyFeatured,
+      badgeTier: store.badgeTier,
       logo: store.logo,
       banner: store.banner,
       rating: Math.round(averageRating * 10) / 10,

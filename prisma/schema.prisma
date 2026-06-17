@@ -17,8 +17,8 @@ model User {
   updatedAt                DateTime                       @updatedAt
   resetPasswordToken       String?
   resetPasswordExpires     DateTime?
-  isEmailVerified        Boolean                        @default(false)
-  emailVerifiedAt        DateTime?
+  isEmailVerified          Boolean                        @default(false)
+  emailVerifiedAt          DateTime?
   cart                     Cart?
   feedbacks                Feedback[]
   homepageSections         HomepageSectionVendor[]
@@ -43,18 +43,18 @@ model User {
 }
 
 model AuthToken {
-  id          String    @id @default(cuid())
-  userId      String
-  tokenType   TokenType
-  selector    String?   @unique
-  tokenHash   String
-  expiresAt   DateTime
-  usedAt      DateTime?
-  createdAt   DateTime  @default(now())
-  ipAddress   String?
-  userAgent   String?
+  id        String    @id @default(cuid())
+  userId    String
+  tokenType TokenType
+  selector  String?   @unique
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  ipAddress String?
+  userAgent String?
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, tokenType])
   @@index([userId, tokenType, expiresAt])
@@ -94,6 +94,7 @@ model Store {
   logo                     String?
   banner                   String?
   categoryId               String?
+  badgeTier                VendorBadgeTier?
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   alternativePhoneNumber   String?
@@ -735,6 +736,12 @@ enum VerificationAction {
   PAYMENT_REINITIATED
 }
 
+enum VendorBadgeTier {
+  TRUSTED
+  PREMIUM
+  PLATINUM
+}
+
 enum OrderType {
   NORMAL
   PREORDER
@@ -927,16 +934,16 @@ model FulfillmentEvent {
 }
 
 model OrderMessage {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   orderId     String
   userId      String
   userRole    String
   message     String
   messageType MessageType @default(GENERAL)
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([userId])

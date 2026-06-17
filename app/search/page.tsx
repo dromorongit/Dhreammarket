@@ -9,6 +9,7 @@ import { Button } from '@/components/Button'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
@@ -23,7 +24,7 @@ interface SearchProduct {
   dealsPrice?: number | null
   stock: number
   image: string | null
-  store: { id: string; name: string; isVerified: boolean } | null
+  store: { id: string; name: string; isVerified: boolean; badgeTier: string | null } | null
   category: { id: string; name: string } | null
   type: string
   availabilityType?: string
@@ -36,6 +37,7 @@ interface SearchVendor {
   logo: string | null
   isVerified: boolean
   isFeatured: boolean
+  badgeTier: string | null
   productCount: number
   category: { id: string; name: string; slug: string } | null
   type: string
@@ -314,20 +316,28 @@ function SearchPageContent() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <h3 className="text-sm font-semibold text-deep-navy truncate group-hover:text-royal-blue transition-colors">
-                                  {vendor.name}
-                                </h3>
-                                {vendor.isVerified && (
-                                  <Badge variant="verified" size="sm" className="text-[9px] px-1 py-0">
-                                    ✓
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-500">
-                                {vendor.productCount} products
-                                {vendor.category && ` · ${vendor.category.name}`}
-                              </p>
+<div className="flex items-center gap-1.5">
+                                 <h3 className="text-sm font-semibold text-deep-navy truncate group-hover:text-royal-blue transition-colors">
+                                   {vendor.name}
+                                 </h3>
+                                 {vendor.isVerified && (
+                                   <Badge variant="verified" size="sm" className="text-[9px] px-1 py-0">
+                                     ✓
+                                   </Badge>
+                                 )}
+                               </div>
+                               <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                                 {vendor.productCount} products
+                                 {vendor.category && ` · ${vendor.category.name}`}
+                                 {(() => {
+                                   const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                                   return badgeInfo ? (
+                                     <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
+                                       {badgeInfo.tier === 'PLATINUM' ? 'Platinum' : badgeInfo.tier === 'PREMIUM' ? 'Premium' : 'Trusted'}
+                                     </Badge>
+                                   ) : null
+                                 })()}
+                               </p>
                             </div>
                           </div>
                         </Card>
@@ -533,16 +543,24 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
                </span>
             )}
           </div>
-          {product.store && (
-            <div className="flex items-center gap-1 min-w-0">
-              <p className="text-[10px] text-slate-500 truncate">
-                {product.store.name}
-              </p>
-              {product.store.isVerified && (
-                <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
-              )}
-            </div>
-          )}
+{product.store && (
+             <div className="flex items-center gap-1 min-w-0">
+               <p className="text-[10px] text-slate-500 truncate">
+                 {product.store.name}
+               </p>
+               {product.store.isVerified && (
+                 <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+               )}
+               {(() => {
+                 const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                 return badgeInfo ? (
+                   <Badge variant={badgeInfo.variant} size="sm" className="text-[8px] px-1 py-0">
+                     {badgeInfo.tier === 'PLATINUM' ? 'P' : badgeInfo.tier === 'PREMIUM' ? 'PR' : 'T'}
+                   </Badge>
+                 ) : null
+               })()}
+             </div>
+           )}
         </div>
       </Card>
     </Link>

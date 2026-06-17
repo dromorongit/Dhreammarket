@@ -12,6 +12,7 @@ import { Skeleton, SkeletonCard, SkeletonReviews } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink, getWhatsAppLinks } from '@/lib/phone'
 import { truncateVendorName } from '@/lib/utils'
+import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
@@ -60,6 +61,7 @@ interface VendorData {
   whatsappNumber: string | null
   isVerified: boolean
   isFeatured: boolean
+  badgeTier: string | null
   logo: string | null
   banner: string | null
   rating: number
@@ -417,15 +419,23 @@ fetchVendor()
                  {vendor.isVerified && (
                    <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
                  )}
-                 {vendor.isFeatured && (
-                   <Badge variant="premium" size="md">
-                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                     </svg>
-                     Featured
-                   </Badge>
-                 )}
-               </div>
+{vendor.isFeatured && (
+                    <Badge variant="premium" size="md">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      Featured
+                    </Badge>
+                  )}
+                  {(() => {
+                    const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                    return badgeInfo ? (
+                      <Badge variant={badgeInfo.variant} size="md">
+                        {badgeInfo.displayLabel}
+                      </Badge>
+                    ) : null
+                  })()}
+                </div>
 
               {vendor.category && (
                 <p className="text-slate-600 mb-2">
@@ -610,14 +620,22 @@ fetchVendor()
                              </span>
                            )}
                         </div>
-                        <div className="flex items-center gap-1 min-w-0">
-                          <p className="text-[10px] text-slate-500 truncate">
-                            {vendor.name}
-                          </p>
-                          {vendor.isVerified && (
-                            <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                          )}
-                        </div>
+<div className="flex items-center gap-1 min-w-0">
+                           <p className="text-[10px] text-slate-500 truncate">
+                             {vendor.name}
+                           </p>
+                           {vendor.isVerified && (
+                             <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                           )}
+                           {(() => {
+                             const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                             return badgeInfo ? (
+                               <Badge variant={badgeInfo.variant} size="sm" className="text-[9px] px-1 py-0">
+                                 {badgeInfo.displayLabel}
+                               </Badge>
+                             ) : null
+                           })()}
+                         </div>
                       </div>
                     </Card>
                   )})}

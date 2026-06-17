@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { formatPrice } from '@/lib/currency'
+import { getVendorBadgeInfo, BADGE_TIERS } from '@/lib/vendor-badge'
 import Link from 'next/link'
 
 interface VerificationDocument {
@@ -54,7 +55,9 @@ interface VerificationAuditLog {
 interface VerificationApplication {
   id: string
   store: {
+    id: string
     name: string
+    badgeTier: string | null
   }
   vendor: {
     email: string
@@ -91,6 +94,26 @@ export default function AdminVerificationApplicationsPage() {
   const [filters, setFilters] = useState({ status: '', search: '' })
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selectedApp, setSelectedApp] = useState<VerificationApplication | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [badgeActionLoading, setBadgeActionLoading] = useState(false)
+
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUserRole(data.user?.role || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch user role:', e)
+    }
+  }
+
+  useEffect(() => {
+    fetchUserRole()
+  }, [])
+
+  const isSuperAdmin = userRole === 'SUPER_ADMIN'
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -154,6 +177,59 @@ export default function AdminVerificationApplicationsPage() {
       console.error(err)
     } finally {
       setActionLoading(null)
+    }
+  }
+
+  const handleBadgeAction = async (storeId: string, badgeTier: string | null) => {
+    if (!isSuperAdmin) {
+      alert('Only SUPER_ADMIN can manage vendor badges')
+      return
+    }
+
+    if (!badgeTier && !confirm('Remove badge from this vendor?')) {
+      return
+    }
+
+    if (badgeTier) {
+      const confirmMessage = selectedApp?.store?.badgeTier
+        ? `Change badge from ${getVendorBadgeInfo(selectedApp.store.badgeTier as any)?.displayLabel || 'None'} to ${getVendorBadgeInfo(badgeTier as any)?.displayLabel}?`
+        : `Assign ${getVendorBadgeInfo(badgeTier as any)?.displayLabel} badge to this vendor?`
+      if (!confirm(confirmMessage)) {
+        return
+      }
+    }
+
+    try {
+      setBadgeActionLoading(true)
+      const response = await fetch(`/api/admin/vendors/${storeId}/badge`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: badgeTier ? 'assign_badge' : 'remove_badge',
+          badgeTier,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || 'Failed to update vendor badge')
+        return
+      }
+
+      // Update selectedApp state if modal is open
+      if (selectedApp) {
+        setSelectedApp({
+          ...selectedApp,
+          store: { ...selectedApp.store, badgeTier },
+        })
+      }
+      fetchApplications()
+    } catch (err) {
+      console.error(err)
+      alert('Failed to update vendor badge')
+    } finally {
+      setBadgeActionLoading(false)
     }
   }
 
@@ -407,7 +483,52 @@ export default function AdminVerificationApplicationsPage() {
                   {/* Store Information */}
                   <div>
                     <h4 className="font-medium text-gray-700 mb-2">Store Information</h4>
-                    <p className="text-sm text-gray-600">{selectedApp.store?.name}</p>
+                    <p className="text-sm text-gray-600 mb-3">{selectedApp.store?.name}</p>
+                    
+                    {/* Badge Management Section - SUPER_ADMIN only */}
+                    {isSuperAdmin && (
+                      <div className="mt-3 p-3 bg-slate-50 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Vendor Badge Management</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs text-gray-500">Current Badge:</span>
+                          {selectedApp.store?.badgeTier ? (
+                            <Badge variant={getVendorBadgeInfo(selectedApp.store.badgeTier as any)?.variant || 'default'} size="sm">
+                              {getVendorBadgeInfo(selectedApp.store.badgeTier as any)?.displayLabel || 'Unknown'}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-gray-400">No badge assigned</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {BADGE_TIERS.map((tier) => (
+                            <button
+                              key={tier.value}
+                              onClick={() => handleBadgeAction(selectedApp.store!.id, tier.value)}
+                              disabled={badgeActionLoading}
+                              className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                                selectedApp.store?.badgeTier === tier.value
+                                  ? 'bg-slate-200 border-slate-300 text-slate-700 cursor-default'
+                                  : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              {tier.label}
+                            </button>
+                          ))}
+                          {selectedApp.store?.badgeTier && (
+                            <button
+                              onClick={() => handleBadgeAction(selectedApp.store!.id, null)}
+                              disabled={badgeActionLoading}
+                              className="text-xs px-3 py-1 rounded-full border border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        {badgeActionLoading && (
+                          <p className="text-xs text-gray-500 mt-2">Updating badge...</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Vendor Contact */}

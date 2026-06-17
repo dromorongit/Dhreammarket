@@ -61,12 +61,13 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-        store: {
-          select: {
-            id: true,
-            name: true,
-          }
-        },
+store: {
+           select: {
+             id: true,
+             name: true,
+             badgeTier: true,
+           }
+         },
 documents: true,
          payments: true,
          auditLogs: {
