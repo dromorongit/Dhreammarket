@@ -26,7 +26,7 @@ const productSelect = {
   images: { select: { id: true, url: true, alt: true } },
   category: { select: { id: true, name: true, slug: true } },
   store: {
-    select: { id: true, name: true, isVerified: true, logo: true },
+    select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true },
   },
 } as const
 
@@ -70,6 +70,7 @@ export async function GET(_request: NextRequest) {
                       isVerified: true,
                       isFeatured: true,
                       logo: true,
+                      badgeTier: true,
                       _count: { select: { products: true } },
                     },
                   },
@@ -132,6 +133,7 @@ export async function GET(_request: NextRequest) {
       vendors: (section.vendors || [])
         .map((sv: any) => ({
           ...sv.vendor,
+          badgeTier: sv.vendor.store?.badgeTier ?? null,
           storeName: sv.vendor.store?.name ?? sv.vendor.name,
           productCount: sv.vendor.store?._count?.products ?? 0,
         }))
