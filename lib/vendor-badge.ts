@@ -6,25 +6,27 @@ export type VendorBadgeInfo = {
   variant: 'trusted-vendor' | 'premium-vendor' | 'platinum-vendor'
 }
 
-export function getVendorBadgeInfo(tier: VendorBadgeTier | null): VendorBadgeInfo | null {
+export function getVendorBadgeInfo(tier: VendorBadgeTier | string | null): VendorBadgeInfo | null {
   if (!tier) return null
-  
-  switch (tier) {
+
+  const normalizedTier = typeof tier === 'string' ? tier.toUpperCase() as VendorBadgeTier : tier
+
+  switch (normalizedTier) {
     case 'TRUSTED':
       return {
-        tier,
+        tier: normalizedTier,
         displayLabel: 'Trusted Vendor',
         variant: 'trusted-vendor',
       }
     case 'PREMIUM':
       return {
-        tier,
+        tier: normalizedTier,
         displayLabel: 'Premium Vendor',
         variant: 'premium-vendor',
       }
     case 'PLATINUM':
       return {
-        tier,
+        tier: normalizedTier,
         displayLabel: 'Platinum Vendor',
         variant: 'platinum-vendor',
       }
