@@ -41,7 +41,7 @@ export async function POST(
       where: { id: { in: vendorIds } },
       include: {
         profile: true,
-        store: { select: { id: true, name: true, isVerified: true, isFeatured: true } },
+        store: { select: { id: true, name: true, isVerified: true, isFeatured: true, badgeTier: true } },
       },
     })
 
@@ -76,16 +76,17 @@ export async function POST(
         vendor: {
           include: {
             profile: true,
-            store: {
-              select: {
-                id: true,
-                name: true,
-                isVerified: true,
-                isFeatured: true,
-                logo: true,
-                _count: { select: { products: true } },
-              },
-            },
+store: {
+               select: {
+                 id: true,
+                 name: true,
+                 isVerified: true,
+                 isFeatured: true,
+                 logo: true,
+                 badgeTier: true,
+                 _count: { select: { products: true } },
+               },
+             },
           },
         },
       },

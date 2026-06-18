@@ -46,7 +46,7 @@ const updated = await prisma.product.findMany({
        where: { brandId: id },
        include: {
          images: true,
-         store: { select: { id: true, name: true } },
+         store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
        },
        orderBy: { name: 'asc' }
      })

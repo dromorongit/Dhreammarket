@@ -30,6 +30,7 @@ export async function GET(
             id: true,
             name: true,
             isVerified: true,
+            badgeTier: true,
           },
         },
         images: true,

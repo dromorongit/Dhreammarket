@@ -22,7 +22,7 @@ const productSelect = {
   images: { select: { id: true, url: true, alt: true } },
   category: { select: { id: true, name: true, slug: true } },
   store: {
-    select: { id: true, name: true, isVerified: true, logo: true },
+    select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true },
   },
 }
 

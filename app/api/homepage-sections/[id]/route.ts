@@ -26,9 +26,9 @@ export async function GET(
               include: {
                 images: true,
                 category: true,
-                store: {
-                  select: { id: true, name: true, isVerified: true },
-                },
+store: {
+                   select: { id: true, name: true, isVerified: true, badgeTier: true },
+                 },
               },
             },
           },
@@ -38,16 +38,17 @@ vendors: {
               vendor: {
                 include: {
                   profile: true,
-                  store: {
-                    select: {
-                      id: true,
-                      name: true,
-                      isVerified: true,
-                      isFeatured: true,
-                      logo: true,
-                      _count: { select: { products: true } },
-                    },
-                  },
+store: {
+                     select: {
+                       id: true,
+                       name: true,
+                       isVerified: true,
+                       isFeatured: true,
+                       logo: true,
+                       badgeTier: true,
+                       _count: { select: { products: true } },
+                     },
+                   },
                 },
               },
             },

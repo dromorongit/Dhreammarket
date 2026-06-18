@@ -76,7 +76,7 @@ export async function POST(
               include: {
                 images: true,
                 category: true,
-                store: { select: { id: true, name: true, isVerified: true } },
+                store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
               },
             },
       },
