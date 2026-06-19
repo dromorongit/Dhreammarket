@@ -64,13 +64,6 @@ function getCurrentUrl(): string {
   return `${window.location.pathname}${window.location.search || ''}`
 }
 
-function handleAuthRedirect() {
-  const currentUrl = encodeURIComponent(getCurrentUrl())
-  if (typeof window !== 'undefined') {
-    window.location.href = `/login?redirect=${currentUrl}`
-  }
-}
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null)
   const [loading, setLoading] = useState(false)

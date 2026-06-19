@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
