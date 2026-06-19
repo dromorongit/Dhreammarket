@@ -62,10 +62,30 @@ function VerifyEmailContent() {
       const data = await response.json()
 
       if (response.ok) {
-        if (redirectUrl) {
-          window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`
+        // Auto-login is handled by the backend - redirect to target page
+        if (data.user) {
+          // User is auto-authenticated, redirect directly
+          const role = data.user.role
+          
+          // For vendors, check if they need to complete onboarding
+          if (role === 'VENDOR' && !redirectUrl) {
+            // Redirect to store setup for vendor onboarding (cannot be bypassed via redirect param)
+            window.location.href = '/dashboard/vendor/store'
+          } else {
+            const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
+                                    role === 'ADMIN' ? '/dashboard/admin' :
+                                    role === 'VENDOR' ? '/dashboard/vendor/store' :
+                                    '/dashboard/customer'
+            const targetUrl = redirectUrl || dashboardPath
+            window.location.href = targetUrl
+          }
         } else {
-          window.location.href = '/login'
+          // Fallback: redirect to login if no auto-login
+          if (redirectUrl) {
+            window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`
+          } else {
+            window.location.href = '/login'
+          }
         }
       } else {
         setError(data.error || 'Verification failed')

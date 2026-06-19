@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { rateLimit } from '@/lib/rate-limit'
+import { generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('email-verification')(request)
@@ -98,11 +99,25 @@ export async function POST(request: NextRequest) {
       console.error('Failed to create audit log:', auditError)
     }
 
-    return NextResponse.json({ 
+    // Auto-login after verification - generate token and set cookie
+    const token = generateToken({ userId: user.id, role: user.role })
+    
+    const response = NextResponse.json({ 
       message: 'Email verified successfully',
       email: user.email,
-      isEmailVerified: true 
+      isEmailVerified: true,
+      user: { id: user.id, email: user.email, role: user.role }
     }, { status: 200 })
+    
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+    
+    return response
   } catch (error) {
     console.error('Email verification error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

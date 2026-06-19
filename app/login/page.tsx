@@ -63,11 +63,15 @@ export default function LoginPage() {
           window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
         } else {
           const role = data.user.role
+          // Vendors go to store setup unless redirect specified (onboarding cannot be bypassed)
           const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
                                 role === 'ADMIN' ? '/dashboard/admin' :
-                                role === 'VENDOR' ? '/dashboard/vendor' :
+                                role === 'VENDOR' ? '/dashboard/vendor/store' :
                                 '/dashboard/customer'
-          const targetUrl = redirectUrl || dashboardPath
+          // Only allow redirect to non-dashboard paths; vendor onboarding must be completed
+          const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor') 
+            ? redirectUrl 
+            : dashboardPath
           window.location.href = targetUrl
         }
       } else {
