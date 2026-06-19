@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
@@ -8,7 +8,7 @@ import { Input } from '@/components/Input'
 import { PasswordInput } from '@/components/PasswordInput'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -65,9 +65,9 @@ export default function LoginPage() {
           const role = data.user.role
           // Vendors go to store setup unless redirect specified (onboarding cannot be bypassed)
           const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
-                                role === 'ADMIN' ? '/dashboard/admin' :
-                                role === 'VENDOR' ? '/dashboard/vendor/store' :
-                                '/dashboard/customer'
+                              role === 'ADMIN' ? '/dashboard/admin' :
+                              role === 'VENDOR' ? '/dashboard/vendor/store' :
+                              '/dashboard/customer'
           // Only allow redirect to non-dashboard paths; vendor onboarding must be completed
           const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor') 
             ? redirectUrl 
@@ -143,5 +143,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   )
 }

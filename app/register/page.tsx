@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
@@ -12,7 +12,7 @@ type Role = 'CUSTOMER' | 'VENDOR'
 
 const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
 
-export default function RegisterPage() {
+function RegisterContent() {
   const [name, setName] = useState('')
   const [mobileNumber, setMobileNumber] = useState('')
   const [email, setEmail] = useState('')
@@ -128,11 +128,11 @@ export default function RegisterPage() {
            Create your Dhream Market account
          </h2>
 <p className="mt-2 text-center text-sm text-gray-600">
-           Already have an account?{' '}
-           <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"} className="font-medium text-blue-600 hover:text-blue-500">
-             Sign in
-           </Link>
-         </p>
+            Already have an account?{' '}
+            <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"} className="font-medium text-blue-600 hover:text-blue-500">
+              Sign in
+            </Link>
+          </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -238,5 +238,13 @@ export default function RegisterPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+      <RegisterContent />
+    </Suspense>
   )
 }
