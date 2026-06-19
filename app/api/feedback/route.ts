@@ -52,19 +52,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    let userId: string | null = null
+
+    // Try to get authenticated user (optional - allow anonymous submissions)
+    if (token) {
+      const payload = await verifyToken(token)
+      if (payload) {
+        userId = payload.userId
+      }
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { type, subject, message, email: providedEmail, name: providedName } = await request.json()
 
-    const { type, subject, message } = await request.json()
-
+    // Validate required fields
     if (!type || !subject || !message) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+    }
+
+    // For anonymous submissions, email is required
+    if (!userId && !providedEmail) {
+      return NextResponse.json({ error: 'Email is required for anonymous submissions' }, { status: 400 })
     }
 
     // Input sanitization - security hardening
@@ -79,14 +86,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message must be at least 10 characters' }, { status: 400 })
     }
 
+    // Build feedback data
+    const feedbackData: any = {
+      type,
+      subject: sanitizedSubject,
+      message: sanitizedMessage,
+      status: 'OPEN',
+    }
+
+    // Link to user if authenticated, otherwise store contact info in message
+    if (userId) {
+      feedbackData.userId = userId
+    }
+
     const feedback = await getPrisma().feedback.create({
-      data: {
-        userId: payload.userId,
-        type,
-        subject: sanitizedSubject,
-        message: sanitizedMessage,
-        status: 'OPEN',
-      },
+      data: feedbackData,
       include: {
         user: {
           select: {
@@ -98,10 +112,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Send email notification to support
+    // Send email notification to support (non-blocking)
     try {
-      const userEmail = feedback.user?.email || 'Unknown'
-      const userName = feedback.user?.email?.split('@')[0] || 'Anonymous User'
+      const userEmail = feedback.user?.email || providedEmail || 'Unknown'
+      const userName = providedName || feedback.user?.email?.split('@')[0] || 'Anonymous User'
+      
+      const escapedMessage = sanitizedMessage
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>')
       
       const emailContent = `
         <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Contact Form Message</h2>
@@ -109,7 +129,7 @@ export async function POST(request: NextRequest) {
         <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">From</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userName} (${userEmail || 'Unknown'})</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userName} (${userEmail})</td>
           </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Feedback Type</td>
@@ -121,7 +141,7 @@ export async function POST(request: NextRequest) {
           </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Message</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151; white-space: pre-wrap;">${sanitizedMessage.replace(/\n/g, '<br>')}</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151;">${escapedMessage}</td>
           </tr>
         </table>
         <p style="margin: 0; font-size: 14px; color: #6b7280;">View this feedback in the admin dashboard for response.</p>

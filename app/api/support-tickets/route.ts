@@ -101,6 +101,12 @@ export async function POST(request: NextRequest) {
         fromName = userRecord?.email || email || 'Unknown'
       }
       
+      const escapedMessage = sanitizedMessage
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>')
+      
       const emailContent = `
         <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Support Ticket</h2>
         <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">A new support ticket has been submitted.</p>
@@ -123,7 +129,7 @@ export async function POST(request: NextRequest) {
           </tr>` : ''}
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Message</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151; white-space: pre-wrap;">${sanitizedMessage.replace(/\n/g, '<br>')}</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151;">${escapedMessage}</td>
           </tr>
         </table>
         <p style="margin: 0; font-size: 14px; color: #6b7280;">View this ticket in the admin dashboard for response.</p>

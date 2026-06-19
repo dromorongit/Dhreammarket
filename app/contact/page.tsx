@@ -112,7 +112,9 @@ export default function ContactPage() {
         body: JSON.stringify({
           type: formData.type,
           subject: formData.subject,
-          message: formData.message
+          message: formData.message,
+          email: formData.email,
+          name: formData.name
         }),
         credentials: 'include'
       })
