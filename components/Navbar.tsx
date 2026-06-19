@@ -518,12 +518,9 @@ export function Navbar() {
          mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
        }`}>
          <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white">
-           <button
-             onClick={() => { router.push('/'); closeMobileMenu(); }}
-             className="w-full text-left block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
-           >
-             Home
-           </button>
+            <Link href="/" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+              Home
+            </Link>
            <Link href="/marketplace" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
              Marketplace
            </Link>
