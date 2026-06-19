@@ -497,23 +497,23 @@ export function Navbar() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
 ) : (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
+)}
+            </svg>
+            </button>
           </div>
         </div>
+      </div>
 
-{/* Mobile Search Bar (expandable) */}
-        <div className={`lg:hidden transition-all duration-300 ease-in-out ${
-          mobileSearchOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-        }`}>
-          <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white">
-            <SearchDropdown onNavigate={closeMobileSearch} />
-          </div>
+      {/* Mobile Search Bar (expandable) */}
+      <div className={`lg:hidden transition-all duration-300 ease-in-out ${
+        mobileSearchOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white">
+          <SearchDropdown onNavigate={closeMobileSearch} />
         </div>
+      </div>
 
-        {/* Mobile Menu */}
+      {/* Mobile Menu */}
       <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out relative ${
         mobileMenuOpen ? 'max-h-[600px] opacity-100 z-50' : 'max-h-0 opacity-0'
       }`}>

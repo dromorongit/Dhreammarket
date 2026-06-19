@@ -57,7 +57,7 @@ export async function sendEmail({ to, subject, htmlContent, textContent }: Email
 }
 
 // Base email template wrapper for consistent styling
-function getEmailTemplate(content: string, footerText = '') {
+export function getEmailTemplate(content: string, footerText = '') {
   return `
 <!DOCTYPE html>
 <html>

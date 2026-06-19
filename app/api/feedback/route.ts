@@ -3,6 +3,9 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { rateLimit } from '@/lib/rate-limit'
 import { sanitizeUserContent } from '@/lib/sanitize'
+import { sendEmail, getEmailTemplate } from '@/lib/email'
+
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@dhreamarket.com'
 
 export async function GET(request: NextRequest) {
   try {
@@ -94,6 +97,49 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    // Send email notification to support
+    try {
+      const userEmail = feedback.user?.email || 'Unknown'
+      const userName = feedback.user?.email?.split('@')[0] || 'Anonymous User'
+      
+      const emailContent = `
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Contact Form Message</h2>
+        <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">You have received a new message from the contact form.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">From</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userName} (${userEmail || 'Unknown'})</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Feedback Type</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${type.replace(/_/g, ' ')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Subject</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${sanitizedSubject}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Message</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151; white-space: pre-wrap;">${sanitizedMessage.replace(/\n/g, '<br>')}</td>
+          </tr>
+        </table>
+        <p style="margin: 0; font-size: 14px; color: #6b7280;">View this feedback in the admin dashboard for response.</p>
+      `
+
+      const emailResult = await sendEmail({
+        to: SUPPORT_EMAIL,
+        subject: `[Contact Form] ${sanitizedSubject}`,
+        htmlContent: getEmailTemplate(emailContent),
+        textContent: `New contact form message from ${userName} (${userEmail})\n\nSubject: ${sanitizedSubject}\nType: ${type}\n\nMessage:\n${sanitizedMessage}`,
+      })
+
+      if (!emailResult.success) {
+        console.error('[FEEDBACK] Email send failed:', emailResult.error || emailResult.reason)
+      }
+    } catch (emailError) {
+      console.error('[FEEDBACK] Email send error:', emailError)
+    }
 
     return NextResponse.json({ feedback }, { status: 201 })
   } catch (error) {
