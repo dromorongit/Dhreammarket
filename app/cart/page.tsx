@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -87,7 +87,8 @@ export default function Cart() {
         const data: CartResponse = await response.json()
         setCart(data.cart)
       } else if (response.status === 401) {
-        router.push('/login')
+        const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
+        window.location.href = `/login?redirect=${currentUrl}`
       } else {
         console.error('Failed to fetch cart')
       }

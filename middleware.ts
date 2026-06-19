@@ -4,8 +4,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken, type Role } from './lib/auth-middleware'
 
+const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
+
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, search } = request.nextUrl
+  
+  const fullUrl = `${pathname}${search || ''}`
+  const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
 
   // Define protected routes
   const protectedRoutes = {
@@ -26,11 +31,21 @@ export async function middleware(request: NextRequest) {
     console.log('TOKEN EXISTS:', !!token)
 
     if (!token) {
+      if (!isAuthRoute) {
+        const redirectUrl = new URL('/login', request.url)
+        redirectUrl.searchParams.set('redirect', fullUrl)
+        return NextResponse.redirect(redirectUrl)
+      }
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
+      if (!isAuthRoute) {
+        const redirectUrl = new URL('/login', request.url)
+        redirectUrl.searchParams.set('redirect', fullUrl)
+        return NextResponse.redirect(redirectUrl)
+      }
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
@@ -39,7 +54,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
+    if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
       // Check email verification first
       try {
         const { getPrisma } = await import('./lib/prisma')
@@ -49,7 +64,11 @@ if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
         })
         
         if (!user?.isEmailVerified) {
-          return NextResponse.redirect(new URL('/verify-email', request.url))
+          const verifyUrl = new URL('/verify-email', request.url)
+          if (fullUrl) {
+            verifyUrl.searchParams.set('redirect', fullUrl)
+          }
+          return NextResponse.redirect(verifyUrl)
         }
       } catch (error) {
         console.error('Error checking email verification:', error)
@@ -67,7 +86,11 @@ if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
         })
         
         if (!user?.isEmailVerified) {
-          return NextResponse.redirect(new URL('/verify-email', request.url))
+          const verifyUrl = new URL('/verify-email', request.url)
+          if (fullUrl) {
+            verifyUrl.searchParams.set('redirect', fullUrl)
+          }
+          return NextResponse.redirect(verifyUrl)
         }
       } catch (error) {
         console.error('Error checking email verification:', error)
@@ -83,29 +106,32 @@ if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
       if (pathname.startsWith('/dashboard/vendor/verification')) {
         return NextResponse.next()
       }
-       
-       try {
-         const { isVendorOnboarded } = await import('./lib/onboarding')
-         const isOnboarded = await isVendorOnboarded(payload.userId)
-         
-         // Debug logging
-         console.log('[Middleware] Onboarding check for user:', payload.userId, 'isOnboarded:', isOnboarded, 'pathname:', pathname)
-         
-         if (!isOnboarded) {
-           // Redirect to store setup if vendor hasn't completed onboarding
-           // But don't redirect if already on the store setup page (prevents loop)
-           if (!pathname.startsWith('/dashboard/vendor/store')) {
-             const storeSetupUrl = '/dashboard/vendor/store'
-             const redirectUrl = new URL(storeSetupUrl, request.url)
-             return NextResponse.redirect(redirectUrl)
-           }
-         }
-       } catch (error) {
-         console.error('Error checking vendor onboarding status:', error)
-         // On error, allow access to prevent redirect loop
-         // Don't redirect - just allow access to the page
-       }
-     }
+        
+        try {
+          const { isVendorOnboarded } = await import('./lib/onboarding')
+          const isOnboarded = await isVendorOnboarded(payload.userId)
+          
+          // Debug logging
+          console.log('[Middleware] Onboarding check for user:', payload.userId, 'isOnboarded:', isOnboarded, 'pathname:', pathname)
+          
+          if (!isOnboarded) {
+            // Redirect to store setup if vendor hasn't completed onboarding
+            // But don't redirect if already on the store setup page (prevents loop)
+            if (!pathname.startsWith('/dashboard/vendor/store')) {
+              const storeSetupUrl = '/dashboard/vendor/store'
+              const redirectUrl = new URL(storeSetupUrl, request.url)
+              if (fullUrl) {
+                redirectUrl.searchParams.set('redirect', fullUrl)
+              }
+              return NextResponse.redirect(redirectUrl)
+            }
+          }
+        } catch (error) {
+          console.error('Error checking vendor onboarding status:', error)
+          // On error, allow access to prevent redirect loop
+          // Don't redirect - just allow access to the page
+        }
+      }
   }
 
   return NextResponse.next()

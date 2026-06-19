@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -9,6 +9,8 @@ import { PasswordInput } from '@/components/PasswordInput'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 
 type Role = 'CUSTOMER' | 'VENDOR'
+
+const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
 
 export default function RegisterPage() {
   const [name, setName] = useState('')
@@ -21,6 +23,26 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const redirectParam = searchParams.get('redirect')
+    if (redirectParam) {
+      try {
+        const decodedUrl = decodeURIComponent(redirectParam)
+        if (decodedUrl.startsWith('/')) {
+          const authRouteCheck = AUTH_ROUTES.some(route => decodedUrl.startsWith(route))
+          if (!authRouteCheck) {
+            setRedirectUrl(decodedUrl)
+          }
+        }
+      } catch {
+        // Invalid redirect URL, ignore
+      }
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,7 +92,7 @@ export default function RegisterPage() {
       return
     }
 
-try {
+    try {
        const response = await fetch('/api/auth/register', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
@@ -80,21 +102,24 @@ try {
        const data = await response.json()
 
        if (response.ok) {
-         // Redirect to verification page if email verification is required
          if (data.needsVerification) {
-           router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+           const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
+           window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
          } else {
-           router.push('/login')
+           const targetUrl = redirectUrl 
+             ? `/login?redirect=${encodeURIComponent(redirectUrl)}`
+             : '/login'
+           window.location.href = targetUrl
          }
        } else {
          setError(data.error || 'Registration failed')
        }
      } catch (err) {
-      setError('An error occurred. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+       setError('An error occurred. Please try again.')
+     } finally {
+       setLoading(false)
+     }
+   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -102,12 +127,12 @@ try {
          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
            Create your Dhream Market account
          </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            Sign in
-          </Link>
-        </p>
+<p className="mt-2 text-center text-sm text-gray-600">
+           Already have an account?{' '}
+           <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"} className="font-medium text-blue-600 hover:text-blue-500">
+             Sign in
+           </Link>
+         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

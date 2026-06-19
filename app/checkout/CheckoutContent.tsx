@@ -119,21 +119,22 @@ export default function CheckoutContent() {
     }
   }, [contextCart])
 
-  const loadCart = async () => {
-    try {
-      const response = await fetch('/api/cart')
-      if (response.ok) {
-        const data: CartResponse = await response.json()
-        setCart(data.cart)
-      } else if (response.status === 401) {
-        router.push('/login')
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+const loadCart = async () => {
+     try {
+       const response = await fetch('/api/cart')
+       if (response.ok) {
+         const data: CartResponse = await response.json()
+         setCart(data.cart)
+       } else if (response.status === 401) {
+         const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
+         window.location.href = `/login?redirect=${currentUrl}`
+       }
+     } catch (error) {
+       console.error('Error fetching cart:', error)
+     } finally {
+       setLoading(false)
+     }
+   }
 
   const fetchProfile = async () => {
     try {
@@ -190,42 +191,42 @@ export default function CheckoutContent() {
     return Object.keys(errors).length === 0
   }
 
-  const handleCheckout = async () => {
-    console.log('[Checkout] Proceed to payment clicked')
-    console.log('[Checkout] Paystack Public Key Exists:', !!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY)
-    
-    if (!cart || cart.items.length === 0) {
-      console.log('[Checkout] Cart is empty - aborting')
-      return
-    }
+const handleCheckout = async () => {
+     console.log('[Checkout] Proceed to payment clicked')
+     console.log('[Checkout] Paystack Public Key Exists:', !!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY)
+     
+     if (!cart || cart.items.length === 0) {
+       console.log('[Checkout] Cart is empty - aborting')
+       return
+     }
 
-    // Revalidate stock before checkout
-    for (const item of cart.items) {
-      const isPreorderOrBackorder = item.product.availabilityType === 'PREORDER' || 
-                                    item.product.availabilityType === 'BACKORDER'
-      if (!isPreorderOrBackorder) {
-        const availableStock = item.productVariant?.stock ?? item.product.stock
-        if (availableStock < item.quantity) {
-          setError(`Insufficient stock for ${item.product.name}. Available: ${availableStock}`)
-          setProcessing(false)
-          return
-        }
-      }
-    }
-    
-    if (!validateForm()) {
-      console.log('[Checkout] Form validation failed - aborting')
-      return
-    }
+     // Revalidate stock before checkout
+     for (const item of cart.items) {
+       const isPreorderOrBackorder = item.product.availabilityType === 'PREORDER' || 
+                                     item.product.availabilityType === 'BACKORDER'
+       if (!isPreorderOrBackorder) {
+         const availableStock = item.productVariant?.stock ?? item.product.stock
+         if (availableStock < item.quantity) {
+           setError(`Insufficient stock for ${item.product.name}. Available: ${availableStock}`)
+           setProcessing(false)
+           return
+         }
+       }
+     }
+     
+     if (!validateForm()) {
+       console.log('[Checkout] Form validation failed - aborting')
+       return
+     }
 
-    setProcessing(true)
-    setError(null)
+     setProcessing(true)
+     setError(null)
 
-    try {
-console.log('[Checkout] Calling /api/checkout with payload:', {
+     try {
+       console.log('[Checkout] Calling /api/checkout with payload:', {
          customerInfo: { ...formData, email: formData.email },
        })
-       
+        
        const response = await fetch('/api/checkout', {
          method: 'POST',
          headers: {
@@ -236,27 +237,32 @@ console.log('[Checkout] Calling /api/checkout with payload:', {
          }),
        })
 
-      console.log('[Checkout] API response status:', response.status)
-      
-      const data = await response.json()
-      console.log('[Checkout] API response data:', data)
+       console.log('[Checkout] API response status:', response.status)
+       
+       const data = await response.json()
+       console.log('[Checkout] API response data:', data)
 
-      if (response.ok && data.authorizationUrl) {
-        console.log('[Checkout] Redirecting to Paystack:', data.authorizationUrl)
-        window.location.href = data.authorizationUrl
-      } else {
-        // EXPOSE FULL ERROR - do not swallow errors
-        const errorMessage = data.error || data.message || 'Failed to initialize checkout'
-        console.error('[Checkout] API error response:', { status: response.status, error: errorMessage, fullData: data })
-        setError(errorMessage)
-        setProcessing(false)
-      }
-    } catch (err) {
-      console.error('[Checkout] Fetch error:', err)
-      setError('An error occurred during checkout. Please check your connection and try again.')
-      setProcessing(false)
-    }
-  }
+       if (response.status === 401) {
+         const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
+         window.location.href = `/login?redirect=${currentUrl}`
+         return
+       }
+
+       if (response.ok && data.authorizationUrl) {
+         console.log('[Checkout] Redirecting to Paystack:', data.authorizationUrl)
+         window.location.href = data.authorizationUrl
+       } else {
+         const errorMessage = data.error || data.message || 'Failed to initialize checkout'
+         console.error('[Checkout] API error response:', { status: response.status, error: errorMessage, fullData: data })
+         setError(errorMessage)
+         setProcessing(false)
+       }
+     } catch (err) {
+       console.error('[Checkout] Fetch error:', err)
+       setError('An error occurred during checkout. Please check your connection and try again.')
+       setProcessing(false)
+     }
+   }
 
   const verifyPayment = async (ref: string) => {
     setProcessing(true)

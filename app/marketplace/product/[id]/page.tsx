@@ -1,7 +1,5 @@
-'use client'
-
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -301,7 +299,7 @@ export default function ProductDetail() {
     return product?.stock || 0
   }, [selectedVariant, product?.stock])
 
-  const addToCart = async () => {
+const addToCart = async () => {
      if (!product || addingToCart) return
 
      const hasVariants = product.variants && product.variants.length > 0
@@ -333,81 +331,99 @@ export default function ProductDetail() {
          }),
        })
 
-      if (response.ok) {
-        const data: CartResponse = await response.json()
-        dispatchCartUpdate()
-        alert('Product added to cart!')
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to add to cart')
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error)
-      alert('Error adding to cart')
-    } finally {
-      setAddingToCart(false)
-    }
-  }
+       if (response.status === 401) {
+         const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
+         window.location.href = `/login?redirect=${currentUrl}`
+         return
+       }
 
-  const submitReview = async () => {
-    if (!user || submittingReview) return
+       if (response.ok) {
+         const data: CartResponse = await response.json()
+         dispatchCartUpdate()
+         alert('Product added to cart!')
+       } else {
+         const error = await response.json()
+         alert(error.error || 'Failed to add to cart')
+       }
+     } catch (error) {
+       console.error('Error adding to cart:', error)
+       alert('Error adding to cart')
+     } finally {
+       setAddingToCart(false)
+     }
+   }
 
-    setSubmittingReview(true)
-    try {
-      const url = editingReview 
-        ? `/api/products/${productId}/reviews/${editingReview.id}`
-        : `/api/products/${productId}/reviews`
-      
-      const response = await fetch(url, {
-        method: editingReview ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          rating: reviewRating,
-          comment: reviewComment,
-        }),
-      })
+const submitReview = async () => {
+     if (!user || submittingReview) return
 
-      if (response.ok) {
-        alert(editingReview ? 'Review updated successfully!' : 'Review submitted successfully!')
-        setShowReviewForm(false)
-        setEditingReview(null)
-        setReviewRating(5)
-        setReviewComment('')
-        fetchReviews()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to submit review')
-      }
-    } catch (error) {
-      console.error('Error submitting review:', error)
-      alert('Error submitting review')
-    } finally {
-      setSubmittingReview(false)
-    }
-  }
+     setSubmittingReview(true)
+     try {
+       const url = editingReview 
+         ? `/api/products/${productId}/reviews/${editingReview.id}`
+         : `/api/products/${productId}/reviews`
+       
+       const response = await fetch(url, {
+         method: editingReview ? 'PUT' : 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({
+           rating: reviewRating,
+           comment: reviewComment,
+         }),
+       })
 
-  const deleteReview = async (reviewId: string) => {
-    if (!confirm('Are you sure you want to delete this review?')) return
+       if (response.status === 401) {
+         const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
+         window.location.href = `/login?redirect=${currentUrl}`
+         return
+       }
 
-    try {
-      const response = await fetch(`/api/products/${productId}/reviews/${reviewId}`, {
-        method: 'DELETE',
-      })
+       if (response.ok) {
+         alert(editingReview ? 'Review updated successfully!' : 'Review submitted successfully!')
+         setShowReviewForm(false)
+         setEditingReview(null)
+         setReviewRating(5)
+         setReviewComment('')
+         fetchReviews()
+       } else {
+         const error = await response.json()
+         alert(error.error || 'Failed to submit review')
+       }
+     } catch (error) {
+       console.error('Error submitting review:', error)
+       alert('Error submitting review')
+     } finally {
+       setSubmittingReview(false)
+     }
+   }
 
-      if (response.ok) {
-        alert('Review deleted successfully!')
-        fetchReviews()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to delete review')
-      }
-    } catch (error) {
-      console.error('Error deleting review:', error)
-      alert('Error deleting review')
-    }
-  }
+const deleteReview = async (reviewId: string) => {
+     if (!confirm('Are you sure you want to delete this review?')) return
+
+     try {
+       const response = await fetch(`/api/products/${productId}/reviews/${reviewId}`, {
+         method: 'DELETE',
+       })
+
+       if (response.status === 401) {
+         const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
+         window.location.href = `/login?redirect=${currentUrl}`
+         return
+       }
+
+       if (response.ok) {
+         alert('Review deleted successfully!')
+         fetchReviews()
+       } else {
+         const error = await response.json()
+         alert(error.error || 'Failed to delete review')
+       }
+     } catch (error) {
+       console.error('Error deleting review:', error)
+       alert('Error deleting review')
+     }
+   }
 
   const getCustomerInitials = (email: string): string => {
     const name = email.split('@')[0]

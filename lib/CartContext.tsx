@@ -57,9 +57,22 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
+const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
+
+function getCurrentUrl(): string {
+  if (typeof window === 'undefined') return ''
+  return `${window.location.pathname}${window.location.search || ''}`
+}
+
+function handleAuthRedirect() {
+  const currentUrl = encodeURIComponent(getCurrentUrl())
+  if (typeof window !== 'undefined') {
+    window.location.href = `/login?redirect=${currentUrl}`
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null)
-  // Start with false to prevent hydration mismatch - will be set to true on client mount
   const [loading, setLoading] = useState(false)
 
   const fetchCart = useCallback(async () => {
@@ -69,7 +82,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const data = await response.json()
         setCart(data.cart)
       } else if (response.status === 401) {
-        // User not authenticated, set empty cart
         setCart({ id: null, items: [], total: 0 })
       }
     } catch (error) {
@@ -79,10 +91,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Calculate total quantity of items
   const cartTotalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
-  
-  // Calculate item count (number of unique products)
   const cartItemCount = cart?.items?.length || 0
 
   const addToCart = useCallback(async (
@@ -109,6 +118,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }),
       })
 
+      if (response.status === 401) {
+        handleAuthRedirect()
+        return false
+      }
+
       if (response.ok) {
         const data = await response.json()
         setCart(data.cart)
@@ -132,6 +146,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ quantity }),
       })
 
+      if (response.status === 401) {
+        handleAuthRedirect()
+        return false
+      }
+
       if (response.ok) {
         const data = await response.json()
         setCart(data.cart)
@@ -151,6 +170,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
       })
 
+      if (response.status === 401) {
+        handleAuthRedirect()
+        return false
+      }
+
       if (response.ok) {
         const data = await response.json()
         setCart(data.cart)
@@ -169,11 +193,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatchCartUpdate()
   }, [])
 
-  // Initial fetch and setup event listener for cross-tab sync
   useEffect(() => {
     fetchCart()
 
-    // Listen for storage events to sync cart across tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'cart-updated') {
         fetchCart()
@@ -182,7 +204,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     window.addEventListener('storage', handleStorageChange)
     
-    // Also listen for custom events for same-tab updates
     const handleCartUpdate = () => {
       fetchCart()
     }
@@ -222,10 +243,16 @@ export function useCart() {
   return context
 }
 
-// Helper to dispatch cart update event
 export function dispatchCartUpdate() {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('cart-updated'))
     localStorage.setItem('cart-updated', Date.now().toString())
+  }
+}
+
+export function handleAuthRedirect() {
+  const currentUrl = encodeURIComponent(getCurrentUrl())
+  if (typeof window !== 'undefined') {
+    window.location.href = `/login?redirect=${currentUrl}`
   }
 }

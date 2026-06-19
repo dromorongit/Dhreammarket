@@ -17,10 +17,27 @@ function VerifyEmailContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
+
   useEffect(() => {
     const emailParam = searchParams.get('email')
     if (emailParam) {
       setEmail(decodeURIComponent(emailParam))
+    }
+    const redirectParam = searchParams.get('redirect')
+    if (redirectParam) {
+      try {
+        const decodedUrl = decodeURIComponent(redirectParam)
+        if (decodedUrl.startsWith('/')) {
+          const authRoutes = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
+          const isAuthRoute = authRoutes.some(route => decodedUrl.startsWith(route))
+          if (!isAuthRoute) {
+            setRedirectUrl(decodedUrl)
+          }
+        }
+      } catch {
+        // Invalid redirect URL, ignore
+      }
     }
   }, [searchParams])
 
@@ -45,7 +62,11 @@ function VerifyEmailContent() {
       const data = await response.json()
 
       if (response.ok) {
-        router.push('/login')
+        if (redirectUrl) {
+          window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`
+        } else {
+          window.location.href = '/login'
+        }
       } else {
         setError(data.error || 'Verification failed')
       }
@@ -129,11 +150,11 @@ function VerifyEmailContent() {
               >
                 {resendLoading ? 'Sending...' : 'Resend Code'}
               </Button>
-              <p className="text-center text-sm text-gray-600">
-                <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                  Back to Login
-                </Link>
-              </p>
+<p className="text-center text-sm text-gray-600">
+                 <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"} className="font-medium text-blue-600 hover:text-blue-500">
+                   Back to Login
+                 </Link>
+               </p>
             </form>
           </CardContent>
         </Card>

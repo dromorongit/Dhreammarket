@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -15,6 +15,27 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const redirectParam = searchParams.get('redirect')
+    if (redirectParam) {
+      try {
+        const decodedUrl = decodeURIComponent(redirectParam)
+        if (decodedUrl.startsWith('/')) {
+          const authRoutes = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
+          const isAuthRoute = authRoutes.some(route => decodedUrl.startsWith(route))
+          if (!isAuthRoute) {
+            setRedirectUrl(decodedUrl)
+          }
+        }
+      } catch {
+        // Invalid redirect URL, ignore
+      }
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,24 +55,24 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password, rememberMe }),
       })
 
-const data = await response.json()
+      const data = await response.json()
 
-       if (response.ok) {
-         if (data.needsVerification) {
-           router.push(`/verify-email?email=${encodeURIComponent(email)}`)
-         } else {
-           // Redirect based on user role
-           const role = data.user.role
-           const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
+      if (response.ok) {
+        if (data.needsVerification) {
+          const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
+          window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
+        } else {
+          const role = data.user.role
+          const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
                                 role === 'ADMIN' ? '/dashboard/admin' :
                                 role === 'VENDOR' ? '/dashboard/vendor' :
                                 '/dashboard/customer'
-           // Use window.location for full page reload to ensure auth state updates
-           window.location.href = dashboardPath
-         }
-       } else {
-         setError(data.error || 'Login failed')
-       }
+          const targetUrl = redirectUrl || dashboardPath
+          window.location.href = targetUrl
+        }
+      } else {
+        setError(data.error || 'Login failed')
+      }
     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {
@@ -65,12 +86,12 @@ const data = await response.json()
          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
            Sign in to Dhream Market
          </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-            create a new account
-          </Link>
-        </p>
+<p className="mt-2 text-center text-sm text-gray-600">
+            Or{' '}
+            <Link href={redirectUrl ? `/register?redirect=${encodeURIComponent(redirectUrl)}` : "/register"} className="font-medium text-blue-600 hover:text-blue-500">
+              create a new account
+            </Link>
+          </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
