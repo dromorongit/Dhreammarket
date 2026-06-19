@@ -513,96 +513,99 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-        mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
-      }`}>
-        <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white">
-          <Link href="/" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            Home
-          </Link>
-          <Link href="/marketplace" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            Marketplace
-          </Link>
-          <Link href="/about" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            About
-          </Link>
-          <Link href="/contact" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            Contact
-          </Link>
-          <Link href="/help" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-            Support
-          </Link>
-          {user && (
-            <Link href="/cart" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-              <span className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
-                </svg>
-                Cart
-                {cartTotalQuantity > 0 && (
-                  <span className="ml-auto bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-scale-in">
-                    {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
-                  </span>
-                )}
-              </span>
-            </Link>
-          )}
-          <div className="border-t border-slate-200 my-2"></div>
-          {user ? (
-            <>
-               <div className="px-4 py-2">
-                 <p className="text-sm font-medium text-slate-700">Welcome, {getDisplayName(user)}</p>
-               </div>
-              {user.role === 'SUPER_ADMIN' && (
-                <Link href="/dashboard/super-admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Super Admin Dashboard
-                </Link>
-              )}
-              {user.role === 'SUPER_ADMIN' && (
-                <Link href="/dashboard/super-admin/product-categories" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Product Categories
-                </Link>
-              )}
-              {user.role === 'SUPER_ADMIN' && (
-                <Link href="/dashboard/super-admin/homepage" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Homepage Sections
-                </Link>
-              )}
-              {user.role === 'ADMIN' && (
-                <Link href="/dashboard/admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Admin Dashboard
-                </Link>
-              )}
-              {user.role === 'VENDOR' && (
-                <Link href="/dashboard/vendor" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  Vendor Dashboard
-                </Link>
-              )}
-              {user.role === 'CUSTOMER' && (
-                <Link href="/dashboard/customer" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                  My Account
-                </Link>
-              )}
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors mt-2"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
-                Sign In
-              </Link>
-              <Link href="/register" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl bg-deep-navy text-white text-center font-medium hover:bg-royal-blue transition-colors mt-2">
-                Get Started
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
+{/* Mobile Menu */}
+       <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+         mobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+       }`}>
+         <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white">
+           <button
+             onClick={() => { router.push('/'); closeMobileMenu(); }}
+             className="w-full text-left block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
+           >
+             Home
+           </button>
+           <Link href="/marketplace" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+             Marketplace
+           </Link>
+           <Link href="/about" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+             About
+           </Link>
+           <Link href="/contact" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+             Contact
+           </Link>
+           <Link href="/help" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+             Support
+           </Link>
+           {user && (
+             <Link href="/cart" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+               <span className="flex items-center gap-2">
+                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
+                 </svg>
+                 Cart
+                 {cartTotalQuantity > 0 && (
+                   <span className="ml-auto bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-scale-in">
+                     {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
+                   </span>
+                 )}
+               </span>
+             </Link>
+           )}
+           <div className="border-t border-slate-200 my-2"></div>
+           {user ? (
+             <>
+                <div className="px-4 py-2">
+                  <p className="text-sm font-medium text-slate-700">Welcome, {getDisplayName(user)}</p>
+                </div>
+               {user.role === 'SUPER_ADMIN' && (
+                 <Link href="/dashboard/super-admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Super Admin Dashboard
+                 </Link>
+               )}
+               {user.role === 'SUPER_ADMIN' && (
+                 <Link href="/dashboard/super-admin/product-categories" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Product Categories
+                 </Link>
+               )}
+               {user.role === 'SUPER_ADMIN' && (
+                 <Link href="/dashboard/super-admin/homepage" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Homepage Sections
+                 </Link>
+               )}
+               {user.role === 'ADMIN' && (
+                 <Link href="/dashboard/admin" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Admin Dashboard
+                 </Link>
+               )}
+               {user.role === 'VENDOR' && (
+                 <Link href="/dashboard/vendor" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   Vendor Dashboard
+                 </Link>
+               )}
+               {user.role === 'CUSTOMER' && (
+                 <Link href="/dashboard/customer" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                   My Account
+                 </Link>
+               )}
+               <button
+                 onClick={handleLogout}
+                 className="w-full text-left px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors mt-2"
+               >
+                 Sign Out
+               </button>
+             </>
+           ) : (
+             <>
+               <Link href="/login" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors">
+                 Sign In
+               </Link>
+               <Link href="/register" onClick={closeMobileMenu} className="block px-4 py-3 rounded-xl bg-deep-navy text-white text-center font-medium hover:bg-royal-blue transition-colors mt-2">
+                 Get Started
+               </Link>
+             </>
+           )}
+         </div>
+       </div>
     </nav>
   )
 }
