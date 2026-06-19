@@ -233,10 +233,8 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
   }
 
   return (
-    <div className="relative w-full" ref={dropdownRef}>
-      {/* Search Input */}
-      <div className="relative overflow-hidden">
-        {/* Search Icon */}
+<div className="relative w-full isolate" ref={dropdownRef}>
+      <div className="relative">
         <svg
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors pointer-events-none"
           fill="none"
@@ -314,7 +312,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
         <div
           id="search-dropdown"
           role="listbox"
-          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-premium-xl border border-slate-200/80 overflow-hidden z-50 animate-scale-in origin-top"
+          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-premium-xl border border-slate-200/80 z-[9999] animate-scale-in origin-top"
           style={{ animationDuration: '200ms' }}
         >
           <div className="max-h-[420px] overflow-y-auto">

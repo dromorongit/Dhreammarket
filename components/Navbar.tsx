@@ -505,10 +505,10 @@ export function Navbar() {
       </div>
 
       {/* Mobile Search Bar (expandable) */}
-      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-        mobileSearchOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
+      <div className={`lg:hidden transition-all duration-300 ease-in-out ${
+        mobileSearchOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white overflow-hidden">
+        <div className="px-4 pb-3 pt-1 border-b border-slate-200 bg-white">
           <SearchDropdown onNavigate={closeMobileSearch} />
         </div>
       </div>
