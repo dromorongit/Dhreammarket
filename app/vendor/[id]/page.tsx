@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
 import VendorClient from './vendor-client'
 

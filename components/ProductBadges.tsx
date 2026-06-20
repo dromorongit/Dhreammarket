@@ -1,15 +1,15 @@
 import { Badge } from '@/components/Badge'
 
 export interface ProductBadgeData {
-  discountPercentage?: number
-  isFlashSale?: boolean
-  isSponsored?: boolean
-  isFeatured?: boolean
-  availabilityType?: string
-  expectedArrivalDate?: string | null
-  expectedRestockDate?: string | null
-  stock?: number
-}
+   discountPercentage?: number
+   isFlashSale?: boolean
+   isSponsored?: boolean
+   isFeatured?: boolean
+   availabilityType?: string | null
+   expectedArrivalDate?: string | null
+   expectedRestockDate?: string | null
+   stock?: number
+ }
 
 interface ProductBadgesProps {
   product: ProductBadgeData
@@ -169,7 +169,7 @@ export function calculateProductBadges(product: {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock?: number
-  availabilityType?: string
+  availabilityType?: string | null
   expectedArrivalDate?: string | null
   expectedRestockDate?: string | null
   isSponsored?: boolean

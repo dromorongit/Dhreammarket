@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
 import ProductClient from './product-client'
 
@@ -116,7 +116,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
       '@type': 'Offer',
       price: product?.price?.toString() || '0',
       priceCurrency: 'GHS',
-      availability: getAvailabilityStatus(product?.availabilityType, product?.stock ?? 0),
+      availability: getAvailabilityStatus(product?.availabilityType ?? null, product?.stock ?? 0),
       seller: product?.store?.name ? { '@type': 'Organization', name: product.store.name } : undefined,
     },
   }
