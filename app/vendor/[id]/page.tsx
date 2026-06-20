@@ -70,12 +70,7 @@ export function generateViewport(): Viewport {
   }
 }
 
-export const metadata = {
-  title: {
-    default: 'Dhream Market - Powering Digital Trade',
-    template: '%s - Dhream Market',
-  },
-}
+
 
 export default async function VendorPage({ params }: { params: { id: string } }) {
   const vendor = await getVendorInfo(params.id)

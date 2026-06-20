@@ -93,12 +93,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export const metadata = {
-  title: {
-    default: 'Dhream Market - Powering Digital Trade',
-    template: '%s - Dhream Market',
-  },
-}
+
 
 export function generateViewport(): Viewport {
   return {
