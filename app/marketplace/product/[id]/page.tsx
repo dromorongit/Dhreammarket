@@ -14,7 +14,7 @@ interface ProductForMetadata {
   availabilityType: string | null
   images: Array<{ url: string; alt: string | null }> | null
   store: { id: string; name: string; logo: string | null } | null
-  brand: { name: string } | null
+  brandRelation: { name: string } | null
 }
 
 async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
@@ -30,7 +30,7 @@ async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
         availabilityType: true,
         images: { select: { url: true, alt: true } },
         store: { select: { id: true, name: true, logo: true } },
-        brand: { select: { name: true } },
+        brandRelation: { select: { name: true } },
       },
     })
 
@@ -45,7 +45,7 @@ async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
       availabilityType: product.availabilityType,
       images: product.images,
       store: product.store,
-      brand: product.brand,
+      brandRelation: product.brandRelation,
     }
   } catch {
     return null
@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
     name: product?.name || 'Product',
     description: product?.description || `Buy ${product?.name} from ${product?.store?.name} on Dhream Market.`,
     image: productImages,
-    brand: product?.brand?.name ? { '@type': 'Brand', name: product.brand.name } : undefined,
+    brand: product?.brandRelation?.name ? { '@type': 'Brand', name: product.brandRelation.name } : undefined,
     offers: {
       '@type': 'Offer',
       price: product?.price?.toString() || '0',
