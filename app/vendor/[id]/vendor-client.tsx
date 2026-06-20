@@ -148,6 +148,153 @@ useEffect(() => {
     }
   }, [user, vendorId])
 
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch user:', e)
+    }
+  }
+
+  const fetchVendorReviews = async () => {
+    if (!vendorId) return
+    try {
+      setReviewsLoading(true)
+      const response = await fetch(`/api/vendors/${vendorId}/reviews`)
+      if (response.ok) {
+        const data = await response.json()
+        setVendorReviews(data.reviews || [])
+        setVendorRating(data.averageRating || 0)
+        setVendorReviewCount(data.totalReviews || 0)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  const checkCanReviewVendor = async () => {
+    if (!vendorId) return
+    try {
+      const response = await fetch(`/api/vendors/${vendorId}/reviews?checkEligibility=true`)
+      if (response.ok) {
+        const data = await response.json()
+        setCanReviewVendor(data.canReview || false)
+        setEligibilityReason(data.reason || null)
+        if (data.userReview) {
+          setUserReview(data.userReview)
+        }
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const renderStars = (rating: number, interactive: boolean = false, onSelect?: (rating: number) => void) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            disabled={!interactive}
+            onClick={() => onSelect && onSelect(star)}
+            className={`text-lg ${
+              star <= rating ? 'text-premium-gold' : 'text-slate-300'
+            } ${interactive ? 'hover:text-premium-gold cursor-pointer' : ''}`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  const getCustomerInitials = (name: string) => {
+    return name.charAt(0).toUpperCase()
+  }
+
+  const submitVendorReview = async () => {
+    if (!vendorId || !reviewComment.trim()) return
+    try {
+      setSubmittingReview(true)
+      setReviewError(null)
+      const response = await fetch(`/api/vendors/${vendorId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewComment.trim() }),
+      })
+      if (response.ok) {
+        setReviewComment('')
+        setReviewRating(5)
+        setShowReviewForm(false)
+        fetchVendorReviews()
+        checkCanReviewVendor()
+      } else {
+        const errorData = await response.json()
+        setReviewError(errorData.error || 'Failed to submit review')
+      }
+    } catch (err) {
+      setReviewError('Failed to submit review')
+      console.error(err)
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const updateVendorReview = async () => {
+    if (!vendorId || !editingReview || !reviewComment.trim()) return
+    try {
+      setSubmittingReview(true)
+      setReviewError(null)
+      const response = await fetch(`/api/vendors/${vendorId}/reviews/${editingReview.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewComment.trim() }),
+      })
+      if (response.ok) {
+        setReviewComment('')
+        setReviewRating(5)
+        setEditingReview(null)
+        setShowReviewForm(false)
+        fetchVendorReviews()
+        checkCanReviewVendor()
+      } else {
+        const errorData = await response.json()
+        setReviewError(errorData.error || 'Failed to update review')
+      }
+    } catch (err) {
+      setReviewError('Failed to update review')
+      console.error(err)
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const deleteVendorReview = async (reviewId: string) => {
+    if (!vendorId) return
+    if (!confirm('Are you sure you want to delete this review?')) return
+    try {
+      setDeletingReviewId(reviewId)
+      const response = await fetch(`/api/vendors/${vendorId}/reviews/${reviewId}`, {
+        method: 'DELETE',
+      })
+      if (response.ok) {
+        fetchVendorReviews()
+        checkCanReviewVendor()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeletingReviewId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
