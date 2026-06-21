@@ -449,7 +449,7 @@ const fetchVendors = async () => {
                 <input
                   type="text"
                   placeholder="Search products, vendors, categories, brands..."
-                  className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-4 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                  className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-4 text-base text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
                 />
                 <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 hover:text-white transition-colors">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

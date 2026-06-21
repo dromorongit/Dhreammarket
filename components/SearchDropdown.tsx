@@ -257,7 +257,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
           onKeyDown={handleKeyDown}
           onFocus={() => query.trim() && results && setIsOpen(true)}
           placeholder="Search products, vendors, categories, brands..."
-          className="w-full h-10 pl-10 pr-10 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-sm text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/30 focus:border-royal-blue/50 focus:bg-white shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200"
+          className="w-full h-10 pl-10 pr-10 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-sm text-base md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/30 focus:border-royal-blue/50 focus:bg-white shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200"
           aria-label="Search marketplace"
           aria-autocomplete="list"
           aria-controls="search-dropdown"
