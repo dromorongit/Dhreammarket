@@ -123,13 +123,23 @@ export async function POST(request: NextRequest) {
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>')
       
+      const submissionTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC'
+      
       const emailContent = `
-        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Contact Form Message</h2>
-        <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">You have received a new message from the contact form.</p>
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Support Submission</h2>
+        <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">A new support message has been submitted.</p>
         <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
           <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">From</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userName} (${userEmail})</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Source</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">Contact Page</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Name</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Email</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userEmail}</td>
           </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Feedback Type</td>
@@ -140,18 +150,20 @@ export async function POST(request: NextRequest) {
             <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${sanitizedSubject}</td>
           </tr>
           <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Message</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151;">${escapedMessage}</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Submitted</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${submissionTimestamp}</td>
           </tr>
         </table>
-        <p style="margin: 0; font-size: 14px; color: #6b7280;">View this feedback in the admin dashboard for response.</p>
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1a1a2e;">Message</h3>
+        <p style="margin: 0; font-size: 16px; color: #374151; line-height: 1.6;">${escapedMessage}</p>
       `
 
       const emailResult = await sendEmail({
         to: SUPPORT_EMAIL,
-        subject: `[Contact Form] ${sanitizedSubject}`,
-        htmlContent: getEmailTemplate(emailContent),
-        textContent: `New contact form message from ${userName} (${userEmail})\n\nSubject: ${sanitizedSubject}\nType: ${type}\n\nMessage:\n${sanitizedMessage}`,
+        subject: `[${type}] ${sanitizedSubject}`,
+        htmlContent: getEmailTemplate(emailContent, 'You can reply directly to this email to respond to the user.'),
+        textContent: `New Contact Page submission\n\nSource: Contact Page\nName: ${userName}\nEmail: ${userEmail}\nType: ${type}\nSubject: ${sanitizedSubject}\nSubmitted: ${submissionTimestamp}\n\nMessage:\n${sanitizedMessage}`,
+        replyTo: userEmail,
       })
 
       if (!emailResult.success) {

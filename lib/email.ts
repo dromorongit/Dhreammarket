@@ -18,28 +18,35 @@ interface EmailParams {
   subject: string
   htmlContent: string
   textContent?: string
+  replyTo?: string
 }
 
-export async function sendEmail({ to, subject, htmlContent, textContent }: EmailParams) {
+export async function sendEmail({ to, subject, htmlContent, textContent, replyTo }: EmailParams) {
   if (!BREVO_API_KEY) {
     console.log(`[Email Mock] Would send to ${to}: ${subject}`)
     return { success: false, reason: 'Brevo API key not configured' }
   }
 
   try {
+    const emailPayload: any = {
+      sender: { email: SENDER_EMAIL, name: SENDER_NAME },
+      to: [{ email: to }],
+      subject,
+      htmlContent,
+      textContent: textContent || htmlContent.replace(/<[^>]*>/g, ''),
+    }
+
+    if (replyTo) {
+      emailPayload.replyTo = { email: replyTo }
+    }
+
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'api-key': BREVO_API_KEY,
       },
-      body: JSON.stringify({
-        sender: { email: SENDER_EMAIL, name: SENDER_NAME },
-        to: [{ email: to }],
-        subject,
-        htmlContent,
-        textContent: textContent || htmlContent.replace(/<[^>]*>/g, ''),
-      }),
+      body: JSON.stringify(emailPayload),
     })
 
     if (response.ok) {

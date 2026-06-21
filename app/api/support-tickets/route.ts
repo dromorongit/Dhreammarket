@@ -93,12 +93,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Send email notification to support
+// Send email notification to support
     try {
       let fromName = name || email || 'Unknown'
+      let userEmail = email || 'Unknown'
       if (userId && !name) {
         const userRecord = await getPrisma().user.findUnique({ where: { id: userId } })
         fromName = userRecord?.email || email || 'Unknown'
+      }
+      if (userId && !email) {
+        const userRecord = await getPrisma().user.findUnique({ where: { id: userId } })
+        userEmail = userRecord?.email || 'Unknown'
       }
       
       const escapedMessage = sanitizedMessage
@@ -107,39 +112,48 @@ export async function POST(request: NextRequest) {
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>')
       
+      const submissionTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC'
+      const feedbackType = category || 'General'
+      
       const emailContent = `
-        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Support Ticket</h2>
-        <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">A new support ticket has been submitted.</p>
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Support Submission</h2>
+        <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">A new support message has been submitted.</p>
         <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Source</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">Help Center</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Name</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${fromName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Email</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userEmail}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Feedback Type</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${feedbackType}</td>
+          </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Subject</td>
             <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${sanitizedSubject}</td>
           </tr>
           <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Category</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${category || 'General'}</td>
-          </tr>
-          <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">From</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${fromName}</td>
-          </tr>
-          ${phone ? `<tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Phone</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${phone}</td>
-          </tr>` : ''}
-          <tr>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Message</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #374151;">${escapedMessage}</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Submitted</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${submissionTimestamp}</td>
           </tr>
         </table>
-        <p style="margin: 0; font-size: 14px; color: #6b7280;">View this ticket in the admin dashboard for response.</p>
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #1a1a2e;">Message</h3>
+        <p style="margin: 0; font-size: 16px; color: #374151; line-height: 1.6;">${escapedMessage}</p>
       `
 
       const emailResult = await sendEmail({
         to: SUPPORT_EMAIL,
-        subject: `[Support Ticket] ${sanitizedSubject}`,
-        htmlContent: getEmailTemplate(emailContent),
-        textContent: `New support ticket submitted.\n\nSubject: ${sanitizedSubject}\nCategory: ${category || 'General'}\n\nMessage:\n${sanitizedMessage}`,
+        subject: `[${feedbackType}] ${sanitizedSubject}`,
+        htmlContent: getEmailTemplate(emailContent, 'You can reply directly to this email to respond to the user.'),
+        textContent: `New Help Center Contact Support submission\n\nSource: Help Center\nName: ${fromName}\nEmail: ${userEmail}\nFeedback Type: ${feedbackType}\nSubject: ${sanitizedSubject}\nSubmitted: ${submissionTimestamp}\n\nMessage:\n${sanitizedMessage}`,
+        replyTo: userEmail,
       })
 
       if (!emailResult.success) {
