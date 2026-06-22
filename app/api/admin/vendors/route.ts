@@ -103,28 +103,29 @@ export async function GET(request: NextRequest) {
       outstandingBalance = Math.max(0, outstandingBalance - paidOut)
 
 return {
-         id: store.id,
-         name: store.name,
-         description: store.description,
-         isVerified: store.isVerified,
-         isFeatured: store.isFeatured,
-         badgeTier: store.badgeTier,
-         featuredUntil: store.featuredUntil ? store.featuredUntil.toISOString() : null,
-         createdAt: store.user.createdAt,
-         mobileNumber: store.mainPhoneNumber,
-         user: {
-           id: store.user.id,
-           email: store.user.email,
-           role: store.user.role,
-           createdAt: store.user.createdAt,
-         },
-         _count: {
-           products: store._count.products,
-         },
-         grossRevenue,
-         totalPayouts: paidOut,
-         outstandingBalance,
-       }
+          id: store.id,
+          name: store.name,
+          description: store.description,
+          isVerified: store.isVerified,
+          isFeatured: store.isFeatured,
+          badgeTier: store.badgeTier,
+          featuredUntil: store.featuredUntil ? store.featuredUntil.toISOString() : null,
+          createdAt: store.user.createdAt,
+          mobileNumber: store.mainPhoneNumber,
+          location: store.location,
+          user: {
+            id: store.user.id,
+            email: store.user.email,
+            role: store.user.role,
+            createdAt: store.user.createdAt,
+          },
+          _count: {
+            products: store._count.products,
+          },
+          grossRevenue,
+          totalPayouts: paidOut,
+          outstandingBalance,
+        }
     }))
 
     const vendors = vendorsWithMetrics

@@ -86,6 +86,7 @@ model Store {
   logo                     String?
   banner                   String?
   categoryId               String?
+  location                 String?
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   alternativePhoneNumber   String?

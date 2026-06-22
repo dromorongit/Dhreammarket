@@ -15,6 +15,7 @@ interface Store {
   mainPhoneNumber: string | null
   alternativePhoneNumber: string | null
   whatsappNumber: string | null
+  location: string
   categoryId: string | null
   acceptsPreOrders: boolean
   acceptsBackOrders: boolean
@@ -50,6 +51,7 @@ export default function StoreManagement() {
     mainPhoneNumber: '',
     alternativePhoneNumber: '',
     whatsappNumber: '',
+    location: '',
     acceptsPreOrders: false,
     acceptsBackOrders: false,
   })
@@ -65,21 +67,22 @@ export default function StoreManagement() {
       const response = await fetch('/api/store')
       if (response.ok) {
         const data = await response.json()
-        if (data.store) {
-          setStore(data.store)
-          setIsNewStore(false)
-          setFormData({
-            name: data.store.name,
-            description: data.store.description || '',
-            categoryId: data.store.categoryId || '',
-            logo: data.store.logo || '',
-            banner: data.store.banner || '',
-            mainPhoneNumber: data.store.mainPhoneNumber || '',
-            alternativePhoneNumber: data.store.alternativePhoneNumber || '',
-            whatsappNumber: data.store.whatsappNumber || '',
-            acceptsPreOrders: data.store.acceptsPreOrders || false,
-            acceptsBackOrders: data.store.acceptsBackOrders || false,
-          })
+if (data.store) {
+           setStore(data.store)
+           setIsNewStore(false)
+           setFormData({
+             name: data.store.name,
+             description: data.store.description || '',
+             categoryId: data.store.categoryId || '',
+             logo: data.store.logo || '',
+             banner: data.store.banner || '',
+             mainPhoneNumber: data.store.mainPhoneNumber || '',
+             alternativePhoneNumber: data.store.alternativePhoneNumber || '',
+             whatsappNumber: data.store.whatsappNumber || '',
+             location: data.store.location || '',
+             acceptsPreOrders: data.store.acceptsPreOrders || false,
+             acceptsBackOrders: data.store.acceptsBackOrders || false,
+           })
         } else {
           // Store doesn't exist yet
           setStore(null)
@@ -120,7 +123,13 @@ export default function StoreManagement() {
       setErrors({ categoryId: 'Vendor category is required' })
       return
     }
-    
+
+    // Validate location is required
+    if (!formData.location || !formData.location.trim()) {
+      setErrors({ location: 'Location is required' })
+      return
+    }
+
     setSaving(true)
     setSaveSuccess(false)
 
@@ -317,25 +326,44 @@ export default function StoreManagement() {
                     </p>
                   </div>
 
-                  <div>
-                    <label htmlFor="whatsappNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                      WhatsApp Number
-                    </label>
-                    <Input
-                      id="whatsappNumber"
-                      name="whatsappNumber"
-                      type="tel"
-                      value={formData.whatsappNumber}
-                      onChange={handleChange}
-                      placeholder="+233XXXXXXXXX"
-                      className="w-full"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      WhatsApp contact number (optional)
-                    </p>
-                  </div>
-                </div>
-              </div>
+<div>
+                     <label htmlFor="whatsappNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                       WhatsApp Number
+                     </label>
+                     <Input
+                       id="whatsappNumber"
+                       name="whatsappNumber"
+                       type="tel"
+                       value={formData.whatsappNumber}
+                       onChange={handleChange}
+                       placeholder="+233XXXXXXXXX"
+                       className="w-full"
+                     />
+                     <p className="text-xs text-gray-500 mt-1">
+                       WhatsApp contact number (optional)
+                     </p>
+                   </div>
+
+                   <div>
+                     <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                       Location *
+                     </label>
+                     <Input
+                       id="location"
+                       name="location"
+                       type="text"
+                       required
+                       value={formData.location}
+                       onChange={handleChange}
+                       placeholder="Enter your store location"
+                       className="w-full"
+                     />
+                     <p className="text-xs text-gray-500 mt-1">
+                       Physical location of your store (city, region, or address)
+                     </p>
+                   </div>
+                 </div>
+               </div>
 
               {/* Pre-order and Backorder Settings Section */}
               <div className="border-t pt-6">
@@ -445,6 +473,9 @@ export default function StoreManagement() {
               {errors.categoryId && (
                 <div className="text-red-600 text-sm">{errors.categoryId}</div>
               )}
+              {errors.location && (
+                <div className="text-red-600 text-sm">{errors.location}</div>
+              )}
               {errors.general && (
                 <div className="text-red-600 text-sm">{errors.general}</div>
               )}
@@ -457,7 +488,7 @@ export default function StoreManagement() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving || !formData.categoryId || formData.categoryId === ''}>
+                <Button type="submit" disabled={saving || !formData.categoryId || formData.categoryId === '' || !formData.location || !formData.location.trim()}>
                   {saving ? 'Saving...' : store ? 'Update Store' : 'Create Store'}
                 </Button>
               </div>

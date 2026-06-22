@@ -51,21 +51,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, acceptsPreOrders, acceptsBackOrders } = await request.json()
-   
+const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, location, acceptsPreOrders, acceptsBackOrders } = await request.json()
+    
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
     }
-   
+    
     // Validate main phone number is required
     if (!mainPhoneNumber || !mainPhoneNumber.trim()) {
       return NextResponse.json({ error: 'Main phone number is required' }, { status: 400 })
     }
-   
+    
     // Validate vendor category is provided and active
     // Check for both null/undefined AND empty string
     if (!categoryId || categoryId === '') {
       return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
+    }
+
+    // Validate location is required
+    if (!location || !location.trim()) {
+      return NextResponse.json({ error: 'Location is required' }, { status: 400 })
     }
    
     // Input sanitization - security hardening
@@ -97,24 +102,25 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
       hasMainPhone: !!mainPhoneNumber,
     })
    
-    const store = await getPrisma().store.create({
-        data: {
-          userId: payload.userId,
-          name: name.trim(),
-          description: sanitizedDescription || null,
-          categoryId: categoryId,
-          mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
-          alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
-          whatsappNumber: sanitizePhoneNumber(whatsappNumber),
-          acceptsPreOrders: acceptsPreOrders || false,
-          acceptsBackOrders: acceptsBackOrders || false,
-          ...(logo !== undefined && { logo }),
-          ...(banner !== undefined && { banner }),
-        },
-        include: {
-          vendor_categories: true,
-        }
-      })
+const store = await getPrisma().store.create({
+         data: {
+           userId: payload.userId,
+           name: name.trim(),
+           description: sanitizedDescription || null,
+           categoryId: categoryId,
+           location: location.trim(),
+           mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
+           alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
+           whatsappNumber: sanitizePhoneNumber(whatsappNumber),
+           acceptsPreOrders: acceptsPreOrders || false,
+           acceptsBackOrders: acceptsBackOrders || false,
+           ...(logo !== undefined && { logo }),
+           ...(banner !== undefined && { banner }),
+         },
+         include: {
+           vendor_categories: true,
+         }
+       })
   
     // Debug: Log the created store
     console.log('[Store API] Store created successfully:', {
@@ -150,21 +156,26 @@ export async function PUT(request: NextRequest) {
       where: { userId: payload.userId },
     })
 
-const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, acceptsPreOrders, acceptsBackOrders } = await request.json()
-   
+const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, location, acceptsPreOrders, acceptsBackOrders } = await request.json()
+    
      if (!name || !name.trim()) {
        return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
      }
-   
+    
      // Validate main phone number is required
      if (!mainPhoneNumber || !mainPhoneNumber.trim()) {
        return NextResponse.json({ error: 'Main phone number is required' }, { status: 400 })
      }
-   
+    
      // Validate vendor category is provided and active
      // Check for both null/undefined AND empty string
      if (!categoryId || categoryId === '') {
        return NextResponse.json({ error: 'Vendor category is required' }, { status: 400 })
+     }
+
+     // Validate location is required
+     if (!location || !location.trim()) {
+       return NextResponse.json({ error: 'Location is required' }, { status: 400 })
      }
    
      // Input sanitization - security hardening
@@ -188,23 +199,24 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
      })
    
 const store = await getPrisma().store.update({
-          where: { userId: payload.userId },
-          data: {
-            name: name.trim(),
-            description: sanitizedDescription || null,
-            categoryId: categoryId,
-            mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
-            alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
-            whatsappNumber: sanitizePhoneNumber(whatsappNumber),
-            acceptsPreOrders: acceptsPreOrders !== undefined ? acceptsPreOrders : false,
-            acceptsBackOrders: acceptsBackOrders !== undefined ? acceptsBackOrders : false,
-            ...(logo !== undefined && { logo }),
-            ...(banner !== undefined && { banner }),
-          },
-         include: {
-           vendor_categories: true,
-         }
-       })
+           where: { userId: payload.userId },
+           data: {
+             name: name.trim(),
+             description: sanitizedDescription || null,
+             categoryId: categoryId,
+             location: location.trim(),
+             mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
+             alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
+             whatsappNumber: sanitizePhoneNumber(whatsappNumber),
+             acceptsPreOrders: acceptsPreOrders !== undefined ? acceptsPreOrders : false,
+             acceptsBackOrders: acceptsBackOrders !== undefined ? acceptsBackOrders : false,
+             ...(logo !== undefined && { logo }),
+             ...(banner !== undefined && { banner }),
+           },
+          include: {
+            vendor_categories: true,
+          }
+        })
 
     // Create audit log for store profile update
     if (existingStore) {
