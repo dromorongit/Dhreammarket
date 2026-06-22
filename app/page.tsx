@@ -1047,6 +1047,7 @@ const fetchProducts = async () => {
       }
 
       if (response.ok) {
+        dispatchCartUpdate()
         // Could show success toast here
       }
     } catch (error) {
