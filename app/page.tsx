@@ -13,7 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
-import { handleAuthRedirect } from '@/lib/CartContext'
+import { handleAuthRedirect, dispatchCartUpdate } from '@/lib/CartContext'
 import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
