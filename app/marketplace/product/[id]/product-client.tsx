@@ -13,7 +13,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import { MdVerified } from 'react-icons/md'
-import { dispatchCartUpdate } from '@/lib/CartContext'
+import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
 
 const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
@@ -141,6 +141,11 @@ useEffect(() => {
           productVariantId: selectedVariant?.id,
         }),
       })
+
+      if (response.status === 401) {
+        handleAuthRedirect()
+        return
+      }
 
       if (response.ok) {
         dispatchCartUpdate()

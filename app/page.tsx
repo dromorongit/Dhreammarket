@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
+import { handleAuthRedirect } from '@/lib/CartContext'
 import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
@@ -1039,6 +1040,12 @@ const fetchProducts = async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId, quantity: 1 })
       })
+
+      if (response.status === 401) {
+        handleAuthRedirect()
+        return
+      }
+
       if (response.ok) {
         // Could show success toast here
       }

@@ -12,7 +12,7 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
-import { dispatchCartUpdate } from '@/lib/CartContext'
+import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
 interface CartResponse {
@@ -263,6 +263,11 @@ const fetchVendors = async () => {
           quantity: 1,
         }),
       })
+
+      if (response.status === 401) {
+        handleAuthRedirect()
+        return
+      }
 
       if (response.ok) {
         dispatchCartUpdate()
