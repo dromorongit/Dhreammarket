@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-middleware'
+import { isVendorOnboarded } from '@/lib/onboarding'
 import { getVendorDemandAnalytics } from '@/lib/demand-forecast'
 
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,15 @@ export async function GET(request: NextRequest) {
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json(
+        { analytics: null, error: 'Complete store setup to view demand analytics' },
+        { status: 403 }
+      )
     }
 
     const analytics = await getVendorDemandAnalytics(payload.userId)

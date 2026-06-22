@@ -23,6 +23,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json(
+        { suppliers: [], success: false, error: 'Complete store setup to view suppliers' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const includeDisabled = searchParams.get('includeDisabled') === 'true'
 

@@ -22,6 +22,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Check if vendor has completed onboarding (store and category)
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json(
+        { error: 'Complete store setup to view suppliers' },
+        { status: 403 }
+      )
+    }
+
     const supplier = await getSupplierById(params.id)
 
     if (!supplier) {
