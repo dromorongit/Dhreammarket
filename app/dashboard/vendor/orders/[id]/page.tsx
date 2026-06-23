@@ -849,8 +849,8 @@ export default function VendorOrderDetailPage() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Respond to Refund Request</h3>
 <p className="text-sm text-gray-600 mb-4">
-                   Please provide a response to the customer&apos;s refund request.
-                 </p>
+          Please provide a response to the customer&apos;s refund request.
+        </p>
                 <Textarea
                   value={vendorReply}
                   onChange={(e) => setVendorReply(e.target.value)}
@@ -882,21 +882,20 @@ export default function VendorOrderDetailPage() {
         )}
 
         {/* Actions */}
-<div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild variant="outline" className="flex-1 min-h-[44px]">
-                  <Link href="/dashboard/vendor">Back to Dashboard</Link>
-                </Button>
-                <Button asChild className="flex-1 min-h-[44px]">
-                  <Link href="/dashboard/vendor/products">Manage Products</Link>
-                </Button>
-              </div>
-              <NeedHelpButton
-                variant="outline"
-                size="sm"
-                category="ORDER"
-                fullWidth
-              />
-            </div>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button asChild variant="outline" className="flex-1 min-h-[44px]">
+            <Link href="/dashboard/vendor">Back to Dashboard</Link>
+          </Button>
+          <Button asChild className="flex-1 min-h-[44px]">
+            <Link href="/dashboard/vendor/products">Manage Products</Link>
+          </Button>
+          <NeedHelpButton
+            variant="outline"
+            size="sm"
+            category="ORDER"
+            fullWidth
+          />
+        </div>
       </div>
     </div>
   )

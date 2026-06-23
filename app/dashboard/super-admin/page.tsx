@@ -180,38 +180,38 @@ export default function SuperAdminDashboard() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 tracking-tight">
               Super Admin Dashboard
             </h1>
-            <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
-              Full ecosystem visibility, governance controls, and financial oversight for the entire platform.
-            </p>
+<p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
+                Full ecosystem visibility, governance controls, and financial oversight for the entire platform.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
-         {/* Platform Overview Stats - Mobile Responsive */}
-         <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-           <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-             <CardContent className="p-4 sm:p-6">
-               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
-                   <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                   </svg>
-                 </div>
-                 <div className="min-w-0">
-                   <p className="text-xs sm:text-sm text-slate-500 truncate">Total Users</p>
-                   <p className="text-lg sm:text-2xl font-bold text-deep-navy truncate">{(stats?.totalUsers ?? 0).toLocaleString()}</p>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-10">
+          {/* Platform Overview Stats - Mobile Responsive */}
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-slate-500 truncate">Total Users</p>
+                    <p className="text-lg sm:text-2xl font-bold text-deep-navy truncate">{(stats?.totalUsers ?? 0).toLocaleString()}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
                 <div>
@@ -354,31 +354,31 @@ export default function SuperAdminDashboard() {
          </div>
 
 {/* Employee/Admin Management & Vendor Governance - Mobile Responsive */}
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-           <Card variant="elevated">
-             <CardContent className="p-4 sm:p-6">
-               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                 <h3 className="text-lg font-semibold text-deep-navy">Employee / Admin Management</h3>
-<Button asChild variant="primary" size="sm" className="w-full sm:w-auto min-h-[44px]">
-                <Link href="/dashboard/admin/create-admin">Create Admin</Link>
-              </Button>
-               </div>
-               <div className="space-y-3">
-                 {admins.length === 0 ? (
-                   <EmptyState
-                     icon={
-                       <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                       </svg>
-                     }
-                     title="No admins found"
-                     description="Admin accounts will appear here."
-                     className="py-6"
-                   />
- ) : (
-                   <div className="space-y-3">
-                     {admins.slice(0, 5).map((admin) => (
-                        <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card variant="elevated">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                <h3 className="text-lg font-semibold text-deep-navy">Employee / Admin Management</h3>
+                <Button asChild variant="primary" size="sm" className="w-full sm:w-auto min-h-[44px]">
+                  <Link href="/dashboard/admin/create-admin">Create Admin</Link>
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {admins.length === 0 ? (
+                  <EmptyState
+                    icon={
+                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    }
+                    title="No admins found"
+                    description="Admin accounts will appear here."
+                    className="py-6"
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {admins.slice(0, 5).map((admin) => (
+                      <div key={admin.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
                           <div className="flex items-start sm:items-center gap-3 min-w-0">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
                               {admin.profile?.firstName?.charAt(0) || admin.profile?.lastName?.charAt(0) || admin.email?.charAt(0) || ''}
@@ -397,76 +397,76 @@ export default function SuperAdminDashboard() {
                           </div>
                           <Badge variant="info" className="w-full sm:w-auto text-center sm:text-left">ADMIN</Badge>
                         </div>
-                      ))}
+))}
                     </div>
-                 )}
-<Button asChild variant="ghost" className="w-full min-h-[44px]">
-                <Link href="/dashboard/admin/users">View All Admins</Link>
-              </Button>
-               </div>
-             </CardContent>
-           </Card>
+                  )}
+                <Button asChild variant="ghost" className="w-full min-h-[44px]">
+                  <Link href="/dashboard/admin/users">View All Admins</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-           <Card variant="elevated">
-             <CardContent className="p-4 sm:p-6">
-               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                 <h3 className="text-lg font-semibold text-deep-navy">Vendor Governance</h3>
-<Button asChild variant="primary" size="sm" className="w-full sm:w-auto min-h-[44px]">
-                <Link href="/dashboard/admin/vendors">Manage Vendors</Link>
-              </Button>
-               </div>
-               <div className="space-y-3">
-                 {vendors.length === 0 ? (
-                   <EmptyState
-                     icon={
-                       <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                       </svg>
-                     }
-                     title="No vendors found"
-                     description="Vendors will appear here."
-                     className="py-6"
-                   />
- ) : (
-                   <div className="space-y-3">
-                     {vendors.slice(0, 5).map((vendor) => (
-                       <div key={vendor.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
-                         <div className="flex items-start sm:items-center gap-3 min-w-0">
-                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                             {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
-                           </div>
-                           <div className="min-w-0 flex-1">
-                             <p className="text-sm font-medium text-slate-700 break-words">
-                               {vendor.storeName || vendor.name || 'Unnamed Store'}
-                             </p>
-                             <p className="text-xs text-slate-500 break-all">{vendor.email}</p>
-                             {vendor.mobileNumber && (
-                               <p className="text-xs text-slate-400 mt-1">{vendor.mobileNumber}</p>
-                             )}
-                           </div>
-                         </div>
-                         <div className="flex flex-col sm:flex-row gap-1 w-full sm:w-auto">
-                           {vendor.store?.isVerified && (
-                             <Badge variant="success" className="text-center">Verified</Badge>
-                           )}
-                           {vendor.store?.isFeatured && (
-                             <Badge variant="premium" className="text-center">Featured</Badge>
-                           )}
-                           {(!vendor.store?.isVerified && !vendor.store?.isFeatured) && (
-                             <Badge variant="default" className="text-center">Pending</Badge>
-                           )}
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 )}
-<Button asChild variant="ghost" className="w-full min-h-[44px]">
-                <Link href="/dashboard/admin/vendors">View All Vendors</Link>
-              </Button>
-               </div>
-             </CardContent>
-           </Card>
-         </div>
+          <Card variant="elevated">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                <h3 className="text-lg font-semibold text-deep-navy">Vendor Governance</h3>
+                <Button asChild variant="primary" size="sm" className="w-full sm:w-auto min-h-[44px]">
+                  <Link href="/dashboard/admin/vendors">Manage Vendors</Link>
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {vendors.length === 0 ? (
+                  <EmptyState
+                    icon={
+                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    }
+                    title="No vendors found"
+                    description="Vendors will appear here."
+                    className="py-6"
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {vendors.slice(0, 5).map((vendor) => (
+                      <div key={vendor.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
+                        <div className="flex items-start sm:items-center gap-3 min-w-0">
+<div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                            {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-700 break-words">
+                              {vendor.storeName || vendor.name || 'Unnamed Store'}
+                            </p>
+                            <p className="text-xs text-slate-500 break-all">{vendor.email}</p>
+                            {vendor.mobileNumber && (
+                              <p className="text-xs text-slate-400 mt-1">{vendor.mobileNumber}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-1 w-full sm:w-auto">
+                          {vendor.store?.isVerified && (
+                            <Badge variant="success" className="text-center">Verified</Badge>
+                          )}
+                          {vendor.store?.isFeatured && (
+                            <Badge variant="premium" className="text-center">Featured</Badge>
+                          )}
+                          {(!vendor.store?.isVerified && !vendor.store?.isFeatured) && (
+                            <Badge variant="default" className="text-center">Pending</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button asChild variant="ghost" className="w-full min-h-[44px]">
+                  <Link href="/dashboard/admin/vendors">View All Vendors</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Platform Health & Support */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -624,93 +624,18 @@ export default function SuperAdminDashboard() {
                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
                  <Link href="/dashboard/super-admin/homepage">
                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                     </svg>
-                   </div>
-                   <span className="text-sm font-medium text-slate-700">Create Admin</span>
-                 </Link>
-               </Button>
-             </div>
-                   <span className="text-sm font-medium text-slate-700">Manage Users</span>
-                 </Link>
-               </Button>
-               <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                 <Link href="/dashboard/admin/vendors">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">Manage Vendors</span>
+<svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700">Create Admin</span>
+                  </Link>
                 </Button>
-              </Link>
-              <Link href="/dashboard/admin/vendor-categories">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">Vendor Categories</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/admin/orders">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">View Orders</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/admin/products">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">Manage Products</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/admin/payments">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">Payments & Revenue</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/super-admin/product-categories">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">Product Categories</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/super-admin/homepage">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">Create Admin</span>
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Governance Navigation */}
+          {/* Governance Navigation */}
         <Card variant="elevated" className="mb-8">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-deep-navy mb-4">Governance Navigation</h3>

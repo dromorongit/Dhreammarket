@@ -320,8 +320,8 @@ export default function AdminOrdersPage() {
                         </span>
                       </div>
                       
-<div className="grid grid-cols-2 gap-2 text-sm">
-                         <div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
                            <span className="text-gray-500">Total:</span>
                            <span className="ml-1 font-medium">{formatCurrency(order.total)}</span>
                          </div>
@@ -354,22 +354,23 @@ export default function AdminOrdersPage() {
                         </div>
                       )}
                       
-                      <div className="flex flex-wrap gap-2 pt-2">
-<Link href={`/dashboard/admin/orders/${order.id}`}>
-                        <button
-                          className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
-                          title="View order details"
-                        >
-                          View Details
-                        </button>
-                      </Link>
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
-                          title="Delete order"
-                        >
-                          Delete
-                        </button>
-                      </div>
+<div className="flex flex-wrap gap-2 pt-2">
+                         <Link href={`/dashboard/admin/orders/${order.id}`}>
+                           <button
+                             className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
+                             title="View order details"
+                           >
+                             View Details
+                           </button>
+                         </Link>
+                         <button
+                           onClick={() => handleDeleteOrder(order.id)}
+                           className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                           title="Delete order"
+                         >
+                           Delete
+                         </button>
+                       </div>
                     </div>
                   ))}
                 </div>
@@ -378,7 +379,7 @@ export default function AdminOrdersPage() {
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
-<thead className="bg-gray-50 border-b">
+                  <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
