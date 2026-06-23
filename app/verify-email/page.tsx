@@ -66,19 +66,26 @@ function VerifyEmailContent() {
         if (data.user) {
           // User is auto-authenticated, redirect directly
           const role = data.user.role
-          
-          // For vendors, check if they need to complete onboarding
-          if (role === 'VENDOR' && !redirectUrl) {
-            // Redirect to store setup for vendor onboarding (cannot be bypassed via redirect param)
-            window.location.href = '/dashboard/vendor/store'
+          const isOnboarded = data.isOnboarded
+
+          // Determine dashboard path based on role and onboarding status
+          let dashboardPath: string
+          if (role === 'SUPER_ADMIN') {
+            dashboardPath = '/dashboard/super-admin'
+          } else if (role === 'ADMIN') {
+            dashboardPath = '/dashboard/admin'
+          } else if (role === 'VENDOR') {
+            // Vendors go to vendor dashboard if onboarded, otherwise to store setup
+            dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
           } else {
-            const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
-                                    role === 'ADMIN' ? '/dashboard/admin' :
-                                    role === 'VENDOR' ? '/dashboard/vendor/store' :
-                                    '/dashboard/customer'
-            const targetUrl = redirectUrl || dashboardPath
-            window.location.href = targetUrl
+            dashboardPath = '/dashboard/customer'
           }
+
+          // Only allow redirect to non-vendor-dashboard paths; vendor onboarding must be completed via middleware
+          const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor')
+            ? redirectUrl
+            : dashboardPath
+          window.location.href = targetUrl
         } else {
           // Fallback: redirect to login if no auto-login
           if (redirectUrl) {

@@ -63,14 +63,22 @@ function LoginContent() {
           window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
         } else {
           const role = data.user.role
-          // Vendors go to store setup unless redirect specified (onboarding cannot be bypassed)
-          const dashboardPath = role === 'SUPER_ADMIN' ? '/dashboard/super-admin' :
-                              role === 'ADMIN' ? '/dashboard/admin' :
-                              role === 'VENDOR' ? '/dashboard/vendor/store' :
-                              '/dashboard/customer'
+          const isOnboarded = data.isOnboarded
+          // Determine dashboard path based on role and onboarding status
+          let dashboardPath: string
+          if (role === 'SUPER_ADMIN') {
+            dashboardPath = '/dashboard/super-admin'
+          } else if (role === 'ADMIN') {
+            dashboardPath = '/dashboard/admin'
+          } else if (role === 'VENDOR') {
+            // Vendors go to vendor dashboard if onboarded, otherwise to store setup
+            dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+          } else {
+            dashboardPath = '/dashboard/customer'
+          }
           // Only allow redirect to non-dashboard paths; vendor onboarding must be completed
-          const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor') 
-            ? redirectUrl 
+          const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor')
+            ? redirectUrl
             : dashboardPath
           window.location.href = targetUrl
         }

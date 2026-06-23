@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyPassword, generateToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/rate-limit'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export async function POST(request: NextRequest) {
   // Rate limiting - security hardening
@@ -53,8 +54,18 @@ export async function POST(request: NextRequest) {
     console.log('Setting token cookie')
     console.log('NODE_ENV:', process.env.NODE_ENV)
     console.log('Cookie secure flag:', process.env.NODE_ENV === 'production')
-    
-    const response = NextResponse.json({ message: 'Login successful', user: { id: user.id, email: user.email, role: user.role } })
+
+    // Check vendor onboarding status
+    let isOnboarded: boolean | undefined = undefined
+    if (user.role === 'VENDOR') {
+      isOnboarded = await isVendorOnboarded(user.id)
+    }
+
+    const response = NextResponse.json({
+      message: 'Login successful',
+      user: { id: user.id, email: user.email, role: user.role },
+      isOnboarded
+    })
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

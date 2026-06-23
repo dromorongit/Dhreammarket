@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { rateLimit } from '@/lib/rate-limit'
 import { generateToken } from '@/lib/auth'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('email-verification')(request)
@@ -101,12 +102,19 @@ export async function POST(request: NextRequest) {
 
     // Auto-login after verification - generate token and set cookie
     const token = generateToken({ userId: user.id, role: user.role })
-    
-    const response = NextResponse.json({ 
+
+    // Check vendor onboarding status
+    let isOnboarded: boolean | undefined = undefined
+    if (user.role === 'VENDOR') {
+      isOnboarded = await isVendorOnboarded(user.id)
+    }
+
+    const response = NextResponse.json({
       message: 'Email verified successfully',
       email: user.email,
       isEmailVerified: true,
-      user: { id: user.id, email: user.email, role: user.role }
+      user: { id: user.id, email: user.email, role: user.role },
+      isOnboarded
     }, { status: 200 })
     
     response.cookies.set('token', token, {
