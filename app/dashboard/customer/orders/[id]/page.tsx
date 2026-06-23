@@ -907,16 +907,12 @@ export default function CustomerOrderDetailPage() {
             </div>
           )}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/dashboard/customer" className="flex-1">
-              <Button variant="outline" className="w-full">
-                View All Orders
-              </Button>
-            </Link>
-            <Link href="/marketplace" className="flex-1">
-              <Button className="w-full">
-                Continue Shopping
-              </Button>
-            </Link>
+<Button asChild variant="outline" className="w-full">
+                  <Link href="/dashboard/customer">View All Orders</Link>
+                </Button>
+<Button asChild className="w-full">
+                  <Link href="/marketplace">Continue Shopping</Link>
+                </Button>
           </div>
           <NeedHelpButton
             variant="outline"

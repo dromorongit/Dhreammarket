@@ -150,9 +150,9 @@ export default function CustomerProfilePage() {
           <Card>
             <CardContent className="p-8 text-center">
               <p className="text-slate-600">Unable to load profile. Please try again.</p>
-              <Link href="/login">
-                <Button className="mt-4">Login</Button>
-              </Link>
+              <Button asChild className="mt-4">
+                <Link href="/login">Login</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -331,30 +331,30 @@ export default function CustomerProfilePage() {
               <CardContent className="p-6">
                 <h3 className="text-lg font-semibold text-deep-navy mb-4">Quick Links</h3>
                 <div className="space-y-3">
-                  <Link href="/dashboard/customer/orders">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                  <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+                    <Link href="/dashboard/customer/orders">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                       </svg>
                       My Orders
-                    </Button>
-                  </Link>
-                  <Link href="/cart">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+                    <Link href="/cart">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 110 4m0-2a2 2 0 11-2 2m2 2v1a2 2 0 102 2h2" />
                       </svg>
                       My Cart
-                    </Button>
-                  </Link>
-                  <Link href="/marketplace">
-                    <Button variant="ghost" size="sm" className="w-full justify-start">
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+                    <Link href="/marketplace">
                       <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                       </svg>
                       Marketplace
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

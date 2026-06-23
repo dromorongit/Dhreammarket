@@ -204,9 +204,9 @@ export default function SuperAdminReviewsPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Reviews</h2>
               <p className="text-gray-600 mb-6">{error}</p>
-              <Link href="/dashboard/super-admin">
-                <Button>Return to Dashboard</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/super-admin">Return to Dashboard</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>

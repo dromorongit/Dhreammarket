@@ -565,9 +565,9 @@ export default function VendorOrderDetailPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
               <p className="text-gray-600 mb-6">{error}</p>
-              <Link href="/dashboard/vendor">
-                <Button>Return to Dashboard</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor">Return to Dashboard</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -583,9 +583,9 @@ export default function VendorOrderDetailPage() {
             <CardContent className="p-8 text-center">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Order Not Found</h2>
               <p className="text-gray-600 mb-6">The order you&apos;re looking for doesn&apos;t exist.</p>
-              <Link href="/dashboard/vendor">
-                <Button>Return to Dashboard</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor">Return to Dashboard</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -882,26 +882,21 @@ export default function VendorOrderDetailPage() {
         )}
 
         {/* Actions */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link href="/dashboard/vendor" className="flex-1">
-              <Button variant="outline" className="w-full">
-                Back to Dashboard
-              </Button>
-            </Link>
-            <Link href="/dashboard/vendor/products" className="flex-1">
-              <Button className="w-full">
-                Manage Products
-              </Button>
-            </Link>
-          </div>
-          <NeedHelpButton
-            variant="outline"
-            size="sm"
-            category="ORDER"
-            fullWidth
-          />
-        </div>
+<div className="flex flex-col sm:flex-row gap-4">
+                <Button asChild variant="outline" className="flex-1 min-h-[44px]">
+                  <Link href="/dashboard/vendor">Back to Dashboard</Link>
+                </Button>
+                <Button asChild className="flex-1 min-h-[44px]">
+                  <Link href="/dashboard/vendor/products">Manage Products</Link>
+                </Button>
+              </div>
+              <NeedHelpButton
+                variant="outline"
+                size="sm"
+                category="ORDER"
+                fullWidth
+              />
+            </div>
       </div>
     </div>
   )

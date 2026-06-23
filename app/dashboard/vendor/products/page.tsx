@@ -63,10 +63,8 @@ export default function VendorProducts() {
       const response = await fetch('/api/products')
       if (response.ok) {
         const data = await response.json()
-        // Apply null safety - use optional chaining and default to empty array
         const rawProducts = Array.isArray(data?.products) ? data.products : []
         
-        // Enrich products with available stock (stock - reserved)
         const enrichedProducts = rawProducts.map((product: any) => ({
           ...product,
           availableStock: product.stock - (product.reservedQuantity || 0),
@@ -133,9 +131,9 @@ export default function VendorProducts() {
               <p className="text-gray-600 mb-6">
                 You need to set up your store and select a category before managing products.
               </p>
-              <Link href="/dashboard/vendor/store">
-                <Button>Complete Store Setup</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor/store">Complete Store Setup</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -163,11 +161,9 @@ export default function VendorProducts() {
               size="sm"
               category="VENDOR"
             />
-            <Link href="/dashboard/vendor/products/new">
-              <Button>
-                + Add New Product
-              </Button>
-            </Link>
+            <Button asChild>
+              <Link href="/dashboard/vendor/products/new">+ Add New Product</Link>
+            </Button>
           </div>
         </div>
 
@@ -176,9 +172,9 @@ export default function VendorProducts() {
             <CardContent className="text-center py-12">
               <h3 className="text-lg font-medium text-gray-900 mb-2">No products yet</h3>
               <p className="text-gray-600 mb-6">Start by adding your first product to the marketplace.</p>
-              <Link href="/dashboard/vendor/products/new">
-                <Button>Add Your First Product</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor/products/new">Add Your First Product</Link>
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -205,7 +201,7 @@ export default function VendorProducts() {
                     <p className="text-gray-600 text-sm mb-2 line-clamp-2">
                       {product.description || 'No description'}
                     </p>
-<div className="flex justify-between items-center mb-3">
+                    <div className="flex justify-between items-center mb-3">
                       <span className="text-lg font-bold text-blue-600">
                         {formatPrice(product.price)}
                       </span>

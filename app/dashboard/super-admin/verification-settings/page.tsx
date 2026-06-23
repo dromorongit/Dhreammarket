@@ -203,16 +203,12 @@ export default function SuperAdminVerificationSettings() {
             <CardContent className="p-6">
               <h3 className="font-medium text-gray-900 mb-4">Verification Management</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Link href="/dashboard/admin/verification-applications">
-                  <Button variant="outline" className="w-full">
-                    View Verification Applications
-                  </Button>
-                </Link>
-                <Link href="/dashboard/admin/vendors">
-                  <Button variant="outline" className="w-full">
-                    Manage Vendors
-                  </Button>
-                </Link>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/dashboard/admin/verification-applications">View Verification Applications</Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/dashboard/admin/vendors">Manage Vendors</Link>
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -164,16 +164,16 @@ export default function CustomerDashboard() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-3 mt-6">
-                      <Link href="/marketplace">
-                        <Button size="sm">
-                          Browse Marketplace
-                        </Button>
-                      </Link>
-                      <Link href="/cart">
-                        <Button variant="outline" size="sm">
-                          View Cart
-                        </Button>
-                      </Link>
+                      <Button asChild size="sm">
+                <Link href="/marketplace">
+                  Browse Marketplace
+                </Link>
+              </Button>
+                      <Button asChild variant="outline" size="sm">
+                <Link href="/cart">
+                  View Cart
+                </Link>
+              </Button>
                     </div>
                   </div>
                 </div>
@@ -261,46 +261,46 @@ export default function CustomerDashboard() {
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-deep-navy mb-4">Quick Actions</h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
                 <Link href="/marketplace">
-                  <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Marketplace</span>
-                  </Button>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">Marketplace</span>
                 </Link>
+              </Button>
+<Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
                 <Link href="/cart">
-                  <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Cart</span>
-                  </Button>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 110 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">Cart</span>
                 </Link>
+              </Button>
+                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
                 <Link href="/dashboard/customer/orders">
-                  <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Orders</span>
-                  </Button>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">Orders</span>
                 </Link>
+              </Button>
+                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
                 <Link href="/dashboard/customer/profile">
-                  <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Profile</span>
-                  </Button>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">Profile</span>
                 </Link>
+              </Button>
               </div>
             </CardContent>
           </Card>
@@ -323,11 +323,11 @@ export default function CustomerDashboard() {
                   <span className="text-sm text-slate-600">Total Orders</span>
                   <span className="text-sm font-medium text-deep-navy">{orders.length}</span>
                 </div>
+<Button asChild variant="outline" size="sm" className="w-full">
                 <Link href="/dashboard/customer/profile">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Update Profile
-                  </Button>
+                  Update Profile
                 </Link>
+              </Button>
               </div>
             </CardContent>
           </Card>
@@ -339,11 +339,11 @@ export default function CustomerDashboard() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-deep-navy">Recent Orders</h3>
               {orders.length > 0 && (
-                <Link href="/dashboard/customer/orders">
-                  <Button variant="ghost" size="sm">
-                    View All Orders
-                  </Button>
-                </Link>
+<Button asChild variant="ghost" size="sm">
+                 <Link href="/dashboard/customer/orders">
+                   View All Orders
+                 </Link>
+               </Button>
               )}
             </div>
 
@@ -404,11 +404,11 @@ export default function CustomerDashboard() {
                 ))}
                 {orders.length > 5 && (
                   <div className="text-center pt-4">
-                    <Link href="/dashboard/customer/orders">
-                      <Button variant="outline" size="sm">
-                        View All {orders.length} Orders
-                      </Button>
-                    </Link>
+<Button asChild variant="outline" size="sm">
+                   <Link href="/dashboard/customer/orders">
+                     View All {orders.length} Orders
+                   </Link>
+                 </Button>
                   </div>
                 )}
               </div>
@@ -438,11 +438,11 @@ export default function CustomerDashboard() {
                 <p className="text-sm text-slate-600 mb-3">
                   Find instant answers to common questions about orders, payments, and more.
                 </p>
-                <Link href="/faq">
-                  <Button variant="outline" size="sm" className="w-full">
-                    View FAQs
-                  </Button>
-                </Link>
+<Button asChild variant="outline" size="sm" className="w-full">
+                   <Link href="/faq">
+                     View FAQs
+                   </Link>
+                 </Button>
               </div>
             </div>
           </CardContent>

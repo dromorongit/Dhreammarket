@@ -256,9 +256,9 @@ export default function NewProduct() {
               <p className="text-gray-600 mb-6">
                 You need to set up your store and select a category before adding products.
               </p>
-              <Link href="/dashboard/vendor/store">
-                <Button>Complete Store Setup</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor/store">Complete Store Setup</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>

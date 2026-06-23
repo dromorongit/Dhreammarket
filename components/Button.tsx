@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, forwardRef } from 'react'
+import { ButtonHTMLAttributes, forwardRef, cloneElement, ReactElement } from 'react'
 import { cn } from '@/lib/utils'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -6,10 +6,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   loading?: boolean
   fullWidth?: boolean
+  asChild?: boolean
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', className, children, loading, fullWidth, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', className, children, loading, fullWidth, asChild, ...props }, ref) => {
     const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-royal-blue focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none relative overflow-hidden group'
 
     const sizeClasses = {
@@ -29,17 +30,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       success: 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/35 hover:scale-[1.02] active:scale-[0.98] border border-emerald-500/20',
     }
 
+    const combinedClasses = cn(
+      baseClasses,
+      sizeClasses[size],
+      variantClasses[variant],
+      fullWidth && 'w-full',
+      loading && 'cursor-wait',
+      className
+    )
+
+    if (asChild && children) {
+      return cloneElement(children as ReactElement, {
+        className: cn(combinedClasses, (children as ReactElement).props?.className),
+        disabled: loading || props.disabled,
+        ...props,
+      })
+    }
+
     return (
       <button
         ref={ref}
-        className={cn(
-          baseClasses,
-          sizeClasses[size],
-          variantClasses[variant],
-          fullWidth && 'w-full',
-          loading && 'cursor-wait',
-          className
-        )}
+        className={combinedClasses}
         disabled={loading || props.disabled}
         {...props}
       >

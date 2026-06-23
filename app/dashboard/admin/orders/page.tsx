@@ -355,15 +355,14 @@ export default function AdminOrdersPage() {
                       )}
                       
                       <div className="flex flex-wrap gap-2 pt-2">
-                        <Link href={`/dashboard/admin/orders/${order.id}`}>
-                          <button
-                            className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
-                            title="View order details"
-                          >
-                            View Details
-                          </button>
-                        </Link>
+<Link href={`/dashboard/admin/orders/${order.id}`}>
                         <button
+                          className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
+                          title="View order details"
+                        >
+                          View Details
+                        </button>
+                      </Link>
                           onClick={() => handleDeleteOrder(order.id)}
                           className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
                           title="Delete order"

@@ -636,10 +636,10 @@ export default function SuperAdminHomepagePage() {
               completed sales.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
-            <Link href="/dashboard/super-admin/brands" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto min-h-[44px]">Manage Brands</Button>
-            </Link>
+<div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
+            <Button asChild variant="outline" className="w-full sm:w-auto min-h-[44px]">
+              <Link href="/dashboard/super-admin/brands">Manage Brands</Link>
+            </Button>
             <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto min-h-[44px]">
               + Add Section
             </Button>
@@ -749,11 +749,9 @@ export default function SuperAdminHomepagePage() {
                   {/* Actions - Full width stacked on mobile */}
                   <div className="flex flex-col gap-2 mt-auto">
                     {section.slug === "brand-store" ? (
-                      <Link href="/dashboard/super-admin/brands">
-                        <Button variant="outline" size="sm" className="w-full min-h-[44px]">
-                          Manage Brands
-                        </Button>
-                      </Link>
+                      <Button asChild variant="outline" size="sm" className="w-full min-h-[44px]">
+                        <Link href="/dashboard/super-admin/brands">Manage Brands</Link>
+                      </Button>
                     ) : (
                       <Button
                         variant="outline"

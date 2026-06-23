@@ -418,19 +418,12 @@ export default function VendorDashboard() {
           <div className="mb-8">
             <Card variant="elevated" className="border-2 border-blue-200">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    <h3 className="text-lg font-semibold text-deep-navy">Open Restock Orders</h3>
-                  </div>
-                  <Link href="/dashboard/vendor/restock">
-                    <Button variant="outline" size="sm">
-                      View All
-                    </Button>
-                  </Link>
-                </div>
+<div className="flex items-center justify-between mb-4">
+               <h3 className="text-lg font-semibold text-deep-navy">Open Restock Orders</h3>
+               <Button asChild variant="outline" size="sm">
+                 <Link href="/dashboard/vendor/restock">View All</Link>
+               </Button>
+             </div>
                 <p className="text-sm text-slate-600 mb-4">
                   Track your incoming inventory from active restock orders.
                 </p>
@@ -454,13 +447,13 @@ export default function VendorDashboard() {
                     </div>
                   ))}
                 </div>
-                {restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').length > 4 && (
-                  <Link href="/dashboard/vendor/restock" className="block mt-4 text-center">
-                    <Button variant="outline" size="sm">
-                      View All {restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').length} Open Orders
-                    </Button>
-                  </Link>
-                )}
+{restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').length > 4 && (
+                   <div className="text-center mt-4">
+                     <Button asChild variant="outline" size="sm">
+                       <Link href="/dashboard/vendor/restock">View All {restockOrders.filter(o => o.status !== 'RECEIVED' && o.status !== 'CANCELLED').length} Open Orders</Link>
+                     </Button>
+                   </div>
+                 )}
               </CardContent>
             </Card>
           </div>
@@ -469,14 +462,12 @@ export default function VendorDashboard() {
         {/* Recent Orders */}
         <Card variant="elevated" className="mb-8">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-deep-navy">Recent Orders</h3>
-              <Link href="/dashboard/vendor/orders">
-                <Button variant="ghost" size="sm">
-                  View All Orders
-                </Button>
-              </Link>
-            </div>
+<div className="flex items-center justify-between mb-6">
+               <h3 className="text-lg font-semibold text-deep-navy">Recent Orders</h3>
+               <Button asChild variant="ghost" size="sm">
+                 <Link href="/dashboard/vendor/orders">View All Orders</Link>
+               </Button>
+             </div>
 
             {loading ? (
               <div className="space-y-4">
@@ -540,15 +531,13 @@ export default function VendorDashboard() {
                     </div>
                   </Link>
                 ))}
-                {orderItems.length > 10 && (
-                  <div className="text-center pt-4">
-                    <Link href="/dashboard/vendor/orders">
-                      <Button variant="outline" size="sm">
-                        View All {orderItems.length} Orders
-                      </Button>
-                    </Link>
-                  </div>
-                )}
+{orderItems.length > 10 && (
+                   <div className="text-center pt-4">
+                     <Button asChild variant="outline" size="sm">
+                       <Link href="/dashboard/vendor/orders">View All {orderItems.length} Orders</Link>
+                     </Button>
+                   </div>
+                 )}
               </div>
             )}
           </CardContent>
@@ -563,23 +552,21 @@ export default function VendorDashboard() {
                    Apply for vendor verification to gain customer trust and access premium features.
                  </p>
                </div>
-               <div className="flex gap-2">
-                 {metrics.verificationStatus !== 'NOT_APPLIED' && (
-                   <Link href="/dashboard/vendor/verification">
-                     <Button variant="outline" className="flex items-center gap-2">
-                       View Application
-                     </Button>
-                   </Link>
-                 )}
-                 <Button
-                   onClick={handleApplyForVerification}
-                   disabled={actionLoading}
-                   className="flex items-center gap-2"
-                 >
-                   <MdVerified className="w-5 h-5" />
-                   {actionLoading ? 'Processing...' : metrics.verificationStatus === 'NOT_APPLIED' ? 'Apply For Verification' : 'Restart Application'}
-                 </Button>
-               </div>
+<div className="flex gap-2">
+                  {metrics.verificationStatus !== 'NOT_APPLIED' && (
+                    <Button asChild variant="outline" className="flex items-center gap-2 min-h-[44px]">
+                      <Link href="/dashboard/vendor/verification">View Application</Link>
+                    </Button>
+                  )}
+                  <Button
+                    onClick={handleApplyForVerification}
+                    disabled={actionLoading}
+                    className="flex items-center gap-2 min-h-[44px]"
+                  >
+                    <MdVerified className="w-5 h-5" />
+                    {actionLoading ? 'Processing...' : metrics.verificationStatus === 'NOT_APPLIED' ? 'Apply For Verification' : 'Restart Application'}
+                  </Button>
+                </div>
              </CardContent>
            </Card>
          )}
@@ -588,39 +575,39 @@ export default function VendorDashboard() {
         <Card variant="elevated">
           <CardContent className="p-6">
             <h3 className="text-lg font-semibold text-deep-navy mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Link href="/dashboard/vendor/products/new">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group min-h-[44px]">
+                <Link href="/dashboard/vendor/products/new">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-slate-700">Add Product</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/vendor/products">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group min-h-[44px]">
+                <Link href="/dashboard/vendor/products">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-slate-700">Manage Products</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/vendor/orders">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group min-h-[44px]">
+                <Link href="/dashboard/vendor/orders">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-slate-700">View Orders</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/vendor/store">
-                <Button variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group">
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group min-h-[44px]">
+                <Link href="/dashboard/vendor/store">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -628,8 +615,8 @@ export default function VendorDashboard() {
                     </svg>
                   </div>
                   <span className="text-sm font-medium text-slate-700">Store Settings</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
               <div>
                 <NeedHelpButton
                   variant="outline"

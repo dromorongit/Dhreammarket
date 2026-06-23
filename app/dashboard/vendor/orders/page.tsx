@@ -151,9 +151,9 @@ export default function VendorOrdersPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Orders</h2>
               <p className="text-gray-600 mb-6">{error}</p>
-              <Link href="/dashboard/vendor">
-                <Button>Return to Dashboard</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor">Return to Dashboard</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -264,16 +264,14 @@ export default function VendorOrdersPage() {
                            })}
                          </p>
                        </div>
-                       <div className="text-right">
-                         <p className="text-sm text-gray-500">Your Total</p>
-                         <p className="text-xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</p>
-                         <p className="text-xs text-gray-500">{order.items.length} item(s)</p>
-                       </div>
-                       <Link href={`/dashboard/vendor/orders/${order.id}`}>
-                         <Button variant="outline" size="sm">
-                           View Details
-                         </Button>
-                       </Link>
+<div className="text-right">
+                          <p className="text-sm text-gray-500">Your Total</p>
+                          <p className="text-xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</p>
+                          <p className="text-xs text-gray-500">{order.items.length} item(s)</p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="min-h-[44px]">
+                          <Link href={`/dashboard/vendor/orders/${order.id}`}>View Details</Link>
+                        </Button>
                      </div>
                    </CardContent>
                  </Card>

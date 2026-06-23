@@ -166,9 +166,9 @@ export default function VendorFulfillmentPage() {
               </div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Orders</h2>
               <p className="text-gray-600 mb-6">{error}</p>
-              <Link href="/dashboard/vendor">
-                <Button>Return to Dashboard</Button>
-              </Link>
+              <Button asChild>
+                <Link href="/dashboard/vendor">Return to Dashboard</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
