@@ -354,8 +354,8 @@ export default function AdminOrdersPage() {
                         </div>
                       )}
                       
-<div className="flex flex-wrap gap-2 pt-2">
-                         <Link href={`/dashboard/admin/orders/${order.id}`}>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Link href={`/dashboard/admin/orders/${order.id}`}>
                            <button
                              className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
                              title="View order details"
