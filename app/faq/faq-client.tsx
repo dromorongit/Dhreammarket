@@ -309,25 +309,24 @@ export default function FAQClient() {
                                 <h3 className="text-lg font-semibold text-slate-800 pr-4">
                                   {faq.question}
                                 </h3>
-                                <button className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
-                                  <svg
-                                    className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${expandedId === faq.id ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                  </svg>
-</button>
+<button className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
+                              <svg
+                                className={`w-5 h-5 text-slate-600 transition-transform duration-200 ${expandedId === faq.id ? 'rotate-180' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                          {expandedId === faq.id && (
+                            <div className="mt-4 pt-4 border-t border-slate-100">
+                              <p className="text-slate-600 leading-relaxed">
+                                {faq.answer}
+                              </p>
                             </div>
-                            {expandedId === faq.id && (
-                              <div className="mt-4 pt-4 border-t border-slate-100">
-                                <p className="text-slate-600 leading-relaxed">
-                                  {faq.answer}
-                                </p>
-                              </div>
-                            )}
-                            </div>
+                          )}
                           </CardContent>
                         </Card>
                       ))}
