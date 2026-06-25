@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
 import ProductClient from './product-client'
+import { ProductJsonLd } from '@/components/seo/ProductJsonLd'
+import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 
 const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
@@ -15,6 +17,8 @@ interface ProductForMetadata {
   images: Array<{ url: string; alt: string | null }> | null
   store: { id: string; name: string; logo: string | null } | null
   brandRelation: { name: string } | null
+  averageRating: number
+  reviewCount: number
 }
 
 async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
@@ -28,6 +32,8 @@ async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
         price: true,
         stock: true,
         availabilityType: true,
+        averageRating: true,
+        reviewCount: true,
         images: { select: { url: true, alt: true } },
         store: { select: { id: true, name: true, logo: true } },
         brandRelation: { select: { name: true } },
@@ -46,29 +52,26 @@ async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
       images: product.images,
       store: product.store,
       brandRelation: product.brandRelation,
+      averageRating: product.averageRating ?? 0,
+      reviewCount: product.reviewCount ?? 0,
     }
   } catch {
     return null
   }
 }
 
-function getAvailabilityStatus(availabilityType: string | null, stock: number): string {
-  if (availabilityType === 'PREORDER' || availabilityType === 'BACKORDER') {
-    return 'https://schema.org/PreOrder'
-  }
-  return stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+function truncateDescription(description: string | null, maxChars: number = 160): string {
+  if (!description) return 'Discover quality products from verified Ghanaian vendors on Dhream Market.'
+  return description.length > maxChars ? description.substring(0, maxChars).trim() + '...' : description
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const product = await getProductInfo(params.id)
 
-  const title = product?.name ? `${product.name} - Dhream Market` : 'Dhream Market - Powering Digital Trade'
-  const description = product?.description || (product?.store?.name && product?.name ? `Buy ${product.name} from ${product.store.name} on Dhream Market.` : 'Discover quality products on Dhream Market.')
+  const title = product?.name ?? 'Product - Dhream Market'
+  const description = truncateDescription(product?.description)
 
-  const imageUrl = product?.images?.[0]?.url ||
-    product?.store?.logo ||
-    DEFAULT_OG_IMAGE
-
+  const imageUrl = product?.images?.[0]?.url ?? product?.store?.logo ?? DEFAULT_OG_IMAGE
   const url = `${SITE_URL}/marketplace/product/${params.id}`
 
   return {
@@ -81,8 +84,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       title,
       description,
       url,
-      type: 'website',
-      images: imageUrl ? [{ url: imageUrl, width: 1200, height: 630, alt: product?.name || 'Product' }] : undefined,
+      type: 'product',
+      images: imageUrl ? [{ url: imageUrl, width: 1200, height: 630, alt: product?.name ?? 'Product' }] : undefined,
     },
     twitter: {
       card: 'summary_large_image',
@@ -94,7 +97,6 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 
-
 export function generateViewport(): Viewport {
   return {
     themeColor: '#1e40af',
@@ -104,28 +106,33 @@ export function generateViewport(): Viewport {
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const product = await getProductInfo(params.id)
 
-  const productImages = product?.images?.map((img) => img.url) || [DEFAULT_OG_IMAGE]
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product?.name || 'Product',
-    description: product?.description || `Buy ${product?.name} from ${product?.store?.name} on Dhream Market.`,
-    image: productImages,
-    brand: product?.brandRelation?.name ? { '@type': 'Brand', name: product.brandRelation.name } : undefined,
-    offers: {
-      '@type': 'Offer',
-      price: product?.price?.toString() || '0',
-      priceCurrency: 'GHS',
-      availability: getAvailabilityStatus(product?.availabilityType ?? null, product?.stock ?? 0),
-      seller: product?.store?.name ? { '@type': 'Organization', name: product.store.name } : undefined,
-    },
+  if (!product) {
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Product',
+              name: 'Product Not Found',
+            }),
+          }}
+        />
+        <ProductClient />
+      </>
+    )
   }
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      <ProductJsonLd product={product} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Marketplace', url: '/marketplace' },
+          { name: product.name ?? 'Product', url: `/marketplace/product/${product.id}` },
+        ]}
       />
       <ProductClient />
     </>

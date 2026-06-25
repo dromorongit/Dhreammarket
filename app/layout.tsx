@@ -4,11 +4,23 @@ import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { CartProvider } from '@/lib/CartContext'
 import { CookieConsentBanner } from '@/components/CookieConsentBanner'
+import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 
 export const metadata: Metadata = {
-  title: 'Dhream Market - Powering Digital Trade',
-  description: 'The Smart Commerce Ecosystem',
-   icons: {
+  title: {
+    default: 'Dhream Market - Powering Digital Trade',
+    template: '%s | Dhream Market',
+  },
+  description: 'Ghana\'s premier digital marketplace. Buy and sell securely with Paystack.',
+  openGraph: {
+    siteName: 'Dhream Market',
+    locale: 'en_GH',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  icons: {
     icon: '/assets/images/dhreammarket.png',
   },
 }
@@ -21,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans">
+        <OrganizationJsonLd />
         <CartProvider>
           <Navbar />
           <main className="min-h-screen">

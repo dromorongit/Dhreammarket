@@ -253,7 +253,7 @@ useEffect(() => {
               )}
               {(() => {
                 if (!product.store) return null
-                const badgeInfo = getVendorBadgeInfo(product.store.badgeTier as any)
+                const badgeInfo = getVendorBadgeInfo(product.store.badgeTier)
                 if (badgeInfo) {
                   const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                   return <MdVerified className={`w-4 h-4 ${iconColor}`} />

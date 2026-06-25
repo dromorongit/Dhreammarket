@@ -1,8 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Next.js 14 has App Router enabled by default
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'prisma', 'cloudinary', 'pg']
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cloudinary.com',
+        pathname: '/**',
+      },
+    ],
   },
   webpack: (config, { isServer }) => {
     // Externalize Prisma packages to prevent webpack from bundling them
