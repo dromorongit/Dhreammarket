@@ -604,9 +604,9 @@ function MarketplaceContent() {
                             <p className="text-[10px] text-slate-500 truncate">
                               {product.store.name}
                             </p>
-                            {(() => {
-                              const badgeInfo = getVendorBadgeInfo((product.store as { badgeTier?: string | null }).badgeTier)
-                              if (badgeInfo) {
+{(() => {
+                               const badgeInfo = getVendorBadgeInfo(product.store?.badgeTier ?? null)
+                               if (badgeInfo) {
                                 const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                                 return (
                                   <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
@@ -699,9 +699,9 @@ function MarketplaceContent() {
                           <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                             {truncateVendorName(vendor.name)}
                           </h3>
-                          {(() => {
-                            const badgeInfo = getVendorBadgeInfo((vendor as { badgeTier?: string | null }).badgeTier)
-                            if (badgeInfo) {
+{(() => {
+                             const badgeInfo = getVendorBadgeInfo(vendor.badgeTier)
+                             if (badgeInfo) {
                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                               return (
                                 <MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
