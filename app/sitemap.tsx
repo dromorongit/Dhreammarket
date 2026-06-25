@@ -38,14 +38,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const vendorCategories = await getPrisma().vendorCategory.findMany({
     where: { isActive: true },
-    select: { slug: true, updatedAt: true },
+    select: { slug: true },
   })
 
   const vendorCategoryEntries: MetadataRoute.Sitemap = vendorCategories
-    .filter((cat): cat is { slug: string; updatedAt: Date } => cat.slug !== null)
+    .filter((cat): cat is { slug: string } => cat.slug !== null)
     .map((vc) => ({
       url: `${SITE_URL}/marketplace/vendor/${vc.slug}`,
-      lastModified: vc.updatedAt,
+      lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
     }))
