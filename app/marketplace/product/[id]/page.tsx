@@ -126,7 +126,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
 
   const productForJsonLd = {
     ...product,
-    images: (product.images ?? []).map((img, i) => ({ ...img, id: img.id ?? String(i) })),
+    images: (product.images ?? []).map((img, i) => ({ ...img, id: String(i) })),
   }
 
   return (
