@@ -84,7 +84,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       title,
       description,
       url,
-      type: 'product',
+      type: 'website',
       images: imageUrl ? [{ url: imageUrl, width: 1200, height: 630, alt: product?.name ?? 'Product' }] : undefined,
     },
     twitter: {
