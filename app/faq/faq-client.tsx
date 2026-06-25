@@ -197,13 +197,17 @@ export default function FAQClient() {
     setExpandedId(expandedId === id ? null : id)
   }
 
-  const groupedFAQs: Record<string, FAQ[]> = selectedCategory === 'All'
-    ? filteredFAQs.reduce((acc, faq) => {
-        if (!acc[faq.category]) acc[faq.category] = []
-        acc[faq.category].push(faq)
-        return acc
-      }, {} as Record<string, FAQ[]>)
-    : { [selectedCategory]: filteredFAQs }
+  const groupedFAQs: Record<string, FAQ[]> = (() => {
+  if (selectedCategory !== 'All') {
+    return { [selectedCategory]: filteredFAQs }
+  }
+  const result: Record<string, FAQ[]> = {}
+  filteredFAQs.forEach(faq => {
+    if (!result[faq.category]) result[faq.category] = []
+    result[faq.category].push(faq)
+  })
+  return result
+})()
 
   return (
     <>
