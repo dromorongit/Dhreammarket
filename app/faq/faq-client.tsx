@@ -203,7 +203,7 @@ export default function FAQClient() {
         acc[faq.category].push(faq)
         return acc
       }, {} as Record<string, FAQ[]>)
-    : { [selectedCategory]: filteredFAQs }
+    : ({ [selectedCategory]: filteredFAQs })
 
   return (
     <>
