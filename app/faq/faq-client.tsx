@@ -198,16 +198,16 @@ export default function FAQClient() {
   }
 
   const groupedFAQs: Record<string, FAQ[]> = (() => {
-  if (selectedCategory !== 'All') {
-    return { [selectedCategory]: filteredFAQs }
-  }
-  const result: Record<string, FAQ[]> = {}
-  filteredFAQs.forEach(faq => {
-    if (!result[faq.category]) result[faq.category] = []
-    result[faq.category].push(faq)
-  })
-  return result
-})()
+    if (selectedCategory !== 'All') {
+      return { [selectedCategory]: filteredFAQs }
+    }
+    const result: Record<string, FAQ[]> = {}
+    filteredFAQs.forEach(faq => {
+      if (!result[faq.category]) result[faq.category] = []
+      result[faq.category].push(faq)
+    })
+    return result
+  })()
 
   return (
     <>
@@ -318,15 +318,15 @@ export default function FAQClient() {
                                   >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                   </svg>
-                                </button>
+</button>
+                            </div>
+                            {expandedId === faq.id && (
+                              <div className="mt-4 pt-4 border-t border-slate-100">
+                                <p className="text-slate-600 leading-relaxed">
+                                  {faq.answer}
+                                </p>
                               </div>
-                              {expandedId === faq.id && (
-                                <div className="mt-4 pt-4 border-t border-slate-100">
-                                  <p className="text-slate-600 leading-relaxed">
-                                    {faq.answer}
-                                  </p>
-                                </div>
-                              )}
+                            )}
                             </div>
                           </CardContent>
                         </Card>
@@ -357,9 +357,9 @@ export default function FAQClient() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
-                        </div>
-                        {expandedId === faq.id && (
-                          <div className="mt-4 pt-4 border-t border-slate-100">
+</div>
+                              {expandedId === faq.id && (
+                                <div className="mt-4 pt-4 border-t border-slate-100">
                             <p className="text-slate-600 leading-relaxed">
                               {faq.answer}
                             </p>
