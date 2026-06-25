@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const product = await getProductInfo(params.id)
 
   const title = product?.name ?? 'Product - Dhream Market'
-  const description = truncateDescription(product?.description)
+  const description = truncateDescription(product?.description ?? null)
 
   const imageUrl = product?.images?.[0]?.url ?? product?.store?.logo ?? DEFAULT_OG_IMAGE
   const url = `${SITE_URL}/marketplace/product/${params.id}`
