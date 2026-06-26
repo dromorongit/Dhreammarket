@@ -32,6 +32,7 @@ interface SearchProduct {
 
 interface SearchVendor {
   id: string
+  slug: string | null
   name: string
   description: string | null
   logo: string | null
