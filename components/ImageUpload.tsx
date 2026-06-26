@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -233,10 +234,11 @@ export default function ImageUpload({
               key={`${url}-${index}`}
               className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200"
             >
-              <img
+              <Image
                 src={url}
                 alt={`Preview ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="object-cover"
+                fill
                 loading="lazy"
               />
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200" />

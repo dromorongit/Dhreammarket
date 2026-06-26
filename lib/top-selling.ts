@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client'
 
 const productSelect = {
   id: true,
+  slug: true,
   name: true,
   price: true,
   flashSalePrice: true,

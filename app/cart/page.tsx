@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -229,10 +230,11 @@ export default function Cart() {
                   {/* Product Image */}
                   <div className="w-24 h-24 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
                     {item.product.images.length > 0 ? (
-                      <img
+                      <Image
                         src={item.product.images[0].url}
                         alt={item.product.images[0].alt || item.product.name}
-                        className="w-full h-full object-cover"
+                        className="object-cover"
+                        fill
                         loading="lazy"
                       />
                     ) : (

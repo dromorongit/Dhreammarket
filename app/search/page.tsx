@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -17,6 +18,7 @@ type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands'
 
 interface SearchProduct {
   id: string
+  slug?: string
   name: string
   brand: string | null
   price: number
@@ -305,10 +307,11 @@ function SearchPageContent() {
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center shrink-0 overflow-hidden">
                               {vendor.logo ? (
-                                <img
+                                <Image
                                   src={vendor.logo}
                                   alt={vendor.name}
-                                  className="w-full h-full object-cover"
+                                  className="object-cover"
+                                  fill
                                 />
                               ) : (
                                 <span className="text-lg font-bold text-white">
@@ -518,14 +521,15 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
   })
 
   return (
-    <Link href={`/marketplace/product/${product.id}`} className="block">
+    <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
       <Card variant="elevated" className="group flex flex-col overflow-hidden h-full">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
           {product.image ? (
-            <img
+            <Image
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="object-cover"
+              fill
               loading="lazy"
             />
           ) : (

@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 
 const productSelect = {
   id: true,
+  slug: true,
   name: true,
   price: true,
   flashSalePrice: true,

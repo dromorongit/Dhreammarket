@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/Card';
@@ -82,10 +83,11 @@ function ProductImage({
   const image = product?.images?.[0];
   if (image) {
     return (
-      <img
+      <Image
         src={image.url}
         alt={image.alt || product.name}
         className={className}
+        fill
         loading='lazy'
       />
     );
@@ -228,7 +230,7 @@ function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
       >
-        <Link href={`/marketplace/product/${product.id}`} className='block'>
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
             <ProductImage
               product={product}
@@ -315,7 +317,7 @@ function SponsoredCard({ product }: { product: EnterpriseProduct }) {
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
       >
-        <Link href={`/marketplace/product/${product.id}`} className='block'>
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
             <ProductImage
               product={product}
@@ -386,7 +388,7 @@ function DealCard({ product }: { product: EnterpriseProduct }) {
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200 w-full'
       >
-        <Link href={`/marketplace/product/${product.id}`} className='block'>
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
             <ProductImage
               product={product}
@@ -459,7 +461,7 @@ function StandardCard({
         variant='elevated'
         className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
       >
-        <Link href={`/marketplace/product/${product.id}`} className='block'>
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
             <ProductImage
               product={product}
@@ -1081,10 +1083,11 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
       >
         <div className='w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform'>
           {logo ? (
-            <img
+            <Image
               src={logo}
               alt={normalized.name}
-              className='w-full h-full object-cover'
+              className='object-cover'
+              fill
             />
           ) : (
             <span className='text-2xl font-bold text-royal-blue'>

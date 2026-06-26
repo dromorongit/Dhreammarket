@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -70,10 +71,11 @@ interface HomepageSectionProps {
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
             {product.images?.[0] ? (
-              <img
+              <Image
                 src={product.images?.[0]?.url}
                 alt={product.images?.[0]?.alt || product.name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
                 loading="lazy"
               />
             ) : (
@@ -257,10 +259,11 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
               <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
                 <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
                   {vendor.logo ? (
-                    <img
+                    <Image
                       src={vendor.logo}
                       alt={vendor.name}
                       className="absolute inset-0 w-full h-full object-cover opacity-50"
+                      fill
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -473,14 +476,15 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
              return (
                <Link key={product.id} href={`/marketplace/product/${product.id}`}>
                  <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
-                   <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                     {product.images?.[0] ? (
-                       <img
-                         src={product.images[0].url}
-                         alt={product.images[0].alt || product.name}
-                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                       />
-                     ) : (
+<div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                      {product.images?.[0] ? (
+                        <Image
+                          src={product.images[0].url}
+                          alt={product.images[0].alt || product.name}
+                          className="object-cover"
+                          fill
+                        />
+                      ) : (
                        <div className="w-full h-full flex items-center justify-center">
                          <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
@@ -526,14 +530,15 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                return (
                  <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
                    <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                     <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                       {product.images?.[0] ? (
-                         <img
-                           src={product.images[0].url}
-                           alt={product.images[0].alt || product.name}
-                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                         />
-                       ) : (
+<div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                        {product.images?.[0] ? (
+                          <Image
+                            src={product.images[0].url}
+                            alt={product.images[0].alt || product.name}
+                            className="object-cover"
+                            fill
+                          />
+                        ) : (
                          <div className="w-full h-full flex items-center justify-center">
                            <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
@@ -628,10 +633,11 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
           <div className="relative">
             <div className="aspect-square bg-white/10 rounded-3xl overflow-hidden backdrop-blur-sm">
               {heroProduct.images?.[0] ? (
-                <img
+                <Image
                   src={heroProduct.images[0].url}
                   alt={heroProduct.images[0].alt || heroProduct.name}
-                  className="w-full h-full object-cover"
+                  className="object-cover"
+                  fill
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -712,23 +718,24 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                    })
                    return (
                      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                       <Link href={`/marketplace/product/${product.id}`}>
+                       <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
                          <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
                            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                             {product.images?.[0] ? (
-                               <img
-                                 src={product.images[0].url}
-                                 alt={product.images[0].alt || product.name}
-                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                 loading="lazy"
-                               />
-                             ) : (
-                               <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                 </svg>
-                               </div>
-                             )}
+{product.images?.[0] ? (
+                                <Image
+                                  src={product.images[0].url}
+                                  alt={product.images[0].alt || product.name}
+                                  className="object-cover"
+                                  fill
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                </div>
+                              )}
                             <ProductBadges product={badgeData} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <div className="absolute bottom-0 left-0 right-0 p-3">
@@ -769,23 +776,24 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                    })
                    return (
                      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                       <Link href={`/marketplace/product/${product.id}`}>
+                       <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
                          <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
                            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-                             {product.images?.[0] ? (
-                               <img
-                                 src={product.images[0].url}
-                                 alt={product.images[0].alt || product.name}
-                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                 loading="lazy"
-                               />
-                             ) : (
-                               <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                 </svg>
-                               </div>
-                             )}
+{product.images?.[0] ? (
+                                <Image
+                                  src={product.images[0].url}
+                                  alt={product.images[0].alt || product.name}
+                                  className="object-cover"
+                                  fill
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                </div>
+                              )}
                             <ProductBadges product={badgeData} />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                             <div className="absolute bottom-0 left-0 right-0 p-3">

@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -346,10 +347,12 @@ useEffect(() => {
     <div className="min-h-screen bg-slate-50">
       {vendor.banner && (
         <div className="relative h-64 md:h-80 overflow-hidden">
-          <img
+          <Image
             src={vendor.banner}
             alt={`${vendor.name} banner`}
             className="w-full h-full object-cover"
+            fill
+            priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
@@ -360,7 +363,7 @@ useEffect(() => {
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg">
               {vendor.logo ? (
-                <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
+                <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill />
               ) : (
                 <span className="text-4xl font-bold text-slate-700">
                   {vendor.name.charAt(0).toUpperCase()}
@@ -559,10 +562,11 @@ useEffect(() => {
                     <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                         {product.images?.length > 0 ? (
-                          <img
+                          <Image
                             src={product.images[0].url}
                             alt={product.images[0].alt || product.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="object-cover"
+                            fill
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-slate-100">

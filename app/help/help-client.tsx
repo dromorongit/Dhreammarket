@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/Card'
@@ -134,7 +135,7 @@ function HelpContent() {
       <div className="min-h-screen bg-slate-50">
         <div className="bg-gradient-to-br from-deep-navy to-purple-900 relative overflow-hidden">
           <div className="absolute inset-0">
-            <img src="/assets/images/help.jpg" alt="" className="w-full h-full object-cover opacity-30" />
+            <Image src="/assets/images/help.jpg" alt="" className="w-full h-full object-cover opacity-30" fill priority />
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
           </div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">

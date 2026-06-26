@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 
@@ -12,11 +13,7 @@ export default function TermsAndConditionsPage() {
       {/* Header */}
       <div className="bg-gradient-to-br from-deep-navy to-purple-900 relative overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src="/assets/images/terms.jpg"
-            alt=""
-            className="w-full h-full object-cover opacity-30"
-          />
+          <Image src="/assets/images/terms.jpg" alt="" className="w-full h-full object-cover opacity-30" fill priority />
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
           <div className="absolute top-20 -right-40 w-96 h-96 bg-premium-gold/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 -left-40 w-96 h-96 bg-royal-blue/10 rounded-full blur-3xl"></div>

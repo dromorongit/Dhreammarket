@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
@@ -661,14 +662,15 @@ function VendorCategorySection() {
            {filteredVendors.map((vendor) => (
              <Link key={vendor.id} href={`/marketplace?vendor=${vendor.id}`}>
                <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
-                 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-                   {vendor.logo ? (
-                     <img
-                       src={vendor.logo}
-                       alt={vendor.name}
-                       className="object-cover w-full h-full"
-                     />
-                   ) : (
+<div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                    {vendor.logo ? (
+                      <Image
+                        src={vendor.logo}
+                        alt={vendor.name}
+                        className="object-cover w-full h-full"
+                        fill
+                      />
+                    ) : (
                      <span className="text-2xl font-bold text-white">
                        {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
                      </span>
@@ -755,15 +757,15 @@ function TopVendorsSection() {
        {vendors.map((vendor) => (
          <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
-             <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-                {vendor.logo ? (
-                  <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
-                ) : (
-                  <span className="text-2xl font-bold text-white">
-                    {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
+<div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                 {vendor.logo ? (
+                   <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill />
+                 ) : (
+                   <span className="text-2xl font-bold text-white">
+                     {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
+                   </span>
+                 )}
+               </div>
               <div className="flex items-center justify-center gap-1 mb-2">
 <svg className="w-5 h-5 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -849,15 +851,15 @@ function NewVendorsSection() {
        {vendors.map((vendor) => (
          <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
-             <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-                {vendor.logo ? (
-                  <img src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" />
-                ) : (
-                  <span className="text-2xl font-bold text-white">
-                    {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
+<div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                 {vendor.logo ? (
+                   <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill />
+                 ) : (
+                   <span className="text-2xl font-bold text-white">
+                     {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
+                   </span>
+                 )}
+               </div>
 <div className="flex items-center justify-center gap-1 min-w-0 mb-2">
                  <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                    {truncateVendorName(vendor.name)}
@@ -1097,22 +1099,23 @@ const fetchProducts = async () => {
                variant="elevated"
                className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
              >
-               <Link href={`/marketplace/product/${product.id}`} className="block">
-                 <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                   {(product.images?.length ?? 0) > 0 ? (
-                     <img
-                       src={product.images?.[0]?.url}
-                       alt={product.images?.[0]?.alt || product.name}
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                       loading="lazy"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                       <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                       </svg>
-                     </div>
-                   )}
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                    {(product.images?.length ?? 0) > 0 ? (
+                      <Image
+                        src={product.images?.[0]?.url}
+                        alt={product.images?.[0]?.alt || product.name}
+                        className="object-cover"
+                        fill
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
                    <ProductBadges product={calculateProductBadges({
                      price: product.price,
                      flashSalePrice: product.flashSalePrice,
@@ -1128,8 +1131,8 @@ const fetchProducts = async () => {
                  </div>
                </Link>
                <div className="p-2 space-y-1 flex-1 flex flex-col">
-                 <Link href={`/marketplace/product/${product.id}`} className="block">
-                   <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                    <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                      {product.name}
                    </h3>
                  </Link>
@@ -1196,22 +1199,23 @@ const fetchProducts = async () => {
                variant="elevated"
                className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
              >
-               <Link href={`/marketplace/product/${product.id}`} className="block">
-                 <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                   {(product.images?.length ?? 0) > 0 ? (
-                     <img
-                       src={product.images?.[0]?.url}
-                       alt={product.images?.[0]?.alt || product.name}
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                       loading="lazy"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                       <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                       </svg>
-                     </div>
-                   )}
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                    {(product.images?.length ?? 0) > 0 ? (
+                      <Image
+                        src={product.images?.[0]?.url}
+                        alt={product.images?.[0]?.alt || product.name}
+                        className="object-cover"
+                        fill
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
                    <ProductBadges product={calculateProductBadges({
                      price: product.price,
                      flashSalePrice: product.flashSalePrice,
@@ -1227,8 +1231,8 @@ const fetchProducts = async () => {
                  </div>
                </Link>
                <div className="p-2 space-y-1 flex-1 flex flex-col">
-                 <Link href={`/marketplace/product/${product.id}`} className="block">
-                   <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                    <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                      {product.name}
                    </h3>
                  </Link>
@@ -1295,22 +1299,23 @@ const fetchProducts = async () => {
                variant="elevated"
                className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
              >
-               <Link href={`/marketplace/product/${product.id}`} className="block">
-                 <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                   {(product.images?.length ?? 0) > 0 ? (
-                     <img
-                       src={product.images?.[0]?.url}
-                       alt={product.images?.[0]?.alt || product.name}
-                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                       loading="lazy"
-                     />
-                   ) : (
-                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                       <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                       </svg>
-                     </div>
-                   )}
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                  <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                    {(product.images?.length ?? 0) > 0 ? (
+                      <Image
+                        src={product.images?.[0]?.url}
+                        alt={product.images?.[0]?.alt || product.name}
+                        className="object-cover"
+                        fill
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
                    <ProductBadges product={calculateProductBadges({
                      price: product.price,
                      flashSalePrice: product.flashSalePrice,
@@ -1326,8 +1331,8 @@ const fetchProducts = async () => {
                  </div>
                </Link>
                <div className="p-2 space-y-1 flex-1 flex flex-col">
-                 <Link href={`/marketplace/product/${product.id}`} className="block">
-                   <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                    <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                      {product.name}
                    </h3>
                  </Link>

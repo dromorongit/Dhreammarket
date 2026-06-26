@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -210,11 +211,15 @@ useEffect(() => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             {selectedImage ? (
-              <img
-                src={selectedImage}
-                alt={product.name}
-                className="w-full aspect-square object-cover rounded-lg"
-              />
+              <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+                <Image
+                  src={selectedImage}
+                  alt={product.name}
+                  className="object-cover"
+                  fill
+                  priority
+                />
+              </div>
             ) : (
               <div className="w-full aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
                 <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,10 +237,12 @@ useEffect(() => {
                     className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${selectedImage === img.url ? 'border-royal-blue' : 'border-slate-200'
                       }`}
                   >
-                    <img
+                    <Image
                       src={img.url}
                       alt={img.alt || product.name}
-                      className="w-full h-full object-cover"
+                      className="object-cover"
+                      width={80}
+                      height={80}
                     />
                   </button>
                 ))}

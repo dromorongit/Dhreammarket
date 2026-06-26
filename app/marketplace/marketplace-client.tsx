@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -17,6 +18,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 
 interface Product {
   id: string
+  slug?: string
   name: string
   description: string | null
   price: number
@@ -558,13 +560,14 @@ function MarketplaceContent() {
                       variant="elevated"
                       className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
                     >
-                      <Link href={`/marketplace/product/${product.id}`} className="block">
+                      <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
                           {(product.images?.length ?? 0) > 0 ? (
-                            <img
+                            <Image
                               src={product.images![0].url}
                               alt={product.images![0].alt || product.name}
-                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="object-cover"
+                              fill
                               loading="lazy"
                             />
                           ) : (
@@ -639,7 +642,7 @@ function MarketplaceContent() {
                                     ? 'Add to Cart'
                                     : 'Out of Stock'}
                           </Button>
-                          <Link href={`/marketplace/product/${product.id}`} className="w-full">
+                          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
                             <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
                               View Details
                             </Button>
@@ -675,10 +678,11 @@ function MarketplaceContent() {
                     <Link href={`/vendor/${vendor.slug ?? vendor.id}`} className="block">
                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
                         {vendor.logo ? (
-                          <img
+                          <Image
                             src={vendor.logo}
                             alt={`${vendor.name} logo`}
                             className="absolute inset-0 w-full h-full object-cover opacity-50"
+                            fill
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center">

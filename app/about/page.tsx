@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -13,11 +14,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-deep-navy to-purple-900 relative overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src="/assets/images/market2.jpg"
-            alt=""
-            className="w-full h-full object-cover opacity-30"
-          />
+          <Image src="/assets/images/market2.jpg" alt="" className="w-full h-full object-cover opacity-30" fill priority />
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
           <div className="absolute top-20 -right-40 w-96 h-96 bg-premium-gold/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 -left-40 w-96 h-96 bg-royal-blue/10 rounded-full blur-3xl"></div>
@@ -289,10 +286,11 @@ export default function AboutPage() {
             </div>
             <div className="relative">
               <div className="aspect-square rounded-2xl overflow-hidden">
-                <img
+                <Image
                   src="/assets/images/market1.jpg"
                   alt="Our Story - Dhream Market"
-                  className="w-full h-full object-cover"
+                  className="object-cover"
+                  fill
                 />
               </div>
               <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/30"></div>
