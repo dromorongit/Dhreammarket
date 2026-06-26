@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
+import { slugify } from '@/lib/slugify'
 
 export const dynamic = 'force-dynamic'
 
@@ -286,6 +287,16 @@ export async function POST(request: NextRequest) {
 
     // Create product - use first category as primary, rest will be linked via junction table
     const primaryCategoryId = uniqueCategoryIds[0]
+
+    // Generate unique slug
+    const baseSlug = slugify(name.trim())
+    let slug = baseSlug
+    let suffix = 2
+    while (await getPrisma().product.findUnique({ where: { slug } })) {
+      slug = `${baseSlug}-${suffix}`
+      suffix++
+    }
+
     const product = await getPrisma().product.create({
       data: {
         storeId: store.id,
@@ -303,6 +314,7 @@ export async function POST(request: NextRequest) {
         preOrderNotes: preOrderNotes || null,
         expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
         backOrderNotes: backOrderNotes || null,
+        slug: slug,
       },
       include: {
         category: true,
