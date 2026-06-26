@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -182,14 +183,15 @@ export default function VendorProducts() {
             {products.map((product) => (
               <Card key={product.id} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-0">
-                  <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
-                    {Array.isArray(product.images) && product.images.length > 0 ? (
-                      <img
-                        src={product.images[0]?.url || ''}
-                        alt={product.images[0]?.alt || product.name}
-                        className="w-full h-48 object-cover"
-                        loading="lazy"
-                      />
+<div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
+{Array.isArray(product.images) && product.images.length > 0 ? (
+                       <Image
+                         src={product.images[0]?.url || ''}
+                         alt={product.images[0]?.alt || product.name}
+                         width={80}
+                         height={80}
+                         className="w-full h-48 object-cover"
+                       />
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center bg-gray-100">
                         <span className="text-gray-400 text-sm">No image</span>

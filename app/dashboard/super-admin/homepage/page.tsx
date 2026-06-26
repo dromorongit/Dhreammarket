@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/Card";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
@@ -1251,13 +1252,15 @@ function ManageSectionModal({
                               className="min-w-[20px] min-h-[20px]"
                             />
                             <div className="text-slate-400 cursor-grab min-w-[24px] min-h-[44px] flex items-center justify-center">⋮⋮</div>
-                            {item.product.images?.[0] && (
-                              <img
-                                src={item.product.images[0].url}
-                                alt=""
-                                className="w-10 h-10 rounded-lg object-cover"
-                              />
-                            )}
+{item.product.images?.[0] && (
+                               <Image
+                                 src={item.product.images[0].url}
+                                 alt=""
+                                 width={400}
+                                 height={400}
+                                 className="w-10 h-10 rounded-lg object-cover"
+                               />
+                             )}
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">
                                 {item.product.name}
@@ -1292,13 +1295,15 @@ function ManageSectionModal({
                             key={item.id}
                             className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white min-h-[60px]"
                           >
-                            {item.brand.logo ? (
-                              <img
-                                src={item.brand.logo}
-                                alt={item.brand.name}
-                                className="w-10 h-10 rounded-lg object-cover"
-                              />
-                            ) : (
+{item.brand.logo ? (
+                               <Image
+                                 src={item.brand.logo}
+                                 alt={item.brand.name}
+                                 width={400}
+                                 height={400}
+                                 className="w-10 h-10 rounded-lg object-cover"
+                               />
+                             ) : (
                               <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
                                 <span className="text-xs font-medium">
                                   {item.brand.name?.charAt(0) || "B"}
@@ -1412,13 +1417,15 @@ function ManageSectionModal({
                         {brand._count?.products || 0} products
                       </p>
                     </div>
-                    {brand.logo ? (
-                      <img
-                        src={brand.logo}
-                        alt={brand.name}
-                        className="w-10 h-10 rounded-lg object-cover"
-                      />
-                    ) : (
+{brand.logo ? (
+                       <Image
+                         src={brand.logo}
+                         alt={brand.name}
+                         width={400}
+                         height={400}
+                         className="w-10 h-10 rounded-lg object-cover"
+                       />
+                     ) : (
                       <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
                         <span className="text-xs font-medium">
                           {brand.name?.charAt(0) || "B"}

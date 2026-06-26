@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -568,14 +569,16 @@ const handleCheckout = async () => {
                 <div className="space-y-4">
 {cart.items.map((item) => (
                      <div key={item.id} className="flex items-center gap-4 pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-                       <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
-                         {item.product.images.length > 0 ? (
-                           <img
-                             src={item.product.images[0].url}
-                             alt={item.product.images[0].alt || item.product.name}
-                             className="w-full h-full object-cover"
-                           />
-                         ) : (
+<div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                          {item.product.images.length > 0 ? (
+                            <Image
+                              src={item.product.images[0].url}
+                              alt={item.product.images[0].alt || item.product.name}
+                              width={80}
+                              height={80}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
                            <div className="w-full h-full flex items-center justify-center">
                              <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.516-1.516a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />

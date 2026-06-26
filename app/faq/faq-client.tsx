@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/Card";
 import { Badge } from "@/components/Badge";
 import { Input } from "@/components/Input";
@@ -237,10 +238,12 @@ export default function FAQClient() {
       <div className="min-h-screen bg-slate-50">
         <div className="bg-gradient-to-br from-deep-navy to-purple-900 relative overflow-hidden">
           <div className="absolute inset-0">
-            <img
+            <Image
               src="/assets/images/faq.jpg"
               alt=""
-              className="w-full h-full object-cover opacity-30"
+              fill
+              priority
+              className="object-cover opacity-30"
             />
             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
             <div className="absolute top-20 -right-40 w-96 h-96 bg-premium-gold/10 rounded-full blur-3xl"></div>

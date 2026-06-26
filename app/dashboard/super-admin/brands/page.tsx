@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -224,7 +225,7 @@ export default function SuperAdminBrandsPage() {
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {brand.logo ? (
-                      <img src={brand.logo} alt={brand.name} className="w-full h-full object-cover" />
+                      <Image src={brand.logo} alt={brand.name} width={80} height={80} className="w-full h-full object-contain" />
                     ) : (
                       <span className="text-xl font-bold text-royal-blue">{brand.name.charAt(0)}</span>
                     )}
@@ -402,10 +403,10 @@ function BrandModal({
                 rows={2}
               />
             </div>
-            <div>
+<div>
               <label className="block text-sm font-medium mb-1">Logo</label>
-              {logo && <img src={logo} alt="Logo" className="w-16 h-16 rounded-xl object-cover mb-2" />}
-              <input
+              {logo && <Image src={logo} alt="Logo" width={80} height={80} className="w-16 h-16 rounded-xl object-contain mb-2" />}
+               <input
                 type="file"
                 accept="image/*"
                 onChange={async (e) => {

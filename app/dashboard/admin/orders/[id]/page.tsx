@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 
@@ -414,11 +415,13 @@ export default function AdminOrderDetailPage() {
                 <h3 className="text-sm font-medium text-gray-700 mb-3">{group.storeName}</h3>
                 <div className="space-y-3">
                   {group.items.map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+<div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                       {item.productImage && (
-                        <img 
-                          src={item.productImage} 
+                        <Image
+                          src={item.productImage}
                           alt={item.productName}
+                          width={80}
+                          height={80}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
                       )}
