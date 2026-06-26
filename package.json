@@ -12,8 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "audit-vendor-onboarding": "tsx scripts/audit-vendor-onboarding.ts",
-    "create-super-admin": "node scripts/create-super-admin.mjs",
+    "audit-vendor-onboarding": "tsx _scripts/audit-vendor-onboarding.ts",
+    "create-super-admin": "node _scripts/create-super-admin.mjs",
     "postinstall": "prisma generate",
     "prepare": "prisma generate"
   },
