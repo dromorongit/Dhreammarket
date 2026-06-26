@@ -20,7 +20,7 @@ const prisma = new PrismaClient({ adapter })
 
 async function backfillStores() {
   const stores = await prisma.store.findMany({
-    where: { slug: { equals: null } },
+    where: { slug: null },
     select: { id: true, name: true },
   })
 
@@ -45,7 +45,7 @@ async function backfillStores() {
 
 async function backfillProducts() {
   const products = await prisma.product.findMany({
-    where: { slug: { equals: null } },
+    where: { slug: null },
     select: { id: true, name: true },
   })
 
