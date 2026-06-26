@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
+import { EnterpriseProduct, ManagedHomepageSection } from '@/lib/homepage-product-utils'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
@@ -14,70 +15,43 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
 export function HomepageSectionSkeleton() {
-  return (
-    <section className="relative py-16 lg:py-24 bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
-          <Skeleton className="h-8 w-48 mb-3" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <div className="space-y-4">
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-            <div className="flex gap-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                  <SkeletonCard />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-            <div className="flex gap-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                  <SkeletonCard />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-interface Product {
-  id: string
-  slug: string | null
-  name: string
-  price: number
-  flashSalePrice?: number | null
-  salesPrice?: number | null
-  dealsPrice?: number | null
-  stock: number
-  availabilityType?: string
-  expectedArrivalDate?: string | null
-  expectedRestockDate?: string | null
-  images: Array<{ id: string; url: string; alt: string | null }>
-  store?: { id: string; slug: string | null; name: string; isVerified: boolean; badgeTier?: string | null }
-  category?: { id: string; name: string }
-}
-
-interface HomepageSectionData {
-  id: string
-  name: string
-  slug: string
-  type: string
-  subtitle: string | null
-  products: Product[]
-  vendors: any[]
-}
+   return (
+     <section className="relative py-16 lg:py-24 bg-slate-50">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+         <div className="mb-10">
+           <Skeleton className="h-8 w-48 mb-3" />
+           <Skeleton className="h-4 w-64" />
+         </div>
+         <div className="space-y-4">
+           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+             <div className="flex gap-4">
+               {[...Array(5)].map((_, i) => (
+                 <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                   <SkeletonCard />
+                 </div>
+               ))}
+             </div>
+           </div>
+           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+             <div className="flex gap-4">
+               {[...Array(5)].map((_, i) => (
+                 <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                   <SkeletonCard />
+                 </div>
+               ))}
+             </div>
+           </div>
+         </div>
+       </div>
+     </section>
+   )
+ }
 
 interface HomepageSectionProps {
-  section: HomepageSectionData
-}
+   section: ManagedHomepageSection
+ }
 
-function CompactProductCard({ product }: { product: Product }) {
+ function CompactProductCard({ product }: { product: EnterpriseProduct }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
   const badgeData = calculateProductBadges({
     price: product.price,
@@ -915,7 +889,7 @@ function resolveSectionRenderer(type: string): React.FC<HomepageSectionProps> | 
   return sectionRenderers[key]
 }
 
-export function HomepageSectionRenderer({ sections }: { sections: HomepageSectionData[] }) {
+export function HomepageSectionRenderer({ sections }: { sections: ManagedHomepageSection[] }) {
   if (!sections || sections.length === 0) {
     return null
   }

@@ -1,5 +1,6 @@
 export interface EnterpriseProduct {
   id: string
+  slug?: string
   name: string
   price: number
   flashSalePrice?: number | null
