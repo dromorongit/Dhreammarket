@@ -28,6 +28,7 @@ export async function GET(
         store: {
           select: {
             id: true,
+            slug: true,
             name: true,
             isVerified: true,
             badgeTier: true,

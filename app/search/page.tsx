@@ -297,7 +297,7 @@ function SearchPageContent() {
                     {filtered.vendors.map((vendor) => (
                       <Link
                         key={vendor.id}
-                        href={`/vendor/${vendor.id}`}
+                        href={`/vendor/${vendor.slug ?? vendor.id}`}
                         className="block"
                       >
                         <Card variant="elevated" className="group p-4 hover:shadow-xl transition-all duration-300">

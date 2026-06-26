@@ -67,6 +67,7 @@ interface Category {
 
 interface Vendor {
   id: string
+  slug: string | null
   name: string
   description: string | null
   isVerified: boolean
@@ -671,7 +672,7 @@ function MarketplaceContent() {
                     variant="elevated"
                     className="group overflow-hidden cursor-pointer"
                   >
-                    <Link href={`/vendor/${vendor.id}`} className="block">
+                    <Link href={`/vendor/${vendor.slug ?? vendor.id}`} className="block">
                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
                         {vendor.logo ? (
                           <img

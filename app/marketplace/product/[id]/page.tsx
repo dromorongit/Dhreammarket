@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 import ProductClient from './product-client'
 import { ProductJsonLd } from '@/components/seo/ProductJsonLd'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
@@ -9,24 +10,26 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
 
 interface ProductForMetadata {
   id: string
+  slug: string | null
   name: string | null
   description: string | null
   price: number
   stock: number
   availabilityType: string | null
   images: Array<{ url: string; alt: string | null }> | null
-  store: { id: string; name: string; logo: string | null } | null
+  store: { id: string; name: string; slug: string | null; logo: string | null } | null
   brandRelation: { name: string } | null
   averageRating: number
   reviewCount: number
 }
 
-async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
+async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | null> {
   try {
     const product = await getPrisma().product.findUnique({
-      where: { id: id },
+      where: { slug: idOrSlug },
       select: {
         id: true,
+        slug: true,
         name: true,
         description: true,
         price: true,
@@ -35,26 +38,51 @@ async function getProductInfo(id: string): Promise<ProductForMetadata | null> {
         averageRating: true,
         reviewCount: true,
         images: { select: { url: true, alt: true } },
-        store: { select: { id: true, name: true, logo: true } },
+        store: { select: { id: true, name: true, slug: true, logo: true } },
         brandRelation: { select: { name: true } },
       },
     })
 
-    if (!product) return null
-
-    return {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      availabilityType: product.availabilityType,
-      images: product.images,
-      store: product.store,
-      brandRelation: product.brandRelation,
-      averageRating: product.averageRating ?? 0,
-      reviewCount: product.reviewCount ?? 0,
+    if (product) {
+      return {
+        id: product.id,
+        slug: product.slug,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        stock: product.stock,
+        availabilityType: product.availabilityType,
+        images: product.images,
+        store: product.store,
+        brandRelation: product.brandRelation,
+        averageRating: product.averageRating ?? 0,
+        reviewCount: product.reviewCount ?? 0,
+      }
     }
+
+    const productById = await getPrisma().product.findUnique({
+      where: { id: idOrSlug },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        price: true,
+        stock: true,
+        availabilityType: true,
+        averageRating: true,
+        reviewCount: true,
+        images: { select: { url: true, alt: true } },
+        store: { select: { id: true, name: true, slug: true, logo: true } },
+        brandRelation: { select: { name: true } },
+      },
+    })
+
+    if (productById) {
+      redirect(`/marketplace/product/${productById.slug}`)
+    }
+
+    return null
   } catch {
     return null
   }
@@ -72,7 +100,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const description = truncateDescription(product?.description ?? null)
 
   const imageUrl = product?.images?.[0]?.url ?? product?.store?.logo ?? DEFAULT_OG_IMAGE
-  const url = `${SITE_URL}/marketplace/product/${params.id}`
+  const url = `${SITE_URL}/marketplace/product/${product?.slug ?? params.id}`
 
   return {
     title,
@@ -136,7 +164,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
         items={[
           { name: 'Home', url: '/' },
           { name: 'Marketplace', url: '/marketplace' },
-          { name: product.name ?? 'Product', url: `/marketplace/product/${product.id}` },
+          { name: product?.name ?? 'Product', url: `/marketplace/product/${product?.slug ?? product?.id}` },
         ]}
       />
       <ProductClient />

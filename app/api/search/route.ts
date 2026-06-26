@@ -49,28 +49,29 @@ export async function GET(request: NextRequest) {
           ],
         },
 include: {
-           images: { take: 1 },
-           store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
-           category: { select: { id: true, name: true } },
-         },
+            images: { take: 1 },
+            store: { select: { id: true, slug: true, name: true, isVerified: true, badgeTier: true } },
+            category: { select: { id: true, name: true } },
+          },
         take: typeFilter === 'products' ? 20 : LIMIT_PER_TYPE,
         orderBy: { createdAt: 'desc' },
       })
 
 results.products = products.map((p) => ({
-         id: p.id,
-         name: p.name,
-         brand: p.brand,
-         price: p.price,
-         salesPrice: p.salesPrice,
-         dealsPrice: p.dealsPrice,
-         stock: p.stock,
-         image: p.images?.[0]?.url || null,
-         store: p.store,
-         category: p.category,
-         type: 'product',
-         availabilityType: p.availabilityType,
-       }))
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        brand: p.brand,
+        price: p.price,
+        salesPrice: p.salesPrice,
+        dealsPrice: p.dealsPrice,
+        stock: p.stock,
+        image: p.images?.[0]?.url || null,
+        store: p.store,
+        category: p.category,
+        type: 'product',
+        availabilityType: p.availabilityType,
+      }))
     }
 
     // Search Vendors (Stores)
@@ -92,17 +93,18 @@ results.products = products.map((p) => ({
       })
 
 results.vendors = vendors.map((v) => ({
-         id: v.id,
-         name: v.name,
-         description: v.description,
-         logo: v.logo,
-         isVerified: v.isVerified,
-         isFeatured: v.isFeatured,
-         badgeTier: v.badgeTier,
-         productCount: v._count?.products || 0,
-         category: v.vendor_categories,
-         type: 'vendor',
-       }))
+        id: v.id,
+        slug: v.slug,
+        name: v.name,
+        description: v.description,
+        logo: v.logo,
+        isVerified: v.isVerified,
+        isFeatured: v.isFeatured,
+        badgeTier: v.badgeTier,
+        productCount: v._count?.products || 0,
+        category: v.vendor_categories,
+        type: 'vendor',
+      }))
     }
 
     // Search Product Categories

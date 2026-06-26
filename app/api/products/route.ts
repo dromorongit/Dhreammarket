@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
       },
       select: {
         id: true,
+        slug: true,
         name: true,
         price: true,
         flashSalePrice: true,
@@ -122,6 +123,7 @@ export async function GET(request: NextRequest) {
         store: {
           select: {
             id: true,
+            slug: true,
             name: true,
             isVerified: true,
             logo: true,

@@ -17,6 +17,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 
 interface VendorProduct {
   id: string
+  slug: string | null
   name: string
   description: string | null
   price: number
@@ -555,7 +556,7 @@ useEffect(() => {
                     variant="elevated"
                     className="group flex flex-col overflow-hidden h-full p-0"
                   >
-                    <Link href={`/marketplace/product/${product.id}`} className="block">
+                    <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                         {product.images?.length > 0 ? (
                           <img
@@ -574,7 +575,7 @@ useEffect(() => {
                       </div>
                     </Link>
                     <div className="p-2 space-y-1 flex-1 flex flex-col">
-                      <Link href={`/marketplace/product/${product.id}`} className="block">
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                         <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
                           {product.name}
                         </h3>

@@ -48,6 +48,7 @@ export function HomepageSectionSkeleton() {
 
 interface Product {
   id: string
+  slug: string | null
   name: string
   price: number
   flashSalePrice?: number | null
@@ -58,7 +59,7 @@ interface Product {
   expectedArrivalDate?: string | null
   expectedRestockDate?: string | null
   images: Array<{ id: string; url: string; alt: string | null }>
-  store?: { id: string; name: string; isVerified: boolean; badgeTier?: string | null }
+  store?: { id: string; slug: string | null; name: string; isVerified: boolean; badgeTier?: string | null }
   category?: { id: string; name: string }
 }
 
@@ -92,7 +93,7 @@ function CompactProductCard({ product }: { product: Product }) {
   return (
     <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
       <div className="flex flex-col h-full">
-        <Link href={`/marketplace/product/${product.id}`} className="block">
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
             {product.images?.[0] ? (
               <img
@@ -278,7 +279,7 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {displayVendors.map((vendor: any) => (
-            <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+            <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
               <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
                 <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
                   {vendor.logo ? (

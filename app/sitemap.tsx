@@ -52,15 +52,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const vendors = await getPrisma().store.findMany({
     where: { categoryId: { not: null } },
-    select: { id: true, updatedAt: true },
+    select: { slug: true, updatedAt: true },
   })
 
-  const vendorEntries: MetadataRoute.Sitemap = vendors.map((vendor) => ({
-    url: `${SITE_URL}/vendor/${vendor.id}`,
-    lastModified: vendor.updatedAt ?? new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }))
+  const vendorEntries: MetadataRoute.Sitemap = vendors
+    .filter((vendor): vendor is { slug: string; updatedAt: Date } => vendor.slug !== null)
+    .map((vendor) => ({
+      url: `${SITE_URL}/vendor/${vendor.slug}`,
+      lastModified: vendor.updatedAt ?? new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }))
 
   const products = await getPrisma().product.findMany({
     where: {
@@ -70,15 +72,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { availabilityType: 'BACKORDER' },
       ],
     },
-    select: { id: true, updatedAt: true },
+    select: { slug: true, updatedAt: true },
   })
 
-  const productEntries: MetadataRoute.Sitemap = products.map((product) => ({
-    url: `${SITE_URL}/marketplace/product/${product.id}`,
-    lastModified: product.updatedAt,
-    changeFrequency: 'daily',
-    priority: 0.8,
-  }))
+  const productEntries: MetadataRoute.Sitemap = products
+    .filter((product): product is { slug: string; updatedAt: Date } => product.slug !== null)
+    .map((product) => ({
+      url: `${SITE_URL}/marketplace/product/${product.slug}`,
+      lastModified: product.updatedAt,
+      changeFrequency: 'daily',
+      priority: 0.8,
+    }))
 
   return [...staticEntries, ...categoryEntries, ...vendorCategoryEntries, ...vendorEntries, ...productEntries]
 }

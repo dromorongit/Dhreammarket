@@ -52,6 +52,7 @@ interface ProductData {
   } | null
   store: {
     id: string
+    slug: string | null
     name: string
     isVerified: boolean
     badgeTier: string | null
@@ -247,7 +248,7 @@ useEffect(() => {
 
             <div className="flex items-center gap-2 mb-4">
               {product.store && (
-                <Link href={`/vendor/${product.store.id}`} className="text-slate-600 hover:text-royal-blue">
+                <Link href={`/vendor/${product.store?.slug ?? product.store?.id}`} className="text-slate-600 hover:text-royal-blue">
                   {truncateVendorName(product.store.name)}
                 </Link>
               )}

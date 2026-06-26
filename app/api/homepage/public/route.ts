@@ -130,9 +130,10 @@ export async function GET(_request: NextRequest) {
       subtitle: section.subtitle,
       displayOrder: section.displayOrder,
       products: sortedProducts,
-      vendors: (section.vendors || [])
+vendors: (section.vendors || [])
         .map((sv: any) => ({
           ...sv.vendor,
+          slug: sv.vendor.store?.slug ?? null,
           badgeTier: sv.vendor.store?.badgeTier ?? null,
           storeName: sv.vendor.store?.name ?? sv.vendor.name,
           productCount: sv.vendor.store?._count?.products ?? 0,

@@ -753,7 +753,7 @@ function TopVendorsSection() {
   return (
      <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
        {vendors.map((vendor) => (
-         <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+         <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
              <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                 {vendor.logo ? (
@@ -847,7 +847,7 @@ function NewVendorsSection() {
   return (
      <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
        {vendors.map((vendor) => (
-         <Link key={vendor.id} href={`/vendor/${vendor.id}`}>
+         <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
              <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                 {vendor.logo ? (

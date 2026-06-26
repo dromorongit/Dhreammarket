@@ -8,6 +8,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 
 interface SearchProduct {
   id: string
+  slug: string | null
   name: string
   brand: string | null
   price: number
@@ -18,6 +19,7 @@ interface SearchProduct {
 
 interface SearchVendor {
   id: string
+  slug: string | null
   name: string
   description: string | null
   logo: string | null
@@ -182,10 +184,10 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
         e.preventDefault()
         if (activeIndex >= 0 && flatResults[activeIndex]) {
           const item = flatResults[activeIndex]
-          if (isProductItem(item)) {
-            router.push(`/marketplace/product/${item.id}`)
-          } else if (isVendorItem(item)) {
-            router.push(`/vendor/${item.id}`)
+if (isProductItem(item)) {
+             router.push(`/marketplace/product/${item.slug ?? item.id}`)
+           } else if (isVendorItem(item)) {
+             router.push(`/vendor/${item.slug ?? item.id}`)
           } else if (isCategoryItem(item)) {
             router.push(`/marketplace?category=${encodeURIComponent(item.id)}`)
           } else if (isBrandItem(item)) {
@@ -401,7 +403,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
                   return (
                     <Link
                       key={vendor.id}
-                      href={`/vendor/${vendor.id}`}
+                      href={`/vendor/${vendor.slug ?? vendor.id}`}
                       onClick={handleResultClick}
                       className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
                         flatIdx === activeIndex ? 'bg-royal-blue/8' : 'hover:bg-slate-50'

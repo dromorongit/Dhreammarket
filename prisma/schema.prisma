@@ -79,6 +79,7 @@ model Store {
   id                       String                          @id @default(cuid())
   userId                   String                          @unique
   name                     String
+  slug                     String                          @unique
   description              String?
   isVerified               Boolean                         @default(false)
   isFeatured               Boolean                         @default(false)
@@ -155,6 +156,7 @@ model Product {
   storeId                  String
   categoryId               String
   name                     String
+  slug                     String                      @unique
   description              String?
   brand                    String?
   price                    Float

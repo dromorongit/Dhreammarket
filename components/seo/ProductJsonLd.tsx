@@ -8,6 +8,7 @@ interface ProductImage {
 
 interface ProductStore {
   id: string
+  slug: string | null
   name: string
   logo: string | null
 }
@@ -58,7 +59,7 @@ export const ProductJsonLd: FC<ProductJsonLdProps> = ({ product }) => {
       seller: product.store?.name ? {
         '@type': 'Organization',
         name: product.store.name,
-        url: `${SITE_URL}/vendor/${product.store.id}`,
+        url: `${SITE_URL}/vendor/${product.store.slug ?? product.store.id}`,
       } : undefined,
     },
     brand: product.brandRelation?.name ? {
