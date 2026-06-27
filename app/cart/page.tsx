@@ -217,121 +217,115 @@ export default function Cart() {
           </h1>
         </div>
 
-        {/* Cart Items */}
-        <div className="space-y-4 mb-8">
+{/* Cart Items */}
+        <div>
           {cart.items.map((item) => (
-            <Card
+            <div
               key={item.id}
-              variant="elevated"
-              className="group hover:shadow-xl transition-all duration-300"
+              className="bg-white rounded-2xl shadow-sm p-4 mb-3"
             >
-              <CardContent className="p-6">
-                <div className="flex items-center gap-6">
-                  {/* Product Image */}
-<div className="w-24 h-24 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
-                     {item.product.images.length > 0 ? (
-                       <Image
-                         src={item.product.images[0].url}
-                         alt={item.product.images[0].alt || item.product.name}
-                         width={96}
-                         height={96}
-                         className="object-cover rounded-lg w-24 h-24 flex-shrink-0"
-                         loading="lazy"
-                       />
-                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Product Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-deep-navy mb-1">
-                      {item.product.name}
-                    </h3>
-{item.productVariant && (
-                       <div className="flex flex-wrap gap-2 mb-2">
-                         {item.productVariant.color && (
-                           <Badge variant="default" size="sm">Color: {item.productVariant.color}</Badge>
-                         )}
-                         {item.productVariant.size && (
-                           <Badge variant="default" size="sm">Size: {item.productVariant.size}</Badge>
-                         )}
-                         {item.productVariant.age && (
-                           <Badge variant="default" size="sm">Age: {item.productVariant.age}</Badge>
-                         )}
-                       </div>
-                     )}
-                     {item.product.availabilityType === 'PREORDER' && (
-                       <Badge variant="info" size="sm" className="mb-2">Pre-order</Badge>
-                     )}
-                     {item.product.availabilityType === 'BACKORDER' && (
-                       <Badge variant="warning" size="sm" className="mb-2">Backorder</Badge>
-                     )}
-                     <p className="text-royal-blue font-semibold text-lg">
-                       {formatPrice(item.product.price)}
-                     </p>
-                    <p className="text-sm text-slate-500">
-                      Stock available: {item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock}
-                    </p>
-                  </div>
-
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-slate-50 rounded-xl p-1">
-<button
-                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                         disabled={updatingItems.has(item.id) || item.quantity <= 1}
-                         className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                       >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                         </svg>
-                       </button>
-                       <span className="w-12 text-center font-semibold text-deep-navy">
-                         {updatingItems.has(item.id) ? (
-                           <svg className="w-4 h-4 animate-spin mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                           </svg>
-                         ) : (
-                           item.quantity
-                         )}
-                       </span>
-                       <button
-                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                         disabled={updatingItems.has(item.id) || (item.product.availabilityType === 'IN_STOCK' && item.quantity >= (item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock))}
-                         className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-100 hover:text-deep-navy transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                       >
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                         </svg>
-                       </button>
-                     </div>
-                  </div>
-
-                  {/* Price & Remove */}
-                  <div className="text-right flex flex-col items-end gap-2">
-                    <p className="text-xl font-bold text-deep-navy">
-                      {formatPrice(item.product.price * item.quantity)}
-                    </p>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      disabled={updatingItems.has(item.id)}
-                      className="text-slate-500 hover:text-rose-600 text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              {/* Top Row: Image and Product Details */}
+              <div className="flex items-start gap-4">
+                {/* Product Image */}
+                <div className="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
+                  {item.product.images.length > 0 ? (
+                    <Image
+                      src={item.product.images[0].url}
+                      alt={item.product.images[0].alt || item.product.name}
+                      width={80}
+                      height={80}
+                      className="object-cover rounded-xl w-20 h-20 flex-shrink-0"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      Remove
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Product Details */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">
+                    {item.product.name}
+                  </h3>
+                  {item.productVariant && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {item.productVariant.color && (
+                        <Badge variant="default" size="sm">Color: {item.productVariant.color}</Badge>
+                      )}
+                      {item.productVariant.size && (
+                        <Badge variant="default" size="sm">Size: {item.productVariant.size}</Badge>
+                      )}
+                      {item.productVariant.age && (
+                        <Badge variant="default" size="sm">Age: {item.productVariant.age}</Badge>
+                      )}
+                    </div>
+                  )}
+                  {item.product.availabilityType === 'PREORDER' && (
+                    <Badge variant="info" size="sm" className="mb-2">Pre-order</Badge>
+                  )}
+                  {item.product.availabilityType === 'BACKORDER' && (
+                    <Badge variant="warning" size="sm" className="mb-2">Backorder</Badge>
+                  )}
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Store: Default Store
+                  </p>
+                  <p className="text-base font-bold text-blue-700 mt-1">
+                    {formatPrice(item.product.price)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Row: Quantity Selector and Remove Button */}
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                {/* Quantity Selector */}
+                <div className="flex items-center gap-0 rounded-xl overflow-hidden border border-gray-200 w-fit">
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    disabled={updatingItems.has(item.id) || item.quantity <= 1}
+                    className="w-9 h-9 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                    </svg>
+                  </button>
+                  <span className="w-10 h-9 flex items-center justify-center text-sm font-semibold text-gray-900 bg-white border-x border-gray-200">
+                    {updatingItems.has(item.id) ? (
+                      <svg className="w-4 h-4 animate-spin mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      item.quantity
+                    )}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    disabled={updatingItems.has(item.id) || (item.product.availabilityType === 'IN_STOCK' && item.quantity >= (item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock))}
+                    className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white font-medium text-lg hover:bg-blue-700 border-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Remove Button */}
+                <button
+                  onClick={() => removeItem(item.id)}
+                  disabled={updatingItems.has(item.id)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Remove
+                </button>
+              </div>
+            </div>
           ))}
         </div>
 
