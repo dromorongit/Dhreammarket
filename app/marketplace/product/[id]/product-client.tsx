@@ -103,6 +103,19 @@ function getStockBadge(availabilityType: string | null, stock: number): { label:
   return stock > 0 ? { label: 'In Stock', variant: 'success' } : { label: 'Out of Stock', variant: 'danger' }
 }
 
+function getVendorBadgeColor(badgeTier: string | null, isVerified: boolean): { color: string; tooltip: string } | null {
+  if (badgeTier === 'PREMIUM') {
+    return { color: '#D4AF37', tooltip: 'Premium Vendor' }
+  }
+  if (badgeTier === 'PLATINUM') {
+    return { color: '#A8A9AD', tooltip: 'Platinum Vendor' }
+  }
+  if (badgeTier === 'TRUSTED' || isVerified) {
+    return { color: '#1E40AF', tooltip: 'Verified Vendor' }
+  }
+  return null
+}
+
 function renderStars(rating: number, size: 'sm' | 'md' = 'md'): React.ReactNode {
   return Array.from({ length: 5 }).map((_, i) => (
     <FiStar
@@ -515,30 +528,39 @@ export default function ProductClient() {
               <div className="border-t border-slate-200 pt-6">
                 <div className="flex items-center gap-3">
                   {product.store?.logo ? (
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200">
                       <Image
                         src={product.store.logo}
                         alt={product.store.name}
-                        className="object-cover"
+                        className="object-cover w-full h-full"
                         width={48}
                         height={48}
                       />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 md:w-6 md:h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 7h1m4-7h1m-1 7h1m4-7h1m-1 7h1" />
-                      </svg>
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-700 font-bold text-lg">
+                        {product.store?.name?.[0]?.toUpperCase() ?? 'S'}
+                      </span>
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex flex-col">
                     <div className="flex items-center gap-1 flex-wrap">
-                      <span className="font-semibold text-[#0F1F3D] text-sm md:text-base truncate">
+                      <span className="font-semibold text-gray-900 text-sm md:text-base truncate">
                         {truncateVendorName(product.store?.name ?? 'Unknown Store')}
                       </span>
-                      {product.store?.isVerified && (
-                        <MdVerified className="w-4 h-4 text-[#1E40AF] flex-shrink-0" />
-                      )}
+                      {(() => {
+                        const badge = product.store?.badgeTier || (product.store?.isVerified ? 'TRUSTED' : null)
+                        const badgeInfo = getVendorBadgeColor(product.store?.badgeTier, product.store?.isVerified ?? false)
+                        if (!badgeInfo) return null
+                        return (
+                          <MdVerified
+                            className="w-5 h-5"
+                            style={{ color: badgeInfo.color }}
+                            title={badgeInfo.tooltip}
+                          />
+                        )
+                      })()}
                     </div>
                     <Link
                       href={`/vendor/${product.store?.slug ?? product.store?.id}`}

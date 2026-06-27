@@ -13,27 +13,28 @@ export async function GET(
    { params }: { params: { id: string } }
  ) {
    try {
-     const product = await getPrisma().product.findUnique({
-       where: { slug: params.id },
-       include: {
-         category: true,
-         brandRelation: {
-           select: {
-             id: true,
-             name: true,
-             slug: true,
-             logo: true,
-           },
-         },
-         store: {
-           select: {
-             id: true,
-             slug: true,
-             name: true,
-             isVerified: true,
-             badgeTier: true,
-           },
-         },
+const product = await getPrisma().product.findUnique({
+        where: { slug: params.id },
+        include: {
+          category: true,
+          brandRelation: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logo: true,
+            },
+          },
+          store: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              logo: true,
+              isVerified: true,
+              badgeTier: true,
+            },
+          },
          images: true,
          productReviews: {
            select: {
@@ -59,16 +60,17 @@ export async function GET(
              logo: true,
            },
          },
-         store: {
-           select: {
-             id: true,
-             slug: true,
-             name: true,
-             isVerified: true,
-             badgeTier: true,
-           },
-         },
-         images: true,
+store: {
+            select: {
+              id: true,
+              slug: true,
+              name: true,
+              logo: true,
+              isVerified: true,
+              badgeTier: true,
+            },
+          },
+          images: true,
          productReviews: {
            select: {
              rating: true,

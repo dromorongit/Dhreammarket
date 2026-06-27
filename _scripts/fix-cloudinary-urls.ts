@@ -15,32 +15,32 @@ const prisma = new PrismaClient({ adapter })
 
 async function main() {
   const images = await prisma.$executeRaw`
-    UPDATE "ProductImage"
+    UPDATE product_images
     SET url = REPLACE(url, 'http://res.cloudinary.com', 'https://res.cloudinary.com')
     WHERE url LIKE 'http://res.cloudinary.com%'
   `
-  console.log(`Updated ${images} ProductImage rows`)
+  console.log(`Updated ${images} product_images rows`)
 
   const storeLogos = await prisma.$executeRaw`
-    UPDATE "Store"
+    UPDATE stores
     SET logo = REPLACE(logo, 'http://res.cloudinary.com', 'https://res.cloudinary.com')
     WHERE logo LIKE 'http://res.cloudinary.com%'
   `
-  console.log(`Updated ${storeLogos} Store logo rows`)
+  console.log(`Updated ${storeLogos} stores logo rows`)
 
   const storeBanners = await prisma.$executeRaw`
-    UPDATE "Store"
+    UPDATE stores
     SET banner = REPLACE(banner, 'http://res.cloudinary.com', 'https://res.cloudinary.com')
     WHERE banner LIKE 'http://res.cloudinary.com%'
   `
-  console.log(`Updated ${storeBanners} Store banner rows`)
+  console.log(`Updated ${storeBanners} stores banner rows`)
 
   const brands = await prisma.$executeRaw`
-    UPDATE "Brand"
+    UPDATE brands
     SET logo = REPLACE(logo, 'http://res.cloudinary.com', 'https://res.cloudinary.com')
     WHERE logo LIKE 'http://res.cloudinary.com%'
   `
-  console.log(`Updated ${brands} Brand logo rows`)
+  console.log(`Updated ${brands} brands logo rows`)
 
   console.log('Done. All http Cloudinary URLs updated to https.')
 }
