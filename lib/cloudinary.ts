@@ -75,7 +75,7 @@ export async function uploadImage(
             folder,
           });
           resolve({
-            url: result.url,
+            url: result.secure_url,
             publicId: result.public_id,
             secureUrl: result.secure_url,
           });
@@ -140,6 +140,7 @@ export function getOptimizedUrl(
   const { width = 800, height = 800, crop = 'limit', quality = 'auto', format = 'auto' } = options;
 
   return cloudinary.url(publicId, {
+    secure: true,
     width,
     height,
     crop,
