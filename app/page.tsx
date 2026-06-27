@@ -979,7 +979,7 @@ function PopularCategoriesSection() {
 // Featured Products Section Component
 interface Product {
   id: string
-  slug?: string
+  slug: string
   name: string
   description: string | null
   price: number
@@ -1178,29 +1178,29 @@ const fetchProducts = async () => {
                    >
                      {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
                    </Button>
-                   <Link href={`/marketplace/product/${product.id}`} className="w-full">
-                     <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                       View Details
-                     </Button>
-                   </Link>
-                 </div>
-               </div>
-             </Card>
-           )
-         })}
-       </div>
+<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
 
-       {/* Tablet: 3 columns, up to 5 rows (15 products) */}
-       <div className="hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6">
-         {products.slice(0, 15).map((product) => {
-           const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-           return (
-             <Card
-               key={product.id}
-               variant="elevated"
-               className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
-             >
-<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+        {/* Tablet: 3 columns, up to 5 rows (15 products) */}
+        <div className="hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6">
+          {products.slice(0, 15).map((product) => {
+            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+            return (
+              <Card
+                key={product.id}
+                variant="elevated"
+                className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+              >
+                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                     {(product.images?.length ?? 0) > 0 ? (
                       <Image
@@ -1217,42 +1217,42 @@ const fetchProducts = async () => {
                         </svg>
                       </div>
                     )}
-                   <ProductBadges product={calculateProductBadges({
-                     price: product.price,
-                     flashSalePrice: product.flashSalePrice,
-                     salesPrice: product.salesPrice,
-                     dealsPrice: product.dealsPrice,
-                     stock: product.stock,
-                     availabilityType: product.availabilityType,
-                     expectedArrivalDate: product.expectedArrivalDate,
-                     expectedRestockDate: product.expectedRestockDate,
-                     isSponsored: product.isSponsored,
-                     isFeatured: product.isFeatured,
-                   })} />
-                 </div>
-               </Link>
-               <div className="p-2 space-y-1 flex-1 flex flex-col">
-<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                    <ProductBadges product={calculateProductBadges({
+                      price: product.price,
+                      flashSalePrice: product.flashSalePrice,
+                      salesPrice: product.salesPrice,
+                      dealsPrice: product.dealsPrice,
+                      stock: product.stock,
+                      availabilityType: product.availabilityType,
+                      expectedArrivalDate: product.expectedArrivalDate,
+                      expectedRestockDate: product.expectedRestockDate,
+                      isSponsored: product.isSponsored,
+                      isFeatured: product.isFeatured,
+                    })} />
+                  </div>
+                </Link>
+                <div className="p-2 space-y-1 flex-1 flex flex-col">
+                  <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                     <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                     {product.name}
-                   </h3>
-                 </Link>
-                 <div className="flex items-center gap-1.5 flex-wrap">
-                   <span className="text-[11px] font-bold text-royal-blue">
-                     {formatPrice(effectivePrice)}
-                   </span>
-                   {effectivePrice < product.price && (
-                     <span className="text-[10px] text-slate-400 line-through">
-                       {formatPrice(product.price)}
-                     </span>
-                   )}
-                 </div>
-                 {product.store && (
-                   <div className="flex items-center gap-1 min-w-0">
-                     <p className="text-[10px] text-slate-500 truncate">
-                       {product.store.name}
-                     </p>
-{(() => {
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-royal-blue">
+                      {formatPrice(effectivePrice)}
+                    </span>
+                    {effectivePrice < product.price && (
+                      <span className="text-[10px] text-slate-400 line-through">
+                        {formatPrice(product.price)}
+                      </span>
+                    )}
+                  </div>
+                  {product.store && (
+                    <div className="flex items-center gap-1 min-w-0">
+                      <p className="text-[10px] text-slate-500 truncate">
+                        {product.store.name}
+                      </p>
+                      {(() => {
                         const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                         if (badgeInfo) {
                           const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
@@ -1267,40 +1267,40 @@ const fetchProducts = async () => {
                         }
                         return null
                       })()}
-                   </div>
-                 )}
-                 <div className="flex flex-col gap-1 pt-0.5">
-                   <Button
-                     size="sm"
-                     className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-                     disabled={addingToCart.has(product.id)}
-                     onClick={() => addToCart(product.id)}
-                   >
-                     {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
-                   </Button>
-                   <Link href={`/marketplace/product/${product.id}`} className="w-full">
-                     <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                       View Details
-                     </Button>
-                   </Link>
-                 </div>
-               </div>
-             </Card>
-           )
-         })}
-       </div>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1 pt-0.5">
+                    <Button
+                      size="sm"
+                      className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
+                      disabled={addingToCart.has(product.id)}
+                      onClick={() => addToCart(product.id)}
+                    >
+                      {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
+                    </Button>
+                    <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
 
-       {/* Desktop: 5 columns, up to 4 rows (20 products) */}
-       <div className="hidden lg:grid lg:grid-cols-5 gap-4 lg:gap-6">
-         {products.slice(0, 20).map((product) => {
-           const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-           return (
-             <Card
-               key={product.id}
-               variant="elevated"
-               className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
-             >
-<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+        {/* Desktop: 5 columns, up to 4 rows (20 products) */}
+        <div className="hidden lg:grid lg:grid-cols-5 gap-4 lg:gap-6">
+          {products.slice(0, 20).map((product) => {
+            const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+            return (
+              <Card
+                key={product.id}
+                variant="elevated"
+                className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+              >
+                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                     {(product.images?.length ?? 0) > 0 ? (
                       <Image
@@ -1317,42 +1317,42 @@ const fetchProducts = async () => {
                         </svg>
                       </div>
                     )}
-                   <ProductBadges product={calculateProductBadges({
-                     price: product.price,
-                     flashSalePrice: product.flashSalePrice,
-                     salesPrice: product.salesPrice,
-                     dealsPrice: product.dealsPrice,
-                     stock: product.stock,
-                     availabilityType: product.availabilityType,
-                     expectedArrivalDate: product.expectedArrivalDate,
-                     expectedRestockDate: product.expectedRestockDate,
-                     isSponsored: product.isSponsored,
-                     isFeatured: product.isFeatured,
-                   })} />
-                 </div>
-               </Link>
-               <div className="p-2 space-y-1 flex-1 flex flex-col">
-<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                    <ProductBadges product={calculateProductBadges({
+                      price: product.price,
+                      flashSalePrice: product.flashSalePrice,
+                      salesPrice: product.salesPrice,
+                      dealsPrice: product.dealsPrice,
+                      stock: product.stock,
+                      availabilityType: product.availabilityType,
+                      expectedArrivalDate: product.expectedArrivalDate,
+                      expectedRestockDate: product.expectedRestockDate,
+                      isSponsored: product.isSponsored,
+                      isFeatured: product.isFeatured,
+                    })} />
+                  </div>
+                </Link>
+                <div className="p-2 space-y-1 flex-1 flex flex-col">
+                  <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                     <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                     {product.name}
-                   </h3>
-                 </Link>
-                 <div className="flex items-center gap-1.5 flex-wrap">
-                   <span className="text-[11px] font-bold text-royal-blue">
-                     {formatPrice(effectivePrice)}
-                   </span>
-                   {effectivePrice < product.price && (
-                     <span className="text-[10px] text-slate-400 line-through">
-                       {formatPrice(product.price)}
-                     </span>
-                   )}
-                 </div>
-                 {product.store && (
-                   <div className="flex items-center gap-1 min-w-0">
-                     <p className="text-[10px] text-slate-500 truncate">
-                       {product.store.name}
-                     </p>
-{(() => {
+                      {product.name}
+                    </h3>
+                  </Link>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[11px] font-bold text-royal-blue">
+                      {formatPrice(effectivePrice)}
+                    </span>
+                    {effectivePrice < product.price && (
+                      <span className="text-[10px] text-slate-400 line-through">
+                        {formatPrice(product.price)}
+                      </span>
+                    )}
+                  </div>
+                  {product.store && (
+                    <div className="flex items-center gap-1 min-w-0">
+                      <p className="text-[10px] text-slate-500 truncate">
+                        {product.store.name}
+                      </p>
+                      {(() => {
                         const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
                         if (badgeInfo) {
                           const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
@@ -1367,28 +1367,28 @@ const fetchProducts = async () => {
                         }
                         return null
                       })()}
-                   </div>
-                 )}
-                 <div className="flex flex-col gap-1 pt-0.5">
-                   <Button
-                     size="sm"
-                     className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-                     disabled={addingToCart.has(product.id)}
-                     onClick={() => addToCart(product.id)}
-                   >
-                     {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
-                   </Button>
-                   <Link href={`/marketplace/product/${product.id}`} className="w-full">
-                     <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                       View Details
-                     </Button>
-                   </Link>
-                 </div>
-               </div>
-             </Card>
-           )
-         })}
-       </div>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1 pt-0.5">
+                    <Button
+                      size="sm"
+                      className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
+                      disabled={addingToCart.has(product.id)}
+                      onClick={() => addToCart(product.id)}
+                    >
+                      {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
+                    </Button>
+                    <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
 
       {/* See More button - always visible */}
       <div className="mt-8 text-center">
