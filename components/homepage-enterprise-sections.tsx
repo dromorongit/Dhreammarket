@@ -1079,15 +1079,16 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
     <Link href={`/marketplace?brand=${normalized.id || normalized.slug}`}>
       <Card
         variant='elevated'
-        className='group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full'
+        className='group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full flex flex-col items-center'
       >
-        <div className='w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform'>
+        <div className='w-28 h-20 md:w-36 md:h-24 mb-3 rounded-xl bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0'>
           {logo ? (
             <Image
               src={logo}
               alt={normalized.name}
-              className='object-cover'
-              fill
+              width={120}
+              height={80}
+              className='max-w-full max-h-full object-contain'
             />
           ) : (
             <span className='text-2xl font-bold text-royal-blue'>
@@ -1095,11 +1096,8 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
             </span>
           )}
         </div>
-        <h3 className='text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors line-clamp-1'>
+        <p className='text-sm font-medium text-gray-700 text-center mt-2 truncate'>
           {normalized.name}
-        </h3>
-        <p className='text-xs text-slate-500 mt-1'>
-          {normalized.productCount} products
         </p>
       </Card>
     </Link>
@@ -1136,14 +1134,14 @@ export function BrandStoreSection({
         />
 
         {/* Mobile horizontal scroll */}
-        <div className='md:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide'>
-          <div className='flex gap-4 pb-4' style={{ width: 'max-content' }}>
+        <div className='md:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide pb-4'>
+          <div className='flex gap-4'>
             {displayBrands.map((brand) => {
               const normalized = normalizeBrand(brand);
               return (
                 <div
                   key={normalized.id || normalized.slug}
-                  className='w-36 flex-shrink-0'
+                  className='w-32 flex-shrink-0'
                 >
                   <BrandCard brand={brand} />
                 </div>
