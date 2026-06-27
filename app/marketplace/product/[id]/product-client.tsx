@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -12,12 +12,9 @@ import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
-import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
-import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
-
-const SITE_URL = 'https://www.dhreamarket.com'
-const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
+import { MdVerified } from 'react-icons/md'
+import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus } from 'react-icons/fi'
 
 interface ProductImage {
   id: string
@@ -35,18 +32,28 @@ interface ProductVariant {
   active: boolean
 }
 
+interface ProductReview {
+  id: string
+  rating: number
+  comment: string | null
+  createdAt: string
+  isVerifiedPurchase: boolean
+  reviewer: string
+}
+
 interface ProductData {
   id: string
   name: string
   description: string | null
   price: number
-  stock: number
   reservedQuantity: number
   availabilityType: string | null
   expectedArrivalDate: string | null
   expectedRestockDate: string | null
   preOrderNotes: string | null
   backOrderNotes: string | null
+  salesPrice: number | null
+  dealsPrice: number | null
   category: {
     id: string
     name: string
@@ -70,11 +77,13 @@ interface ProductData {
   variants: ProductVariant[]
   averageRating: number
   reviewCount: number
+  stock: number
 }
 
-interface User {
-  id: string
-  role: string
+interface ReviewsResponse {
+  reviews: ProductReview[]
+  averageRating: number
+  totalReviews: number
 }
 
 function getAvailabilityStatus(availabilityType: string | null, stock: number): string {
@@ -84,48 +93,109 @@ function getAvailabilityStatus(availabilityType: string | null, stock: number): 
   return stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
 }
 
-export default function ProductPage() {
+function getStockBadge(availabilityType: string | null, stock: number): { label: string; variant: 'success' | 'danger' | 'info' | 'warning' } {
+  if (availabilityType === 'PREORDER') {
+    return { label: 'Pre-Order', variant: 'info' }
+  }
+  if (availabilityType === 'BACKORDER') {
+    return { label: 'Backorder', variant: 'warning' }
+  }
+  return stock > 0 ? { label: 'In Stock', variant: 'success' } : { label: 'Out of Stock', variant: 'danger' }
+}
+
+function renderStars(rating: number, size: 'sm' | 'md' = 'md'): React.ReactNode {
+  return Array.from({ length: 5 }).map((_, i) => (
+    <FiStar
+      key={i}
+      className={`${size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'} ${i < Math.floor(rating) ? 'text-premium-gold fill-current' : 'text-slate-300'}`}
+    />
+  ))
+}
+
+export default function ProductClient() {
   const params = useParams()
   const productId = params.id as string
 
   const [product, setProduct] = useState<ProductData | null>(null)
+  const [reviews, setReviews] = useState<ProductReview[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [addingToCart, setAddingToCart] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [quantity, setQuantity] = useState(1)
+  const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
+  const [showFullDescription, setShowFullDescription] = useState(false)
+  const [showFloatingCTA, setShowFloatingCTA] = useState(false)
 
-useEffect(() => {
-     if (!productId) return
+  const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
-     const fetchProduct = async () => {
-       try {
-         setLoading(true)
-         const response = await fetch(`/api/products/${productId}`)
-         if (response.ok) {
-           const data = await response.json()
-           setProduct(data.product)
-           if (data.product?.images?.length > 0) {
-             setSelectedImage(data.product.images[0].url)
-           }
-           if (data.product?.variants?.length > 0) {
-             const activeVariant = data.product.variants.find((v: ProductVariant) => v.active)
-             setSelectedVariant(activeVariant || data.product.variants[0])
-           }
-         } else {
-           const errorData = await response.json()
-           setError(errorData.error || 'Failed to load product')
-         }
-       } catch (err) {
-         setError('Failed to load product')
-         console.error(err)
-       } finally {
-         setLoading(false)
-       }
-     }
+  const fetchProduct = useCallback(async () => {
+    if (!productId) return
 
-     fetchProduct()
-   }, [productId])
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/products/${productId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setProduct(data.product)
+        if (data.product?.images?.length > 0) {
+          setSelectedImage(data.product.images[0].url)
+        } else {
+          setSelectedImage(null)
+        }
+        if (data.product?.variants?.length > 0) {
+          const activeVariant = data.product.variants.find((v: ProductVariant) => v.active)
+          setSelectedVariant(activeVariant ?? null)
+        } else {
+          setSelectedVariant(null)
+        }
+        if (data.product?.reviews) {
+          setReviews(data.product.reviews)
+        }
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error ?? 'Failed to load product')
+      }
+    } catch {
+      setError('Failed to load product')
+    } finally {
+      setLoading(false)
+    }
+  }, [productId])
+
+  useEffect(() => {
+    fetchProduct()
+  }, [fetchProduct])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFloatingCTA(!entry.isIntersecting)
+      },
+      { threshold: 0 }
+    )
+
+    if (addToCartButtonRef.current) {
+      observer.observe(addToCartButtonRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  const fetchReviews = useCallback(async () => {
+    if (!productId) return
+
+    try {
+      const response = await fetch(`/api/products/${productId}/reviews`)
+      if (response.ok) {
+        const data: ReviewsResponse = await response.json()
+        setReviews(data.reviews)
+      }
+    } catch {
+      console.error('Failed to fetch reviews')
+    }
+  }, [productId])
 
   const addToCart = async () => {
     if (!product) return
@@ -139,7 +209,7 @@ useEffect(() => {
         },
         body: JSON.stringify({
           productId: product.id,
-          quantity: 1,
+          quantity,
           productVariantId: selectedVariant?.id,
         }),
       })
@@ -154,27 +224,48 @@ useEffect(() => {
         alert('Product added to cart!')
       } else {
         const error = await response.json()
-        alert(error.error || 'Failed to add to cart')
+        alert(error.error ?? 'Failed to add to cart')
       }
-    } catch (error) {
-      console.error('Error adding to cart:', error)
+    } catch {
       alert('Error adding to cart')
     } finally {
       setAddingToCart(false)
     }
   }
 
+  const handleQuantityChange = (newQuantity: number) => {
+    const maxStock = selectedVariant ? selectedVariant.stock : product?.stock ?? 0
+    const availableStock = product ? product.stock - product.reservedQuantity : 0
+    const actualMax = selectedVariant ? selectedVariant.stock : availableStock
+    const minQty = 1
+    const maxQty = Math.max(minQty, actualMax)
+    setQuantity(Math.min(Math.max(minQty, newQuantity), maxQty))
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
+      <div className="min-h-screen bg-[#F8F9FC] py-6 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Skeleton className="aspect-square rounded-lg" />
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-6 w-1/2" />
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-20 w-full" />
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8">
+            <div className="w-full md:w-[55%]">
+              <Skeleton className="aspect-square rounded-xl md:rounded-2xl" />
+              <div className="flex gap-2 mt-4 overflow-x-auto">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="w-16 h-16 md:w-20 md:h-20 rounded-lg flex-shrink-0" />
+                ))}
+              </div>
+            </div>
+            <div className="w-full md:w-[45%]">
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-8 md:h-10 w-3/4" />
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-10 md:h-12 w-32" />
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
             </div>
           </div>
         </div>
@@ -184,62 +275,103 @@ useEffect(() => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <EmptyState
-            icon={
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center py-12 px-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-rose-100 flex items-center justify-center">
+              <svg className="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.553 0 2.51-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.466 0L3.34 16c-.771 1.333.192 3 1.732 3z" />
               </svg>
-            }
-            title="Product Not Found"
-            description={error || "The product you're looking for doesn't exist."}
-            actionLabel="Back to Marketplace"
-            onAction={() => window.location.href = '/marketplace'}
-          />
-        </div>
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold text-[#0F1F3D] mb-2">Product Not Found</h2>
+            <p className="text-slate-600 mb-6">{error ?? "The product you're looking for doesn't exist."}</p>
+            <Link href="/marketplace">
+              <Button variant="primary" size="md" fullWidth>Back to Marketplace</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  const effectivePrice = product.price
   const availableStock = product.stock - product.reservedQuantity
+  const variantStock = selectedVariant?.stock ?? availableStock
+  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+  const hasDeal = !!product.dealsPrice && product.dealsPrice < product.price
+  const hasSale = !!product.salesPrice && product.salesPrice < product.price && !hasDeal
+  const stockBadge = getStockBadge(product.availabilityType, availableStock)
+
+  const descriptionPreview = product.description && product.description.length > 150
+    ? product.description.substring(0, 150).trim + '...'
+    : product.description ?? ''
+
+  const currentImageIndex = product.images?.findIndex(img => img.url === selectedImage) ?? 0
+  const totalImages = product.images?.length ?? 0
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            {selectedImage ? (
-              <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                <Image
-                  src={selectedImage}
-                  alt={product.name}
-                  className="object-cover"
-                  fill
-                  priority
-                />
-              </div>
-            ) : (
-              <div className="w-full aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
-                <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            )}
+    <div className="min-h-screen bg-[#F8F9FC] pb-20 md:pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <nav className="flex items-center gap-1 text-xs md:text-sm mb-4 md:mb-6 overflow-x-auto">
+          <Link href="/" className="text-slate-600 hover:text-[#1E40AF] whitespace-nowrap">Home</Link>
+          <FiChevronRight className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />
+          <Link href="/marketplace" className="text-slate-600 hover:text-[#1E40AF] whitespace-nowrap">Marketplace</Link>
+          <FiChevronRight className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />
+          {product.category && (
+            <>
+              <Link href={`/marketplace?category=${product.category.id}`} className="text-slate-600 hover:text-[#1E40AF] whitespace-nowrap">
+                {product.category.name}
+              </Link>
+              <FiChevronRight className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />
+            </>
+          )}
+          <span className="text-[#0F1F3D] font-medium truncate max-w-[150px] md:max-w-xs">
+            {product.name}
+          </span>
+        </nav>
+
+        <div className="flex flex-col md:flex-row md:gap-8">
+          <div className="w-full md:w-[55%]">
+            <div className="relative bg-white rounded-xl md:rounded-2xl shadow-lg overflow-hidden mb-4">
+              {selectedImage ? (
+                <>
+                  <div className="relative aspect-square">
+                    <Image
+                      src={selectedImage}
+                      alt={product.name}
+                      className="object-contain"
+                      fill
+                      priority
+                      sizes="(max-width: 768px) 100vw, 55vw"
+                    />
+                  </div>
+                  {totalImages > 1 && (
+                    <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
+                      {currentImageIndex + 1} / {totalImages}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="aspect-square bg-slate-100 flex items-center justify-center">
+                  <svg className="w-16 h-16 md:w-20 md:h-20 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
+            </div>
 
             {product.images && product.images.length > 1 && (
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:pb-0">
                 {product.images.map((img) => (
                   <button
                     key={img.id}
                     onClick={() => setSelectedImage(img.url)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${selectedImage === img.url ? 'border-royal-blue' : 'border-slate-200'
-                      }`}
+                    className={`w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 flex-shrink-0 ${
+                      selectedImage === img.url ? 'border-[#1E40AF]' : 'border-slate-200'
+                    }`}
                   >
                     <Image
                       src={img.url}
-                      alt={img.alt || product.name}
+                      alt={img.alt ?? product.name}
                       className="object-cover"
                       width={80}
                       height={80}
@@ -250,89 +382,273 @@ useEffect(() => {
             )}
           </div>
 
-          <div>
-            <h1 className="text-3xl font-bold text-deep-navy mb-4">{product.name}</h1>
-
-            <div className="flex items-center gap-2 mb-4">
-              {product.store && (
-                <Link href={`/vendor/${product.store?.slug ?? product.store?.id}`} className="text-slate-600 hover:text-royal-blue">
-                  {truncateVendorName(product.store.name)}
-                </Link>
+          <div className="w-full md:w-[45%] mt-6 md:mt-0">
+            <div className="md:sticky md:top-24">
+              {product.category && (
+                <Badge variant="outline" size="sm" className="mb-3">
+                  {product.category.name}
+                </Badge>
               )}
-              {(() => {
-                if (!product.store) return null
-                const badgeInfo = getVendorBadgeInfo(product.store.badgeTier)
-                if (badgeInfo) {
-                  const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                  return <MdVerified className={`w-4 h-4 ${iconColor}`} />
-                }
-                if (product.store.isVerified) {
-                  return <MdVerified className="w-4 h-4 text-sky-500" />
-                }
-                return null
-              })()}
-            </div>
 
-            <div className="text-3xl font-bold text-royal-blue mb-6">{formatPrice(effectivePrice)}</div>
+              <h1 className="text-2xl md:text-3xl font-bold text-[#0F1F3D] mb-3">
+                {product.name}
+              </h1>
 
-            <ProductBadges product={calculateProductBadges({
-              price: product.price,
-              stock: product.stock,
-              availabilityType: product.availabilityType,
-              expectedArrivalDate: product.expectedArrivalDate,
-              expectedRestockDate: product.expectedRestockDate,
-            })} />
-
-            {product.description && (
-              <div className="mt-6">
-                <h2 className="text-lg font-semibold text-deep-navy mb-2">Description</h2>
-                <p className="text-slate-600">{product.description}</p>
-              </div>
-            )}
-
-            <div className="mt-6">
-              <Button
-                onClick={addToCart}
-                disabled={addingToCart || availableStock === 0}
-                className="w-full sm:w-auto"
-              >
-                {addingToCart
-                  ? 'Adding...'
-                  : availableStock === 0 && product.availabilityType === 'IN_STOCK'
-                    ? 'Out of Stock'
-                    : product.availabilityType === 'PREORDER'
-                      ? 'Pre-order Now'
-                      : product.availabilityType === 'BACKORDER'
-                        ? 'Backorder'
-                        : 'Add to Cart'}
-              </Button>
-            </div>
-
-            {product.variants && product.variants.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-slate-700 mb-2">Variants</h3>
-                <select
-                  value={selectedVariant?.id || ''}
-                  onChange={(e) => {
-                    const v = product.variants.find(v => v.id === e.target.value)
-                    setSelectedVariant(v || null)
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-1">
+                  {renderStars(product.averageRating, 'sm')}
+                </div>
+                <span className="text-sm text-slate-600">
+                  ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+                </span>
+                <button
+                  onClick={() => {
+                    setActiveTab('reviews')
+                    const reviewsSection = document.getElementById('reviews-tab')
+                    reviewsSection?.scrollIntoView({ behavior: 'smooth' })
                   }}
-                  className="border border-slate-200 rounded-lg px-3 py-2"
+                  className="text-xs text-[#1E40AF] hover:underline ml-1"
                 >
-                  {product.variants.map((variant) => (
-                    <option key={variant.id} value={variant.id} disabled={!variant.active}>
-                      {variant.color && `Color: ${variant.color}`}
-                      {variant.size && ` / Size: ${variant.size}`}
-                      {variant.age && ` / Age: ${variant.age}`}
-                      {!variant.active && ' (Out of Stock)'}
-                    </option>
-                  ))}
-                </select>
+                  See all reviews
+                </button>
+              </div>
+
+              <div className="mb-4">
+                {hasDeal ? (
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-2xl md:text-3xl font-bold text-[#1E40AF]">
+                      ₵ {formatPrice(effectivePrice)}
+                    </span>
+                    <span className="text-base md:text-lg text-slate-500 line-through">
+                      ₵ {formatPrice(product.price)}
+                    </span>
+                    <Badge variant="premium" size="sm">DEAL</Badge>
+                  </div>
+                ) : hasSale ? (
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-2xl md:text-3xl font-bold text-[#1E40AF]">
+                      ₵ {formatPrice(effectivePrice)}
+                    </span>
+                    <span className="text-base md:text-lg text-slate-500 line-through">
+                      ₵ {formatPrice(product.price)}
+                    </span>
+                    <Badge variant="warning" size="sm">SALE</Badge>
+                  </div>
+                ) : (
+                  <span className="text-2xl md:text-3xl font-bold text-[#1E40AF]">
+                    ₵ {formatPrice(effectivePrice)}
+                  </span>
+                )}
+              </div>
+
+              <Badge variant={stockBadge.variant} size="sm" className="mb-4">
+                {stockBadge.label}
+              </Badge>
+
+              <div className="mb-6">
+                <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+                  {showFullDescription ? product.description : descriptionPreview}
+                </p>
+                {product.description && product.description.length > 150 && (
+                  <button
+                    onClick={() => setShowFullDescription(!showFullDescription)}
+                    className="text-xs md:text-sm text-[#1E40AF] font-medium mt-2 hover:underline"
+                  >
+                    {showFullDescription ? 'Show Less' : 'Show More'}
+                  </button>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-[#0F1F3D] mb-2">Quantity</label>
+                <div className="flex items-center w-32 md:w-40 border border-[#0F1F3D] rounded-lg md:rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    disabled={quantity <= 1}
+                    className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-[#0F1F3D] hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FiMinus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max={variantStock}
+                    value={quantity}
+                    onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                    className="w-full h-11 md:h-12 text-center text-base font-medium text-[#0F1F3D] focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    disabled={quantity >= variantStock}
+                    className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-[#0F1F3D] hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FiPlus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <Button
+                  ref={addToCartButtonRef}
+                  onClick={addToCart}
+                  disabled={addingToCart || availableStock === 0}
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  className="h-12 md:h-14 text-base md:text-lg font-semibold"
+                >
+                  <FiShoppingCart className="w-5 h-5 mr-2" />
+                  {addingToCart
+                    ? 'Adding...'
+                    : availableStock === 0 && product.availabilityType === 'IN_STOCK'
+                      ? 'Out of Stock'
+                      : product.availabilityType === 'PREORDER'
+                        ? 'Pre-order Now'
+                        : product.availabilityType === 'BACKORDER'
+                          ? 'Backorder'
+                          : 'Add to Cart'}
+                </Button>
+                <Button variant="outline" size="lg" fullWidth className="h-12 md:h-14 text-base md:text-lg font-semibold">
+                  Buy Now
+                </Button>
+              </div>
+
+              <div className="border-t border-slate-200 pt-6">
+                <div className="flex items-center gap-3">
+                  {product.store?.logo ? (
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
+                      <Image
+                        src={product.store.logo}
+                        alt={product.store.name}
+                        className="object-cover"
+                        width={48}
+                        height={48}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 md:w-6 md:h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 7h1m4-7h1m-1 7h1m4-7h1m-1 7h1" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="font-semibold text-[#0F1F3D] text-sm md:text-base truncate">
+                        {truncateVendorName(product.store?.name ?? 'Unknown Store')}
+                      </span>
+                      {product.store?.isVerified && (
+                        <MdVerified className="w-4 h-4 text-[#1E40AF] flex-shrink-0" />
+                      )}
+                    </div>
+                    <Link
+                      href={`/vendor/${product.store?.slug ?? product.store?.id}`}
+                      className="text-xs md:text-sm text-[#1E40AF] hover:underline"
+                    >
+                      View Store
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 md:mt-12">
+          <div className="flex gap-4 md:gap-8 border-b border-slate-200 mb-4 md:mb-6 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('description')}
+              className={`pb-3 px-1 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'description'
+                  ? 'text-[#1E40AF] border-b-2 border-[#1E40AF]'
+                  : 'text-slate-600 hover:text-[#0F1F3D]'
+              }`}
+            >
+              Description
+            </button>
+            <button
+              id="reviews-tab"
+              onClick={() => setActiveTab('reviews')}
+              className={`pb-3 px-1 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'reviews'
+                  ? 'text-[#1E40AF] border-b-2 border-[#1E40AF]'
+                  : 'text-slate-600 hover:text-[#0F1F3D]'
+              }`}
+            >
+              Reviews ({product.reviewCount})
+            </button>
+          </div>
+
+          <div className="min-h-[200px]">
+            {activeTab === 'description' ? (
+              <div className="prose prose-slate max-w-none">
+                <p className="text-slate-600 leading-relaxed text-sm md:text-base">
+                  {product.description ?? 'No description available for this product.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.length === 0 ? (
+                  <EmptyState
+                    icon={
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.417-4.03 8-9 8a9.863 9.863 0 01-4.255-.94L3 20l1.395-2.42C3.512 15.042 3 13.574 3 12c0-1.593.559-3.036 1.544-4.292A8.966 8.966 0 0112 4.97c4.97 0 9 3.582 9 8z" />
+                      </svg>
+                    }
+                    title="No reviews yet"
+                    description="Be the first to review this product."
+                  />
+                ) : (
+                  reviews.map((review) => (
+                    <div key={review.id} className="border border-slate-200 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-1">
+                          {renderStars(review.rating, 'sm')}
+                        </div>
+                        <span className="text-sm font-medium text-[#0F1F3D]">{review.reviewer}</span>
+                        {review.isVerifiedPurchase && (
+                          <Badge variant="success" size="sm">Verified</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mb-2">
+                        {new Date(review.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <p className="text-slate-600 text-sm">{review.comment}</p>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {showFloatingCTA && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-50 md:hidden shadow-2xl">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-xs text-slate-600">Price:</span>
+              <p className="text-base font-bold text-[#0F1F3D]">
+                ₵ {formatPrice(effectivePrice)}
+              </p>
+            </div>
+            <Button
+              onClick={addToCart}
+              disabled={addingToCart || availableStock === 0}
+              variant="primary"
+              size="md"
+              className="flex-1 max-w-xs h-11"
+            >
+              <FiShoppingCart className="w-4 h-4 mr-1" />
+              Add to Cart
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
