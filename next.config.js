@@ -15,6 +15,21 @@ const nextConfig = {
         hostname: "res.cloudinary.com",
         pathname: "/**",
       },
+      {
+        protocol: "http",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "cloudinary.com",
+        pathname: "/**",
+      },
     ],
   },
   webpack: (config, { isServer }) => {
