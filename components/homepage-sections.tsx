@@ -474,8 +474,8 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                expectedRestockDate: product.expectedRestockDate,
              })
              return (
-               <Link key={product.id} href={`/marketplace/product/${product.id}`}>
-                 <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
+<Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
+                    <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
 <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
                       {product.images?.[0] ? (
                         <Image
@@ -528,7 +528,7 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                  expectedRestockDate: product.expectedRestockDate,
                })
                return (
-                 <Link key={product.id} href={`/marketplace/product/${product.id}`} className="w-64 flex-shrink-0">
+                 <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className="w-64 flex-shrink-0">
                    <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
 <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
                         {product.images?.[0] ? (
@@ -618,8 +618,8 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link href={`/marketplace/product/${heroProduct.id}`}>
-                <Button variant="gradient" size="lg">
+<Link href={`/marketplace/product/${heroProduct.slug ?? heroProduct.id}`}>
+                 <Button variant="gradient" size="lg">
                   Shop Now
                 </Button>
               </Link>

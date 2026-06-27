@@ -9,49 +9,83 @@ import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 export const runtime = 'nodejs'
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const product = await getPrisma().product.findUnique({
-      where: { id: params.id },
-      include: {
-        category: true,
-        brandRelation: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            logo: true,
-          },
-        },
-        store: {
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            isVerified: true,
-            badgeTier: true,
-          },
-        },
-        images: true,
-        productReviews: {
-          select: {
-            rating: true,
-          },
-        },
-        categoryAssignments: {
-          include: {
-            productCategory: true,
-          },
-        },
-        variants: true,
-      },
-    })
+   request: NextRequest,
+   { params }: { params: { id: string } }
+ ) {
+   try {
+     const product = await getPrisma().product.findUnique({
+       where: { slug: params.id },
+       include: {
+         category: true,
+         brandRelation: {
+           select: {
+             id: true,
+             name: true,
+             slug: true,
+             logo: true,
+           },
+         },
+         store: {
+           select: {
+             id: true,
+             slug: true,
+             name: true,
+             isVerified: true,
+             badgeTier: true,
+           },
+         },
+         images: true,
+         productReviews: {
+           select: {
+             rating: true,
+           },
+         },
+         categoryAssignments: {
+           include: {
+             productCategory: true,
+           },
+         },
+         variants: true,
+       },
+     }) ?? await getPrisma().product.findUnique({
+       where: { id: params.id },
+       include: {
+         category: true,
+         brandRelation: {
+           select: {
+             id: true,
+             name: true,
+             slug: true,
+             logo: true,
+           },
+         },
+         store: {
+           select: {
+             id: true,
+             slug: true,
+             name: true,
+             isVerified: true,
+             badgeTier: true,
+           },
+         },
+         images: true,
+         productReviews: {
+           select: {
+             rating: true,
+           },
+         },
+         categoryAssignments: {
+           include: {
+             productCategory: true,
+           },
+         },
+         variants: true,
+       },
+     })
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-    }
+     if (!product) {
+       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+     }
 
     // Calculate average rating
     const reviews = product.productReviews || []

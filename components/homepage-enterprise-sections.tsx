@@ -669,9 +669,9 @@ export function EnterpriseGadgetDisplaySection({
 
         {/* Desktop grid */}
         <div className='hidden lg:grid grid-cols-2 gap-6'>
-          {products.slice(0, 4).map((product) => (
-            <Link key={product.id} href={`/marketplace/product/${product.id}`}>
-              <Card
+{products.slice(0, 4).map((product) => (
+             <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
+               <Card
                 variant='elevated'
                 className='group overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 bg-slate-800/50 border border-slate-700/50'
               >
@@ -708,12 +708,12 @@ export function EnterpriseGadgetDisplaySection({
           {topRowProducts.length > 0 && (
             <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
               <div className='flex gap-4'>
-                {topRowProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/marketplace/product/${product.id}`}
-                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
-                  >
+{topRowProducts.map((product) => (
+                   <Link
+                     key={product.id}
+                     href={`/marketplace/product/${product.slug ?? product.id}`}
+                     className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
+                   >
                     <Card
                       variant='elevated'
                       className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
@@ -742,12 +742,12 @@ export function EnterpriseGadgetDisplaySection({
           {bottomRowProducts.length > 0 && (
             <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
               <div className='flex gap-4'>
-                {bottomRowProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/marketplace/product/${product.id}`}
-                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
-                  >
+{bottomRowProducts.map((product) => (
+                   <Link
+                     key={product.id}
+                     href={`/marketplace/product/${product.slug ?? product.id}`}
+                     className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
+                   >
                     <Card
                       variant='elevated'
                       className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
