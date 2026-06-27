@@ -103,7 +103,7 @@ function getStockBadge(availabilityType: string | null, stock: number): { label:
   return stock > 0 ? { label: 'In Stock', variant: 'success' } : { label: 'Out of Stock', variant: 'danger' }
 }
 
-function getVendorBadgeColor(badgeTier: string | null, isVerified: boolean): { color: string; tooltip: string } | null {
+function getVendorBadgeColor(badgeTier: string | null | undefined, isVerified: boolean): { color: string; tooltip: string } | null {
   if (badgeTier === 'PREMIUM') {
     return { color: '#D4AF37', tooltip: 'Premium Vendor' }
   }
