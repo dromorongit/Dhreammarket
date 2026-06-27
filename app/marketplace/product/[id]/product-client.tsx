@@ -385,7 +385,7 @@ export default function ProductClient() {
           <div className="w-full md:w-[45%] mt-6 md:mt-0">
             <div className="md:sticky md:top-24">
               {product.category && (
-                <Badge variant="outline" size="sm" className="mb-3">
+                <Badge variant="info" size="sm" className="mb-3">
                   {product.category.name}
                 </Badge>
               )}
