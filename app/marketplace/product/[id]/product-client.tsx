@@ -302,7 +302,7 @@ export default function ProductClient() {
   const stockBadge = getStockBadge(product.availabilityType, availableStock)
 
   const descriptionPreview = product.description && product.description.length > 150
-    ? product.description.substring(0, 150).trim + '...'
+    ? product.description.substring(0, 150).trim() + '...'
     : product.description ?? ''
 
   const currentImageIndex = product.images?.findIndex(img => img.url === selectedImage) ?? 0
@@ -417,35 +417,39 @@ export default function ProductClient() {
                 {hasDeal ? (
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-2xl md:text-3xl font-bold text-[#1E40AF]">
-                      ₵ {formatPrice(effectivePrice)}
+                      {formatPrice(effectivePrice)}
                     </span>
                     <span className="text-base md:text-lg text-slate-500 line-through">
-                      ₵ {formatPrice(product.price)}
+                      {formatPrice(product.price)}
                     </span>
                     <Badge variant="premium" size="sm">DEAL</Badge>
                   </div>
                 ) : hasSale ? (
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-2xl md:text-3xl font-bold text-[#1E40AF]">
-                      ₵ {formatPrice(effectivePrice)}
+                      {formatPrice(effectivePrice)}
                     </span>
                     <span className="text-base md:text-lg text-slate-500 line-through">
-                      ₵ {formatPrice(product.price)}
+                      {formatPrice(product.price)}
                     </span>
                     <Badge variant="warning" size="sm">SALE</Badge>
                   </div>
                 ) : (
                   <span className="text-2xl md:text-3xl font-bold text-[#1E40AF]">
-                    ₵ {formatPrice(effectivePrice)}
+                    {formatPrice(effectivePrice)}
                   </span>
                 )}
               </div>
 
-              <Badge variant={stockBadge.variant} size="sm" className="mb-4">
-                {stockBadge.label}
-              </Badge>
+<Badge variant={stockBadge.variant} size="sm" className="mb-4">
+                 {stockBadge.label}
+               </Badge>
 
-              <div className="mb-6">
+               {stockBadge.variant === 'success' && availableStock > 0 && (
+                 <p className="text-sm text-gray-500 mt-1">{availableStock} items available</p>
+               )}
+
+               <div className="mb-6">
                 <p className="text-slate-600 text-sm md:text-base leading-relaxed">
                   {showFullDescription ? product.description : descriptionPreview}
                 </p>
@@ -461,26 +465,21 @@ export default function ProductClient() {
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-[#0F1F3D] mb-2">Quantity</label>
-                <div className="flex items-center w-32 md:w-40 border border-[#0F1F3D] rounded-lg md:rounded-xl overflow-hidden">
+                <div className="flex items-center rounded-xl shadow-sm overflow-hidden w-fit">
                   <button
                     onClick={() => handleQuantityChange(quantity - 1)}
                     disabled={quantity <= 1}
-                    className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-[#0F1F3D] hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-11 h-11 rounded-l-xl border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-xl font-light text-navy transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FiMinus className="w-4 h-4" />
                   </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max={variantStock}
-                    value={quantity}
-                    onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                    className="w-full h-11 md:h-12 text-center text-base font-medium text-[#0F1F3D] focus:outline-none"
-                  />
+                  <div className="w-14 h-11 border-t border-b border-gray-200 bg-white flex items-center justify-center text-base font-semibold text-navy">
+                    {quantity}
+                  </div>
                   <button
                     onClick={() => handleQuantityChange(quantity + 1)}
                     disabled={quantity >= variantStock}
-                    className="w-11 h-11 md:w-12 md:h-12 flex items-center justify-center text-[#0F1F3D] hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-11 h-11 rounded-r-xl border border-gray-200 bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-xl font-light text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FiPlus className="w-4 h-4" />
                   </button>
@@ -492,21 +491,21 @@ export default function ProductClient() {
                   ref={addToCartButtonRef}
                   onClick={addToCart}
                   disabled={addingToCart || availableStock === 0}
-                  variant="primary"
-                  size="lg"
                   fullWidth
-                  className="h-12 md:h-14 text-base md:text-lg font-semibold"
+                  className="h-14 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white font-semibold text-base rounded-xl flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg"
                 >
-                  <FiShoppingCart className="w-5 h-5 mr-2" />
-                  {addingToCart
-                    ? 'Adding...'
-                    : availableStock === 0 && product.availabilityType === 'IN_STOCK'
-                      ? 'Out of Stock'
-                      : product.availabilityType === 'PREORDER'
-                        ? 'Pre-order Now'
-                        : product.availabilityType === 'BACKORDER'
-                          ? 'Backorder'
-                          : 'Add to Cart'}
+                  <FiShoppingCart className="w-5 h-5" />
+                  <span>
+                    {addingToCart
+                      ? 'Adding...'
+                      : availableStock === 0 && product.availabilityType === 'IN_STOCK'
+                        ? 'Out of Stock'
+                        : product.availabilityType === 'PREORDER'
+                          ? 'Pre-order Now'
+                          : product.availabilityType === 'BACKORDER'
+                            ? 'Backorder'
+                            : 'Add to Cart'}
+                  </span>
                 </Button>
                 <Button variant="outline" size="lg" fullWidth className="h-12 md:h-14 text-base md:text-lg font-semibold">
                   Buy Now
@@ -630,12 +629,12 @@ export default function ProductClient() {
       {showFloatingCTA && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-50 md:hidden shadow-2xl">
           <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="text-xs text-slate-600">Price:</span>
-              <p className="text-base font-bold text-[#0F1F3D]">
-                ₵ {formatPrice(effectivePrice)}
-              </p>
-            </div>
+<div>
+                <span className="text-xs text-slate-600">Price:</span>
+                <p className="text-base font-bold text-[#0F1F3D]">
+                  {formatPrice(effectivePrice)}
+                </p>
+              </div>
             <Button
               onClick={addToCart}
               disabled={addingToCart || availableStock === 0}

@@ -165,12 +165,12 @@ function SectionHeader({
         </Badge>
       )}
       <h2
-        className='text-2xl sm:text-3xl lg:text-4xl font-bold'
+        className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${dark ? 'text-white' : 'text-deep-navy'}`}
       >
         {title}
       </h2>
       {subtitle && (
-        <p className='mt-2'>
+        <p className={`mt-2 ${dark ? 'text-slate-300' : 'text-slate-600'}`}>
           {subtitle}
         </p>
       )}
@@ -1077,29 +1077,24 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
 
   return (
     <Link href={`/marketplace?brand=${normalized.id || normalized.slug}`}>
-      <Card
-        variant='elevated'
-        className='group p-5 text-center hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-2xl h-full flex flex-col items-center'
-      >
-        <div className='w-28 h-20 md:w-36 md:h-24 mb-3 rounded-xl bg-white border border-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0'>
+      <div className="flex-shrink-0 w-36 md:w-44 flex flex-col items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 cursor-pointer">
+        <div className="w-24 h-16 flex items-center justify-center">
           {logo ? (
             <Image
               src={logo}
               alt={normalized.name}
-              width={120}
-              height={80}
-              className='max-w-full max-h-full object-contain'
+              width={96}
+              height={64}
+              className="object-contain max-h-16"
             />
           ) : (
-            <span className='text-2xl font-bold text-royal-blue'>
+            <span className="text-2xl font-bold text-royal-blue">
               {normalized.name.charAt(0).toUpperCase()}
             </span>
           )}
         </div>
-        <p className='text-sm font-medium text-gray-700 text-center mt-2 truncate'>
-          {normalized.name}
-        </p>
-      </Card>
+        <p className="text-xs font-semibold text-gray-700 text-center truncate w-full">{normalized.name}</p>
+      </div>
     </Link>
   );
 }
@@ -1123,41 +1118,26 @@ export function BrandStoreSection({
   if (!displayBrands.length) return null;
 
   return (
-    <section className='relative py-16 lg:py-24 bg-slate-50'>
+    <section className='relative py-16 lg:py-24 bg-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <SectionHeader
-          badge='Shop Brands'
-          title={section?.name ?? 'Brand Store'}
-          subtitle={
-            section?.subtitle ?? 'Explore products from your favorite brands'
-          }
-        />
+        <div className="mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-deep-navy mb-2">Featured Brands</h2>
+          <p className="text-gray-500 mb-6">Shop by your favourite brands</p>
+        </div>
 
-        {/* Mobile horizontal scroll */}
-        <div className='md:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide pb-4'>
+        <div className='overflow-x-auto overflow-y-hidden scrollbar-hide pb-4'>
           <div className='flex gap-4'>
             {displayBrands.map((brand) => {
               const normalized = normalizeBrand(brand);
               return (
                 <div
                   key={normalized.id || normalized.slug}
-                  className='w-32 flex-shrink-0'
                 >
                   <BrandCard brand={brand} />
                 </div>
               );
             })}
           </div>
-        </div>
-
-        {/* Desktop grid */}
-        <div className='hidden md:grid grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-          {displayBrands.map((brand) => (
-            <BrandCard
-              key={normalizeBrand(brand).id || normalizeBrand(brand).slug}
-              brand={brand}
-            />
-          ))}
         </div>
 
         <div className='mt-8 text-center'>
