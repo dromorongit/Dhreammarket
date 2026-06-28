@@ -33,6 +33,7 @@ interface HomepageSection {
   displayOrder: number;
   type: string;
   subtitle: string | null;
+  settings: any;
   createdAt: string;
   updatedAt: string;
   products?: HomepageSectionProduct[];
@@ -77,6 +78,7 @@ interface Vendor {
 }
 
 const SECTION_TYPES = [
+  { value: "TRENDING_NOW", label: "Trending Now" },
   { value: "FLASH_SALES", label: "Flash Sales" },
   { value: "SPONSORED_PRODUCTS", label: "Sponsored Products" },
   { value: "LARGE_FEATURE_CARDS", label: "Gadget Display" },
@@ -91,6 +93,12 @@ const SECTION_TYPES = [
 ];
 
 const DEFAULT_SECTIONS = [
+  {
+    name: "Trending Now",
+    slug: "trending-now",
+    type: "TRENDING_NOW",
+    subtitle: "Discover what's currently trending across Dhream Market.",
+  },
   {
     name: "Flash Sales",
     slug: "flash-sales",
@@ -157,6 +165,8 @@ export default function SuperAdminHomepagePage() {
   );
   const [managingSection, setManagingSection] =
     useState<HomepageSection | null>(null);
+  const [managingTrendingSettings, setManagingTrendingSettings] =
+    useState<HomepageSection | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(
@@ -178,6 +188,22 @@ export default function SuperAdminHomepagePage() {
   >([]);
   const [saving, setSaving] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [trendingSettings, setTrendingSettings] = useState({
+    mode: 'MANUAL' as 'MANUAL' | 'AUTOMATIC',
+    maxProducts: 20,
+    weights: {
+      recentSales: 40,
+      productViews: 20,
+      wishlistAdds: 15,
+      cartAdds: 15,
+      recentReviews: 5,
+      averageRating: 5,
+    },
+    timeWindow: '7D' as '24H' | '7D' | '30D',
+    excludeOutOfStock: true,
+    excludeHiddenProducts: true,
+    excludeArchivedProducts: true,
+  });
 
   const fetchSections = useCallback(async () => {
     try {
@@ -753,6 +779,43 @@ export default function SuperAdminHomepagePage() {
                       <Button asChild variant="outline" size="sm" className="w-full min-h-[44px]">
                         <Link href="/dashboard/super-admin/brands">Manage Brands</Link>
                       </Button>
+                    ) : section.slug === "trending-now" ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full min-h-[44px]"
+                          onClick={() => setManagingSection(section)}
+                        >
+                          Manage Products
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full min-h-[44px]"
+                          onClick={() => {
+                            setTrendingSettings({
+                              mode: ((section.settings as any)?.mode as 'MANUAL' | 'AUTOMATIC') || 'MANUAL',
+                              maxProducts: (section.settings as any)?.maxProducts || 20,
+                              weights: (section.settings as any)?.weights || {
+                                recentSales: 40,
+                                productViews: 20,
+                                wishlistAdds: 15,
+                                cartAdds: 15,
+                                recentReviews: 5,
+                                averageRating: 5,
+                              },
+                              timeWindow: (section.settings as any)?.timeWindow || '7D',
+                              excludeOutOfStock: (section.settings as any)?.excludeOutOfStock ?? true,
+                              excludeHiddenProducts: (section.settings as any)?.excludeHiddenProducts ?? true,
+                              excludeArchivedProducts: (section.settings as any)?.excludeArchivedProducts ?? true,
+                            });
+                            setManagingTrendingSettings(section);
+                          }}
+                        >
+                          Trending Settings
+                        </Button>
+                      </>
                     ) : (
                       <Button
                         variant="outline"
@@ -881,16 +944,48 @@ export default function SuperAdminHomepagePage() {
             }}
             onBulkRemove={(ids) => handleBulkRemoveProducts(ids)}
             onReorderProducts={handleReorderProducts}
-            onClose={() => {
-              setManagingSection(null);
-              setSelectedProducts(new Set());
-              setSelectedVendors(new Set());
-              setSelectedBrands(new Set());
-              setAssignedProducts([]);
-              setAssignedBrands([]);
-              setSearchQuery("");
-              setProductPage(1);
+onClose={() => {
+               setManagingSection(null);
+               setSelectedProducts(new Set());
+               setSelectedVendors(new Set());
+               setSelectedBrands(new Set());
+               setAssignedProducts([]);
+               setAssignedBrands([]);
+               setSearchQuery("");
+               setProductPage(1);
+             }}
+             saving={saving}
+           />
+        )}
+
+        {/* Trending Settings Modal */}
+        {managingTrendingSettings && (
+          <TrendingSettingsModal
+            section={managingTrendingSettings}
+            settings={trendingSettings}
+            onSettingsChange={setTrendingSettings}
+            onSave={async () => {
+              setSaving(true);
+              try {
+                const response = await fetch(
+                  `/api/homepage-sections/${managingTrendingSettings.id}`,
+                  {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ settings: trendingSettings }),
+                  },
+                );
+                if (response.ok) {
+                  await fetchSections();
+                  setManagingTrendingSettings(null);
+                }
+              } catch (err) {
+                console.error("Error saving trending settings:", err);
+              } finally {
+                setSaving(false);
+              }
             }}
+            onClose={() => setManagingTrendingSettings(null)}
             saving={saving}
           />
         )}
@@ -1486,5 +1581,152 @@ function ManageSectionModal({
       </div>
     );
   }
+
+// Trending Settings Modal
+function TrendingSettingsModal({
+  section,
+  settings,
+  onSettingsChange,
+  onSave,
+  onClose,
+  saving,
+}: {
+  section: HomepageSection;
+  settings: {
+    mode: 'MANUAL' | 'AUTOMATIC';
+    maxProducts: number;
+    weights: {
+      recentSales: number;
+      productViews: number;
+      wishlistAdds: number;
+      cartAdds: number;
+      recentReviews: number;
+      averageRating: number;
+    };
+    timeWindow: '24H' | '7D' | '30D';
+    excludeOutOfStock: boolean;
+    excludeHiddenProducts: boolean;
+    excludeArchivedProducts: boolean;
+  };
+  onSettingsChange: (newSettings: typeof settings) => void;
+  onSave: () => void;
+  onClose: () => void;
+  saving: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4">
+      <Card variant="elevated" className="w-full max-w-none sm:max-w-lg max-h-[100dvh] sm:max-h-none sm:h-auto sm:rounded-2xl flex flex-col">
+        <CardContent className="p-4 sm:p-6 flex flex-col flex-1 min-h-0">
+          <h2 className="text-lg sm:text-xl font-bold text-deep-navy mb-4 sm:mb-6">
+            Trending Settings
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                Mode
+              </label>
+              <select
+                value={settings.mode}
+                onChange={(e) => onSettingsChange({ ...settings, mode: e.target.value as 'MANUAL' | 'AUTOMATIC' })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+              >
+                <option value="MANUAL">Manual - Select products manually</option>
+                <option value="AUTOMATIC">Automatic - Algorithm selects products</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                Max Products to Display
+              </label>
+              <input
+                type="number"
+                value={settings.maxProducts}
+                onChange={(e) => onSettingsChange({ ...settings, maxProducts: parseInt(e.target.value) || 20 })}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+                min="1"
+                max="100"
+              />
+            </div>
+            {settings.mode === 'AUTOMATIC' && (
+              <>
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                    Time Window
+                  </label>
+                  <select
+                    value={settings.timeWindow}
+                    onChange={(e) => onSettingsChange({ ...settings, timeWindow: e.target.value as '24H' | '7D' | '30D' })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+                  >
+                    <option value="24H">Last 24 Hours</option>
+                    <option value="7D">Last 7 Days</option>
+                    <option value="30D">Last 30 Days</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs sm:text-sm font-medium text-slate-700">Algorithm Weights</p>
+                  {Object.entries(settings.weights).map(([key, value]) => (
+                    <div key={key}>
+                      <label className="block text-[10px] sm:text-xs text-slate-600 mb-1 capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
+                      <input
+                        type="range"
+                        value={value}
+                        onChange={(e) => onSettingsChange({
+                          ...settings,
+                          weights: { ...settings.weights, [key]: parseInt(e.target.value) }
+                        })}
+                        className="w-full"
+                        min="0"
+                        max="100"
+                      />
+                      <span className="text-[10px] text-slate-500">{value}%</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-medium text-slate-700 mb-2">Filters</p>
+                  <label className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={settings.excludeOutOfStock}
+                      onChange={(e) => onSettingsChange({ ...settings, excludeOutOfStock: e.target.checked })}
+                    />
+                    <span className="text-xs">Exclude out of stock products</span>
+                  </label>
+                  <label className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={settings.excludeHiddenProducts}
+                      onChange={(e) => onSettingsChange({ ...settings, excludeHiddenProducts: e.target.checked })}
+                    />
+                    <span className="text-xs">Exclude hidden products</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={settings.excludeArchivedProducts}
+                      onChange={(e) => onSettingsChange({ ...settings, excludeArchivedProducts: e.target.checked })}
+                    />
+                    <span className="text-xs">Exclude archived products</span>
+                  </label>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-auto">
+            <Button onClick={onSave} loading={saving} className="w-full sm:w-auto min-h-[44px]">
+              Save Settings
+            </Button>
+            <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
+              Cancel
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 

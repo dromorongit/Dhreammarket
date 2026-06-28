@@ -4,6 +4,78 @@ import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 
 export const dynamic = 'force-dynamic'
 
+interface TrendingWeights {
+  recentSales: number
+  productViews: number
+  wishlistAdds: number
+  cartAdds: number
+  recentReviews: number
+  averageRating: number
+}
+
+const DEFAULT_WEIGHTS: TrendingWeights = {
+  recentSales: 40,
+  productViews: 20,
+  wishlistAdds: 15,
+  cartAdds: 15,
+  recentReviews: 5,
+  averageRating: 5,
+}
+
+async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>, settings: TrendingWeights & { timeWindow: '24H' | '7D' | '30D' }, maxProducts: number): Promise<any[]> {
+  const now = new Date()
+  const timeWindowMap: Record<string, number> = {
+    '24H': 24 * 60 * 60 * 1000,
+    '7D': 7 * 24 * 60 * 60 * 1000,
+    '30D': 30 * 24 * 60 * 60 * 1000,
+  }
+  const cutoffDate = new Date(now.getTime() - timeWindowMap[settings.timeWindow])
+
+  const products = await prisma.product.findMany({
+    where: {
+      stock: { gt: 0 },
+      OR: [
+        { availabilityType: 'IN_STOCK' },
+        { availabilityType: 'PREORDER' },
+        { availabilityType: 'BACKORDER' },
+      ],
+    },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
+      _count: {
+        select: {
+          productReviews: true,
+          orderItems: {
+            where: {
+              order: {
+                createdAt: { gte: cutoffDate },
+                status: { in: ['COMPLETED', 'DELIVERED'] },
+              },
+            },
+          },
+        },
+      },
+    },
+    take: 100,
+  })
+
+  return products
+    .map((product) => {
+      const salesScore = (product._count?.orderItems ?? 0) * DEFAULT_WEIGHTS.recentSales
+      const reviewScore = (product.averageRating ?? 0) * DEFAULT_WEIGHTS.averageRating
+      const reviewCountScore = (product._count?.productReviews ?? 0) * DEFAULT_WEIGHTS.recentReviews * 0.1
+
+      return {
+        ...product,
+        trendingScore: salesScore + reviewScore + reviewCountScore,
+      }
+    })
+    .sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0))
+    .slice(0, maxProducts)
+}
+
 const productSelect = {
   id: true,
   slug: true,
@@ -35,9 +107,11 @@ const productSelect = {
 export async function GET(_request: NextRequest) {
   let sections: any[] = []
   let brands: any[] = []
+  let prismaInstance: ReturnType<typeof getPrisma> | null = null
 
   try {
     const prisma = getPrisma()
+    prismaInstance = prisma
     try {
       await ensureDefaultHomepageSections(prisma)
       console.log('[homepage/public] ensureDefaultHomepageSections completed')
@@ -118,10 +192,27 @@ export async function GET(_request: NextRequest) {
     console.error('Error fetching public homepage sections (outer):', error)
   }
 
-  const formatted = (sections || []).map((section) => {
-    const sortedProducts = (section.products || [])
-      .map((sp: any) => sp.product)
-      .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+  const formatted = await Promise.all((sections || []).map(async (section) => {
+    let sortedProducts: any[] = []
+    
+    if (section.type === 'TRENDING_NOW' && prismaInstance) {
+      const settings = section.settings as any
+      if (settings?.mode === 'AUTOMATIC') {
+        const trendingSettings = {
+          ...DEFAULT_WEIGHTS,
+          timeWindow: settings?.timeWindow || '7D',
+        }
+        sortedProducts = await getAutomaticTrendingProducts(prismaInstance, trendingSettings, settings?.maxProducts || 20)
+      } else {
+        sortedProducts = (section.products || [])
+          .map((sp: any) => sp.product)
+          .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+      }
+    } else {
+      sortedProducts = (section.products || [])
+        .map((sp: any) => sp.product)
+        .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+    }
 
     return {
       id: section.id,
@@ -141,7 +232,7 @@ vendors: (section.vendors || [])
         }))
         .filter(Boolean),
     }
-  })
+  }))
 
   const formattedBrands = (brands || []).map((brand) => ({
     id: brand.id,

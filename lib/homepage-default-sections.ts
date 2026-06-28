@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client'
 import { DEFAULT_HOMEPAGE_SECTIONS } from '@/lib/homepage-constants'
+import { HomepageSectionType } from '@prisma/client'
 
 export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
   try {
@@ -17,7 +18,7 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
         create: {
           name: section.name,
           slug: section.slug,
-          type: section.type,
+          type: section.type as HomepageSectionType,
           subtitle: section.subtitle,
           displayOrder: section.displayOrder,
           isEnabled: true,

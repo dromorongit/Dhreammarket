@@ -1,4 +1,5 @@
 export const MANAGED_SECTION_SLUGS = [
+  'trending-now',
   'flash-sales',
   'sponsored-products',
   'gadget-display',
@@ -14,18 +15,25 @@ export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
 
 export const DEFAULT_HOMEPAGE_SECTIONS = [
   {
+    name: 'Trending Now',
+    slug: 'trending-now',
+    type: 'TRENDING_NOW' as const,
+    subtitle: 'Discover what\'s currently trending across Dhream Market.',
+    displayOrder: 1,
+  },
+  {
     name: 'Flash Sales',
     slug: 'flash-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Limited time offers',
-    displayOrder: 1,
+    displayOrder: 2,
   },
   {
     name: 'Sponsored Products',
     slug: 'sponsored-products',
     type: 'SPONSORED_PRODUCTS' as const,
     subtitle: 'Featured by vendors',
-    displayOrder: 2,
+    displayOrder: 3,
   },
   {
     name: 'Gadget Display',

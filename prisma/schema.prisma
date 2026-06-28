@@ -565,6 +565,7 @@ model HomepageSection {
   displayOrder Int                      @default(0)
   type         HomepageSectionType
   subtitle     String?
+  settings     Json?                    @default("{}")
   createdAt    DateTime                 @default(now())
   updatedAt    DateTime                 @updatedAt
   brands       HomepageSectionBrand[]
@@ -871,6 +872,7 @@ enum HomepageSectionType {
   BIG_DEALS
   CLEARANCE_SALES
   EXPRESS_OFFERS
+  TRENDING_NOW
 }
 
 enum VerificationStatus {

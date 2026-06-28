@@ -95,7 +95,7 @@ export async function PUT(
 
     const prisma = getPrisma();
     const { id } = await params;
-    const { name, slug, type, subtitle, isEnabled, displayOrder } =
+    const { name, slug, type, subtitle, isEnabled, displayOrder, settings } =
       await request.json();
 
     const existing = await prisma.homepageSection.findUnique({
@@ -128,6 +128,7 @@ export async function PUT(
         subtitle: subtitle !== undefined ? subtitle : existing.subtitle,
         isEnabled: isEnabled ?? existing.isEnabled,
         displayOrder: displayOrder ?? existing.displayOrder,
+        settings: settings !== undefined ? settings : existing.settings,
       },
     });
 

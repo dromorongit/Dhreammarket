@@ -36,6 +36,7 @@ import {
   NewArrivalsSection,
   NewThisWeekSection,
 } from '@/components/homepage-enterprise-sections'
+import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
@@ -72,11 +73,13 @@ export default function Home() {
 
   const excludeFromFeaturedIds = useMemo(() => {
     const ids = new Set(enterpriseSections.excludeFromFeaturedIds)
+    const trending = sectionsBySlug['trending-now']?.products ?? []
     const flash = sectionsBySlug['flash-sales']?.products ?? []
     const sponsored = sectionsBySlug['sponsored-products']?.products ?? []
     const topClearance = sectionsBySlug['top-clearance-sales']?.products ?? []
     const homeTheatre = sectionsBySlug['home-theatre']?.products ?? []
     const topExpress = sectionsBySlug['top-express-offers']?.products ?? []
+    collectProductIds(trending).forEach((id) => ids.add(id))
     collectProductIds(flash).forEach((id) => ids.add(id))
     collectProductIds(sponsored).forEach((id) => ids.add(id))
     collectProductIds(topClearance).forEach((id) => ids.add(id))
@@ -201,7 +204,11 @@ return (
         </div>
       </section>
 
-      {/* ─── Super Admin managed: Flash Sales & Sponsored ─── */}
+      {/* ─── Super Admin managed: Trending Now & Flash Sales ─── */}
+      <TrendingNowSection
+        section={sectionsBySlug['trending-now']}
+        loading={loadingManaged}
+      />
       <FlashSalesSection
         section={sectionsBySlug['flash-sales']}
         loading={loadingManaged}
