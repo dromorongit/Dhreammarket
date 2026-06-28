@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ settings: DEFAULT_SETTINGS })
     }
 
-    const settings: TrendingSettings = section.settings && typeof section.settings === 'object' && !Array.isArray(section.settings)
-      ? { ...DEFAULT_SETTINGS, ...section.settings }
+    const settings: TrendingSettings = section.settings
+      ? { ...DEFAULT_SETTINGS, ...(section.settings as unknown as Partial<TrendingSettings>) }
       : DEFAULT_SETTINGS
     return NextResponse.json({ settings })
   } catch (error) {
