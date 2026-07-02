@@ -42,6 +42,23 @@ model User {
   @@map("users")
 }
 
+model PendingRegistration {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  hashedOTP     String
+  otpExpiresAt  DateTime
+  phone         String?
+  role          Role
+  position      String?
+  name          String?
+  hashedPassword String
+  createdAt     DateTime @default(now())
+
+  @@index([email])
+  @@index([otpExpiresAt])
+  @@map("pending_registrations")
+}
+
 model AuthToken {
   id        String    @id @default(cuid())
   userId    String

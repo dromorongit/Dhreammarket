@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { rateLimit } from '@/lib/rate-limit'
 import { generateToken } from '@/lib/auth'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('email-verification')(request)
@@ -24,86 +24,75 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.trim().toLowerCase()
 
-    const user = await getPrisma().user.findUnique({
+    const pendingReg = await getPrisma().pendingRegistration.findUnique({
       where: { email: normalizedEmail },
     })
 
-    if (!user) {
+    if (!pendingReg) {
       return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 })
     }
 
-    // Find valid auth token for email verification
-    const authToken = await getPrisma().authToken.findFirst({
-      where: {
-        userId: user.id,
-        tokenType: 'EMAIL_VERIFICATION',
-        expiresAt: { gt: new Date() },
-        usedAt: null,
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    if (!authToken) {
+    if (pendingReg.otpExpiresAt < new Date()) {
+      await getPrisma().pendingRegistration.delete({
+        where: { id: pendingReg.id },
+      })
       return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 })
     }
 
-    // Verify OTP against stored hash
-    const isValidOTP = bcrypt.compareSync(otp, authToken.tokenHash)
+    const isValidOTP = bcrypt.compareSync(otp, pendingReg.hashedOTP)
     if (!isValidOTP) {
       return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 })
     }
 
-    // Mark email as verified
-    await getPrisma().user.update({
-      where: { id: user.id },
-      data: {
-        isEmailVerified: true,
-        emailVerifiedAt: new Date(),
-      },
+    const existingUser = await getPrisma().user.findUnique({
+      where: { email: normalizedEmail },
     })
 
-    // Mark token as used
-    await getPrisma().authToken.update({
-      where: { id: authToken.id },
-      data: { usedAt: new Date() },
-    })
-
-    // Invalidate any other pending verification tokens for this user
-    await getPrisma().authToken.updateMany({
-      where: {
-        userId: user.id,
-        tokenType: 'EMAIL_VERIFICATION',
-        usedAt: null,
-        id: { not: authToken.id },
-      },
-      data: { usedAt: new Date() },
-    })
-
-    // Non-blocking audit log
-    try {
-      const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                        request.headers.get('x-real-ip') || 'unknown'
-      const userAgent = request.headers.get('user-agent') || undefined
-      
-      await getPrisma().auditLog.create({
-        data: {
-          userId: user.id,
-          userRole: user.role,
-          action: 'EMAIL_VERIFIED',
-          entityType: 'User',
-          entityId: user.id,
-          ipAddress,
-          userAgent,
-        },
+    if (existingUser) {
+      await getPrisma().pendingRegistration.delete({
+        where: { id: pendingReg.id },
       })
-    } catch (auditError) {
-      console.error('Failed to create audit log:', auditError)
+      return NextResponse.json({ error: 'Email already verified. Please login.' }, { status: 200 })
     }
 
-    // Auto-login after verification - generate token and set cookie
+    const user = await getPrisma().user.create({
+      data: {
+        email: pendingReg.email,
+        password: pendingReg.hashedPassword,
+        role: pendingReg.role,
+        position: pendingReg.role === 'ADMIN' ? pendingReg.position : null,
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
+        profile: {
+          create: {
+            phone: pendingReg.phone,
+            firstName: pendingReg.name,
+          },
+        },
+        store: pendingReg.role === 'VENDOR' ? {
+          create: {
+            name: pendingReg.name || 'My Store',
+            slug: '',
+            isVerified: false,
+          },
+        } : undefined,
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        store: {
+          select: { id: true, slug: true },
+        },
+      },
+    })
+
+    await getPrisma().pendingRegistration.delete({
+      where: { id: pendingReg.id },
+    })
+
     const token = generateToken({ userId: user.id, role: user.role })
 
-    // Check vendor onboarding status
     let isOnboarded: boolean | undefined = undefined
     if (user.role === 'VENDOR') {
       isOnboarded = await isVendorOnboarded(user.id)
@@ -116,15 +105,15 @@ export async function POST(request: NextRequest) {
       user: { id: user.id, email: user.email, role: user.role },
       isOnboarded
     }, { status: 200 })
-    
+
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
     })
-    
+
     return response
   } catch (error) {
     console.error('Email verification error:', error)
