@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get('x-paystack-signature')
     const body = await request.text()
     
-    if (!verifyPaystackSignature(body, signature)) {
+    if (!verifyPaystackSignature(body, signature ?? undefined)) {
       console.error('[Payment Webhook] Invalid signature - rejecting webhook')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
