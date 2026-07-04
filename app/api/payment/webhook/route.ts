@@ -67,19 +67,20 @@ export async function POST(request: NextRequest) {
     }
 
 // Check if payment was abandoned, cancelled, or failed
-     if (paymentStatus !== 'success') {
-       // Payment failed, abandoned, or cancelled
-       const isAbandoned = paymentStatus === 'abandoned'
-       const failedStatus = isAbandoned ? 'CANCELLED' : 'FAILED'
+      if (paymentStatus !== 'success') {
+        // Payment failed, abandoned, or cancelled
+        const isAbandoned = paymentStatus === 'abandoned'
+        const isCancelled = paymentStatus === 'cancelled'
+        const failedStatus = (isAbandoned || isCancelled) ? 'CANCELLED' : 'FAILED'
 
-       await getPrisma().$transaction(async (prisma: any) => {
-         await prisma.payment.update({
-           where: { id: payment.id },
-           data: {
-             status: failedStatus,
-             message: isAbandoned ? 'Payment abandoned via webhook' : 'Payment failed via webhook',
-           },
-         })
+        await getPrisma().$transaction(async (prisma: any) => {
+          await prisma.payment.update({
+            where: { id: payment.id },
+            data: {
+              status: failedStatus,
+              message: isAbandoned ? 'Payment abandoned via webhook' : isCancelled ? 'Payment cancelled via webhook' : 'Payment failed via webhook',
+            },
+          })
 
          await prisma.order.update({
            where: { id: payment.orderId },

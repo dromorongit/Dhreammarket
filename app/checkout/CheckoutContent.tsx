@@ -295,6 +295,7 @@ export default function CheckoutContent() {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
+  const [verificationTimeout, setVerificationTimeout] = useState(false)
   
   const { cart: contextCart } = useCart()
   const paymentStatus = searchParams.get('status')
@@ -438,16 +439,29 @@ export default function CheckoutContent() {
 
   const verifyPayment = async (ref: string) => {
     setProcessing(true)
+    setVerificationTimeout(false)
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Verification timeout')), 10000)
+    })
+
     try {
-      const response = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: ref }),
-      })
+      const response = await Promise.race([
+        fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: ref }),
+        }),
+        timeoutPromise,
+      ]) as Response
 
       if (!response.ok) {
         setProcessing(false)
-        window.location.href = '/payment/failed'
+        const data = await response.json()
+        const redirectUrl = data.status === 'cancelled' || data.status === 'abandoned'
+          ? `/payment/cancelled?orderId=${data.orderId ?? ''}`
+          : '/payment/failed'
+        window.location.href = redirectUrl
         return
       }
 
@@ -456,13 +470,24 @@ export default function CheckoutContent() {
       if (data.success) {
         dispatchCartUpdate()
         window.location.href = `/payment/success?orderId=${data.orderId}`
+      } else if (data.status === 'cancelled' || data.status === 'abandoned' || data.status === 'failed') {
+        setProcessing(false)
+        if (data.status === 'cancelled' || data.status === 'abandoned') {
+          window.location.href = `/payment/cancelled?orderId=${data.orderId ?? ''}`
+        } else {
+          window.location.href = '/payment/failed'
+        }
       } else {
         setProcessing(false)
         window.location.href = '/payment/failed'
       }
-    } catch {
+    } catch (error) {
       setProcessing(false)
-      window.location.href = '/payment/failed'
+      if (error instanceof Error && error.message === 'Verification timeout') {
+        setVerificationTimeout(true)
+      } else {
+        window.location.href = '/payment/failed'
+      }
     }
   }
 
@@ -474,9 +499,13 @@ export default function CheckoutContent() {
       if (processedRefs.current.has(ref)) return
       processedRefs.current.add(ref)
       verifyPayment(ref)
-    } else if (status === 'cancelled' || status === 'failed') {
+    } else if (status === 'cancelled' || status === 'failed' || status === 'abandoned') {
       setProcessing(false)
-      window.location.href = '/payment/failed'
+      if (status === 'cancelled' || status === 'abandoned') {
+        window.location.href = '/payment/cancelled'
+      } else {
+        window.location.href = '/payment/failed'
+      }
     } else if (searchParams.toString()) {
       setProcessing(false)
       if (!ref) window.location.href = '/payment/failed'
@@ -509,6 +538,42 @@ export default function CheckoutContent() {
   }
 
   if (processing) {
+    if (verificationTimeout) {
+      return (
+        <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
+            <Card variant="elevated" className="max-w-md mx-auto">
+              <CardContent className="py-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-deep-navy mb-2">
+                  Verification Timeout
+                </h3>
+                <p className="text-slate-600 mb-6">
+                  We could not confirm your payment status. Please check your orders page or contact support.
+                </p>
+                <div className="space-y-3">
+                  <Link href="/dashboard/customer/orders">
+                    <Button size="lg" className="w-full">
+                      Check My Orders
+                    </Button>
+                  </Link>
+                  <Link href="/contact">
+                    <Button variant="outline" size="lg" className="w-full">
+                      Contact Support
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )
+    }
+    
     return (
       <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">

@@ -1,5 +1,6 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -7,6 +8,9 @@ import { Badge } from '@/components/Badge'
 import NeedHelpButton from '@/components/NeedHelpButton'
 
 export default function PaymentFailed() {
+  const searchParams = useSearchParams()
+  const failureReason = searchParams.get('reason')
+
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,7 +29,11 @@ export default function PaymentFailed() {
               Transaction Could Not Complete
             </h1>
             <p className="text-rose-100 text-lg">
-              Your payment was not processed successfully
+              {failureReason === 'insufficient_funds'
+                ? 'Insufficient funds in your account'
+                : failureReason === 'card_declined'
+                ? 'Your card was declined'
+                : 'Your payment was not processed successfully'}
             </p>
           </div>
 
@@ -34,7 +42,7 @@ export default function PaymentFailed() {
             <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-6">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
                   <p className="text-sm font-medium text-rose-800 mb-2">
@@ -58,7 +66,7 @@ export default function PaymentFailed() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-rose-400 rounded-full"></span>
-                      Cancellation by user
+                      Technical error with payment provider
                     </li>
                   </ul>
                 </div>

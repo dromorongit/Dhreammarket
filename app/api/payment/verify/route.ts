@@ -87,46 +87,49 @@ export async function POST(request: NextRequest) {
     if (paymentStatus !== 'success') {
        // Payment failed, abandoned, or cancelled - mark as failed/cancelled and release any reserved stock
        const isAbandoned = paymentStatus === 'abandoned'
-       const failedStatus = isAbandoned ? 'CANCELLED' : 'FAILED'
-      
-      console.log('[Payment Verify API] Payment not successful - status:', paymentStatus, 'marking as:', failedStatus)
-      
-      await getPrisma().$transaction(async (prisma: any) => {
-        // Update payment status to FAILED or CANCELLED
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: failedStatus,
-            message: isAbandoned ? 'Payment abandoned by user' : paymentStatus || 'Payment verification failed',
-          },
-        })
+       const isCancelled = paymentStatus === 'cancelled'
+       const failedStatus = isAbandoned || isCancelled ? 'CANCELLED' : 'FAILED'
 
-        // Update order payment status to match
-        await prisma.order.update({
-          where: { id: payment.orderId },
-          data: {
-            paymentStatus: failedStatus,
-            status: 'CANCELLED',
-          },
-        })
-      })
+       console.log('[Payment Verify API] Payment not successful - status:', paymentStatus, 'marking as:', failedStatus)
 
-      // Release reserved stock for NORMAL orders (must run after transaction commits)
-      const orderForRelease = await getPrisma().order.findUnique({
-        where: { id: payment.orderId },
-      })
+       await getPrisma().$transaction(async (prisma: any) => {
+         // Update payment status to FAILED or CANCELLED
+         await prisma.payment.update({
+           where: { id: payment.id },
+           data: {
+             status: failedStatus,
+             message: isAbandoned ? 'Payment abandoned by user' : isCancelled ? 'Payment cancelled by user' : paymentStatus || 'Payment verification failed',
+           },
+         })
 
-      if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
-        releaseStock(payment.orderId).catch(err => {
-          console.error('Failed to release stock for failed payment:', err)
-        })
-      }
+         // Update order payment status to match
+         await prisma.order.update({
+           where: { id: payment.orderId },
+           data: {
+             paymentStatus: failedStatus,
+             status: 'CANCELLED',
+           },
+         })
+       })
 
-      return NextResponse.json({
-        success: false,
-        error: isAbandoned ? 'Payment was cancelled' : 'Payment verification failed',
-      }, { status: 400 })
-    }
+       // Release reserved stock for NORMAL orders (must run after transaction commits)
+       const orderForRelease = await getPrisma().order.findUnique({
+         where: { id: payment.orderId },
+       })
+
+       if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
+         releaseStock(payment.orderId).catch(err => {
+           console.error('Failed to release stock for failed payment:', err)
+         })
+       }
+
+       return NextResponse.json({
+         success: false,
+         status: paymentStatus,
+         orderId: payment.orderId,
+         error: isAbandoned || isCancelled ? 'Payment was cancelled' : 'Payment verification failed',
+       }, { status: 400 })
+     }
 
     // Payment was successful - update payment and order status, and calculate financials
     console.log('[Payment Verify API] Payment successful - processing order')
