@@ -490,8 +490,8 @@ export default function CheckoutContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
           <div className="animate-pulse space-y-8">
             <Skeleton className="h-10 w-32" />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -510,8 +510,8 @@ export default function CheckoutContent() {
 
   if (processing) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
           <Card variant="elevated" className="max-w-md mx-auto">
             <CardContent className="py-12 text-center">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center mx-auto mb-6 animate-pulse">
@@ -533,8 +533,8 @@ export default function CheckoutContent() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
           <EmptyState
             icon={
               <svg className="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -694,20 +694,20 @@ export default function CheckoutContent() {
                   onChange={(e) => handleInputChange('notes', e.target.value)}
                   rows={3}
                 />
-              </div>
+</div>
             </Card>
           </div>
 
-{/* Order Summary - Desktop: sticky in right column */}
-           <div className="mt-6 lg:mt-0 lg:col-span-4 w-full max-w-full">
-             <div className="lg:sticky lg:top-28 space-y-4">
-               <OrderSummaryDesktop items={cart.items} subtotal={subtotal} />
-               <div className="hidden lg:block">
-                 <PaymentSummaryDesktop total={total} subtotal={subtotal} processing={processing} onCheckout={handleCheckout} />
-               </div>
-             </div>
-           </div>
-         </div>
+          {/* Order Summary - Desktop: sticky in right column */}
+          <div className="mt-6 lg:mt-0 lg:col-span-4 w-full max-w-full">
+            <div className="lg:sticky lg:top-28 space-y-4">
+              <OrderSummaryDesktop items={cart.items} subtotal={subtotal} />
+              <div className="hidden lg:block">
+                <PaymentSummaryDesktop total={total} subtotal={subtotal} processing={processing} onCheckout={handleCheckout} />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Mobile: Collapsible Order Summary */}
         <div className="mt-6 lg:hidden">
