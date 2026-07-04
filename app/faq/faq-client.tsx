@@ -19,7 +19,7 @@ const faqData: FAQ[] = [
   {
     id: "1",
     category: "Customer FAQs",
-    question: "How do I creat an account?",
+    question: "How do I create an account?",
     answer:
       'Click on the "Sign Up" button in the top right corner of the homepage. Fill in your email, password, and select "Customer" as your role. Verify your email address to complete registration.',
   },

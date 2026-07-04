@@ -552,8 +552,8 @@ export default function CheckoutContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-28 lg:pb-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 pb-28 lg:pb-12 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -565,27 +565,29 @@ export default function CheckoutContent() {
           </h1>
           
           {/* Checkout Progress */}
-          <div className="mt-6 flex items-center justify-between max-w-2xl">
-            {CHECKOUT_STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold
-                  ${step.completed ? 'bg-emerald-500 text-white' : step.active ? 'bg-royal-blue text-white' : 'bg-slate-200 text-slate-500'}`}>
-                  {step.completed ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    step.id
+          <div className="mt-6 w-full overflow-x-auto scrollbar-hide">
+            <div className="flex items-center justify-between min-w-max px-4 py-3 gap-1 max-w-2xl">
+              {CHECKOUT_STEPS.map((step, index) => (
+                <div key={step.id} className="flex items-center flex-shrink-0">
+                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
+                    ${step.completed ? 'bg-emerald-500 text-white' : step.active ? 'bg-royal-blue text-white' : 'bg-slate-200 text-slate-500'}`}>
+                    {step.completed ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${step.active ? 'text-royal-blue' : step.completed ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    {step.name}
+                  </span>
+                  {index < CHECKOUT_STEPS.length - 1 && (
+                    <div className={`w-6 h-0.5 mx-2 flex-shrink-0 ${index < 1 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
                   )}
                 </div>
-                <span className={`ml-2 text-sm font-medium ${step.active ? 'text-royal-blue' : step.completed ? 'text-emerald-600' : 'text-slate-500'}`}>
-                  {step.name}
-                </span>
-                {index < CHECKOUT_STEPS.length - 1 && (
-                  <div className={`w-12 h-0.5 mx-4 ${index < 1 ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
@@ -696,13 +698,16 @@ export default function CheckoutContent() {
             </Card>
           </div>
 
-          {/* Order Summary - Desktop: sticky in right column */}
-          <div className="mt-6 lg:mt-0 lg:col-span-4">
-            <div className="lg:sticky lg:top-28">
-              <OrderSummaryDesktop items={cart.items} subtotal={subtotal} />
-            </div>
-          </div>
-        </div>
+{/* Order Summary - Desktop: sticky in right column */}
+           <div className="mt-6 lg:mt-0 lg:col-span-4 w-full max-w-full">
+             <div className="lg:sticky lg:top-28 space-y-4">
+               <OrderSummaryDesktop items={cart.items} subtotal={subtotal} />
+               <div className="hidden lg:block">
+                 <PaymentSummaryDesktop total={total} subtotal={subtotal} processing={processing} onCheckout={handleCheckout} />
+               </div>
+             </div>
+           </div>
+         </div>
 
         {/* Mobile: Collapsible Order Summary */}
         <div className="mt-6 lg:hidden">
@@ -719,11 +724,6 @@ export default function CheckoutContent() {
       {/* Mobile sticky Place Order button */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 lg:hidden z-50 shadow-lg">
         <PaymentSummaryMobile total={total} processing={processing} onCheckout={handleCheckout} />
-      </div>
-
-      {/* Desktop: Payment Summary */}
-      <div className="hidden lg:block lg:col-span-4 lg:sticky lg:top-28 mt-6">
-        <PaymentSummaryDesktop total={total} subtotal={subtotal} processing={processing} onCheckout={handleCheckout} />
       </div>
     </div>
   )
