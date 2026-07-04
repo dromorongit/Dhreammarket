@@ -202,22 +202,21 @@ export default function VendorOrdersPage() {
                   </button>
                 </div>
               </form>
-              <select
-              value={statusFilter}
-              onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-                setStatusFilter(e.target.value)
-                setPage(1)
-              }}
-              className="w-full sm:w-48 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
-            >
-              <option value="all">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+<select
+          value={statusFilter}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+            setStatusFilter(e.target.value)
+            setPage(1)
+          }}
+          className="w-full sm:w-48 rounded-2xl border border-slate-200 bg-white/80 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
+        >
+          <option value="all">All Statuses</option>
+          <option value="PROCESSING">Processing</option>
+          <option value="SHIPPED">Shipped</option>
+          <option value="DELIVERED">Delivered</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
             </div>
           </CardContent>
         </Card>

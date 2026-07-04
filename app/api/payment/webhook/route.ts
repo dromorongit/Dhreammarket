@@ -5,13 +5,39 @@ import { calculateFinancialBreakdown } from '@/lib/revenue'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { createAuditLog } from '@/lib/audit-log'
+import crypto from 'crypto'
+
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
+
+function verifyPaystackSignature(body: string, signature: string | undefined): boolean {
+  if (!signature) return false
+  if (!PAYSTACK_SECRET_KEY) return false
+  
+  const expectedSignature = crypto
+    .createHmac('sha512', PAYSTACK_SECRET_KEY)
+    .update(body)
+    .digest('hex')
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature, 'hex'),
+    Buffer.from(expectedSignature, 'hex')
+  )
+}
 
 // This endpoint is called by Paystack after a payment attempt
 // It serves as a webhook for payment status updates
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const reference = body.data?.reference
+    const signature = request.headers.get('x-paystack-signature')
+    const body = await request.text()
+    
+    if (!verifyPaystackSignature(body, signature)) {
+      console.error('[Payment Webhook] Invalid signature - rejecting webhook')
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+    
+    const parsedBody = JSON.parse(body)
+    const reference = parsedBody.data?.reference
 
     if (!reference) {
       return NextResponse.json({ error: 'Reference is required' }, { status: 400 })
