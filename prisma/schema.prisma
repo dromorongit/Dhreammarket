@@ -319,7 +319,7 @@ model Order {
   tax                   Float?
   orderType             OrderType              @default(NORMAL)
   fulfillmentStatus     OrderFulfillmentStatus @default(PENDING)
-  inventoryConsumedAt   DateTime?
+  inventoryConsumedAt DateTime?
   allocatedAt           DateTime?
   fulfillmentEvents     FulfillmentEvent[]
   items                 OrderItem[]
@@ -390,7 +390,7 @@ model ProductReview {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   order      Order?   @relation(fields: [orderId], references: [id])
-  product    Product  @relation(fields: [productId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
@@ -409,7 +409,7 @@ model VendorReview {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   order      Order?   @relation(fields: [orderId], references: [id])
-  store      Store    @relation(fields: [storeId], references: [id])
+  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
@@ -664,7 +664,7 @@ model RestockOrder {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   purchaseOrderId     String?
-  product             Product            @relation(fields: [productId], references: [id])
+  product             Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   purchaseOrder       PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id])
   vendor              User               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 

@@ -365,11 +365,15 @@ export default function SuperAdminHomepagePage() {
       const response = await fetch(`/api/homepage-sections/${id}`, {
         method: "DELETE",
       });
-      if (response.ok) {
-        setSections((prev) => prev.filter((s) => s.id !== id));
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Failed to delete section');
+        return;
       }
+      setSections((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error("Error deleting section:", err);
+      alert('Failed to delete section');
     }
   };
 

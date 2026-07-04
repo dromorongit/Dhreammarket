@@ -160,8 +160,18 @@ export default function SuperAdminBrandsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this brand? Products will be unlinked but not deleted.')) return
-    await fetch(`/api/super-admin/brands/${id}`, { method: 'DELETE' })
-    await fetchBrands()
+    try {
+      const response = await fetch(`/api/super-admin/brands/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (!response.ok) {
+        alert(data.error || 'Failed to delete brand')
+        return
+      }
+      await fetchBrands()
+    } catch (err) {
+      console.error('Error deleting brand:', err)
+      alert('Failed to delete brand')
+    }
   }
 
   const filteredBrands = brands.filter(
