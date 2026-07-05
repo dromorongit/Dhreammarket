@@ -363,13 +363,13 @@ export default function AdminOrdersPage() {
                              View Details
                            </button>
                          </Link>
-                         <button
-                           onClick={() => handleDeleteOrder(order.id)}
-                           className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
-                           title="Delete order"
-                         >
-                           Delete
-                         </button>
+<button
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="px-3 py-2 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px] touch-manipulation"
+                            title="Delete order"
+                          >
+                            Delete
+                          </button>
                        </div>
                     </div>
                   ))}
@@ -488,13 +488,13 @@ export default function AdminOrdersPage() {
                                   View Details
                                 </button>
                               </Link>
-                              <button
-                                onClick={() => handleDeleteOrder(order.id)}
-                                className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
-                                title="Delete order"
-                              >
-                                Delete
-                              </button>
+<button
+                                 onClick={() => handleDeleteOrder(order.id)}
+                                 className="text-sm text-red-600 hover:text-red-800 min-h-[44px] h-11 touch-manipulation"
+                                 title="Delete order"
+                               >
+                                 Delete
+                               </button>
                             </div>
                           )}
                         </td>
