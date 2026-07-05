@@ -3,6 +3,8 @@ import { getPrisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/adminAuth'
 import { HomepageSectionType } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 interface TrendingSettings {
   mode: 'MANUAL' | 'AUTOMATIC'
   maxProducts: number
