@@ -296,6 +296,7 @@ export default function CheckoutContent() {
   const [error, setError] = useState<string | null>(null)
   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
   const [verificationTimeout, setVerificationTimeout] = useState(false)
+  const [processingScreenTimeout, setProcessingScreenTimeout] = useState(false)
   
   const { cart: contextCart } = useCart()
   const paymentStatus = searchParams.get('status')
@@ -512,6 +513,15 @@ export default function CheckoutContent() {
     }
   }, [searchParams])
 
+  useEffect(() => {
+    if (processing && !verificationTimeout) {
+      const timer = setTimeout(() => {
+        setProcessingScreenTimeout(true)
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [processing, verificationTimeout])
+
   const subtotal = cart?.total ?? 0
   const total = subtotal
   const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
@@ -538,7 +548,7 @@ export default function CheckoutContent() {
   }
 
   if (processing) {
-    if (verificationTimeout) {
+    if (verificationTimeout || processingScreenTimeout) {
       return (
         <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
@@ -550,10 +560,10 @@ export default function CheckoutContent() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-deep-navy mb-2">
-                  Verification Timeout
+                  Payment Verification Taking Too Long
                 </h3>
                 <p className="text-slate-600 mb-6">
-                  We could not confirm your payment status. Please check your orders page or contact support.
+                  We could not confirm your payment status. Please check your orders or return to cart.
                 </p>
                 <div className="space-y-3">
                   <Link href="/dashboard/customer/orders">
@@ -561,9 +571,9 @@ export default function CheckoutContent() {
                       Check My Orders
                     </Button>
                   </Link>
-                  <Link href="/contact">
+                  <Link href="/cart">
                     <Button variant="outline" size="lg" className="w-full">
-                      Contact Support
+                      Return to Cart
                     </Button>
                   </Link>
                 </div>
@@ -573,7 +583,7 @@ export default function CheckoutContent() {
         </div>
       )
     }
-    
+
     return (
       <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
@@ -743,7 +753,7 @@ export default function CheckoutContent() {
                   required
                 />
                 
-                <Input
+<Input
                   label="Delivery Address"
                   placeholder="Street address, apartment, etc."
                   value={formData.address}
@@ -759,7 +769,7 @@ export default function CheckoutContent() {
                   onChange={(e) => handleInputChange('notes', e.target.value)}
                   rows={3}
                 />
-</div>
+              </div>
             </Card>
           </div>
 
