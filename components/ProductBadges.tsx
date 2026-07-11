@@ -73,35 +73,46 @@ if (!discountPercentage && !isFlashSale && !isSponsored && !isFeatured &&
 
   const rightBadges = []
 
-  if (availabilityType === 'PREORDER') {
-    rightBadges.push({
-      key: 'preorder',
-      content: 'PREORDER',
-    })
-    if (expectedArrivalDate) {
-      rightBadges.push({
-        key: 'arrival',
-        type: 'date',
-        content: `Arrives ${new Date(expectedArrivalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-        variant: 'arrival' as const,
-      })
-    }
-  }
+if (availabilityType === 'PREORDER') {
+     rightBadges.push({
+       key: 'preorder',
+       content: 'PREORDER',
+     })
+     const arrivalDate = expectedArrivalDate ? new Date(expectedArrivalDate) : null
+     const hasValidDate = arrivalDate && !isNaN(arrivalDate.getTime())
+     if (hasValidDate) {
+       rightBadges.push({
+         key: 'arrival',
+         type: 'date',
+         content: `Arrives ${arrivalDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+         variant: 'arrival' as const,
+       })
+     }
+   }
 
-  if (availabilityType === 'BACKORDER') {
-    rightBadges.push({
-      key: 'backorder',
-      content: 'BACKORDER',
-    })
-    if (expectedRestockDate) {
-      rightBadges.push({
-        key: 'restock',
-        type: 'date',
-        content: `Restocks ${new Date(expectedRestockDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-        variant: 'restock' as const,
-      })
-    }
-  }
+if (availabilityType === 'BACKORDER') {
+     rightBadges.push({
+       key: 'backorder',
+       content: 'BACKORDER',
+     })
+     const restockDate = expectedRestockDate ? new Date(expectedRestockDate) : null
+     const hasValidRestockDate = restockDate && !isNaN(restockDate.getTime())
+     if (hasValidRestockDate) {
+       rightBadges.push({
+         key: 'restock',
+         type: 'date',
+         content: `Restocks ${restockDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+         variant: 'restock' as const,
+       })
+     } else {
+       rightBadges.push({
+         key: 'backorder-pending',
+         type: 'date',
+         content: 'On backorder',
+         variant: 'restock' as const,
+       })
+     }
+   }
 
   if (availabilityType === 'IN_STOCK' && (stock ?? 0) === 0) {
     rightBadges.push({
@@ -188,8 +199,8 @@ export function calculateProductBadges(product: {
     isSponsored: product.isSponsored ?? false,
     isFeatured: product.isFeatured ?? false,
     availabilityType: product.availabilityType,
-    expectedArrivalDate: product.expectedArrivalDate,
-    expectedRestockDate: product.expectedRestockDate,
+    expectedArrivalDate: product.expectedArrivalDate && product.expectedArrivalDate.trim() !== '' ? product.expectedArrivalDate : null,
+    expectedRestockDate: product.expectedRestockDate && product.expectedRestockDate.trim() !== '' ? product.expectedRestockDate : null,
     stock: product.stock ?? 0,
   }
 }

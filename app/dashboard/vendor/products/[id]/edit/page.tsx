@@ -247,8 +247,8 @@ export default function EditProduct() {
       return
     }
 
-    if (formData.availabilityType === 'PREORDER' && !formData.expectedArrivalDate) {
-      setErrors({ expectedArrivalDate: 'Expected arrival date is required for preorder items' })
+    if (formData.availabilityType === 'PREORDER' && formData.expectedArrivalDate && isNaN(new Date(formData.expectedArrivalDate).getTime())) {
+      setErrors({ expectedArrivalDate: 'Invalid expected arrival date' })
       setSaving(false)
       return
     }
@@ -259,23 +259,23 @@ export default function EditProduct() {
       return
     }
 
-try {
-       const productData = {
-         ...formData,
-         price: parseFloat(formData.price),
-         stock: parseInt(formData.stock),
-         lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
-         salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
-         dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
-         brandId: formData.brandId || null,
-         imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
-         variants: formData.variants.filter(v => v.color || v.size || v.age),
-         expectedArrivalDate: formData.expectedArrivalDate || null,
-         estimatedFulfillmentDays: formData.estimatedFulfillmentDays || null,
-         preOrderNotes: formData.preOrderNotes || null,
-         expectedRestockDate: formData.expectedRestockDate || null,
-         backOrderNotes: formData.backOrderNotes || null,
-       }
+    try {
+      const productData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
+        salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
+        dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
+        brandId: formData.brandId || null,
+        imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
+        variants: formData.variants.filter(v => v.color || v.size || v.age),
+        expectedArrivalDate: formData.expectedArrivalDate || null,
+        estimatedFulfillmentDays: formData.estimatedFulfillmentDays || null,
+        preOrderNotes: formData.preOrderNotes || null,
+        expectedRestockDate: formData.expectedRestockDate || null,
+        backOrderNotes: formData.backOrderNotes || null,
+      }
 
       const response = await fetch(`/api/products/${productId}`, {
         method: 'PUT',
@@ -421,37 +421,37 @@ try {
                     placeholder="0.00"
                   />
                 </div>
-<div>
-                   <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
-                     Stock Quantity *
-                   </label>
-                   <Input
-                     id="stock"
-                     name="stock"
-                     type="number"
-                     min="0"
-                     required
-                     value={formData.stock}
-                     onChange={handleChange}
-                     placeholder="0"
-                   />
-                 </div>
-                 <div>
-                   <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 mb-2">
-                     Low Stock Threshold
-                   </label>
-                   <Input
-                     id="lowStockThreshold"
-                     name="lowStockThreshold"
-                     type="number"
-                     min="0"
-                     value={formData.lowStockThreshold}
-                     onChange={handleChange}
-                     placeholder="5"
-                   />
-                   <p className="text-xs text-gray-500 mt-1">Alert when stock falls to this level</p>
-                 </div>
-               </div>
+                <div>
+                  <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
+                    Stock Quantity *
+                  </label>
+                  <Input
+                    id="stock"
+                    name="stock"
+                    type="number"
+                    min="0"
+                    required
+                    value={formData.stock}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lowStockThreshold" className="block text-sm font-medium text-gray-700 mb-2">
+                    Low Stock Threshold
+                  </label>
+                  <Input
+                    id="lowStockThreshold"
+                    name="lowStockThreshold"
+                    type="number"
+                    min="0"
+                    value={formData.lowStockThreshold}
+                    onChange={handleChange}
+                    placeholder="5"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Alert when stock falls to this level</p>
+                </div>
+              </div>
 
               <div>
                 <label htmlFor="availabilityType" className="block text-sm font-medium text-gray-700 mb-2">
@@ -472,27 +472,27 @@ try {
                 </select>
               </div>
 
-{formData.availabilityType === 'PREORDER' && (
-                 <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                   <h4 className="text-sm font-medium text-blue-900">Pre-order Information</h4>
-                   <div>
-                     <label htmlFor="expectedArrivalDate" className="block text-xs text-gray-600 mb-1">
-                       Expected Arrival Date
-                     </label>
-                     <Input
-                       id="expectedArrivalDate"
-                       name="expectedArrivalDate"
-                       type="date"
-                       required
-                       value={formData.expectedArrivalDate}
-                       onChange={handleChange}
-                       className="w-full"
-                     />
-                   </div>
-                   {errors.expectedArrivalDate && (
-                     <div className="text-red-600 text-sm">{errors.expectedArrivalDate}</div>
-                   )}
-                   <div>
+              {formData.availabilityType === 'PREORDER' && (
+                <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900">Pre-order Information</h4>
+                  <div>
+                    <label htmlFor="expectedArrivalDate" className="block text-xs text-gray-600 mb-1">
+                      Expected Arrival Date
+                    </label>
+                    <Input
+                      id="expectedArrivalDate"
+                      name="expectedArrivalDate"
+                      type="date"
+                      value={formData.expectedArrivalDate}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Optional — leave blank if there is no fixed arrival date</p>
+                  </div>
+                  {errors.expectedArrivalDate && (
+                    <div className="text-red-600 text-sm">{errors.expectedArrivalDate}</div>
+                  )}
+                  <div>
                     <label htmlFor="estimatedFulfillmentDays" className="block text-xs text-gray-600 mb-1">
                       Estimated Fulfillment Days
                     </label>
@@ -524,27 +524,27 @@ try {
                 </div>
               )}
 
-{formData.availabilityType === 'BACKORDER' && (
-                 <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                   <h4 className="text-sm font-medium text-amber-900">Backorder Information</h4>
-                   <div>
-                     <label htmlFor="expectedRestockDate" className="block text-xs text-gray-600 mb-1">
-                       Expected Restock Date
-                     </label>
-                     <Input
-                       id="expectedRestockDate"
-                       name="expectedRestockDate"
-                       type="date"
-                       required
-                       value={formData.expectedRestockDate}
-                       onChange={handleChange}
-                       className="w-full"
-                     />
-                   </div>
-                   {errors.expectedRestockDate && (
-                     <div className="text-red-600 text-sm">{errors.expectedRestockDate}</div>
-                   )}
-                   <div>
+              {formData.availabilityType === 'BACKORDER' && (
+                <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-amber-900">Backorder Information</h4>
+                  <div>
+                    <label htmlFor="expectedRestockDate" className="block text-xs text-gray-600 mb-1">
+                      Expected Restock Date
+                    </label>
+                    <Input
+                      id="expectedRestockDate"
+                      name="expectedRestockDate"
+                      type="date"
+                      required
+                      value={formData.expectedRestockDate}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                  </div>
+                  {errors.expectedRestockDate && (
+                    <div className="text-red-600 text-sm">{errors.expectedRestockDate}</div>
+                  )}
+                  <div>
                     <label htmlFor="backOrderNotes" className="block text-xs text-gray-600 mb-1">
                       Backorder Notes
                     </label>

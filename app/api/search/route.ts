@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
+import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 const prisma = getPrisma()
 
@@ -48,30 +49,40 @@ export async function GET(request: NextRequest) {
             { brand: { contains: query, mode: 'insensitive' } },
           ],
         },
-include: {
-            images: { take: 1 },
-            store: { select: { id: true, slug: true, name: true, isVerified: true, badgeTier: true } },
-            category: { select: { id: true, name: true } },
-          },
+        include: {
+          images: { take: 1 },
+          store: { select: { id: true, slug: true, name: true, isVerified: true, badgeTier: true } },
+          category: { select: { id: true, name: true } },
+        },
         take: typeFilter === 'products' ? 20 : LIMIT_PER_TYPE,
         orderBy: { createdAt: 'desc' },
       })
 
-results.products = products.map((p) => ({
-        id: p.id,
-        slug: p.slug,
-        name: p.name,
-        brand: p.brand,
-        price: p.price,
-        salesPrice: p.salesPrice,
-        dealsPrice: p.dealsPrice,
-        stock: p.stock,
-        image: p.images?.[0]?.url || null,
-        store: p.store,
-        category: p.category,
-        type: 'product',
-        availabilityType: p.availabilityType,
-      }))
+      // Check and update expired pre-orders
+      const preOrderProductIds = products
+        .filter((p) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
+        .map((p) => p.id)
+      const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderProductIds)
+
+      results.products = products.map((p) => {
+        const isExpired = expiredIds.has(p.id) && p.availabilityType === 'PREORDER'
+        return {
+          id: p.id,
+          slug: p.slug,
+          name: p.name,
+          brand: p.brand,
+          price: p.price,
+          salesPrice: p.salesPrice,
+          dealsPrice: p.dealsPrice,
+          stock: p.stock,
+          image: p.images?.[0]?.url || null,
+          store: p.store,
+          category: p.category,
+          type: 'product',
+          availabilityType: isExpired ? 'IN_STOCK' : p.availabilityType,
+          expectedArrivalDate: isExpired ? null : p.expectedArrivalDate,
+        }
+      })
     }
 
     // Search Vendors (Stores)
@@ -92,7 +103,7 @@ results.products = products.map((p) => ({
         orderBy: { createdAt: 'desc' },
       })
 
-results.vendors = vendors.map((v) => ({
+      results.vendors = vendors.map((v) => ({
         id: v.id,
         slug: v.slug,
         name: v.name,

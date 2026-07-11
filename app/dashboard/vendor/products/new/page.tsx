@@ -160,8 +160,8 @@ export default function NewProduct() {
       return
     }
 
-    if (formData.availabilityType === 'PREORDER' && !formData.expectedArrivalDate) {
-      setErrors({ expectedArrivalDate: 'Expected arrival date is required for preorder items' })
+    if (formData.availabilityType === 'PREORDER' && formData.expectedArrivalDate && isNaN(new Date(formData.expectedArrivalDate).getTime())) {
+      setErrors({ expectedArrivalDate: 'Invalid expected arrival date' })
       setSaving(false)
       return
     }
@@ -369,27 +369,27 @@ export default function NewProduct() {
                 </select>
               </div>
 
-{formData.availabilityType === 'PREORDER' && (
-                 <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                   <h4 className="text-sm font-medium text-blue-900">Pre-order Information</h4>
-                   <div>
-                     <label htmlFor="expectedArrivalDate" className="block text-xs text-gray-600 mb-1">
-                       Expected Arrival Date
-                     </label>
-                     <Input
-id="expectedArrivalDate"
-                        name="expectedArrivalDate"
-                        type="date"
-                        required
-                        value={formData.expectedArrivalDate}
-                        onChange={handleChange}
-                        className="w-full"
-                      />
-                    </div>
-                    {errors.expectedArrivalDate && (
-                      <div className="text-red-600 text-sm">{errors.expectedArrivalDate}</div>
-                    )}
-                    <div>
+              {formData.availabilityType === 'PREORDER' && (
+                <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900">Pre-order Information</h4>
+                  <div>
+                    <label htmlFor="expectedArrivalDate" className="block text-xs text-gray-600 mb-1">
+                      Expected Arrival Date
+                    </label>
+                    <Input
+                      id="expectedArrivalDate"
+                      name="expectedArrivalDate"
+                      type="date"
+                      value={formData.expectedArrivalDate}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Optional — leave blank if there is no fixed arrival date</p>
+                  </div>
+                  {errors.expectedArrivalDate && (
+                    <div className="text-red-600 text-sm">{errors.expectedArrivalDate}</div>
+                  )}
+                  <div>
                     <label htmlFor="estimatedFulfillmentDays" className="block text-xs text-gray-600 mb-1">
                       Estimated Fulfillment Days
                     </label>
@@ -421,27 +421,27 @@ id="expectedArrivalDate"
                 </div>
               )}
 
-{formData.availabilityType === 'BACKORDER' && (
-                 <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                   <h4 className="text-sm font-medium text-amber-900">Backorder Information</h4>
-                   <div>
-                     <label htmlFor="expectedRestockDate" className="block text-xs text-gray-600 mb-1">
-                       Expected Restock Date
-                     </label>
-                     <Input
-id="expectedRestockDate"
-                        name="expectedRestockDate"
-                        type="date"
-                        required
-                        value={formData.expectedRestockDate}
-                        onChange={handleChange}
-                        className="w-full"
-                      />
-                    </div>
-                    {errors.expectedRestockDate && (
-                      <div className="text-red-600 text-sm">{errors.expectedRestockDate}</div>
-                    )}
-                    <div>
+              {formData.availabilityType === 'BACKORDER' && (
+                <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-amber-900">Backorder Information</h4>
+                  <div>
+                    <label htmlFor="expectedRestockDate" className="block text-xs text-gray-600 mb-1">
+                      Expected Restock Date
+                    </label>
+                    <Input
+                      id="expectedRestockDate"
+                      name="expectedRestockDate"
+                      type="date"
+                      required
+                      value={formData.expectedRestockDate}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                  </div>
+                  {errors.expectedRestockDate && (
+                    <div className="text-red-600 text-sm">{errors.expectedRestockDate}</div>
+                  )}
+                  <div>
                     <label htmlFor="backOrderNotes" className="block text-xs text-gray-600 mb-1">
                       Backorder Notes
                     </label>

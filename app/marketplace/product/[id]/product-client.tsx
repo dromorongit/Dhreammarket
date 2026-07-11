@@ -455,10 +455,22 @@ export default function ProductClient() {
               </div>
 
 <Badge variant={stockBadge.variant} size="sm" className="mb-4">
-                 {stockBadge.label}
-               </Badge>
+                  {stockBadge.label}
+                </Badge>
 
-               {stockBadge.variant === 'success' && availableStock > 0 && (
+{product.availabilityType === 'PREORDER' && (() => {
+    const arrivalDate = product.expectedArrivalDate ? new Date(product.expectedArrivalDate) : null
+    const hasValidDate = arrivalDate && !isNaN(arrivalDate.getTime())
+    return hasValidDate ? (
+      <p className="text-xs text-blue-600 mb-4">
+        Expected {arrivalDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+      </p>
+    ) : (
+      <p className="text-xs text-blue-600 mb-4">Available for pre-order</p>
+    )
+  })()}
+
+                {stockBadge.variant === 'success' && availableStock > 0 && (
                  <p className="text-sm text-gray-500 mt-1">{availableStock} items available</p>
                )}
 

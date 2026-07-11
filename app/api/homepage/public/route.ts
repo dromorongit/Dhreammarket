@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
+import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,11 +62,27 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
     take: 100,
   })
 
+  // Check and update expired pre-orders
+  const preOrderIds = products
+    .filter((p) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
+    .map((p) => p.id)
+  const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderIds)
+
   return products
     .map((product) => {
       const salesScore = (product._count?.orderItems ?? 0) * DEFAULT_WEIGHTS.recentSales
       const reviewScore = (product.averageRating ?? 0) * DEFAULT_WEIGHTS.averageRating
       const reviewCountScore = (product._count?.productReviews ?? 0) * DEFAULT_WEIGHTS.recentReviews * 0.1
+
+      // If this was an expired pre-order, update the in-memory object
+      if (expiredIds.has(product.id) && product.availabilityType === 'PREORDER') {
+        return {
+          ...product,
+          trendingScore: salesScore + reviewScore + reviewCountScore,
+          availabilityType: 'IN_STOCK',
+          expectedArrivalDate: null,
+        }
+      }
 
       return {
         ...product,
@@ -192,8 +209,9 @@ export async function GET(_request: NextRequest) {
     console.error('Error fetching public homepage sections (outer):', error)
   }
 
-  const formatted = await Promise.all((sections || []).map(async (section) => {
+const formatted = await Promise.all((sections || []).map(async (section) => {
     let sortedProducts: any[] = []
+    const now = new Date()
     
     if (section.type === 'TRENDING_NOW' && prismaInstance) {
       const settings = section.settings as any
@@ -213,6 +231,15 @@ export async function GET(_request: NextRequest) {
         .map((sp: any) => sp.product)
         .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
     }
+
+    // Check and update expired pre-orders in this section
+    const preOrderIds = sortedProducts
+      .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
+      .map((p: any) => p.id)
+    const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderIds)
+    sortedProducts = sortedProducts.map((p: any) =>
+      p && expiredIds?.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
+    )
 
     return {
       id: section.id,

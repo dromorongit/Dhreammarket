@@ -5,6 +5,7 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-allocation-engine'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
+import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 export const runtime = 'nodejs'
 
@@ -85,9 +86,25 @@ store: {
        },
      })
 
-     if (!product) {
-       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-     }
+if (!product) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+      }
+
+    // Check if product is an expired pre-order and update it
+    if (product.availabilityType === 'PREORDER' && product.expectedArrivalDate) {
+      const arrivalDate = new Date(product.expectedArrivalDate)
+      if (arrivalDate < new Date()) {
+        await getPrisma().product.update({
+          where: { id: product.id },
+          data: {
+            availabilityType: 'IN_STOCK',
+            expectedArrivalDate: null,
+          },
+        })
+        product.availabilityType = 'IN_STOCK'
+        product.expectedArrivalDate = null
+      }
+    }
 
     // Calculate average rating
     const reviews = product.productReviews || []
@@ -273,12 +290,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid availability type for this store' }, { status: 400 })
     }
 
-    // Validate preorder/backorder specific fields
-    if (finalAvailabilityType === 'PREORDER') {
-      if (!expectedArrivalDate) {
-        return NextResponse.json({ error: 'Expected arrival date is required for preorder items' }, { status: 400 })
-      }
-      if (isNaN(new Date(expectedArrivalDate).getTime())) {
+if (finalAvailabilityType === 'PREORDER') {
+      if (expectedArrivalDate && isNaN(new Date(expectedArrivalDate).getTime())) {
         return NextResponse.json({ error: 'Invalid expected arrival date' }, { status: 400 })
       }
     }

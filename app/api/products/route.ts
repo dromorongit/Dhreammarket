@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { slugify } from '@/lib/slugify'
+import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 export const dynamic = 'force-dynamic'
 
@@ -141,10 +142,21 @@ export async function GET(request: NextRequest) {
       availableQuantity: p.stock - p.reservedQuantity,
     }))
 
+    // Check and update expired pre-orders
+    const preOrderProductIds = productsWithCachedRatings
+      .filter((p: any) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
+      .map((p: any) => p.id)
+    const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderProductIds)
+
+    // Update in-memory objects for expired pre-orders to reflect IN_STOCK
+    const finalProducts = productsWithCachedRatings.map((p: any) =>
+      expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
+    )
+
     const totalPages = Math.ceil(total / limit)
 
     const response = NextResponse.json({ 
-      products: productsWithCachedRatings,
+      products: finalProducts,
       pagination: { page, limit, total, totalPages }
     })
     // Prevent caching
@@ -268,10 +280,7 @@ export async function POST(request: NextRequest) {
 
     // Validate preorder/backorder specific fields
     if (finalAvailabilityType === 'PREORDER') {
-      if (!expectedArrivalDate) {
-        return NextResponse.json({ error: 'Expected arrival date is required for preorder items' }, { status: 400 })
-      }
-      if (isNaN(new Date(expectedArrivalDate).getTime())) {
+      if (expectedArrivalDate && isNaN(new Date(expectedArrivalDate).getTime())) {
         return NextResponse.json({ error: 'Invalid expected arrival date' }, { status: 400 })
       }
     }
