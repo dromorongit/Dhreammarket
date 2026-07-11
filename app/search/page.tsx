@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import WishlistButton from '@/components/WishlistButton'
 
 type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands'
 
@@ -79,37 +80,54 @@ const TABS: { key: SearchTab; label: string }[] = [
 ]
 
 function SearchPageContent() {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const initialQuery = searchParams.get('q') || ''
+   const searchParams = useSearchParams()
+   const router = useRouter()
+   const initialQuery = searchParams.get('q') || ''
 
-  const [query, setQuery] = useState(initialQuery)
-  const [activeTab, setActiveTab] = useState<SearchTab>('all')
-  const [results, setResults] = useState<SearchResults | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [hasSearched, setHasSearched] = useState(!!initialQuery)
+   const [query, setQuery] = useState(initialQuery)
+   const [activeTab, setActiveTab] = useState<SearchTab>('all')
+   const [results, setResults] = useState<SearchResults | null>(null)
+   const [loading, setLoading] = useState(false)
+   const [hasSearched, setHasSearched] = useState(!!initialQuery)
+   const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
-  const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults(null)
-      setHasSearched(false)
-      return
-    }
+   const performSearch = useCallback(async (searchQuery: string) => {
+     if (!searchQuery.trim()) {
+       setResults(null)
+       setHasSearched(false)
+       return
+     }
 
-    setLoading(true)
-    setHasSearched(true)
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setResults(data)
-      }
-    } catch (error) {
-      console.error('Search error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+     setLoading(true)
+     setHasSearched(true)
+     try {
+       const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+       if (res.ok) {
+         const data = await res.json()
+         setResults(data)
+         const productIds = data.results.products.map((p: SearchProduct) => p.id).join(',')
+         if (productIds) {
+           fetchWishlistStatus(productIds)
+         }
+       }
+     } catch (error) {
+       console.error('Search error:', error)
+     } finally {
+       setLoading(false)
+     }
+   }, [])
+
+   const fetchWishlistStatus = useCallback(async (productIds: string) => {
+     try {
+       const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+       if (response.ok) {
+         const data = await response.json()
+         setWishlistedProductIds(new Set(data.productIds ?? []))
+       }
+     } catch (error) {
+       console.error('Error fetching wishlist status:', error)
+     }
+   }, [])
 
   useEffect(() => {
     if (initialQuery) {
@@ -524,6 +542,12 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
     <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
       <Card variant="elevated" className="group flex flex-col overflow-hidden h-full">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+          <WishlistButton
+            productId={product.id}
+            initialIsWishlisted={false}
+            size="sm"
+            className="absolute top-2 right-2 z-10"
+          />
           {product.image ? (
             <Image
               src={product.image}
@@ -549,34 +573,34 @@ function CompactProductCard({ product }: { product: SearchProduct }) {
             <span className="text-[11px] font-bold text-royal-blue">
               {formatPrice(effectivePrice)}
             </span>
-{(badgeData.discountPercentage ?? 0) > 0 && (
-               <span className="text-[10px] text-slate-400 line-through">
-                 {formatPrice(product.price)}
-               </span>
+            {(badgeData.discountPercentage ?? 0) > 0 && (
+              <span className="text-[10px] text-slate-400 line-through">
+                {formatPrice(product.price)}
+              </span>
             )}
           </div>
-{product.store && (
-              <div className="flex items-center gap-1 min-w-0">
-                <p className="text-[10px] text-slate-500 truncate">
-                  {product.store.name}
-                </p>
-                {(() => {
-                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                  if (badgeInfo) {
-                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                    return (
-                      <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
-                    )
-                  }
-                  if (product.store.isVerified) {
-                    return (
-                      <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
-                    )
-                  }
-                  return null
-                })()}
-              </div>
-            )}
+          {product.store && (
+            <div className="flex items-center gap-1 min-w-0">
+              <p className="text-[10px] text-slate-500 truncate">
+                {product.store.name}
+              </p>
+              {(() => {
+                const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                if (badgeInfo) {
+                  const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                  return (
+                    <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                  )
+                }
+                if (product.store.isVerified) {
+                  return (
+                    <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                  )
+                }
+                return null
+              })()}
+            </div>
+          )}
         </div>
       </Card>
     </Link>

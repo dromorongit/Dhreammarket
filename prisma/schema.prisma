@@ -22,6 +22,7 @@ model User {
   auditLogs                AuditLog[]
   authTokens               AuthToken[]
   cart                     Cart?
+  wishlist               Wishlist?
   feedbacks                Feedback[]
   homepageSections         HomepageSectionVendor[]
   notifications            Notification[]
@@ -199,6 +200,7 @@ model Product {
   expectedRestockDate      DateTime?
   backOrderNotes           String?
   cartItems                CartItem[]
+  wishlistItems          WishlistItem[]
   homepageSections         HomepageSectionProduct[]
   orderItems               OrderItem[]
   categoryAssignments      ProductCategoryAssignment[]
@@ -284,6 +286,29 @@ model CartItem {
 
   @@unique([cartId, productId, productVariantId])
   @@map("cart_items")
+}
+
+model Wishlist {
+  id        String         @id @default(cuid())
+  userId    String         @unique
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  items     WishlistItem[]
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  productId  String
+  createdAt  DateTime @default(now())
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productId])
+  @@map("wishlist_items")
 }
 
 model Order {

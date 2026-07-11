@@ -10,7 +10,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
-import { truncateVendorName } from '@/lib/utils'
+import WishlistButton from '@/components/WishlistButton'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
@@ -140,6 +140,7 @@ export default function ProductClient() {
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [showFloatingCTA, setShowFloatingCTA] = useState(false)
+  const [isWishlisted, setIsWishlisted] = useState(false)
 
   const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -177,26 +178,40 @@ export default function ProductClient() {
     }
   }, [productId])
 
-  useEffect(() => {
-    fetchProduct()
-  }, [fetchProduct])
+useEffect(() => {
+     fetchProduct()
+     fetchWishlistStatus()
+   }, [fetchProduct])
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setShowFloatingCTA(!entry.isIntersecting)
-      },
-      { threshold: 0 }
-    )
+   useEffect(() => {
+     const observer = new IntersectionObserver(
+       ([entry]) => {
+         setShowFloatingCTA(!entry.isIntersecting)
+       },
+       { threshold: 0 }
+     )
 
-    if (addToCartButtonRef.current) {
-      observer.observe(addToCartButtonRef.current)
-    }
+     if (addToCartButtonRef.current) {
+       observer.observe(addToCartButtonRef.current)
+     }
 
-    return () => observer.disconnect()
-  }, [])
+     return () => observer.disconnect()
+   }, [])
 
-  const fetchReviews = useCallback(async () => {
+   const fetchWishlistStatus = useCallback(async () => {
+     if (!productId) return
+     try {
+       const response = await fetch(`/api/wishlist/check?productIds=${productId}`)
+       if (response.ok) {
+         const data = await response.json()
+         setIsWishlisted(data.productIds?.includes(productId) ?? false)
+       }
+     } catch {
+       console.error('Failed to fetch wishlist status')
+     }
+   }, [productId])
+
+   const fetchReviews = useCallback(async () => {
     if (!productId) return
 
     try {
@@ -424,6 +439,10 @@ export default function ProductClient() {
                 >
                   See all reviews
                 </button>
+              </div>
+
+              <div className="flex items-center gap-2 mb-4">
+                <WishlistButton productId={product.id} initialIsWishlisted={isWishlisted} size="md" />
               </div>
 
               <div className="mb-4">

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
+import WishlistButton from '@/components/WishlistButton'
 
 interface SearchProduct {
   id: string

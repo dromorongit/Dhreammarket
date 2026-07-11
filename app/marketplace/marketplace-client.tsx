@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -15,6 +15,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import WishlistButton from '@/components/WishlistButton'
 
 interface Product {
   id: string
@@ -100,6 +101,7 @@ function MarketplaceContent() {
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'products' | 'vendors'>('products')
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (viewMode === 'products') {
@@ -114,10 +116,12 @@ function MarketplaceContent() {
     fetchVendorCategories()
     fetchCounts()
     fetchVendors()
+    fetchWishlistStatus()
   }, [])
 
   useEffect(() => {
     fetchProducts()
+    fetchWishlistStatus()
   }, [productPagination.page])
 
   useEffect(() => {
@@ -242,6 +246,20 @@ function MarketplaceContent() {
       console.error('Error fetching counts:', error)
     }
   }
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (products.length === 0) return
+    try {
+      const productIds = products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products])
 
   const addToCart = async (productId: string) => {
     setAddingToCart(prev => new Set(prev).add(productId))
@@ -562,6 +580,12 @@ function MarketplaceContent() {
                     >
                       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
                         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+                          <WishlistButton
+                            productId={product.id}
+                            initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                            size="sm"
+                            className="absolute top-2 right-2 z-10"
+                          />
                           {(product.images?.length ?? 0) > 0 ? (
                             <Image
                               src={product.images![0].url}

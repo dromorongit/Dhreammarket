@@ -1,0 +1,106 @@
+'use client'
+
+import { useState } from 'react'
+import { FiHeart } from 'react-icons/fi'
+import { handleAuthRedirect } from '@/lib/CartContext'
+
+interface WishlistButtonProps {
+  productId: string
+  initialIsWishlisted?: boolean
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+}
+
+export default function WishlistButton({
+  productId,
+  initialIsWishlisted = false,
+  size = 'md',
+  className = '',
+}: WishlistButtonProps) {
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted)
+  const [loading, setLoading] = useState(false)
+
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 w-10',
+    lg: 'w-12 h-12',
+  }
+
+  const iconSizes = {
+    sm: 'w-4 h-4',
+    md: 'w-5 h-5',
+    lg: 'w-6 h-6',
+  }
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    if (loading) return
+
+    const previousState = isWishlisted
+
+    try {
+      const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('token='))
+        ?.split('=')[1]
+
+      if (!token) {
+        handleAuthRedirect()
+        return
+      }
+
+      setIsWishlisted(!isWishlisted)
+      setLoading(true)
+
+      if (previousState) {
+        const response = await fetch(`/api/wishlist/${productId}`, {
+          method: 'DELETE',
+        })
+
+        if (response.status === 401) {
+          setIsWishlisted(previousState)
+          handleAuthRedirect()
+          return
+        }
+      } else {
+        const response = await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ productId }),
+        })
+
+        if (response.status === 401) {
+          setIsWishlisted(previousState)
+          handleAuthRedirect()
+          return
+        }
+        if (!response.ok) {
+          setIsWishlisted(previousState)
+          throw new Error('Failed to add to wishlist')
+        }
+      }
+    } catch (error) {
+      setIsWishlisted(previousState)
+      console.error('Error toggling wishlist:', error)
+      alert('Failed to update wishlist')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className={`${sizeClasses[size]} rounded-full bg-white/90 shadow-sm hover:bg-white transition-colors flex items-center justify-center ${className}`}
+      aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+    >
+      <FiHeart
+        className={`${iconSizes[size]} ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-slate-400'}`}
+      />
+    </button>
+  )
+}

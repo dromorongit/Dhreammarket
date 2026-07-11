@@ -15,7 +15,9 @@ import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 
-export function HomepageSectionSkeleton() {
+import WishlistButton from '@/components/WishlistButton'
+
+ export function HomepageSectionSkeleton() {
    return (
      <section className="relative py-16 lg:py-24 bg-slate-50">
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,29 +67,34 @@ interface HomepageSectionProps {
     expectedRestockDate: product.expectedRestockDate,
   })
 
-  return (
-    <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
-      <div className="flex flex-col h-full">
-        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-            {product.images?.[0] ? (
-              <Image
-                src={product.images?.[0]?.url}
-                alt={product.images?.[0]?.alt || product.name}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                fill
-                loading="lazy"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
-                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            )}
-            <ProductBadges product={badgeData} />
-          </div>
-        </Link>
+return (
+     <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
+       <div className="flex flex-col h-full">
+         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+             <WishlistButton
+               productId={product.id}
+               size="sm"
+               className="absolute top-2 right-2 z-10"
+             />
+             {product.images?.[0] ? (
+               <Image
+                 src={product.images?.[0]?.url}
+                 alt={product.images?.[0]?.alt || product.name}
+                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                 fill
+                 loading="lazy"
+               />
+             ) : (
+               <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                 </svg>
+               </div>
+             )}
+             <ProductBadges product={badgeData} />
+           </div>
+         </Link>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
           <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
             {product.name}
