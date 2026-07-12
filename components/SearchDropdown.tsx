@@ -55,7 +55,6 @@ interface SearchResults {
   total: number
 }
 
-// Discriminated union for flat results
 type FlatSearchItem =
   | (SearchProduct & { _group: 'Products' })
   | (SearchVendor & { _group: 'Vendors' })
@@ -76,8 +75,8 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
-  // Build typed flat results
   const flatResults: FlatSearchItem[] = results
     ? [
         ...results.results.products.map((p) => ({ ...p, _group: 'Products' as const })),
@@ -87,7 +86,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
       ]
     : []
 
-  const performSearch = useCallback(async (searchQuery: string) => {
+const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults(null)
       setIsOpen(false)
@@ -102,11 +101,27 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
         setResults(data)
         setIsOpen(true)
         setActiveIndex(-1)
+        const productIds = data.results.products.map((p: SearchProduct) => p.id).join(',')
+        if (productIds) {
+          fetchWishlistStatus(productIds)
+        }
       }
     } catch (error) {
       console.error('Search error:', error)
     } finally {
       setLoading(false)
+    }
+  }, [])
+
+  const fetchWishlistStatus = useCallback(async (productIds: string) => {
+    try {
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
     }
   }, [])
 
@@ -321,7 +336,7 @@ if (isProductItem(item)) {
         >
           <div className="max-h-[420px] overflow-y-auto">
             {/* Products */}
-            {results.results.products.length > 0 && (
+{results.results.products.length > 0 && (
               <div className="p-2">
                 <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                   Products
@@ -331,64 +346,71 @@ if (isProductItem(item)) {
                     (r) => r.type === 'product' && (r as SearchProduct).id === product.id
                   )
                   return (
-<Link
-                       key={product.id}
-                       href={`/marketplace/product/${product.slug ?? product.id}`}
-                       onClick={handleResultClick}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-                        flatIdx === activeIndex ? 'bg-royal-blue/8' : 'hover:bg-slate-50'
-                      }`}
-                      role="option"
-                      aria-selected={flatIdx === activeIndex}
-                    >
-<div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
-                         {product.image ? (
-                           <Image
-                             src={product.image}
-                             alt={product.name}
-                             width={56}
-                             height={56}
-                             className="object-cover rounded-lg w-14 h-14 flex-shrink-0"
-                           />
-                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                    <div key={product.id} className="relative">
+                      <WishlistButton
+                        productId={product.id}
+                        initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                        size="sm"
+                        className="absolute top-2 right-2 z-10"
+                      />
+                      <Link
+                        href={`/marketplace/product/${product.slug ?? product.id}`}
+                        onClick={handleResultClick}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+                          flatIdx === activeIndex ? 'bg-royal-blue/8' : 'hover:bg-slate-50'
+                        }`}
+                        role="option"
+                        aria-selected={flatIdx === activeIndex}
+                      >
+                        <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                          {product.image ? (
+                            <Image
+                              src={product.image}
+                              alt={product.name}
+                              width={56}
+                              height={56}
+                              className="object-cover rounded-lg w-14 h-14 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">
+                            {highlightMatch(product.name, query)}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-xs font-semibold text-royal-blue">
+                              {typeof product.price === 'number'
+                                ? `₵${product.price.toFixed(2)}`
+                                : '₵0.00'}
+                            </span>
+                            {product.brand && (
+                              <span className="text-[10px] text-slate-400">· {highlightMatch(product.brand, query)}</span>
+                            )}
+                            {(() => {
+                              const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
+                              if (badgeInfo) {
+                                const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                                return (
+                                  <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                                )
+                              }
+                              if (product.store?.isVerified) {
+                                return (
+                                  <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                )
+                              }
+                              return null
+                            })()}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">
-                          {highlightMatch(product.name, query)}
-                        </p>
-<div className="flex items-center gap-1.5 mt-0.5">
-                           <span className="text-xs font-semibold text-royal-blue">
-                             {typeof product.price === 'number'
-                               ? `₵${product.price.toFixed(2)}`
-                               : '₵0.00'}
-                           </span>
-                           {product.brand && (
-                             <span className="text-[10px] text-slate-400">· {highlightMatch(product.brand, query)}</span>
-                           )}
-                           {(() => {
-                             const badgeInfo = getVendorBadgeInfo((product.store as any)?.badgeTier)
-                             if (badgeInfo) {
-                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                               return (
-                                 <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
-                               )
-                             }
-                             if (product.store?.isVerified) {
-                               return (
-                                 <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                               )
-                             }
-                             return null
-                           })()}
-                         </div>
-                      </div>
-                    </Link>
+                        </div>
+                      </Link>
+                    </div>
                   )
                 })}
               </div>

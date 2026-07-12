@@ -50,6 +50,12 @@ export function getUserFromToken(): { userId: string; role: Role } | null {
   return verifyToken(token)
 }
 
+export async function getServerSession(): Promise<{ userId: string; role: Role } | null> {
+  const token = getTokenFromCookies()
+  if (!token) return null
+  return verifyToken(token)
+}
+
 // Generate a selector (public identifier) for password reset tokens
 export function generateSelector(): string {
   return randomBytes(16).toString('hex')

@@ -11,6 +11,13 @@ interface WishlistButtonProps {
   className?: string
 }
 
+function dispatchWishlistUpdate() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('wishlist-updated'))
+    localStorage.setItem('wishlist-updated', Date.now().toString())
+  }
+}
+
 export default function WishlistButton({
   productId,
   initialIsWishlisted = false,
@@ -22,7 +29,7 @@ export default function WishlistButton({
 
   const sizeClasses = {
     sm: 'w-8 h-8',
-    md: 'w-10 w-10',
+    md: 'w-10 h-10',
     lg: 'w-12 h-12',
   }
 
@@ -50,7 +57,7 @@ export default function WishlistButton({
         return
       }
 
-      setIsWishlisted(!isWishlisted)
+      setIsWishlisted(!previousState)
       setLoading(true)
 
       if (previousState) {
@@ -82,10 +89,10 @@ export default function WishlistButton({
           throw new Error('Failed to add to wishlist')
         }
       }
+      dispatchWishlistUpdate()
     } catch (error) {
       setIsWishlisted(previousState)
       console.error('Error toggling wishlist:', error)
-      alert('Failed to update wishlist')
     } finally {
       setLoading(false)
     }

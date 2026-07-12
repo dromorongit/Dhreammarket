@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
@@ -11,9 +12,10 @@ import { MdVerified } from 'react-icons/md';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import { type EnterpriseProduct, getEffectivePrice } from '@/lib/homepage-product-utils';
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
+import WishlistButton from '@/components/WishlistButton';
 
 
-function TrendingProductCard({ product }: { product: EnterpriseProduct }) {
+function TrendingProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
   const effectivePrice = getEffectivePrice(product)
   const badgeData = calculateProductBadges({
     price: product.price,
@@ -34,6 +36,12 @@ function TrendingProductCard({ product }: { product: EnterpriseProduct }) {
           className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
         >
           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+            <WishlistButton
+              productId={product.id}
+              initialIsWishlisted={initialIsWishlisted}
+              size="sm"
+              className="absolute top-2 right-2 z-10"
+            />
             {product.images?.[0] ? (
               <Image
                 src={product.images[0].url}
@@ -106,6 +114,26 @@ export function TrendingNowSection({
   };
   loading?: boolean;
 }) {
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
   if (loading) {
     return <TrendingNowSectionSkeleton />;
   }
@@ -138,7 +166,11 @@ export function TrendingNowSection({
             <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
               <div className='flex gap-4'>
                 {topRowProducts.map((product) => (
-                  <TrendingProductCard key={product.id} product={product} />
+                  <TrendingProductCard 
+                    key={product.id} 
+                    product={product} 
+                    initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                  />
                 ))}
               </div>
             </div>
@@ -147,7 +179,11 @@ export function TrendingNowSection({
             <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
               <div className='flex gap-4'>
                 {bottomRowProducts.map((product) => (
-                  <TrendingProductCard key={product.id} product={product} />
+                  <TrendingProductCard 
+                    key={product.id} 
+                    product={product} 
+                    initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                  />
                 ))}
               </div>
             </div>

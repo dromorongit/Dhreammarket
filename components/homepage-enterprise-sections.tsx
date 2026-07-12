@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode, useCallback } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -11,6 +11,7 @@ import { formatPrice } from '@/lib/currency';
 import { truncateVendorName } from '@/lib/utils';
 import { MdVerified } from 'react-icons/md';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
+import WishlistButton from '@/components/WishlistButton';
 import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageData, getDiscountPercent, getEffectivePrice, getDiscountedPrice, dedupeProducts, collectProductIds, normalizeBrand, EMPTY_ENTERPRISE_DATA } from '@/lib/homepage-product-utils'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import { TrendingNowSection } from './TrendingNowSection';
@@ -220,307 +221,333 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
   );
 }
 
-function FlashSaleCard({ product }: { product: EnterpriseProduct }) {
+function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
    const salePrice = discountedPrice ?? product.price
    const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
 
-   return (
-     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
-         <Card
-           variant='elevated'
-           className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
-         >
-           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-             <ProductImage
-               product={product}
-               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-             />
-             {product.flashSaleEnd && (
-               <div className='absolute top-2 right-2 bg-deep-navy/90 text-white px-2 py-1 rounded-full flex items-center gap-1'>
-                 <svg
-                   className='w-3 h-3'
-                   fill='none'
-                   stroke='currentColor'
-                   viewBox='0 0 24 24'
-                 >
-                   <path
-                     strokeLinecap='round'
-                     strokeLinejoin='round'
-                     strokeWidth={2}
-                     d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                   />
-                 </svg>
-                 <CountdownTimer endTime={product.flashSaleEnd} />
-               </div>
-             )}
-             <ProductBadges product={calculateProductBadges({
-               price: product.price,
-               flashSalePrice: product.flashSalePrice,
-               salesPrice: product.salesPrice,
-               dealsPrice: product.dealsPrice,
-               stock: product.stock,
-               availabilityType: product.availabilityType,
-               expectedArrivalDate: product.expectedArrivalDate,
-               expectedRestockDate: product.expectedRestockDate,
-             })} />
-           </div>
-           <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-             <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-               {product.name}
-             </h3>
-             <div className='flex items-center gap-1.5 flex-wrap'>
-               <span className='text-[11px] font-bold text-rose-600'>
-                 {formatPrice(salePrice)}
-               </span>
-               {discount > 0 && (
-                 <span className='text-[10px] text-slate-400 line-through'>
-                   {formatPrice(product.price)}
-                 </span>
-               )}
-             </div>
-             {product.store && (
-               <div className='flex items-center gap-1 min-w-0'>
-                 <p className='text-[10px] text-slate-500 truncate'>
-                   {product.store.name}
-                 </p>
-               {(() => {
-                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                  if (badgeInfo) {
-                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                    return (
-                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
-                    )
-                  }
-                  if (product.store.isVerified) {
-                    return (
-                      <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-                    )
-                  }
-                  return null
-                })()}
-               </div>
-             )}
-           </div>
-         </Card>
-       </Link>
-     </div>
-   )
- }
+    return (
+      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
+          <Card
+            variant='elevated'
+            className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+          >
+            <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+              <WishlistButton
+                productId={product.id}
+                initialIsWishlisted={initialIsWishlisted}
+                size="sm"
+                className="absolute top-2 right-2 z-10"
+              />
+              <ProductImage
+                product={product}
+                className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+              />
+              {product.flashSaleEnd && (
+                <div className='absolute top-2 right-2 bg-deep-navy/90 text-white px-2 py-1 rounded-full flex items-center gap-1'>
+                  <svg
+                    className='w-3 h-3'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+                    />
+                  </svg>
+                  <CountdownTimer endTime={product.flashSaleEnd} />
+                </div>
+              )}
+              <ProductBadges product={calculateProductBadges({
+                price: product.price,
+                flashSalePrice: product.flashSalePrice,
+                salesPrice: product.salesPrice,
+                dealsPrice: product.dealsPrice,
+                stock: product.stock,
+                availabilityType: product.availabilityType,
+                expectedArrivalDate: product.expectedArrivalDate,
+                expectedRestockDate: product.expectedRestockDate,
+              })} />
+            </div>
+            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+              <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+                {product.name}
+              </h3>
+              <div className='flex items-center gap-1.5 flex-wrap'>
+                <span className='text-[11px] font-bold text-rose-600'>
+                  {formatPrice(salePrice)}
+                </span>
+                {discount > 0 && (
+                  <span className='text-[10px] text-slate-400 line-through'>
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+              </div>
+              {product.store && (
+                <div className='flex items-center gap-1 min-w-0'>
+                  <p className='text-[10px] text-slate-500 truncate'>
+                    {product.store.name}
+                  </p>
+                {(() => {
+                   const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                     return (
+                       <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                     )
+                   }
+                   if (product.store.isVerified) {
+                     return (
+                       <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                     )
+                   }
+                   return null
+                 })()}
+                </div>
+              )}
+            </div>
+          </Card>
+        </Link>
+      </div>
+    )
+  }
 
-function SponsoredCard({ product }: { product: EnterpriseProduct }) {
+function SponsoredCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
 
-   return (
-     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
-         <Card
-           variant='elevated'
-           className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
-         >
-           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-             <ProductImage
-               product={product}
-               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-             />
-             <ProductBadges product={calculateProductBadges({
-               price: product.price,
-               flashSalePrice: product.flashSalePrice,
-               salesPrice: product.salesPrice,
-               dealsPrice: product.dealsPrice,
-               stock: product.stock,
-               availabilityType: product.availabilityType,
-               expectedArrivalDate: product.expectedArrivalDate,
-               expectedRestockDate: product.expectedRestockDate,
-               isSponsored: true,
-             })} />
-           </div>
-           <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-             <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-               {product.name}
-             </h3>
-             <div className='flex items-center gap-1.5 flex-wrap'>
-               <span className='text-[11px] font-bold text-royal-blue'>
-                 {formatPrice(getEffectivePrice(product))}
-               </span>
-               {discountedPrice && discountedPrice < product.price && (
-                 <span className='text-[10px] text-slate-400 line-through'>
-                   {formatPrice(product.price)}
-                 </span>
-               )}
-             </div>
-             {product.store && (
-               <div className='flex items-center gap-1 min-w-0'>
-                 <p className='text-[10px] text-slate-500 truncate'>
-                   {product.store.name}
-                 </p>
-               {(() => {
-                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                  if (badgeInfo) {
-                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                    return (
-                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
-                    )
-                  }
-                  if (product.store.isVerified) {
-                    return (
-                      <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-                    )
-                  }
-                  return null
-                })()}
-               </div>
-             )}
-           </div>
-         </Card>
-       </Link>
-     </div>
-   )
- }
+    return (
+      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
+          <Card
+            variant='elevated'
+            className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+          >
+            <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+              <WishlistButton
+                productId={product.id}
+                initialIsWishlisted={initialIsWishlisted}
+                size="sm"
+                className="absolute top-2 right-2 z-10"
+              />
+              <ProductImage
+                product={product}
+                className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+              />
+              <ProductBadges product={calculateProductBadges({
+                price: product.price,
+                flashSalePrice: product.flashSalePrice,
+                salesPrice: product.salesPrice,
+                dealsPrice: product.dealsPrice,
+                stock: product.stock,
+                availabilityType: product.availabilityType,
+                expectedArrivalDate: product.expectedArrivalDate,
+                expectedRestockDate: product.expectedRestockDate,
+                isSponsored: true,
+              })} />
+            </div>
+            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+              <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+                {product.name}
+              </h3>
+              <div className='flex items-center gap-1.5 flex-wrap'>
+                <span className='text-[11px] font-bold text-royal-blue'>
+                  {formatPrice(getEffectivePrice(product))}
+                </span>
+                {discountedPrice && discountedPrice < product.price && (
+                  <span className='text-[10px] text-slate-400 line-through'>
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+              </div>
+              {product.store && (
+                <div className='flex items-center gap-1 min-w-0'>
+                  <p className='text-[10px] text-slate-500 truncate'>
+                    {product.store.name}
+                  </p>
+                {(() => {
+                   const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                     return (
+                       <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                     )
+                   }
+                   if (product.store.isVerified) {
+                     return (
+                       <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                     )
+                   }
+                   return null
+                 })()}
+                </div>
+              )}
+            </div>
+          </Card>
+        </Link>
+      </div>
+    )
+  }
 
-function DealCard({ product }: { product: EnterpriseProduct }) {
+function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
-   const salePrice = discountedPrice ?? product.price
+    const salePrice = discountedPrice ?? product.price
 
-   return (
-     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
-         <Card
-           variant='elevated'
-           className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200 w-full'
-         >
-           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-             <ProductImage
-               product={product}
-               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-             />
-             <ProductBadges product={calculateProductBadges({
-               price: product.price,
-               flashSalePrice: product.flashSalePrice,
-               salesPrice: product.salesPrice,
-               dealsPrice: product.dealsPrice,
-               stock: product.stock,
-               availabilityType: product.availabilityType,
-               expectedArrivalDate: product.expectedArrivalDate,
-               expectedRestockDate: product.expectedRestockDate,
-             })} />
-           </div>
-           <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-             <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-               {product.name}
-             </h3>
-             <div className='flex items-center gap-1.5 flex-wrap'>
-               <span className='text-sm font-bold text-rose-600'>
-                 {formatPrice(salePrice)}
-               </span>
-               {discountedPrice && discountedPrice < product.price && (
-                 <span className='text-[11px] text-slate-400 line-through'>
-                   {formatPrice(product.price)}
-                 </span>
-               )}
-             </div>
-             {product.store && (
-               <div className='flex items-center gap-1 min-w-0'>
-                 <p className='text-[10px] text-slate-500 truncate'>
-                   {product.store.name}
-                 </p>
-               {(() => {
-                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                  if (badgeInfo) {
-                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                    return (
-                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
-                    )
-                  }
-                  if (product.store.isVerified) {
-                    return (
-                      <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-                    )
-                  }
-                  return null
-                })()}
-               </div>
-             )}
-           </div>
-         </Card>
-       </Link>
-     </div>
-   )
- }
+    return (
+      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
+          <Card
+            variant='elevated'
+            className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200 w-full'
+          >
+            <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+              <WishlistButton
+                productId={product.id}
+                initialIsWishlisted={initialIsWishlisted}
+                size="sm"
+                className="absolute top-2 right-2 z-10"
+              />
+              <ProductImage
+                product={product}
+                className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+              />
+              <ProductBadges product={calculateProductBadges({
+                price: product.price,
+                flashSalePrice: product.flashSalePrice,
+                salesPrice: product.salesPrice,
+                dealsPrice: product.dealsPrice,
+                stock: product.stock,
+                availabilityType: product.availabilityType,
+                expectedArrivalDate: product.expectedArrivalDate,
+                expectedRestockDate: product.expectedRestockDate,
+              })} />
+            </div>
+            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+              <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+                {product.name}
+              </h3>
+              <div className='flex items-center gap-1.5 flex-wrap'>
+                <span className='text-sm font-bold text-rose-600'>
+                  {formatPrice(salePrice)}
+                </span>
+                {discountedPrice && discountedPrice < product.price && (
+                  <span className='text-[11px] text-slate-400 line-through'>
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+              </div>
+              {product.store && (
+                <div className='flex items-center gap-1 min-w-0'>
+                  <p className='text-[10px] text-slate-500 truncate'>
+                    {product.store.name}
+                  </p>
+                {(() => {
+                   const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                     return (
+                       <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                     )
+                   }
+                   if (product.store.isVerified) {
+                     return (
+                       <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                     )
+                   }
+                   return null
+                 })()}
+                </div>
+              )}
+            </div>
+          </Card>
+        </Link>
+      </div>
+    )
+  }
 
 function StandardCard({
    product,
    badge,
- }: {
+   initialIsWishlisted,
+  }: {
    product: EnterpriseProduct;
    badge?: string;
- }) {
-   return (
-     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
-         <Card
-           variant='elevated'
-           className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
-         >
-           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-             <ProductImage
-               product={product}
-               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-             />
-             <ProductBadges product={calculateProductBadges({
-               price: product.price,
-               flashSalePrice: product.flashSalePrice,
-               salesPrice: product.salesPrice,
-               dealsPrice: product.dealsPrice,
-               stock: product.stock,
-               availabilityType: product.availabilityType,
-               expectedArrivalDate: product.expectedArrivalDate,
-               expectedRestockDate: product.expectedRestockDate,
-             })} />
-           </div>
-           <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-             <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
-               {product.name}
-             </h3>
-             <div className='flex items-center gap-1.5 flex-wrap'>
-               <span className='text-[11px] font-bold text-royal-blue'>
-                 {formatPrice(getEffectivePrice(product))}
-               </span>
-               {getDiscountedPrice(product) && getDiscountedPrice(product)! < product.price && (
-                 <span className='text-[10px] text-slate-400 line-through'>
-                   {formatPrice(product.price)}
-                 </span>
-               )}
-             </div>
-             {product.store && (
-               <div className='flex items-center gap-1 min-w-0'>
-                 <p className='text-[10px] text-slate-500 truncate'>
-                   {product.store.name}
-                 </p>
-               {(() => {
-                  const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                  if (badgeInfo) {
-                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                    return (
-                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
-                    )
-                  }
-                  if (product.store.isVerified) {
-                    return (
-                      <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-                    )
-                  }
-                  return null
-                })()}
-               </div>
-             )}
-           </div>
-         </Card>
-       </Link>
-     </div>
-   )
- }
+   initialIsWishlisted?: boolean;
+  }) {
+    return (
+      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
+          <Card
+            variant='elevated'
+            className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+          >
+            <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+              <WishlistButton
+                productId={product.id}
+                initialIsWishlisted={initialIsWishlisted}
+                size="sm"
+                className="absolute top-2 right-2 z-10"
+              />
+              <ProductImage
+                product={product}
+                className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+              />
+              <ProductBadges product={calculateProductBadges({
+                price: product.price,
+                flashSalePrice: product.flashSalePrice,
+                salesPrice: product.salesPrice,
+                dealsPrice: product.dealsPrice,
+                stock: product.stock,
+                availabilityType: product.availabilityType,
+                expectedArrivalDate: product.expectedArrivalDate,
+                expectedRestockDate: product.expectedRestockDate,
+              })} />
+            </div>
+            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+              <h3 className='text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+                {product.name}
+              </h3>
+              <div className='flex items-center gap-1.5 flex-wrap'>
+                <span className='text-[11px] font-bold text-royal-blue'>
+                  {formatPrice(getEffectivePrice(product))}
+                </span>
+                {getDiscountedPrice(product) && getDiscountedPrice(product)! < product.price && (
+                  <span className='text-[10px] text-slate-400 line-through'>
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+              </div>
+              {product.store && (
+                <div className='flex items-center gap-1 min-w-0'>
+                  <p className='text-[10px] text-slate-500 truncate'>
+                    {product.store.name}
+                  </p>
+                {(() => {
+                   const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
+                   if (badgeInfo) {
+                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                     return (
+                       <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
+                     )
+                   }
+                   if (product.store.isVerified) {
+                     return (
+                       <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
+                     )
+                   }
+                   return null
+                 })()}
+                </div>
+              )}
+            </div>
+          </Card>
+        </Link>
+      </div>
+    )
+  }
 
 export function FlashSalesSection({
   section,
@@ -534,7 +561,27 @@ export function FlashSalesSection({
   };
   loading?: boolean;
 }) {
-  if (loading) return <EnterpriseSectionSkeleton />;
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
+  if (loading) return <EnterpriseSectionSkeleton />
   const products = section.products ?? [];
   if (!products.length) return null;
 
@@ -557,7 +604,7 @@ export function FlashSalesSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <FlashSaleCard product={product} />
+            <FlashSaleCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
@@ -588,6 +635,26 @@ export function SponsoredProductsSection({
   };
   loading?: boolean;
 }) {
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
   if (loading) return <EnterpriseSectionSkeleton />;
   const products = section.products ?? [];
   if (!products.length) return null;
@@ -611,7 +678,7 @@ export function SponsoredProductsSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <SponsoredCard product={product} />
+            <SponsoredCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
@@ -799,7 +866,27 @@ export function TopSellingSection({
   products: EnterpriseProduct[];
   loading?: boolean;
 }) {
-  if (loading) return <EnterpriseSectionSkeleton />;
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!products?.length) return
+    try {
+      const productIds = products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
+  if (loading) return <EnterpriseSectionSkeleton />
   if (!products.length) return null;
 
   return (
@@ -818,6 +905,7 @@ export function TopSellingSection({
               badge={
                 product.salesCount ? `${product.salesCount} sold` : undefined
               }
+              initialIsWishlisted={wishlistedProductIds.has(product.id)}
             />
           )}
         />
@@ -849,6 +937,26 @@ export function BigTopDealsSection({
   };
   loading?: boolean;
 }) {
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
   if (loading) return <EnterpriseSectionSkeleton />;
   const products = section?.products ?? [];
   if (!products.length) return null;
@@ -864,7 +972,7 @@ export function BigTopDealsSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <DealCard product={product} />
+            <DealCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
@@ -895,6 +1003,26 @@ export function TopClearanceSalesSection({
   };
   loading?: boolean;
 }) {
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
   if (loading) return <EnterpriseSectionSkeleton />;
   const products = section?.products ?? [];
   if (!products.length) return null;
@@ -910,7 +1038,7 @@ export function TopClearanceSalesSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <DealCard product={product} />
+            <DealCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
@@ -941,6 +1069,26 @@ export function TopServicesSection({
   };
   loading?: boolean;
 }) {
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
   if (loading) return <EnterpriseSectionSkeleton />;
   const products = section?.products ?? [];
   if (!products.length) return null;
@@ -956,7 +1104,7 @@ export function TopServicesSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <StandardCard product={product} />
+            <StandardCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
@@ -987,9 +1135,34 @@ export function HomeTheatreSection({
   };
   loading?: boolean;
 }) {
-  if (loading) return <EnterpriseSectionSkeleton />;
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
+  if (loading) return <EnterpriseSectionSkeleton dark />;
   const products = section?.products ?? [];
   if (!products.length) return null;
+
+  const mobileProducts = products.slice(0, 20);
+  const half = Math.ceil(mobileProducts.length / 2);
+  const topRowProducts = mobileProducts.slice(0, half);
+  const bottomRowProducts = mobileProducts.slice(half);
 
   return (
     <section className='relative py-16 lg:py-24 bg-gradient-to-br from-purple-900 via-deep-navy to-slate-900 overflow-hidden'>
@@ -1001,15 +1174,139 @@ export function HomeTheatreSection({
         <SectionHeader
           badge='Home Tech'
           title={section.name}
-          subtitle={section.subtitle ?? 'Home entertainment systems'}
+          subtitle={
+            section.subtitle ??
+            'Latest phones, laptops, accessories & gaming gear'
+          }
           dark
         />
-        <ProductRail
-          products={products}
-          renderCard={(product) => (
-            <StandardCard product={product} />
+
+        {/* Desktop grid */}
+        <div className='hidden lg:grid grid-cols-2 gap-6'>
+          {products.slice(0, 4).map((product) => (
+            <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
+              <Card
+                variant='elevated'
+                className='group overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 bg-slate-800/50 border border-slate-700/50'
+              >
+                <div className='relative aspect-[16/9] bg-slate-800 overflow-hidden'>
+                  <WishlistButton
+                    productId={product.id}
+                    initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                    size="sm"
+                    className="absolute top-2 right-2 z-10"
+                  />
+                  <ProductImage
+                    product={product}
+                    className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
+                  />
+                  <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                  <div className='absolute bottom-0 left-0 right-0 p-6'>
+                    <Badge variant='premium' size='sm' className='mb-2'>
+                      Tech
+                    </Badge>
+                    <h3 className='text-xl font-bold text-white mb-1 line-clamp-1'>
+                      {product.name}
+                    </h3>
+                    {product.store && (
+                      <p className='text-white/70 text-sm mb-2'>
+                        {product.store.name}
+                      </p>
+                    )}
+                    <span className='text-2xl font-bold text-premium-gold'>
+                      {formatPrice(getEffectivePrice(product))}
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+
+        {/* Mobile & tablet horizontal scroll - Two independent rows */}
+        <div className='lg:hidden space-y-4'>
+          {topRowProducts.length > 0 && (
+            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+              <div className='flex gap-4'>
+                {topRowProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/marketplace/product/${product.slug ?? product.id}`}
+                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
+                  >
+                    <Card
+                      variant='elevated'
+                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
+                    >
+                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
+                        <WishlistButton
+                          productId={product.id}
+                          initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                          size="sm"
+                          className="absolute top-2 right-2 z-10"
+                        />
+                        <ProductImage
+                          product={product}
+                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                        />
+                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                        <div className='absolute bottom-0 left-0 right-0 p-4'>
+                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
+                            {product.name}
+                          </h3>
+                          <span className='text-lg font-bold text-premium-gold'>
+                            {formatPrice(getEffectivePrice(product))}
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
-        />
+          {bottomRowProducts.length > 0 && (
+            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+              <div className='flex gap-4'>
+                {bottomRowProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/marketplace/product/${product.slug ?? product.id}`}
+                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
+                  >
+                    <Card
+                      variant='elevated'
+                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
+                    >
+                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
+                        <WishlistButton
+                          productId={product.id}
+                          initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                          size="sm"
+                          className="absolute top-2 right-2 z-10"
+                        />
+                        <ProductImage
+                          product={product}
+                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                        />
+                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                        <div className='absolute bottom-0 left-0 right-0 p-4'>
+                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
+                            {product.name}
+                          </h3>
+                          <span className='text-lg font-bold text-premium-gold'>
+                            {formatPrice(getEffectivePrice(product))}
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className='mt-8 text-center'>
           <Link href='/marketplace?category=Electronics'>
             <Button
@@ -1038,6 +1335,26 @@ export function TopExpressOffersSection({
   };
   loading?: boolean;
 }) {
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!section?.products?.length) return
+    try {
+      const productIds = section.products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [section?.products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
   if (loading) return <EnterpriseSectionSkeleton />;
   const products = section?.products ?? [];
   if (!products.length) return null;
@@ -1053,7 +1370,7 @@ export function TopExpressOffersSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <DealCard product={product} />
+            <DealCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>

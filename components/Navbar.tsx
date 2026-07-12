@@ -8,6 +8,7 @@ import { Button } from './Button'
 import { Badge } from './Badge'
 import { SearchDropdown } from './SearchDropdown'
 import { useCart } from '@/lib/CartContext'
+import { FiHeart } from 'react-icons/fi'
 
 interface User {
   userId: string
@@ -81,6 +82,9 @@ export function Navbar() {
   // Use cart context for centralized cart state
   const { cartTotalQuantity, fetchCart } = useCart()
   
+  // Wishlist count
+  const [wishlistCount, setWishlistCount] = useState(0)
+  
   // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -100,6 +104,7 @@ export function Navbar() {
   useEffect(() => {
     if (user) {
       fetchNotifications()
+      fetchWishlist()
     }
   }, [user])
 
@@ -107,6 +112,24 @@ export function Navbar() {
   useEffect(() => {
     fetchCart()
   }, [fetchCart])
+  
+  // Fetch wishlist count on mount
+  useEffect(() => {
+    fetchWishlist()
+  }, [])
+  
+  // Listen for wishlist updates
+  useEffect(() => {
+    const handleWishlistUpdate = () => {
+      fetchWishlist()
+    }
+    
+    window.addEventListener('wishlist-updated', handleWishlistUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('wishlist-updated', handleWishlistUpdate as EventListener)
+    }
+  }, [])
 
   // Listen for cart updates to sync badge
   useEffect(() => {
@@ -120,6 +143,18 @@ export function Navbar() {
       window.removeEventListener('cart-updated', handleCartUpdate as EventListener)
     }
   }, [fetchCart])
+  
+  const fetchWishlist = async () => {
+    try {
+      const response = await fetch('/api/wishlist')
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistCount(data.wishlist?.items?.length ?? 0)
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist:', error)
+    }
+  }
 
   // Close notifications dropdown when clicking outside
   useEffect(() => {
@@ -296,23 +331,39 @@ export function Navbar() {
               <span>Support</span>
               <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
-            {user && (
-              <Link
-                href="/cart"
-                className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
-              >
-                <span className="flex items-center gap-1.5">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
-                  </svg>
-                  Cart
-                </span>
-                {cartTotalQuantity > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-bold min-w-[18px] h-4 rounded-full flex items-center justify-center px-0.5 animate-scale-in">
-                    {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
+{user && (
+              <>
+                <Link
+                  href="/cart"
+                  className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
+                    </svg>
+                    Cart
                   </span>
-                )}
-              </Link>
+                  {cartTotalQuantity > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-rose-500 to-red-500 text-white text-[10px] font-bold min-w-[18px] h-4 rounded-full flex items-center justify-center px-0.5 animate-scale-in">
+                      {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  href="/dashboard/customer/wishlist"
+                  className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <FiHeart className="w-4 h-4" />
+                    Wishlist
+                  </span>
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-bold min-w-[18px] h-4 rounded-full flex items-center justify-center px-0.5 animate-scale-in">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
+                </Link>
+              </>
             )}
           </div>
 
@@ -553,25 +604,41 @@ export function Navbar() {
            >
              Support
            </button>
-           {user && (
-             <button
-               onClick={() => navigateAndCloseMobileMenu('/cart')}
-               className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
-             >
-               <span className="flex items-center gap-2">
-                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
-                 </svg>
-                 Cart
-                 {cartTotalQuantity > 0 && (
-                   <span className="ml-auto bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-scale-in">
-                     {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
-                   </span>
-                 )}
-               </span>
-             </button>
-           )}
-           <div className="border-t border-slate-200 my-2"></div>
+{user && (
+              <>
+                <button
+                  onClick={() => navigateAndCloseMobileMenu('/cart')}
+                  className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 010 4m0-2a2 2 0 01-2 2m2 2v1a2 2 0 002 2h2" />
+                    </svg>
+                    Cart
+                    {cartTotalQuantity > 0 && (
+                      <span className="ml-auto bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-scale-in">
+                        {cartTotalQuantity > 99 ? '99+' : cartTotalQuantity}
+                      </span>
+                    )}
+                  </span>
+                </button>
+                <button
+                  onClick={() => navigateAndCloseMobileMenu('/dashboard/customer/wishlist')}
+                  className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <FiHeart className="w-5 h-5" />
+                    Wishlist
+                    {wishlistCount > 0 && (
+                      <span className="ml-auto bg-pink-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-scale-in">
+                        {wishlistCount > 99 ? '99+' : wishlistCount}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </>
+            )}
+            <div className="border-t border-slate-200 my-2"></div>
            {user ? (
              <>
                <div className="px-4 py-2">

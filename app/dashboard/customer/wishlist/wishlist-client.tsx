@@ -78,6 +78,9 @@ export default function WishlistClient() {
           ...prev!,
           items: prev!.items.filter(item => item.product.id !== productId),
         }))
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('wishlist-updated'))
+        }
       }
     } catch (error) {
       console.error('Error removing item:', error)
