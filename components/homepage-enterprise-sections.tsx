@@ -8,7 +8,6 @@ import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge'
 import { SkeletonCard } from '@/components/Skeleton';
 import { formatPrice } from '@/lib/currency';
-import { truncateVendorName } from '@/lib/utils';
 import { MdVerified } from 'react-icons/md';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import WishlistButton from '@/components/WishlistButton';
@@ -1553,10 +1552,29 @@ export function QuickLinksSection() {
 export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> }) {
   const [products, setProducts] = useState<EnterpriseProduct[]>([])
   const [loading, setLoading] = useState(true)
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchProducts()
   }, [excludeIds])
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!products.length) return
+    try {
+      const productIds = products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
 
   const fetchProducts = async () => {
     try {
@@ -1589,7 +1607,7 @@ const availableProducts = (data.products || [])
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <StandardCard product={product} />
+            <StandardCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
@@ -1611,10 +1629,29 @@ const availableProducts = (data.products || [])
 export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> }) {
   const [products, setProducts] = useState<EnterpriseProduct[]>([])
   const [loading, setLoading] = useState(true)
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchProducts()
   }, [excludeIds])
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!products.length) return
+    try {
+      const productIds = products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
 
   const fetchProducts = async () => {
     try {
@@ -1649,7 +1686,7 @@ const availableProducts = (data.products || [])
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <StandardCard product={product} />
+            <StandardCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
         <div className='mt-8 text-center'>
