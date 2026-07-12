@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
   },
   icons: {
-    icon: [{ url: '/favicon.png', type: 'image/png' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }],
+    icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }],
     apple: '/apple-icon.png',
   },
 }
