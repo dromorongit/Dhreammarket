@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
 import { EnterpriseProduct, ManagedHomepageSection } from '@/lib/homepage-product-utils'
@@ -54,7 +54,7 @@ interface HomepageSectionProps {
    section: ManagedHomepageSection
  }
 
- function CompactProductCard({ product }: { product: EnterpriseProduct }) {
+ function CompactProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
   const badgeData = calculateProductBadges({
     price: product.price,
@@ -72,11 +72,12 @@ return (
        <div className="flex flex-col h-full">
          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-             <WishlistButton
-               productId={product.id}
-               size="sm"
-               className="absolute top-2 right-2 z-10"
-             />
+<WishlistButton
+                productId={product.id}
+                initialIsWishlisted={initialIsWishlisted}
+                size="sm"
+                className="absolute top-2 right-2 z-10"
+              />
              {product.images?.[0] ? (
                <Image
                  src={product.images?.[0]?.url}
@@ -143,6 +144,25 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
   const half = Math.ceil(displayProducts.length / 2)
   const topRowProducts = displayProducts.slice(0, half)
   const bottomRowProducts = displayProducts.slice(half)
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!products.length) return
+    try {
+      const productIds = products.map(p => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
 
   if (displayProducts.length === 0) {
     return (
@@ -186,20 +206,20 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
           {topRowProducts.length > 0 && (
             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
               <div className="flex gap-4">
-                {topRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactProductCard product={product} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {bottomRowProducts.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-              <div className="flex gap-4">
-                {bottomRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactProductCard product={product} />
+{topRowProducts.map((product) => (
+                   <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                     <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                   </div>
+                 ))}
+               </div>
+             </div>
+           )}
+           {bottomRowProducts.length > 0 && (
+             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+               <div className="flex gap-4">
+                 {bottomRowProducts.map((product) => (
+                   <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                     <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
                   </div>
                 ))}
               </div>
