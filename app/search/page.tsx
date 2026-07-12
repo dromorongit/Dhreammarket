@@ -298,9 +298,9 @@ function SearchPageContent() {
                     </h2>
                   )}
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {filtered.products.map((product) => (
-                      <CompactProductCard key={product.id} product={product} />
-                    ))}
+{filtered.products.map((product) => (
+                       <CompactProductCard key={product.id} product={product} wishlistedProductIds={wishlistedProductIds} />
+                     ))}
                   </div>
                 </div>
               )}
@@ -524,7 +524,7 @@ function SearchPageSkeleton() {
 }
 
 /* ─── Compact Product Card (inline for search page) ─── */
-function CompactProductCard({ product }: { product: SearchProduct }) {
+function CompactProductCard({ product, wishlistedProductIds }: { product: SearchProduct; wishlistedProductIds: Set<string> }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
 
   const badgeData = calculateProductBadges({
