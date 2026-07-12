@@ -21,7 +21,8 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
   },
   icons: {
-    icon: '/assets/images/dhreammarket.png',
+    icon: [{ url: '/favicon.png', type: 'image/png' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }],
+    apple: '/apple-icon.png',
   },
 }
 
