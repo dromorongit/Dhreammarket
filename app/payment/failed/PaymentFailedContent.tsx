@@ -9,7 +9,7 @@ import NeedHelpButton from '@/components/NeedHelpButton'
 
 export default function PaymentFailedContent() {
   const searchParams = useSearchParams()
-  const failureReason = searchParams.get('reason')
+  const failureReason = searchParams?.get('reason')
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">

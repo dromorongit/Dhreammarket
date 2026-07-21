@@ -129,7 +129,7 @@ function renderStars(rating: number, size: 'sm' | 'md' = 'md'): React.ReactNode 
 
 export default function ProductClient() {
   const params = useParams()
-  const productId = params.id as string
+  const productId = params!.id as string
 
   const [product, setProduct] = useState<ProductData | null>(null)
   const [reviews, setReviews] = useState<ProductReview[]>([])

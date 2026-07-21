@@ -89,7 +89,7 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
 
 export default function VendorProfilePage() {
   const params = useParams()
-  const vendorId = params.id as string
+  const vendorId = params!.id as string
 
   const [vendor, setVendor] = useState<VendorData | null>(null)
   const [loading, setLoading] = useState(true)

@@ -142,7 +142,7 @@ const PAYMENT_STATUS_CONFIG = {
 export default function CustomerOrderDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const orderId = params.id as string
+  const orderId = params!.id as string
   const [order, setOrder] = useState<Order | null>(null)
   const [events, setEvents] = useState<FulfillmentEvent[]>([])
   const [messages, setMessages] = useState<OrderMessage[]>([])

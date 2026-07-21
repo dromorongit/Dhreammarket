@@ -29,7 +29,7 @@ function RegisterContent() {
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const redirectParam = searchParams.get('redirect')
+    const redirectParam = searchParams?.get('redirect')
     if (redirectParam) {
       try {
         const decodedUrl = decodeURIComponent(redirectParam)

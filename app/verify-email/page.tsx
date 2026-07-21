@@ -20,11 +20,11 @@ function VerifyEmailContent() {
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const emailParam = searchParams.get('email')
+    const emailParam = searchParams?.get('email')
     if (emailParam) {
       setEmail(decodeURIComponent(emailParam))
     }
-    const redirectParam = searchParams.get('redirect')
+    const redirectParam = searchParams?.get('redirect')
     if (redirectParam) {
       try {
         const decodedUrl = decodeURIComponent(redirectParam)
@@ -148,7 +148,7 @@ function VerifyEmailContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={!!searchParams.get('email')}
+                disabled={!!searchParams?.get('email')}
               />
               <Input
                 label="Verification Code"

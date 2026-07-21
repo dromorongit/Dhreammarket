@@ -5,8 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
 import { GA_MEASUREMENT_ID, pageview } from '@/lib/gtag'
 
-function isExcludedRoute(pathname: string): boolean {
-  return pathname.startsWith('/dashboard')
+function isExcludedRoute(pathname: string | null): boolean {
+  return pathname?.startsWith('/dashboard') ?? false
 }
 
 export default function GoogleAnalytics() {
@@ -14,12 +14,12 @@ export default function GoogleAnalytics() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (isExcludedRoute(pathname)) return
-    const url = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '')
+    if (!pathname || isExcludedRoute(pathname)) return
+    const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
     pageview(url)
   }, [pathname, searchParams])
 
-  if (isExcludedRoute(pathname)) return null
+  if (!pathname || isExcludedRoute(pathname)) return null
 
   return (
     <>

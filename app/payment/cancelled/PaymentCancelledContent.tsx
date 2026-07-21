@@ -9,7 +9,7 @@ import NeedHelpButton from '@/components/NeedHelpButton'
 
 export default function PaymentCancelledContent() {
   const searchParams = useSearchParams()
-  const orderId = searchParams.get('orderId')
+  const orderId = searchParams?.get('orderId')
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">

@@ -28,7 +28,7 @@ interface Order {
 export default function PaymentSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const orderId = searchParams.get('orderId')
+  const orderId = searchParams?.get('orderId')
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
 

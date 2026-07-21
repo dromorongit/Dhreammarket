@@ -79,7 +79,7 @@ interface Store {
 export default function EditProduct() {
   const router = useRouter()
   const params = useParams()
-  const productId = params.id as string
+  const productId = params!.id as string
 
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])

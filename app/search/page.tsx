@@ -82,7 +82,7 @@ const TABS: { key: SearchTab; label: string }[] = [
 function SearchPageContent() {
    const searchParams = useSearchParams()
    const router = useRouter()
-   const initialQuery = searchParams.get('q') || ''
+   const initialQuery = searchParams?.get('q') || ''
 
    const [query, setQuery] = useState(initialQuery)
    const [activeTab, setActiveTab] = useState<SearchTab>('all')

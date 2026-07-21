@@ -220,8 +220,8 @@ function VendorVerificationContent() {
     fetchData()
     
     const reference =
-      searchParams.get('reference') ||
-      searchParams.get('trxref')
+      searchParams?.get('reference') ||
+      searchParams?.get('trxref')
 
     if (reference) {
       verifyPayment(reference)

@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { event } from '@/lib/gtag'
 
 interface WishlistItem {
   id: string
@@ -89,7 +90,7 @@ export default function WishlistClient() {
     }
   }
 
-  const addToCart = async (productId: string) => {
+  const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
     try {
       const response = await fetch('/api/cart', {
         method: 'POST',
@@ -106,6 +107,9 @@ export default function WishlistClient() {
 
       if (response.ok) {
         alert('Product added to cart!')
+        if (productName !== undefined && productPrice !== undefined) {
+          event({ action: 'add_to_cart', category: 'ecommerce', label: productName, value: productPrice })
+        }
       } else {
         const error = await response.json()
         alert(error.error ?? 'Failed to add to cart')
@@ -213,7 +217,7 @@ export default function WishlistClient() {
                     <Button
                       size="sm"
                       className="w-full"
-                      onClick={() => addToCart(product.id)}
+                      onClick={() => addToCart(product.id, product.name, product.price)}
                     >
                       Add to Cart
                     </Button>

@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { event } from './gtag'
 
 interface ProductVariant {
   id: string
@@ -74,8 +75,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         setCart(data.cart)
-      } else if (response.status === 401) {
-        setCart({ id: null, items: [], total: 0 })
+        dispatchCartUpdate()
+        event({ action: 'add_to_cart', category: 'ecommerce', label: productId, value: 0 })
+        return true
       }
     } catch (error) {
       console.error('Error fetching cart:', error)

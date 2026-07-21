@@ -119,7 +119,7 @@ const FULFILLMENT_PROGRESSION: Record<string, string[]> = {
 
 export default function VendorOrderDetailPage() {
   const params = useParams()
-  const orderId = params.id as string
+  const orderId = params!.id as string
   const [order, setOrder] = useState<Order | null>(null)
   const [messages, setMessages] = useState<OrderMessage[]>([])
   const [loading, setLoading] = useState(true)

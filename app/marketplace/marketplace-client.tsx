@@ -14,6 +14,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
+import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import WishlistButton from '@/components/WishlistButton'
 
@@ -137,9 +138,9 @@ function MarketplaceContent() {
   }, [selectedCategory])
 
   useEffect(() => {
-    const categoryParam = searchParams.get('category') ?? ''
-    const vendorCategoryParam = searchParams.get('vendorCategory') ?? ''
-    const brandParam = searchParams.get('brand') ?? ''
+    const categoryParam = searchParams?.get('category') ?? ''
+    const vendorCategoryParam = searchParams?.get('vendorCategory') ?? ''
+    const brandParam = searchParams?.get('brand') ?? ''
     setSelectedCategory(categoryParam)
     setSelectedBrand(brandParam)
     setSelectedVendorCategory(vendorCategoryParam)
@@ -261,7 +262,7 @@ function MarketplaceContent() {
     }
   }, [products])
 
-  const addToCart = async (productId: string) => {
+  const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
     setAddingToCart(prev => new Set(prev).add(productId))
     try {
       const response = await fetch('/api/cart', {
@@ -282,6 +283,9 @@ function MarketplaceContent() {
 
       if (response.ok) {
         dispatchCartUpdate()
+        if (productName !== undefined && productPrice !== undefined) {
+          event({ action: 'add_to_cart', category: 'ecommerce', label: productName, value: productPrice })
+        }
         alert('Product added to cart!')
       } else {
         const error = await response.json()
@@ -654,7 +658,7 @@ function MarketplaceContent() {
                             size="sm"
                             className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
                             disabled={product.stock === 0 && product.availabilityType === 'IN_STOCK' || addingToCart.has(product.id)}
-                            onClick={() => addToCart(product.id)}
+                            onClick={() => addToCart(product.id, product.name, product.price)}
                           >
                             {addingToCart.has(product.id)
                               ? '...'

@@ -300,7 +300,7 @@ export default function CheckoutContent() {
   const [processingScreenTimeout, setProcessingScreenTimeout] = useState(false)
   
   const { cart: contextCart } = useCart()
-  const paymentStatus = searchParams.get('status')
+  const paymentStatus = searchParams?.get('status') ?? null
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -496,8 +496,8 @@ export default function CheckoutContent() {
   }
 
   useEffect(() => {
-    const status = searchParams.get('status')
-    const ref = searchParams.get('reference') ?? searchParams.get('trxref')
+    const status = searchParams?.get('status')
+    const ref = searchParams?.get('reference') ?? searchParams?.get('trxref')
     
     if (ref && (status === 'success' || !status)) {
       if (processedRefs.current.has(ref)) return
@@ -510,7 +510,7 @@ export default function CheckoutContent() {
       } else {
         window.location.href = '/payment/failed'
       }
-    } else if (searchParams.toString()) {
+    } else if (searchParams?.toString()) {
       setProcessing(false)
       if (!ref) window.location.href = '/payment/failed'
     }

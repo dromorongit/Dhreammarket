@@ -12,6 +12,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { useState, useEffect, useMemo } from 'react'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
+import { event } from '@/lib/gtag'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { handleAuthRedirect, dispatchCartUpdate } from '@/lib/CartContext'
@@ -1042,34 +1043,37 @@ const fetchProducts = async () => {
      }
    }
 
-  const addToCart = async (productId: string) => {
-    setAddingToCart(prev => new Set(prev).add(productId))
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity: 1 })
-      })
+   const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
+     setAddingToCart(prev => new Set(prev).add(productId))
+     try {
+       const response = await fetch('/api/cart', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ productId, quantity: 1 })
+       })
 
-      if (response.status === 401) {
-        handleAuthRedirect()
-        return
-      }
+       if (response.status === 401) {
+         handleAuthRedirect()
+         return
+       }
 
-      if (response.ok) {
-        dispatchCartUpdate()
-        // Could show success toast here
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error)
-    } finally {
-      setAddingToCart(prev => {
-        const next = new Set(prev)
-        next.delete(productId)
-        return next
-      })
-    }
-  }
+       if (response.ok) {
+         dispatchCartUpdate()
+         if (productName !== undefined && productPrice !== undefined) {
+           event({ action: 'add_to_cart', category: 'ecommerce', label: productName, value: productPrice })
+         }
+         // Could show success toast here
+       }
+     } catch (error) {
+       console.error('Error adding to cart:', error)
+     } finally {
+       setAddingToCart(prev => {
+         const next = new Set(prev)
+         next.delete(productId)
+         return next
+       })
+     }
+   }
 
   if (loading) {
      return (
@@ -1281,7 +1285,7 @@ const fetchProducts = async () => {
                       size="sm"
                       className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
                       disabled={addingToCart.has(product.id)}
-                      onClick={() => addToCart(product.id)}
+                      onClick={() => addToCart(product.id, product.name, product.price)}
                     >
                       {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
                     </Button>
@@ -1381,7 +1385,7 @@ const fetchProducts = async () => {
                       size="sm"
                       className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
                       disabled={addingToCart.has(product.id)}
-                      onClick={() => addToCart(product.id)}
+                      onClick={() => addToCart(product.id, product.name, product.price)}
                     >
                       {addingToCart.has(product.id) ? 'Adding...' : 'Add to Cart'}
                     </Button>
