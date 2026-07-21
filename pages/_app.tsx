@@ -11,15 +11,16 @@ function MyApp({ Component, pageProps }) {
           src="https://www.googletagmanager.com/gtag/js?id=G-QCL4XW5FR1"
           strategy="lazyOnload"
         />
-        <Script
-          strategy="beforeInteractive"
-        >
-          {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-QCL4XW5FR1');`}
-        </Script>
       </Head>
+      <Script
+        id="gtag-init"
+        strategy="beforeInteractive"
+      >
+        {`window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-QCL4XW5FR1');`}
+      </Script>
       <Component {...pageProps} />
     </>
   );
