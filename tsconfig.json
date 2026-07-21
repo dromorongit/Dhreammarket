@@ -23,6 +23,6 @@
       "@prisma/client": ["./node_modules/.prisma/client/index"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "lib/types.d.ts"],
   "exclude": ["node_modules", "_scripts", "scripts"]
 }
