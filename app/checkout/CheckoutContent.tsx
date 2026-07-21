@@ -15,6 +15,7 @@ import { formatPrice } from '@/lib/currency'
 import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
+import { event } from '@/lib/gtag'
 
 interface CartItem {
   id: string
@@ -391,6 +392,8 @@ export default function CheckoutContent() {
 
   const handleCheckout = async () => {
     if (!cart || cart.items.length === 0) return
+
+    event({ action: 'begin_checkout', category: 'ecommerce', value: subtotal })
 
     for (const item of cart.items) {
       const isPreorderOrBackorder = item.product.availabilityType === 'PREORDER' ||

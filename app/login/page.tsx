@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { PasswordInput } from '@/components/PasswordInput'
 import { Card, CardContent, CardHeader } from '@/components/Card'
+import { event } from '@/lib/gtag'
 
 function LoginContent() {
   const [email, setEmail] = useState('')
@@ -57,8 +58,9 @@ function LoginContent() {
 
       const data = await response.json()
 
-      if (response.ok) {
-        if (data.needsVerification) {
+if (response.ok) {
+         event({ action: 'login', category: 'engagement' })
+         if (data.needsVerification) {
           const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
           window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
         } else {

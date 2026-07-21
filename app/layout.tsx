@@ -5,6 +5,8 @@ import { Footer } from '@/components/Footer'
 import { CartProvider } from '@/lib/CartContext'
 import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
   title: {
@@ -34,6 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans">
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
         <OrganizationJsonLd />
         <CartProvider>
           <Navbar />

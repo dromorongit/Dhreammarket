@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { FiHeart } from 'react-icons/fi'
 import { handleAuthRedirect } from '@/lib/CartContext'
+import { event } from '@/lib/gtag'
 
 interface WishlistButtonProps {
   productId: string
@@ -88,6 +89,7 @@ export default function WishlistButton({
           setIsWishlisted(previousState)
           throw new Error('Failed to add to wishlist')
         }
+        event({ action: 'add_to_wishlist', category: 'engagement', label: productId })
       }
       dispatchWishlistUpdate()
     } catch (error) {

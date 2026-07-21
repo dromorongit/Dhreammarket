@@ -16,6 +16,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
 import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus } from 'react-icons/fi'
+import { event } from '@/lib/gtag'
 
 interface ProductImage {
   id: string
@@ -250,6 +251,7 @@ useEffect(() => {
 
       if (response.ok) {
         dispatchCartUpdate()
+        event({ action: 'add_to_cart', category: 'ecommerce', label: product.name, value: product.price })
         alert('Product added to cart!')
       } else {
         const error = await response.json()

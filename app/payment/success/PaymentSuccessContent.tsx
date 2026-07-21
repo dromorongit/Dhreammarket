@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatPrice } from '@/lib/currency'
+import { event } from '@/lib/gtag'
 
 interface Order {
   id: string
@@ -45,6 +46,7 @@ export default function PaymentSuccessContent() {
         const foundOrder = data.orders?.find((o: Order) => o.id === orderId)
         if (foundOrder) {
           setOrder(foundOrder)
+          event({ action: 'purchase', category: 'ecommerce', label: foundOrder.id, value: foundOrder.total })
         }
       }
     } catch (error) {

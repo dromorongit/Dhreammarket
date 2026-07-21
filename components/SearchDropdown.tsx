@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import WishlistButton from '@/components/WishlistButton'
+import { event } from '@/lib/gtag'
 
 interface SearchProduct {
   id: string
@@ -92,6 +93,8 @@ const performSearch = useCallback(async (searchQuery: string) => {
       setIsOpen(false)
       return
     }
+
+    event({ action: 'search', category: 'engagement', label: searchQuery })
 
     setLoading(true)
     try {
