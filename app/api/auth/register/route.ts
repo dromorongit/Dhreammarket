@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { hashPassword, generateOTP, hashOTP, generateToken } from '@/lib/auth'
+import { generateSlug } from '@/lib/slug'
 import { normalizeGhanaPhoneNumber } from '@/lib/phone'
 import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
@@ -53,7 +54,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Position is required for ADMIN accounts' }, { status: 400 })
     }
 
-    // Clean up any expired pending registrations for this email
     await getPrisma().pendingRegistration.deleteMany({
       where: {
         email: normalizedEmail,
@@ -65,16 +65,11 @@ export async function POST(request: NextRequest) {
       where: { email: normalizedEmail },
     })
 
-    if (existingUser && existingUser.isEmailVerified) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 409 })
-    }
-
-    const existingPending = await getPrisma().pendingRegistration.findUnique({
-      where: { email: normalizedEmail },
-    })
-
-    if (existingPending) {
-      return NextResponse.json({ error: 'Registration already pending. Please check your email for the verification code.' }, { status: 409 })
+    if (existingUser) {
+      if (existingUser.isEmailVerified) {
+        return NextResponse.json({ error: 'User already exists' }, { status: 409 })
+      }
+      return NextResponse.json({ error: 'An account with this email already exists but is not verified. Please check your email or request a new verification code.' }, { status: 409 })
     }
 
     const hashedPassword = await hashPassword(password)
@@ -85,8 +80,18 @@ export async function POST(request: NextRequest) {
       const hashedOTP = hashOTP(otp)
       const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
 
-      await getPrisma().pendingRegistration.create({
-        data: {
+      await getPrisma().pendingRegistration.upsert({
+        where: { email: normalizedEmail },
+        update: {
+          hashedOTP,
+          otpExpiresAt,
+          phone: normalizedPhone,
+          role,
+          position: role === 'ADMIN' ? position?.trim() : null,
+          name: role === 'CUSTOMER' ? name?.trim() : null,
+          hashedPassword,
+        },
+        create: {
           email: normalizedEmail,
           hashedOTP,
           otpExpiresAt,
@@ -111,61 +116,92 @@ export async function POST(request: NextRequest) {
       }, { status: 201 })
     }
 
-    const user = await getPrisma().user.create({
-      data: {
-        email: normalizedEmail,
-        password: hashedPassword,
-        role,
-        position: role === 'ADMIN' ? position?.trim() : null,
-        isEmailVerified: true,
-        emailVerifiedAt: new Date(),
-        profile: {
-          create: {
+    try {
+      const user = await getPrisma().$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            email: normalizedEmail,
+            password: hashedPassword,
+            role,
+            position: role === 'ADMIN' ? position?.trim() : null,
+            isEmailVerified: true,
+            emailVerifiedAt: new Date(),
+          },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+          },
+        })
+
+        await tx.profile.create({
+          data: {
+            userId: createdUser.id,
             phone: normalizedPhone,
             firstName: role === 'CUSTOMER' ? name?.trim() : null,
           },
-        },
-        store: role === 'VENDOR' ? {
-          create: {
-            name: name?.trim() || 'My Store',
-            slug: '',
-            isVerified: false,
-          },
-        } : undefined,
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        store: {
-          select: { id: true, slug: true },
-        },
-      },
-    })
+        })
 
-    const token = generateToken({ userId: user.id, role: user.role })
+        let storeData: { id: string; slug: string } | undefined
+        if (role === 'VENDOR') {
+          storeData = await tx.store.create({
+            data: {
+              userId: createdUser.id,
+              name: name?.trim() || 'My Store',
+              slug: await generateSlug({
+                baseText: name?.trim() || 'My Store',
+                target: 'Store',
+                prismaClient: tx,
+              }),
+              isVerified: false,
+            },
+            select: { id: true, slug: true },
+          })
+        }
 
-    let isOnboarded: boolean | undefined = undefined
-    if (user.role === 'VENDOR') {
-      isOnboarded = await isVendorOnboarded(user.id)
+        return {
+          id: createdUser.id,
+          email: createdUser.email,
+          role: createdUser.role,
+          store: storeData,
+        }
+      })
+
+      const token = generateToken({ userId: user.id, role: user.role })
+
+      let isOnboarded: boolean | undefined = undefined
+      if (user.role === 'VENDOR') {
+        isOnboarded = await isVendorOnboarded(user.id)
+      }
+
+      const response = NextResponse.json({
+        message: 'Registration successful',
+        isEmailVerified: true,
+        user: { id: user.id, email: user.email, role: user.role },
+        isOnboarded
+      }, { status: 201 })
+
+      response.cookies.set('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      })
+
+      return response
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        if (error.meta?.target?.includes('email')) {
+          return NextResponse.json({ error: 'User already exists' }, { status: 409 })
+        }
+        if (error.meta?.target?.includes('slug')) {
+          return NextResponse.json({ error: 'Store slug conflict. Please try again.' }, { status: 409 })
+        }
+      }
+      console.error('Registration error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-
-    const response = NextResponse.json({
-      message: 'Registration successful',
-      isEmailVerified: true,
-      user: { id: user.id, email: user.email, role: user.role },
-      isOnboarded
-    }, { status: 201 })
-
-    response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    return response
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

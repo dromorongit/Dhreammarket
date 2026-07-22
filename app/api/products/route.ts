@@ -3,7 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
-import { slugify } from '@/lib/slugify'
+import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 export const dynamic = 'force-dynamic'
@@ -298,13 +298,7 @@ export async function POST(request: NextRequest) {
     const primaryCategoryId = uniqueCategoryIds[0]
 
     // Generate unique slug
-    const baseSlug = slugify(name.trim())
-    let slug = baseSlug
-    let suffix = 2
-    while (await getPrisma().product.findUnique({ where: { slug } })) {
-      slug = `${baseSlug}-${suffix}`
-      suffix++
-    }
+    const slug = await generateSlug({ baseText: name.trim(), target: 'Product' })
 
     const product = await getPrisma().product.create({
       data: {

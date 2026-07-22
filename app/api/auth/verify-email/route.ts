@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { generateToken } from '@/lib/auth'
+import { generateSlug } from '@/lib/slug'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { rateLimit } from '@/lib/rate-limit'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
@@ -64,66 +65,100 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email already verified. Please login.' }, { status: 200 })
     }
 
-    const user = await getPrisma().user.create({
-      data: {
-        email: pendingReg.email,
-        password: pendingReg.hashedPassword,
-        role: pendingReg.role,
-        position: pendingReg.role === 'ADMIN' ? pendingReg.position : null,
-        isEmailVerified: true,
-        emailVerifiedAt: new Date(),
-        profile: {
-          create: {
+    try {
+      const user = await getPrisma().$transaction(async (tx) => {
+        const createdUser = await tx.user.create({
+          data: {
+            email: pendingReg.email,
+            password: pendingReg.hashedPassword,
+            role: pendingReg.role,
+            position: pendingReg.role === 'ADMIN' ? pendingReg.position : null,
+            isEmailVerified: true,
+            emailVerifiedAt: new Date(),
+          },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+          },
+        })
+
+        await tx.profile.create({
+          data: {
+            userId: createdUser.id,
             phone: pendingReg.phone,
             firstName: pendingReg.name,
           },
-        },
-        store: pendingReg.role === 'VENDOR' ? {
-          create: {
-            name: pendingReg.name || 'My Store',
-            slug: '',
-            isVerified: false,
-          },
-        } : undefined,
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        store: {
-          select: { id: true, slug: true },
-        },
-      },
-    })
+        })
 
-    await getPrisma().pendingRegistration.delete({
-      where: { id: pendingReg.id },
-    })
+        let storeData: { id: string; slug: string } | undefined
+        if (pendingReg.role === 'VENDOR') {
+          storeData = await tx.store.create({
+            data: {
+              userId: createdUser.id,
+              name: pendingReg.name || 'My Store',
+              slug: await generateSlug({
+                baseText: pendingReg.name || 'My Store',
+                target: 'Store',
+                prismaClient: tx,
+              }),
+              isVerified: false,
+            },
+            select: { id: true, slug: true },
+          })
+        }
 
-    const token = generateToken({ userId: user.id, role: user.role })
+        return {
+          id: createdUser.id,
+          email: createdUser.email,
+          role: createdUser.role,
+          store: storeData,
+        }
+      })
 
-    let isOnboarded: boolean | undefined = undefined
-    if (user.role === 'VENDOR') {
-      isOnboarded = await isVendorOnboarded(user.id)
+      await getPrisma().pendingRegistration.delete({
+        where: { id: pendingReg.id },
+      })
+
+      const token = generateToken({ userId: user.id, role: user.role })
+
+      let isOnboarded: boolean | undefined = undefined
+      if (user.role === 'VENDOR') {
+        isOnboarded = await isVendorOnboarded(user.id)
+      }
+
+      const response = NextResponse.json({
+        message: 'Email verified successfully',
+        email: user.email,
+        isEmailVerified: true,
+        user: { id: user.id, email: user.email, role: user.role },
+        isOnboarded
+      }, { status: 200 })
+
+      response.cookies.set('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      })
+
+      return response
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        if (error.meta?.target?.includes('email')) {
+          await getPrisma().pendingRegistration.delete({
+            where: { id: pendingReg.id },
+          })
+          return NextResponse.json({ error: 'Email already verified. Please login.' }, { status: 200 })
+        }
+        if (error.meta?.target?.includes('slug')) {
+          return NextResponse.json({ error: 'Store slug conflict. Please contact support.' }, { status: 500 })
+        }
+      }
+      console.error('Email verification error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-
-    const response = NextResponse.json({
-      message: 'Email verified successfully',
-      email: user.email,
-      isEmailVerified: true,
-      user: { id: user.id, email: user.email, role: user.role },
-      isOnboarded
-    }, { status: 200 })
-
-    response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
-    return response
   } catch (error) {
     console.error('Email verification error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

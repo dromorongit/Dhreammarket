@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { sanitizePhoneNumber } from '@/lib/phone'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
-import { slugify } from '@/lib/slugify'
+import { generateSlug } from '@/lib/slug'
 
 export async function GET(request: NextRequest) {
   try {
@@ -93,17 +93,9 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
        return NextResponse.json({ error: 'Store already exists' }, { status: 400 })
      }
     
-     // Generate unique slug for the store
-     let slug = slugify(name.trim())
-     let slugAttempt = 1
-     let existingSlug = await getPrisma().store.findUnique({ where: { slug } })
-     while (existingSlug) {
-       slugAttempt++
-       slug = `${slugify(name.trim())}-${slugAttempt}`
-       existingSlug = await getPrisma().store.findUnique({ where: { slug } })
-     }
-   
-    // Debug: Log the data being saved
+      const slug = await generateSlug({ baseText: name.trim(), target: 'Store' })
+    
+     // Debug: Log the data being saved
     console.log('[Store API] Creating store with data:', {
       userId: payload.userId,
       name: name.trim(),
