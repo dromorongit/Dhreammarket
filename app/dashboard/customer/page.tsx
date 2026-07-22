@@ -328,6 +328,11 @@ export default function CustomerDashboard() {
                   Update Profile
                 </Link>
               </Button>
+              <Button asChild variant="ghost" size="sm" className="w-full">
+                <Link href="/dashboard/customer/settings">
+                  Settings
+                </Link>
+              </Button>
               </div>
             </CardContent>
           </Card>

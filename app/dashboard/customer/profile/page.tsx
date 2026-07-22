@@ -10,6 +10,7 @@ import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import ChangePasswordCard from '@/components/account/ChangePasswordCard'
 
 interface UserProfile {
   id: string
@@ -291,16 +292,15 @@ export default function CustomerProfilePage() {
               </CardContent>
             </Card>
 
-            <div className="flex justify-end">
-              <Button 
-                size="lg" 
-                onClick={handleSave}
-                disabled={saving}
-                className="shadow-lg shadow-royal-blue/20"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
+            <Card variant="elevated">
+              <CardHeader>
+                <h2 className="text-xl font-semibold text-deep-navy">Change Password</h2>
+                <p className="text-slate-600 text-sm mt-1">Update your password to keep your account secure</p>
+              </CardHeader>
+              <CardContent>
+                <ChangePasswordCard />
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}

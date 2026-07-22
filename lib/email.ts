@@ -368,3 +368,34 @@ export async function sendPasswordResetEmail(
     textContent: `Reset your Dhream Market password by visiting: ${resetUrl}. This link expires in ${expiryHours} hour(s).`
   })
  }
+
+// Password changed notification email
+export async function sendPasswordChangedEmail(
+  customerEmail: string,
+  customerName: string
+) {
+  const subject = 'Your Dhream Market Password Was Changed'
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Password Changed Successfully</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">Your password has been changed successfully. If you made this change, no further action is required.</p>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-size: 14px; color: #92400e;">
+        <strong>Important:</strong> If you did not change your password, please contact our support team immediately or use the forgot password feature to secure your account.
+      </p>
+    </div>
+    
+    <p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280;">
+      Thank you for using Dhream Market.
+    </p>
+  `
+  const htmlContent = getEmailTemplate(content, 'If you need assistance, contact our support team at support@dhreamarket.com')
+  
+  return sendEmail({
+    to: customerEmail,
+    subject,
+    htmlContent,
+    textContent: `Your Dhream Market password was changed successfully. If you did not make this change, please contact support immediately.`
+  })
+}

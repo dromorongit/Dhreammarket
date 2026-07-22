@@ -21,6 +21,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   checkout: { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 checkouts per hour
   'payment-verification': { windowMs: 60 * 60 * 1000, maxRequests: 20 }, // 20 verifications per hour
   search: { windowMs: 60 * 1000, maxRequests: 60 }, // 60 searches per minute
+  'change-password': { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 requests per 15 minutes
 }
 
 function getClientIP(request: NextRequest): string {
