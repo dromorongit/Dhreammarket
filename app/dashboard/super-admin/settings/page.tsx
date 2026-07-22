@@ -10,7 +10,7 @@ import SuperAdminSections from '@/components/settings/SuperAdminSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function SuperAdminSettingsPage() {
-  const user = useSettingsUser()
+  const { user } = useSettingsUser()
 
   return (
     <SettingsShell role="SUPER_ADMIN" dashboardHref="/dashboard/super-admin">

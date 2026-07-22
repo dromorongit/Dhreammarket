@@ -10,7 +10,7 @@ import VendorSections from '@/components/settings/VendorSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function VendorSettingsPage() {
-  const user = useSettingsUser()
+  const { user } = useSettingsUser()
 
   return (
     <SettingsShell role="VENDOR" dashboardHref="/dashboard/vendor">

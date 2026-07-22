@@ -10,7 +10,7 @@ import AdminSections from '@/components/settings/AdminSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function AdminSettingsPage() {
-  const user = useSettingsUser()
+  const { user } = useSettingsUser()
 
   return (
     <SettingsShell role="ADMIN" dashboardHref="/dashboard/admin">

@@ -10,7 +10,7 @@ import CustomerSections from '@/components/settings/CustomerSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function CustomerSettingsPage() {
-  const user = useSettingsUser()
+  const { user } = useSettingsUser()
 
   return (
     <SettingsShell role="CUSTOMER" dashboardHref="/dashboard/customer">
