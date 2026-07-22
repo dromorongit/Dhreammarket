@@ -45,35 +45,95 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { firstName, lastName, phone, address } = await request.json()
+    const body = await request.json()
+    const {
+      firstName,
+      lastName,
+      phone,
+      address,
+      avatar,
+      darkMode,
+      language,
+      currency,
+      timezone,
+      emailNotifications,
+      orderNotifications,
+      promotionalNotifications,
+      systemNotifications,
+    } = body
 
-    // Fetch current profile for beforeData
     const currentProfile = await getPrisma().profile.findUnique({
       where: { userId: payload.userId },
     })
 
-    // Update user profile
     const profile = await getPrisma().profile.upsert({
       where: { userId: payload.userId },
       update: {
-        firstName: firstName || null,
-        lastName: lastName || null,
-        phone: phone || null,
-        address: address || null,
+        firstName: firstName ?? undefined,
+        lastName: lastName ?? undefined,
+        phone: phone ?? undefined,
+        address: address ?? undefined,
+        avatar: avatar ?? undefined,
+        darkMode: darkMode ?? undefined,
+        language: language ?? undefined,
+        currency: currency ?? undefined,
+        timezone: timezone ?? undefined,
+        emailNotifications: emailNotifications ?? undefined,
+        orderNotifications: orderNotifications ?? undefined,
+        promotionalNotifications: promotionalNotifications ?? undefined,
+        systemNotifications: systemNotifications ?? undefined,
       },
       create: {
         userId: payload.userId,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        phone: phone || null,
-        address: address || null,
+        firstName: firstName ?? null,
+        lastName: lastName ?? null,
+        phone: phone ?? null,
+        address: address ?? null,
+        avatar: avatar ?? null,
+        darkMode: darkMode ?? false,
+        language: language ?? 'en',
+        currency: currency ?? 'GHS',
+        timezone: timezone ?? 'Africa/Accra',
+        emailNotifications: emailNotifications ?? true,
+        orderNotifications: orderNotifications ?? true,
+        promotionalNotifications: promotionalNotifications ?? false,
+        systemNotifications: systemNotifications ?? true,
       },
     })
 
-    // Create audit log for profile update
     const { beforeData, afterData } = captureBeforeAfter(
-      currentProfile ? { firstName: currentProfile.firstName, lastName: currentProfile.lastName, phone: currentProfile.phone, address: currentProfile.address } : null,
-      { firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone, address: profile.address }
+      currentProfile
+        ? {
+            firstName: currentProfile.firstName,
+            lastName: currentProfile.lastName,
+            phone: currentProfile.phone,
+            address: currentProfile.address,
+            avatar: currentProfile.avatar,
+            darkMode: currentProfile.darkMode,
+            language: currentProfile.language,
+            currency: currentProfile.currency,
+            timezone: currentProfile.timezone,
+            emailNotifications: currentProfile.emailNotifications,
+            orderNotifications: currentProfile.orderNotifications,
+            promotionalNotifications: currentProfile.promotionalNotifications,
+            systemNotifications: currentProfile.systemNotifications,
+          }
+        : null,
+      {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phone: profile.phone,
+        address: profile.address,
+        avatar: profile.avatar,
+        darkMode: profile.darkMode,
+        language: profile.language,
+        currency: profile.currency,
+        timezone: profile.timezone,
+        emailNotifications: profile.emailNotifications,
+        orderNotifications: profile.orderNotifications,
+        promotionalNotifications: profile.promotionalNotifications,
+        systemNotifications: profile.systemNotifications,
+      }
     )
     createAuditLog({
       userId: payload.userId,
@@ -83,7 +143,7 @@ export async function PUT(request: NextRequest) {
       entityId: payload.userId,
       beforeData,
       afterData,
-    }).catch(err => console.error('Failed to create audit log:', err))
+    }).catch((err) => console.error('Failed to create audit log:', err))
 
     return NextResponse.json({ profile, message: 'Profile updated successfully' })
   } catch (error) {

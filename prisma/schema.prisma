@@ -80,15 +80,24 @@ model AuthToken {
 }
 
 model Profile {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  firstName String?
-  lastName  String?
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                       String    @id @default(cuid())
+  userId                   String    @unique
+  firstName                String?
+  lastName                 String?
+  phone                    String?
+  address                  String?
+  avatar                   String?
+  darkMode                 Boolean   @default(false)
+  language                 String?   @default("en")
+  currency                 String?   @default("GHS")
+  timezone                 String?   @default("Africa/Accra")
+  emailNotifications       Boolean   @default(true)
+  orderNotifications       Boolean   @default(true)
+  promotionalNotifications Boolean   @default(false)
+  systemNotifications      Boolean   @default(true)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
 }

@@ -266,3 +266,47 @@ const store = await getPrisma().store.update({
     }, { status: 500 })
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload || payload.role !== 'VENDOR') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { name, description, categoryId, location, mainPhoneNumber, alternativePhoneNumber, whatsappNumber } = await request.json()
+
+    const existingStore = await getPrisma().store.findUnique({
+      where: { userId: payload.userId },
+      include: { vendor_categories: true },
+    })
+
+    if (!existingStore) {
+      return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+    }
+
+    const store = await getPrisma().store.update({
+      where: { userId: payload.userId },
+      data: {
+        ...(name !== undefined && { name: String(name).trim() }),
+        ...(description !== undefined && { description: description || null }),
+        ...(categoryId !== undefined && { categoryId: categoryId || null }),
+        ...(location !== undefined && { location: location?.trim() || null }),
+        ...(mainPhoneNumber !== undefined && { mainPhoneNumber: mainPhoneNumber || null }),
+        ...(alternativePhoneNumber !== undefined && { alternativePhoneNumber: alternativePhoneNumber || null }),
+        ...(whatsappNumber !== undefined && { whatsappNumber: whatsappNumber || null }),
+      },
+      include: { vendor_categories: true },
+    })
+
+    return NextResponse.json({ store })
+  } catch (error) {
+    console.error('Error patching store:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
