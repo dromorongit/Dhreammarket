@@ -5,7 +5,7 @@ import { useState } from 'react'
 interface ToggleProps {
   checked?: boolean
   defaultChecked?: boolean
-  onChange: (checked: boolean) => void
+  onChange?: (checked: boolean) => void
   label?: string
   description?: string
   disabled?: boolean
@@ -21,7 +21,7 @@ export default function Toggle({ checked, defaultChecked, onChange, label, descr
     if (!isControlled) {
       setInternalChecked(!internalChecked)
     }
-    onChange(!value)
+    onChange?.(!value)
   }
   return (
     <div className={`flex items-center justify-between py-2 ${className || ''}`}>

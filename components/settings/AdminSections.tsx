@@ -117,7 +117,7 @@ export default function AdminSections({ adminName }: AdminSectionsProps) {
 
       <SettingsSection title="Notification Preferences" description="Manage admin notification channels">
         <div className="space-y-2">
-          <Toggle label="New User Alerts" description="Notify when a new user registers" checked defaultChecked />
+          <Toggle label="New User Alerts" description="Notify when a new user registers" defaultChecked />
           <Toggle label="Verification Requests" description="Notify for new vendor verification requests" defaultChecked />
           <Toggle label="System Alerts" description="Critical system notifications" defaultChecked />
           <Toggle label="Order Anomalies" description="Flags for suspicious order patterns" defaultChecked />
