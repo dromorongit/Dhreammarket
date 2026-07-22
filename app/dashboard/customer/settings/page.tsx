@@ -16,21 +16,19 @@ export default function CustomerSettingsPage() {
     <SettingsShell role="CUSTOMER" dashboardHref="/dashboard/customer">
       <ProfileSection
         initialProfile={
-          user?.profile
-            ? {
-                id: user.profile.id,
-                email: user.email,
-                role: user.role,
-                firstName: user.profile.firstName,
+              user?.profile
+                ? {
+                    id: user.profile.id,
+                    email: user.email,
+                    firstName: user.profile.firstName,
                 lastName: user.profile.lastName,
                 phone: user.profile.phone,
                 address: user.profile.address,
               }
-            : {
-                id: '',
-                email: '',
-                role: 'CUSTOMER',
-                firstName: null,
+                : {
+                    id: '',
+                    email: '',
+                    firstName: null,
                 lastName: null,
                 phone: null,
                 address: null,
