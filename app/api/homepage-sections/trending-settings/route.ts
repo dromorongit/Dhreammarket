@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest) {
         slug: 'trending-now',
         type: HomepageSectionType.TRENDING_NOW,
         subtitle: 'Discover what\'s currently trending across Dhream Market.',
-        displayOrder: 1,
+        displayOrder: 2,
         isEnabled: true,
         settings: { ...DEFAULT_SETTINGS, ...settings } as any,
       },

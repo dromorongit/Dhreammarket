@@ -205,19 +205,47 @@ return (
         </div>
       </section>
 
-      {/* ─── Super Admin managed: Trending Now & Flash Sales ─── */}
-      <TrendingNowSection
-        section={sectionsBySlug['trending-now']}
-        loading={loadingManaged}
-      />
-      <FlashSalesSection
-        section={sectionsBySlug['flash-sales']}
-        loading={loadingManaged}
-      />
-      <SponsoredProductsSection
-        section={sectionsBySlug['sponsored-products']}
-        loading={loadingManaged}
-      />
+      {/* ─── Managed homepage sections rendered by displayOrder ─── */}
+      {managedData.sections
+        .filter((s) => isManagedSectionSlug(s.slug))
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map((section) => {
+          const sectionProps = {
+            name: section.name,
+            subtitle: section.subtitle,
+            type: section.type,
+            products: section.products,
+            loading: loadingManaged,
+          }
+          if (section.slug === 'sponsored-products')
+            return <SponsoredProductsSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'trending-now')
+            return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'flash-sales')
+            return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'gadget-display')
+            return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'big-top-deals')
+            return <BigTopDealsSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'brand-store')
+            return (
+              <BrandStoreSection
+                key={section.id}
+                section={sectionProps}
+                brands={managedData.brands}
+                loading={loadingManaged}
+              />
+            )
+          if (section.slug === 'top-clearance-sales')
+            return <TopClearanceSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'top-services')
+            return <TopServicesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'home-theatre')
+            return <HomeTheatreSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'top-express-offers')
+            return <TopExpressOffersSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          return null
+        })}
 
       {/* ─── Featured Products (always shown) ─── */}
       {!loadingManaged && (
@@ -252,51 +280,8 @@ return (
         <NewThisWeekSection excludeIds={excludeFromFeaturedIds} />
       )}
 
-      {/* ─── Super Admin managed: Gadget Display ─── */}
-      <EnterpriseGadgetDisplaySection
-        section={sectionsBySlug['gadget-display']}
-        loading={loadingManaged}
-      />
-
       {/* ─── Automatic: Top Selling (real sales data) ─── */}
       <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
-
-      {/* ─── Super Admin managed: Big Top Deals ─── */}
-      <BigTopDealsSection
-        section={sectionsBySlug['big-top-deals']}
-        loading={loadingManaged}
-      />
-
-      {/* ─── Super Admin managed: Top Clearance Sales ─── */}
-      <TopClearanceSalesSection
-        section={sectionsBySlug['top-clearance-sales']}
-        loading={loadingManaged}
-      />
-
-      {/* ─── Super Admin managed: Top Services ─── */}
-      <TopServicesSection
-        section={sectionsBySlug['top-services']}
-        loading={loadingManaged}
-      />
-
-      {/* ─── Super Admin managed: Home Theatre ─── */}
-      <HomeTheatreSection
-        section={sectionsBySlug['home-theatre']}
-        loading={loadingManaged}
-      />
-
-      {/* ─── Super Admin managed: Top Express Offers ─── */}
-      <TopExpressOffersSection
-        section={sectionsBySlug['top-express-offers']}
-        loading={loadingManaged}
-      />
-
-      {/* ─── Super Admin managed: Brand Store ─── */}
-      <BrandStoreSection
-        section={sectionsBySlug['brand-store']}
-        brands={managedData.brands}
-        loading={loadingManaged}
-      />
 
       {/* ─── Optional extra custom sections (non-core) ─── */}
       {loadingManaged ? (

@@ -15,24 +15,24 @@ export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
 
 export const DEFAULT_HOMEPAGE_SECTIONS = [
   {
+    name: 'Sponsored Products',
+    slug: 'sponsored-products',
+    type: 'SPONSORED_PRODUCTS' as const,
+    subtitle: 'Featured by vendors',
+    displayOrder: 1,
+  },
+  {
     name: 'Trending Now',
     slug: 'trending-now',
     type: 'TRENDING_NOW' as const,
     subtitle: 'Discover what\'s currently trending across Dhream Market.',
-    displayOrder: 1,
+    displayOrder: 2,
   },
   {
     name: 'Flash Sales',
     slug: 'flash-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Limited time offers',
-    displayOrder: 2,
-  },
-  {
-    name: 'Sponsored Products',
-    slug: 'sponsored-products',
-    type: 'SPONSORED_PRODUCTS' as const,
-    subtitle: 'Featured by vendors',
     displayOrder: 3,
   },
   {
@@ -47,42 +47,42 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'big-top-deals',
     type: 'BIG_DEALS' as const,
     subtitle: 'Biggest savings on premium products',
-    displayOrder: 6,
+    displayOrder: 5,
   },
   {
     name: 'Brand Store',
     slug: 'brand-store',
     type: 'BRAND_GRID' as const,
     subtitle: 'Explore products from your favorite brands',
-    displayOrder: 7,
+    displayOrder: 6,
   },
   {
     name: 'Top Clearance Sales',
     slug: 'top-clearance-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Massive clearance offers',
-    displayOrder: 11,
+    displayOrder: 7,
   },
   {
     name: 'Top Services',
     slug: 'top-services',
     type: 'SERVICE_GRID' as const,
     subtitle: 'Premium services marketplace',
-    displayOrder: 12,
+    displayOrder: 8,
   },
   {
     name: 'Home Theatre',
     slug: 'home-theatre',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Home entertainment systems',
-    displayOrder: 13,
+    displayOrder: 9,
   },
   {
     name: 'Top Express Offers',
     slug: 'top-express-offers',
     type: 'BIG_DEALS' as const,
     subtitle: 'Express delivery exclusive deals',
-    displayOrder: 14,
+    displayOrder: 10,
   },
 ]
 

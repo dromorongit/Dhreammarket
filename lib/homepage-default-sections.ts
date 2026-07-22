@@ -23,7 +23,9 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
           displayOrder: section.displayOrder,
           isEnabled: true,
         },
-        update: {},
+        update: {
+          displayOrder: section.displayOrder,
+        },
       })
     } catch (e) {
       console.error(`[ensureDefaultHomepageSections] Failed to upsert section ${section.slug}:`, e)
