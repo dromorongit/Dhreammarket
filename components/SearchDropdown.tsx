@@ -76,6 +76,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
   const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
   const flatResults: FlatSearchItem[] = results
@@ -88,6 +89,12 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
     : []
 
 const performSearch = useCallback(async (searchQuery: string) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     if (!searchQuery.trim()) {
       setResults(null)
       setIsOpen(false)
@@ -98,7 +105,9 @@ const performSearch = useCallback(async (searchQuery: string) => {
 
     setLoading(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
+        signal: controller.signal,
+      })
       if (res.ok) {
         const data = await res.json()
         setResults(data)
@@ -110,21 +119,30 @@ const performSearch = useCallback(async (searchQuery: string) => {
         }
       }
     } catch (error) {
-      console.error('Search error:', error)
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Search error:', error)
+      }
     } finally {
-      setLoading(false)
+      if (abortControllerRef.current === controller) {
+        setLoading(false)
+      }
     }
   }, [])
 
   const fetchWishlistStatus = useCallback(async (productIds: string) => {
+    const controller = new AbortController()
     try {
-      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`, {
+        signal: controller.signal,
+      })
       if (response.ok) {
         const data = await response.json()
         setWishlistedProductIds(new Set(data.productIds ?? []))
       }
     } catch (error) {
-      console.error('Error fetching wishlist status:', error)
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Error fetching wishlist status:', error)
+      }
     }
   }, [])
 
@@ -166,6 +184,15 @@ const performSearch = useCallback(async (searchQuery: string) => {
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Abort pending search on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [])
 
   // Type guard helpers
