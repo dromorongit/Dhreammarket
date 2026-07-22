@@ -152,19 +152,19 @@ export async function GET(request: NextRequest) {
     let totalNetAmount = 0
     let totalPlatformCommission = 0
     let totalVendorEarnings = 0
-    let totalRevenue = 0 // For backward compatibility
+    let totalRevenue = 0 // Total Platform Revenue = platformCommission only
     
     paidOrders.forEach((order: any) => {
       // Use grossAmount if available, fallback to total
       const gross = order.grossAmount !== null && order.grossAmount !== undefined ? order.grossAmount : order.total
       totalGrossAmount += gross
       
-      // Processor fee might be null
+      // Processor fee might be null (legacy orders without stored fees)
       if (order.processorFee !== null && order.processorFee !== undefined) {
         totalProcessorFee += order.processorFee
       }
       
-      // Net amount might be null
+      // Net amount might be null (legacy orders without stored fees)
       if (order.netAmount !== null && order.netAmount !== undefined) {
         totalNetAmount += order.netAmount
       }
@@ -178,8 +178,10 @@ export async function GET(request: NextRequest) {
         totalVendorEarnings += order.vendorEarnings
       }
       
-      // For backward compatibility, use total or gross amount
-      totalRevenue += gross
+      // Total Platform Revenue = platform commission only (per accounting model)
+      if (order.platformCommission !== null && order.platformCommission !== undefined) {
+        totalRevenue += order.platformCommission
+      }
     })
 
     // Count reviews and categories

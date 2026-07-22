@@ -6,8 +6,10 @@ import { formatCurrency } from './currency'
  * In a real application, this might come from a database or environment variables
  */
 export const COMMISSION_CONFIG = {
-  // Default commission rate (6%)
-  DEFAULT_RATE: 0.06,
+  // Default commission rate (1%)
+  DEFAULT_RATE: 0.01,
+  // Estimated processor fee rate used as fallback when Paystack fee is missing (2%)
+  FALLBACK_PROCESSOR_FEE_RATE: 0.02,
   // Could be extended to support vendor-specific rates in the future
 }
 
@@ -30,7 +32,7 @@ export function getVendorCommissionRate(vendorId: string | null | undefined): nu
 /**
  * Set a custom commission rate for a vendor
  * @param vendorId - The vendor's user ID
- * @param rate - The commission rate (e.g., 0.06 for 6%)
+ * @param rate - The commission rate (e.g., 0.01 for 1%)
  */
 export function setVendorCommissionRate(vendorId: string, rate: number): void {
   vendorCommissionRates.set(vendorId, rate)
@@ -112,4 +114,20 @@ export function apportionProcessorFee(
     return null
   }
   return (itemGross / orderGross) * totalProcessorFee
+}
+
+/**
+ * Resolve the actual processor fee from Paystack, falling back to an estimated rate when missing.
+ * @param paystackFees - The actual fee from Paystack transaction data (data.fees)
+ * @param grossAmount - The gross amount of the order
+ * @returns The resolved processor fee (actual or estimated)
+ */
+export function resolveProcessorFee(
+  paystackFees: number | null | undefined,
+  grossAmount: number
+): number {
+  if (paystackFees !== null && paystackFees !== undefined && paystackFees > 0) {
+    return paystackFees
+  }
+  return grossAmount * COMMISSION_CONFIG.FALLBACK_PROCESSOR_FEE_RATE
 }

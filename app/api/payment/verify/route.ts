@@ -3,7 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
-import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
+import { calculateFinancialBreakdown, formatFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -169,17 +169,23 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        // Calculate gross amount from order items
-        let grossAmount = 0
-        for (const item of orderItems) {
-          grossAmount += item.price * item.quantity
-        }
+      // Calculate gross amount from order items
+      let grossAmount = 0
+      for (const item of orderItems) {
+        grossAmount += item.price * item.quantity
+      }
 
-        // Determine processor fee from Paystack response (if available)
-        let processorFee: number | null = null
+      // Determine processor fee from Paystack response (actual fees or fallback)
+      const paystackFees = paystackResponse.data?.fees ?? null
+      const isFallback = paystackFees === null || paystackFees === undefined || paystackFees <= 0
+      let processorFee = resolveProcessorFee(paystackFees, grossAmount)
 
-        // Use centralized revenue calculation logic
-        const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
+      if (isFallback) {
+        console.warn('[Payment Verify API] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
+      }
+
+      // Use centralized revenue calculation logic
+      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
 
         // Update order with financial totals
         await prisma.order.update({

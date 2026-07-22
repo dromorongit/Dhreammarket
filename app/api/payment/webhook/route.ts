@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyPaystackPayment } from '@/lib/paystack'
-import { calculateFinancialBreakdown } from '@/lib/revenue'
+import { calculateFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { createAuditLog } from '@/lib/audit-log'
@@ -161,8 +161,14 @@ export async function POST(request: NextRequest) {
         grossAmount += item.price * item.quantity
       }
 
-      // Determine processor fee from Paystack response (if available)
-      let processorFee: number | null = null
+      // Determine processor fee from Paystack response (actual fees or fallback)
+      const paystackFees = paystackResponse.data?.fees ?? null
+      const isFallback = paystackFees === null || paystackFees === undefined || paystackFees <= 0
+      let processorFee = resolveProcessorFee(paystackFees, grossAmount)
+
+      if (isFallback) {
+        console.warn('[Payment Webhook] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
+      }
 
       // Use centralized revenue calculation logic
       const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
