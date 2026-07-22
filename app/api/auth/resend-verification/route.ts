@@ -5,11 +5,18 @@ import { generateToken, generateOTP, hashOTP } from '@/lib/auth'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { sendEmailVerificationEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('email-verification')(request)
   if (rateLimitCheck.success !== true) {
     return rateLimitCheck.response
+  }
+
+  if (!isEmailServiceEnabled()) {
+    return NextResponse.json({ 
+      message: 'Email verification is temporarily unavailable during maintenance. Please try again later.'
+    }, { status: 200 })
   }
 
   try {
@@ -27,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     if (!pendingReg) {
       return NextResponse.json({ 
-        message: 'If an account exists with this email, a verification code will be sent.' 
+        message: 'If an account exists with this email, a verification code will be sent.'
       }, { status: 200 })
     }
 

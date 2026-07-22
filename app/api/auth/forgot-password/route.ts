@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { generateSelector, generateResetSecret, hashResetToken } from '@/lib/auth'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { rateLimit } from '@/lib/rate-limit'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 export async function POST(request: NextRequest) {
   // Rate limiting - security hardening
@@ -19,6 +20,12 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.trim().toLowerCase()
+
+    if (!isEmailServiceEnabled()) {
+      return NextResponse.json({ 
+        message: 'Password reset is temporarily unavailable because our email services are currently under maintenance. Please contact support if you need immediate assistance.'
+      }, { status: 200 })
+    }
 
     // Find user by email (do not reveal if email exists or not)
     const user = await getPrisma().user.findUnique({

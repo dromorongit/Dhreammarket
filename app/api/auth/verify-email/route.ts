@@ -4,11 +4,20 @@ import bcrypt from 'bcryptjs'
 import { generateToken } from '@/lib/auth'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { rateLimit } from '@/lib/rate-limit'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('email-verification')(request)
   if (rateLimitCheck.success !== true) {
     return rateLimitCheck.response
+  }
+
+  const emailServiceEnabled = isEmailServiceEnabled()
+
+  if (!emailServiceEnabled) {
+    return NextResponse.json({ 
+      message: 'Email verification is temporarily unavailable during maintenance. The verification code will remain valid for future use.'
+    }, { status: 200 })
   }
 
   try {

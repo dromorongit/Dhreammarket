@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Card, CardContent, CardHeader } from '@/components/Card'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 function VerifyEmailContent() {
   const [otp, setOtp] = useState('')
@@ -18,6 +19,7 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams()
 
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
+  const emailServiceEnabled = isEmailServiceEnabled()
 
   useEffect(() => {
     const emailParam = searchParams?.get('email')
@@ -122,6 +124,45 @@ function VerifyEmailContent() {
     } finally {
       setResendLoading(false)
     }
+  }
+
+  if (!emailServiceEnabled) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Email Verification Unavailable
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Email services are currently under maintenance.
+          </p>
+        </div>
+
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                  <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Temporary Maintenance</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Email verification is temporarily disabled while we perform maintenance on our email services.
+                </p>
+                <p className="text-sm text-gray-600 mb-6">
+                  Your account may have already been verified automatically. If not, you can still log in and access your dashboard.
+                </p>
+                <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"}>
+                  <Button type="button" className="w-full">Go to Login</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

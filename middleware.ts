@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken, type Role } from './lib/auth-middleware'
+import { isEmailServiceEnabled } from './lib/feature-flags'
 
 const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
 
@@ -54,46 +55,52 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
+    const emailServiceEnabled = isEmailServiceEnabled()
+
     if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
-      // Check email verification first
-      try {
-        const { getPrisma } = await import('./lib/prisma')
-        const user = await getPrisma().user.findUnique({
-          where: { id: payload.userId },
-          select: { isEmailVerified: true },
-        })
-        
-        if (!user?.isEmailVerified) {
-          const verifyUrl = new URL('/verify-email', request.url)
-          if (fullUrl) {
-            verifyUrl.searchParams.set('redirect', fullUrl)
+      if (emailServiceEnabled) {
+        // Check email verification first
+        try {
+          const { getPrisma } = await import('./lib/prisma')
+          const user = await getPrisma().user.findUnique({
+            where: { id: payload.userId },
+            select: { isEmailVerified: true },
+          })
+          
+          if (!user?.isEmailVerified) {
+            const verifyUrl = new URL('/verify-email', request.url)
+            if (fullUrl) {
+              verifyUrl.searchParams.set('redirect', fullUrl)
+            }
+            return NextResponse.redirect(verifyUrl)
           }
-          return NextResponse.redirect(verifyUrl)
+        } catch (error) {
+          console.error('Error checking email verification:', error)
         }
-      } catch (error) {
-        console.error('Error checking email verification:', error)
       }
     }
     
     // Additional onboarding check for vendor routes
     if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
-      // Check email verification first
-      try {
-        const { getPrisma } = await import('./lib/prisma')
-        const user = await getPrisma().user.findUnique({
-          where: { id: payload.userId },
-          select: { isEmailVerified: true },
-        })
-        
-        if (!user?.isEmailVerified) {
-          const verifyUrl = new URL('/verify-email', request.url)
-          if (fullUrl) {
-            verifyUrl.searchParams.set('redirect', fullUrl)
+      if (emailServiceEnabled) {
+        // Check email verification first
+        try {
+          const { getPrisma } = await import('./lib/prisma')
+          const user = await getPrisma().user.findUnique({
+            where: { id: payload.userId },
+            select: { isEmailVerified: true },
+          })
+          
+          if (!user?.isEmailVerified) {
+            const verifyUrl = new URL('/verify-email', request.url)
+            if (fullUrl) {
+              verifyUrl.searchParams.set('redirect', fullUrl)
+            }
+            return NextResponse.redirect(verifyUrl)
           }
-          return NextResponse.redirect(verifyUrl)
+        } catch (error) {
+          console.error('Error checking email verification:', error)
         }
-      } catch (error) {
-        console.error('Error checking email verification:', error)
       }
       
       // Allow access to store setup page without onboarding check

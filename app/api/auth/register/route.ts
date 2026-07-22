@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { hashPassword, generateOTP, hashOTP } from '@/lib/auth'
+import { hashPassword, generateOTP, hashOTP, generateToken } from '@/lib/auth'
 import { normalizeGhanaPhoneNumber } from '@/lib/phone'
 import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
+import { isVendorOnboarded } from '@/lib/onboarding'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('register')(request)
@@ -76,35 +78,94 @@ export async function POST(request: NextRequest) {
     }
 
     const hashedPassword = await hashPassword(password)
+    const emailServiceEnabled = isEmailServiceEnabled()
 
-    const otp = generateOTP()
-    const hashedOTP = hashOTP(otp)
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
+    if (emailServiceEnabled) {
+      const otp = generateOTP()
+      const hashedOTP = hashOTP(otp)
+      const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000)
 
-    await getPrisma().pendingRegistration.create({
+      await getPrisma().pendingRegistration.create({
+        data: {
+          email: normalizedEmail,
+          hashedOTP,
+          otpExpiresAt,
+          phone: normalizedPhone,
+          role,
+          position: role === 'ADMIN' ? position?.trim() : null,
+          name: role === 'CUSTOMER' ? name?.trim() : null,
+          hashedPassword,
+        },
+      })
+
+      try {
+        await sendEmailVerificationEmail(normalizedEmail, name || 'User', otp, otpExpiresAt)
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError)
+      }
+
+      return NextResponse.json({ 
+        message: 'Registration successful. Please verify your email.', 
+        needsVerification: true,
+        email: normalizedEmail
+      }, { status: 201 })
+    }
+
+    const user = await getPrisma().user.create({
       data: {
         email: normalizedEmail,
-        hashedOTP,
-        otpExpiresAt,
-        phone: normalizedPhone,
+        password: hashedPassword,
         role,
         position: role === 'ADMIN' ? position?.trim() : null,
-        name: role === 'CUSTOMER' ? name?.trim() : null,
-        hashedPassword,
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
+        profile: {
+          create: {
+            phone: normalizedPhone,
+            firstName: role === 'CUSTOMER' ? name?.trim() : null,
+          },
+        },
+        store: role === 'VENDOR' ? {
+          create: {
+            name: name?.trim() || 'My Store',
+            slug: '',
+            isVerified: false,
+          },
+        } : undefined,
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        store: {
+          select: { id: true, slug: true },
+        },
       },
     })
 
-    try {
-      await sendEmailVerificationEmail(normalizedEmail, name || 'User', otp, otpExpiresAt)
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError)
+    const token = generateToken({ userId: user.id, role: user.role })
+
+    let isOnboarded: boolean | undefined = undefined
+    if (user.role === 'VENDOR') {
+      isOnboarded = await isVendorOnboarded(user.id)
     }
 
-    return NextResponse.json({ 
-      message: 'Registration successful. Please verify your email.', 
-      needsVerification: true,
-      email: normalizedEmail
+    const response = NextResponse.json({
+      message: 'Registration successful',
+      isEmailVerified: true,
+      user: { id: user.id, email: user.email, role: user.role },
+      isOnboarded
     }, { status: 201 })
+
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

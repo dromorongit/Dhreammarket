@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { PasswordInput } from '@/components/PasswordInput'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { event } from '@/lib/gtag'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 type Role = 'CUSTOMER' | 'VENDOR'
 
@@ -23,7 +24,6 @@ function RegisterContent() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
@@ -104,7 +104,24 @@ function RegisterContent() {
 
 if (response.ok) {
           event({ action: 'sign_up', category: 'engagement' })
-          if (data.needsVerification) {
+          if (data.user) {
+            const role = data.user.role
+            const isOnboarded = data.isOnboarded
+            let dashboardPath: string
+            if (role === 'SUPER_ADMIN') {
+              dashboardPath = '/dashboard/super-admin'
+            } else if (role === 'ADMIN') {
+              dashboardPath = '/dashboard/admin'
+            } else if (role === 'VENDOR') {
+              dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+            } else {
+              dashboardPath = '/dashboard/customer'
+            }
+            const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor')
+              ? redirectUrl
+              : dashboardPath
+            window.location.href = targetUrl
+          } else if (data.needsVerification) {
            const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
            window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
          } else {
@@ -130,11 +147,11 @@ if (response.ok) {
            Create your Dhream Market account
          </h2>
 <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"} className="font-medium text-blue-600 hover:text-blue-500">
-              Sign in
-            </Link>
-          </p>
+          Already have an account?{' '}
+          <Link href={redirectUrl ? `/login?redirect=${encodeURIComponent(redirectUrl)}` : "/login"} className="font-medium text-blue-600 hover:text-blue-500">
+            Sign in
+          </Link>
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

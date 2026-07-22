@@ -3,9 +3,9 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyPassword, generateToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/rate-limit'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 export async function POST(request: NextRequest) {
-  // Rate limiting - security hardening
   const rateLimitCheck = rateLimit('login')(request)
   if (rateLimitCheck.success !== true) {
     return rateLimitCheck.response
@@ -32,8 +32,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account is not active' }, { status: 403 })
     }
 
-    // Check email verification (skip for ADMIN and SUPER_ADMIN)
-    if (!user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+    const emailServiceEnabled = isEmailServiceEnabled()
+
+    // Check email verification (skip for ADMIN and SUPER_ADMIN, and during maintenance)
+    if (!emailServiceEnabled && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      // Allow login during email service maintenance
+    } else if (emailServiceEnabled && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ 
         needsVerification: true,
         message: 'Please verify your email before logging in' 
