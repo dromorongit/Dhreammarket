@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyPassword, generateToken } from '@/lib/auth'
+import { randomBytes } from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
+import { parseUserAgent } from '@/lib/device-detector'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('login')(request)
@@ -49,7 +51,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const token = generateToken({ userId: user.id, role: user.role })
+    const sessionId = randomBytes(32).toString('hex')
+    const userAgent = request.headers.get('user-agent') || undefined
+    const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || undefined
+    const { device, browser, os } = parseUserAgent(userAgent)
+
+    await getPrisma().session.create({
+      data: {
+        sessionId,
+        userId: user.id,
+        device,
+        browser,
+        os,
+        ipAddress,
+        userAgent,
+        isExpired: false,
+      },
+    })
+
+    const token = generateToken({ userId: user.id, role: user.role, sessionId })
 
     // Set cookie duration based on rememberMe preference
     // If checked: 30 days, otherwise: 7 days (default session)

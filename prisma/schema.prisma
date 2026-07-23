@@ -31,6 +31,7 @@ model User {
   payments                 Payment[]
   productReviews           ProductReview[]
   profile                  Profile?
+  sessions                 Session[]
   purchaseOrders           PurchaseOrder[]
   restockOrders            RestockOrder[]
   store                    Store?
@@ -115,6 +116,8 @@ model Store {
   banner                   String?
   categoryId               String?
   location                 String?
+  email                    String?
+  address                  String?
   createdAt                DateTime                        @default(now())
   updatedAt                DateTime                        @updatedAt
   alternativePhoneNumber   String?
@@ -817,6 +820,28 @@ model OrderMessage {
   @@index([userId])
   @@index([isRead])
   @@map("order_messages")
+}
+
+model Session {
+  id           String    @id @default(cuid())
+  sessionId    String    @unique @db.VarChar(255)
+  userId       String
+  device       String?
+  browser      String?
+  os           String?
+  ipAddress    String?
+  location     String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  lastActivity DateTime  @default(now())
+  isExpired    Boolean   @default(false)
+  expiredAt    DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([isExpired])
+  @@map("sessions")
 }
 
 enum TokenType {

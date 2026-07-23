@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Input } from '@/components/Input'
 import { Button } from '@/components/Button'
+import { Textarea } from '@/components/Textarea'
 import SettingsSection from '@/components/settings/SettingsSection'
 import AvatarUpload from '@/components/settings/AvatarUpload'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
@@ -29,6 +30,7 @@ export default function ProfileSection({ initialProfile }: ProfileSectionProps) 
     lastName: initialProfile.lastName || '',
     email: initialProfile.email || '',
     phone: initialProfile.phone || '',
+    address: initialProfile.address || '',
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [avatar, setAvatar] = useState<string | null>(null)
@@ -40,6 +42,7 @@ export default function ProfileSection({ initialProfile }: ProfileSectionProps) 
       lastName: initialProfile.lastName || '',
       email: initialProfile.email || '',
       phone: initialProfile.phone || '',
+      address: initialProfile.address || '',
     })
   }, [initialProfile])
 
@@ -77,6 +80,7 @@ export default function ProfileSection({ initialProfile }: ProfileSectionProps) 
           firstName: formData.firstName,
           lastName: formData.lastName,
           phone: formData.phone,
+          address: formData.address,
         }),
       })
 
@@ -135,6 +139,14 @@ export default function ProfileSection({ initialProfile }: ProfileSectionProps) 
           value={formData.phone}
           onChange={(e) => handleChange('phone', e.target.value)}
           error={formErrors.phone}
+        />
+      </div>
+      <div className="mt-4">
+        <Textarea
+          label="Address"
+          placeholder="Enter your address"
+          value={formData.address}
+          onChange={(e) => handleChange('address', e.target.value)}
         />
       </div>
 

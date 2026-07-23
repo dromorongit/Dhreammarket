@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken, type Role } from './lib/auth-middleware'
 import { isEmailServiceEnabled } from './lib/feature-flags'
+import { updateSessionLastActivity } from './lib/session'
 
 const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
 
@@ -49,6 +50,12 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.redirect(new URL('/login', request.url))
     }
+
+    await updateSessionLastActivity(
+      payload.sessionId,
+      request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || undefined,
+      request.headers.get('user-agent') || undefined
+    )
 
     const allowedRoles = protectedRoutes[protectedRoute as keyof typeof protectedRoutes]
     if (!allowedRoles.includes(payload.role)) {

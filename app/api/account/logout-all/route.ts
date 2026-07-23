@@ -25,6 +25,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    const result = await getPrisma().session.updateMany({
+      where: { userId: payload.userId, isExpired: false, sessionId: { not: payload.sessionId } },
+      data: {
+        isExpired: true,
+        expiredAt: new Date(),
+      },
+    })
+
+    const total = result.count
+
+    if (total === 0) {
+      return NextResponse.json({ message: 'No other active sessions to log out from.' })
+    }
+
     await createAuditLog({
       userId: payload.userId,
       userRole: payload.role || 'USER',
@@ -33,7 +47,7 @@ export async function POST(request: NextRequest) {
       entityId: payload.userId,
     }).catch((err) => console.error('Failed to create audit log:', err))
 
-    return NextResponse.json({ message: 'Logged out from all devices successfully' })
+    return NextResponse.json({ message: `Logged out from ${total} device(s) successfully` })
   } catch (error) {
     console.error('Error logging out from all devices:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

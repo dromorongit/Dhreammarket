@@ -279,15 +279,38 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, categoryId, location, mainPhoneNumber, alternativePhoneNumber, whatsappNumber } = await request.json()
+    const body = await request.json()
+    const {
+      name,
+      description,
+      categoryId,
+      location,
+      mainPhoneNumber,
+      alternativePhoneNumber,
+      whatsappNumber,
+      email,
+      address,
+      logo,
+      banner,
+      acceptsPreOrders,
+      acceptsBackOrders,
+    } = body
 
     const existingStore = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
-      include: { vendor_categories: true },
     })
 
     if (!existingStore) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+    }
+
+    if (categoryId !== undefined && categoryId !== null && categoryId !== '') {
+      const vendorCategory = await getPrisma().vendorCategory.findUnique({
+        where: { id: categoryId }
+      })
+      if (!vendorCategory || !vendorCategory.isActive) {
+        return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+      }
     }
 
     const store = await getPrisma().store.update({
@@ -300,9 +323,40 @@ export async function PATCH(request: NextRequest) {
         ...(mainPhoneNumber !== undefined && { mainPhoneNumber: mainPhoneNumber || null }),
         ...(alternativePhoneNumber !== undefined && { alternativePhoneNumber: alternativePhoneNumber || null }),
         ...(whatsappNumber !== undefined && { whatsappNumber: whatsappNumber || null }),
+        ...(email !== undefined && { email: email || null }),
+        ...(address !== undefined && { address: address || null }),
+        ...(logo !== undefined && { logo }),
+        ...(banner !== undefined && { banner }),
+        ...(acceptsPreOrders !== undefined && { acceptsPreOrders: acceptsPreOrders || false }),
+        ...(acceptsBackOrders !== undefined && { acceptsBackOrders: acceptsBackOrders || false }),
       },
       include: { vendor_categories: true },
     })
+
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action: 'STORE_PROFILE_UPDATED',
+      entityType: 'VENDOR',
+      entityId: existingStore.id,
+      beforeData: {
+        name: existingStore.name,
+        description: existingStore.description,
+        categoryId: existingStore.categoryId,
+        mainPhoneNumber: existingStore.mainPhoneNumber,
+        acceptsPreOrders: existingStore.acceptsPreOrders,
+        acceptsBackOrders: existingStore.acceptsBackOrders,
+      },
+      afterData: {
+        name: store.name,
+        description: store.description,
+        categoryId: store.categoryId,
+        mainPhoneNumber: store.mainPhoneNumber,
+        acceptsPreOrders: store.acceptsPreOrders,
+        acceptsBackOrders: store.acceptsBackOrders,
+      },
+      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+    }).catch((err) => console.error('Failed to create audit log:', err))
 
     return NextResponse.json({ store })
   } catch (error) {

@@ -15,21 +15,21 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword)
 }
 
-export function generateToken(payload: { userId: string; role: Role }): string {
+export function generateToken(payload: { userId: string; role: Role; sessionId: string }): string {
   if (!JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required')
   }
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
 }
 
-export function verifyToken(token: string): { userId: string; role: Role } | null {
+export function verifyToken(token: string): { userId: string; role: Role; sessionId: string } | null {
   if (!JWT_SECRET) {
     throw new Error('JWT_SECRET environment variable is required')
   }
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload
-    if (typeof decoded === 'object' && decoded.userId && decoded.role) {
-      return { userId: decoded.userId as string, role: decoded.role as Role }
+    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & { sessionId?: string }
+    if (typeof decoded === 'object' && decoded.userId && decoded.role && decoded.sessionId) {
+      return { userId: decoded.userId as string, role: decoded.role as Role, sessionId: decoded.sessionId }
     }
     return null
   } catch {
@@ -44,13 +44,13 @@ export function getTokenFromCookies(): string | null {
 
 
 
-export function getUserFromToken(): { userId: string; role: Role } | null {
+export function getUserFromToken(): { userId: string; role: Role; sessionId: string } | null {
   const token = getTokenFromCookies()
   if (!token) return null
   return verifyToken(token)
 }
 
-export async function getServerSession(): Promise<{ userId: string; role: Role } | null> {
+export async function getServerSession(): Promise<{ userId: string; role: Role; sessionId: string } | null> {
   const token = getTokenFromCookies()
   if (!token) return null
   return verifyToken(token)
