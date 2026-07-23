@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('register')(request)
@@ -167,7 +168,17 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      const token = generateToken({ userId: user.id, role: user.role })
+      const sessionId = randomBytes(32).toString('hex')
+
+      await getPrisma().session.create({
+        data: {
+          sessionId,
+          userId: user.id,
+          isExpired: false,
+        },
+      })
+
+      const token = generateToken({ userId: user.id, role: user.role, sessionId })
 
       let isOnboarded: boolean | undefined = undefined
       if (user.role === 'VENDOR') {

@@ -6,6 +6,7 @@ import { generateSlug } from '@/lib/slug'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { rateLimit } from '@/lib/rate-limit'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
+import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('email-verification')(request)
@@ -120,7 +121,17 @@ export async function POST(request: NextRequest) {
         where: { id: pendingReg.id },
       })
 
-      const token = generateToken({ userId: user.id, role: user.role })
+      const sessionId = randomBytes(32).toString('hex')
+
+      await getPrisma().session.create({
+        data: {
+          sessionId,
+          userId: user.id,
+          isExpired: false,
+        },
+      })
+
+      const token = generateToken({ userId: user.id, role: user.role, sessionId })
 
       let isOnboarded: boolean | undefined = undefined
       if (user.role === 'VENDOR') {
