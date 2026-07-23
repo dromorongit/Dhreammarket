@@ -10,10 +10,18 @@ import VendorSections from '@/components/settings/VendorSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function VendorSettingsPage() {
+  return (
+    <SettingsShell role="VENDOR" dashboardHref="/dashboard/vendor">
+      <VendorSettingsContent />
+    </SettingsShell>
+  )
+}
+
+function VendorSettingsContent() {
   const { user } = useSettingsUser()
 
   return (
-    <SettingsShell role="VENDOR" dashboardHref="/dashboard/vendor">
+    <>
       <ProfileSection
         initialProfile={
               user?.profile
@@ -32,9 +40,9 @@ export default function VendorSettingsPage() {
                 lastName: null,
                 phone: null,
                 address: null,
+                  }
               }
-        }
-      />
+            />
 
       <PreferencesSection
         initialPreferences={{
@@ -59,6 +67,6 @@ export default function VendorSettingsPage() {
       <VendorSections initialStore={null} />
 
       <DangerZoneSection />
-    </SettingsShell>
+    </>
   )
 }

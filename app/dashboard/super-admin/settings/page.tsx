@@ -10,10 +10,18 @@ import SuperAdminSections from '@/components/settings/SuperAdminSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function SuperAdminSettingsPage() {
+  return (
+    <SettingsShell role="SUPER_ADMIN" dashboardHref="/dashboard/super-admin">
+      <SuperAdminSettingsContent />
+    </SettingsShell>
+  )
+}
+
+function SuperAdminSettingsContent() {
   const { user } = useSettingsUser()
 
   return (
-    <SettingsShell role="SUPER_ADMIN" dashboardHref="/dashboard/super-admin">
+    <>
       <ProfileSection
         initialProfile={
               user?.profile
@@ -32,9 +40,9 @@ export default function SuperAdminSettingsPage() {
                 lastName: null,
                 phone: null,
                 address: null,
+                  }
               }
-        }
-      />
+            />
 
       <PreferencesSection
         initialPreferences={{
@@ -59,6 +67,6 @@ export default function SuperAdminSettingsPage() {
       <SuperAdminSections />
 
       <DangerZoneSection />
-    </SettingsShell>
+    </>
   )
 }

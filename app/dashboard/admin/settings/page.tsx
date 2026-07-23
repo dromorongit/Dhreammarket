@@ -10,10 +10,18 @@ import AdminSections from '@/components/settings/AdminSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function AdminSettingsPage() {
+  return (
+    <SettingsShell role="ADMIN" dashboardHref="/dashboard/admin">
+      <AdminSettingsContent />
+    </SettingsShell>
+  )
+}
+
+function AdminSettingsContent() {
   const { user } = useSettingsUser()
 
   return (
-    <SettingsShell role="ADMIN" dashboardHref="/dashboard/admin">
+    <>
       <ProfileSection
         initialProfile={
               user?.profile
@@ -32,9 +40,9 @@ export default function AdminSettingsPage() {
                 lastName: null,
                 phone: null,
                 address: null,
+                  }
               }
-        }
-      />
+            />
 
       <PreferencesSection
         initialPreferences={{
@@ -59,6 +67,6 @@ export default function AdminSettingsPage() {
       <AdminSections />
 
       <DangerZoneSection />
-    </SettingsShell>
+    </>
   )
 }

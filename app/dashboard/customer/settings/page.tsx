@@ -10,10 +10,18 @@ import CustomerSections from '@/components/settings/CustomerSections'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function CustomerSettingsPage() {
+  return (
+    <SettingsShell role="CUSTOMER" dashboardHref="/dashboard/customer">
+      <CustomerSettingsContent />
+    </SettingsShell>
+  )
+}
+
+function CustomerSettingsContent() {
   const { user } = useSettingsUser()
 
   return (
-    <SettingsShell role="CUSTOMER" dashboardHref="/dashboard/customer">
+    <>
       <ProfileSection
         initialProfile={
               user?.profile
@@ -32,9 +40,9 @@ export default function CustomerSettingsPage() {
                 lastName: null,
                 phone: null,
                 address: null,
+                  }
               }
-        }
-      />
+            />
 
       <PreferencesSection
         initialPreferences={{
@@ -59,6 +67,6 @@ export default function CustomerSettingsPage() {
       <CustomerSections />
 
       <DangerZoneSection />
-    </SettingsShell>
+    </>
   )
 }
