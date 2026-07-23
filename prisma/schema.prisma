@@ -40,6 +40,10 @@ model User {
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication?
   verificationAuditLogs    VerificationAuditLog[]
+  addresses                Address[]
+  paymentMethods           PaymentMethod[]
+  vendorSettings           VendorSettings?
+  adminSettings            AdminSettings?
 
   @@map("users")
 }
@@ -301,12 +305,15 @@ model CartItem {
 }
 
 model Wishlist {
-  id        String         @id @default(cuid())
-  userId    String         @unique
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  items     WishlistItem[]
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                       String         @id @default(cuid())
+  userId                   String         @unique
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  items                    WishlistItem[]
+  user                     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationPreferences  Json?          @default("{}")
+  privacyPreferences       Json?          @default("{}")
+  recommendationPreferences Json?         @default("{}")
 
   @@map("wishlists")
 }
@@ -593,6 +600,118 @@ model VerificationAuditLog {
   application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@map("verification_audit_logs")
+}
+
+model Address {
+  id        String    @id @default(cuid())
+  userId    String
+  label     String?
+  street    String
+  region    String
+  city      String
+  isDefault Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model PaymentMethod {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    @default("MOBILE_MONEY")
+  details   Json      @default("{}")
+  isDefault Boolean   @default(false)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+model VendorSettings {
+  id                        String    @id @default(cuid())
+  userId                    String    @unique
+  defaultDashboardTab       String    @default("overview")
+  compactView               Boolean   @default(false)
+  autoRefresh               Boolean   @default(true)
+  refreshInterval           Int       @default(30)
+  dateFormat                String    @default("MM/DD/YYYY")
+  itemsPerPage              Int       @default(25)
+  widgetVisibility          Json      @default("{}")
+  productDisplayPreferences Json      @default("{}")
+  orderManagementPreferences Json    @default("{}")
+  inventoryPreferences      Json      @default("{}")
+  notifyNewOrders           Boolean   @default(true)
+  notifyLowStock            Boolean   @default(true)
+  notifyCustomerMessages    Boolean   @default(true)
+  notifySettlements         Boolean   @default(true)
+  notificationChannels      Json      @default("{}")
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_settings")
+}
+
+model AdminSettings {
+  id                          String    @id @default(cuid())
+  userId                      String    @unique
+  defaultDashboardTab         String    @default("overview")
+  compactView                 Boolean   @default(false)
+  autoRefresh                 Boolean   @default(true)
+  refreshInterval             Int       @default(30)
+  dateFormat                  String    @default("MM/DD/YYYY")
+  itemsPerPage                Int       @default(25)
+  widgetVisibility            Json      @default("{}")
+  analyticsPreferences        Json      @default("{}")
+  defaultFilters              Json      @default("{}")
+  moderationPreferences       Json      @default("{}")
+  reviewPreferences           Json      @default("{}")
+  notifyNewUsers              Boolean   @default(true)
+  notifyVerificationRequests  Boolean   @default(true)
+  notifySupportTickets        Boolean   @default(true)
+  notifyOrderAnomalies        Boolean   @default(true)
+  notifySecurityAlerts        Boolean   @default(true)
+  notificationChannels        Json      @default("{}")
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  user                        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_settings")
+}
+
+model SuperAdminSettings {
+  id                          String    @id @default(cuid())
+  maintenanceMode             Boolean   @default(false)
+  registrationOpen            Boolean   @default(true)
+  newVendorApproval           Boolean   @default(true)
+  autoApproveProducts         Boolean   @default(false)
+  defaultCurrency             String    @default("GHS")
+  platformFee                 Float     @default(2.5)
+  platformName                String?   @default("Dhreamarket")
+  platformTimezone            String    @default("Africa/Accra")
+  regionalDefaults            Json      @default("{}")
+  brandingPreferences         Json      @default("{}")
+  auditLogRetention           String    @default("forever")
+  sessionTimeout              String    @default("8")
+  allowedAdminIps             Json      @default("[]")
+  monitoringPreferences       Json      @default("{}")
+  platformBehaviourPreferences Json    @default("{}")
+  notifySystemOutage          Boolean   @default(true)
+  notifyFeatureAnnouncements  Boolean   @default(true)
+  notifyPolicyUpdates         Boolean   @default(true)
+  notifySecurityAlerts        Boolean   @default(true)
+  notifyInfrastructureAlerts  Boolean   @default(true)
+  notifyFinanceAlerts         Boolean   @default(true)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+
+  @@map("super_admin_settings")
 }
 
 model SupportTicket {

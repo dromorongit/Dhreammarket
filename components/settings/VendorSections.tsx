@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Textarea } from '@/components/Textarea'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Toggle from '@/components/settings/Toggle'
 
 interface StoreInfo {
   id: string
@@ -25,6 +26,25 @@ interface StoreInfo {
   acceptsBackOrders?: boolean
 }
 
+interface VendorSettings {
+  id: string
+  defaultDashboardTab?: string
+  compactView?: boolean
+  autoRefresh?: boolean
+  refreshInterval?: number
+  dateFormat?: string
+  itemsPerPage?: number
+  widgetVisibility?: Record<string, any>
+  productDisplayPreferences?: Record<string, any>
+  orderManagementPreferences?: Record<string, any>
+  inventoryPreferences?: Record<string, any>
+  notifyNewOrders?: boolean
+  notifyLowStock?: boolean
+  notifyCustomerMessages?: boolean
+  notifySettlements?: boolean
+  notificationChannels?: Record<string, any>
+}
+
 interface VendorSectionsProps {
   initialStore?: StoreInfo | null
 }
@@ -32,12 +52,18 @@ interface VendorSectionsProps {
 export default function VendorSections({ initialStore }: VendorSectionsProps) {
   const router = useRouter()
   const [store, setStore] = useState<StoreInfo | null>(initialStore || null)
-  const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(!initialStore)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [storeLoading, setStoreLoading] = useState(!initialStore)
+  const [storeSaving, setStoreSaving] = useState(false)
+  const [storeMessage, setStoreMessage] = useState<string | null>(null)
+  const [storeError, setStoreError] = useState<string | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [uploadingLogo, setUploadingLogo] = useState(false)
+
+  const [vendorSettings, setVendorSettings] = useState<VendorSettings | null>(null)
+  const [settingsLoading, setSettingsLoading] = useState(true)
+  const [settingsSaving, setSettingsSaving] = useState(false)
+  const [settingsMessage, setSettingsMessage] = useState<string | null>(null)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!initialStore) {
@@ -45,8 +71,12 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
     }
   }, [initialStore])
 
+  useEffect(() => {
+    fetchVendorSettings()
+  }, [])
+
   const fetchStore = async () => {
-    setLoading(true)
+    setStoreLoading(true)
     try {
       const response = await fetch('/api/store')
       if (response.ok) {
@@ -58,7 +88,22 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
     } catch {
       // silent
     } finally {
-      setLoading(false)
+      setStoreLoading(false)
+    }
+  }
+
+  const fetchVendorSettings = async () => {
+    setSettingsLoading(true)
+    try {
+      const response = await fetch('/api/settings/vendor')
+      if (response.ok) {
+        const data = await response.json()
+        setVendorSettings(data.settings)
+      }
+    } catch {
+      // silent
+    } finally {
+      setSettingsLoading(false)
     }
   }
 
@@ -77,13 +122,13 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
     return Object.keys(errors).length === 0
   }
 
-  const handleSave = async () => {
+  const handleStoreSave = async () => {
     if (!store) return
     if (!validate()) return
 
-    setSaving(true)
-    setMessage(null)
-    setError(null)
+    setStoreSaving(true)
+    setStoreMessage(null)
+    setStoreError(null)
 
     try {
       const response = await fetch('/api/store', {
@@ -95,15 +140,15 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
       const data = await response.json()
       if (response.ok) {
         setStore(data.store)
-        setMessage('Store information updated successfully')
-        setTimeout(() => setMessage(null), 3000)
+        setStoreMessage('Store information updated successfully')
+        setTimeout(() => setStoreMessage(null), 3000)
       } else {
-        setError(data.error || 'Failed to update store')
+        setStoreError(data.error || 'Failed to update store')
       }
     } catch {
-      setError('An error occurred while updating store')
+      setStoreError('An error occurred while updating store')
     } finally {
-      setSaving(false)
+      setStoreSaving(false)
     }
   }
 
@@ -113,12 +158,12 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
 
     const file = files[0]
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file')
+      setStoreError('Please select an image file')
       return
     }
 
     setUploadingLogo(true)
-    setError(null)
+    setStoreError(null)
 
     try {
       const formData = new FormData()
@@ -134,16 +179,48 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
       if (response.ok && data.urls && data.urls.length > 0) {
         setStore((prev) => (prev ? { ...prev, logo: data.urls[0].url } : prev))
       } else {
-        setError(data.error || 'Failed to upload logo')
+        setStoreError(data.error || 'Failed to upload logo')
       }
     } catch {
-      setError('An error occurred while uploading logo')
+      setStoreError('An error occurred while uploading logo')
     } finally {
       setUploadingLogo(false)
     }
   }
 
-  if (loading) {
+  const handleVendorSettingSave = async () => {
+    if (!vendorSettings) return
+    setSettingsSaving(true)
+    setSettingsMessage(null)
+    setSettingsError(null)
+
+    try {
+      const response = await fetch('/api/settings/vendor', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vendorSettings),
+      })
+
+      const data = await response.json()
+      if (response.ok) {
+        setVendorSettings(data.settings)
+        setSettingsMessage('Settings saved successfully')
+        setTimeout(() => setSettingsMessage(null), 3000)
+      } else {
+        setSettingsError(data.error || 'Failed to save settings')
+      }
+    } catch {
+      setSettingsError('An error occurred while saving settings')
+    } finally {
+      setSettingsSaving(false)
+    }
+  }
+
+  const updateVendorSetting = <K extends keyof VendorSettings>(field: K, value: VendorSettings[K]) => {
+    setVendorSettings((prev) => (prev ? { ...prev, [field]: value } : prev))
+  }
+
+  if (storeLoading) {
     return (
       <div className="space-y-6">
         <SettingsSection title="Store Information" description="Update your store details">
@@ -238,8 +315,8 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
               {uploadingLogo ? 'Uploading...' : store.logo ? 'Change Logo' : 'Upload Logo'}
             </Button>
             <p className="text-xs text-slate-500 mt-2">JPG, PNG, or WebP. Max 10MB.</p>
-            {error && error.includes('upload') && (
-              <p className="text-xs text-rose-600 mt-1">{error}</p>
+            {storeError && storeError.includes('upload') && (
+              <p className="text-xs text-rose-600 mt-1">{storeError}</p>
             )}
           </div>
         </div>
@@ -289,20 +366,156 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
         </div>
       </SettingsSection>
 
-      {message && (
+      <SettingsSection title="Vendor Dashboard Preferences" description="Configure your dashboard experience">
+        {settingsLoading ? (
+          <div className="space-y-4">
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Default Dashboard Tab</label>
+                <select
+                  value={vendorSettings?.defaultDashboardTab || 'overview'}
+                  onChange={(e) => updateVendorSetting('defaultDashboardTab', e.target.value)}
+                  disabled={settingsSaving}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+                >
+                  <option value="overview">Overview</option>
+                  <option value="products">Products</option>
+                  <option value="orders">Orders</option>
+                  <option value="inventory">Inventory</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Auto-refresh Interval (seconds)</label>
+                <select
+                  value={String(vendorSettings?.refreshInterval ?? 30)}
+                  onChange={(e) => updateVendorSetting('refreshInterval', parseInt(e.target.value))}
+                  disabled={settingsSaving}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+                >
+                  <option value="0">Off</option>
+                  <option value="15">15 seconds</option>
+                  <option value="30">30 seconds</option>
+                  <option value="60">1 minute</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Date Format</label>
+                <select
+                  value={vendorSettings?.dateFormat || 'MM/DD/YYYY'}
+                  onChange={(e) => updateVendorSetting('dateFormat', e.target.value)}
+                  disabled={settingsSaving}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+                >
+                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Items Per Page</label>
+                <select
+                  value={String(vendorSettings?.itemsPerPage ?? 25)}
+                  onChange={(e) => updateVendorSetting('itemsPerPage', parseInt(e.target.value))}
+                  disabled={settingsSaving}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+                >
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2 mt-2">
+              <Toggle label="Compact View" description="Use compact tables and lists" checked={vendorSettings?.compactView ?? false} onChange={() => updateVendorSetting('compactView', !(vendorSettings?.compactView))} disabled={settingsSaving} />
+              <Toggle label="Auto-refresh" description="Automatically refresh dashboard data" checked={vendorSettings?.autoRefresh ?? true} onChange={() => updateVendorSetting('autoRefresh', !(vendorSettings?.autoRefresh))} disabled={settingsSaving} />
+            </div>
+          </div>
+        )}
+      </SettingsSection>
+
+      <SettingsSection title="Product Display Preferences" description="Customize how products are displayed">
+        {settingsLoading ? (
+          <div className="space-y-4">
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Toggle label="Show low stock badges" description="Highlight products running low on stock" checked={vendorSettings?.inventoryPreferences?.showLowStockBadge ?? true} onChange={() => updateVendorSetting('inventoryPreferences', { ...vendorSettings?.inventoryPreferences, showLowStockBadge: !(vendorSettings?.inventoryPreferences?.showLowStockBadge) })} disabled={settingsSaving} />
+            <Toggle label="Group by category" description="Organize products into category folders" checked={vendorSettings?.productDisplayPreferences?.groupByCategory ?? false} onChange={() => updateVendorSetting('productDisplayPreferences', { ...vendorSettings?.productDisplayPreferences, groupByCategory: !(vendorSettings?.productDisplayPreferences?.groupByCategory) })} disabled={settingsSaving} />
+            <Toggle label="Show out-of-stock items" description="Keep out-of-stock products visible on listings" checked={vendorSettings?.productDisplayPreferences?.showOutOfStock ?? false} onChange={() => updateVendorSetting('productDisplayPreferences', { ...vendorSettings?.productDisplayPreferences, showOutOfStock: !(vendorSettings?.productDisplayPreferences?.showOutOfStock) })} disabled={settingsSaving} />
+          </div>
+        )}
+      </SettingsSection>
+
+      <SettingsSection title="Order Management Preferences" description="Configure how orders are handled">
+        {settingsLoading ? (
+          <div className="space-y-4">
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Toggle label="Auto-accept orders" description="Automatically accept incoming orders" checked={vendorSettings?.orderManagementPreferences?.autoAcceptOrders ?? false} onChange={() => updateVendorSetting('orderManagementPreferences', { ...vendorSettings?.orderManagementPreferences, autoAcceptOrders: !(vendorSettings?.orderManagementPreferences?.autoAcceptOrders) })} disabled={settingsSaving} />
+            <Toggle label="Order status filters" description="Remember selected status filters in order list" checked={vendorSettings?.orderManagementPreferences?.rememberStatusFilters ?? false} onChange={() => updateVendorSetting('orderManagementPreferences', { ...vendorSettings?.orderManagementPreferences, rememberStatusFilters: !(vendorSettings?.orderManagementPreferences?.rememberStatusFilters) })} disabled={settingsSaving} />
+          </div>
+        )}
+      </SettingsSection>
+
+      <SettingsSection title="Notification Preferences" description="Manage vendor notification channels">
+        {settingsLoading ? (
+          <div className="space-y-4">
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Toggle label="New Orders" description="Get notified when a new order is placed" checked={vendorSettings?.notifyNewOrders ?? true} onChange={() => updateVendorSetting('notifyNewOrders', !(vendorSettings?.notifyNewOrders))} disabled={settingsSaving} />
+            <Toggle label="Low Stock Alerts" description="Get notified when inventory is low" checked={vendorSettings?.notifyLowStock ?? true} onChange={() => updateVendorSetting('notifyLowStock', !(vendorSettings?.notifyLowStock))} disabled={settingsSaving} />
+            <Toggle label="Customer Messages" description="Get notified when a customer sends a message" checked={vendorSettings?.notifyCustomerMessages ?? true} onChange={() => updateVendorSetting('notifyCustomerMessages', !(vendorSettings?.notifyCustomerMessages))} disabled={settingsSaving} />
+            <Toggle label="Settlements" description="Get notified about payout and settlement updates" checked={vendorSettings?.notifySettlements ?? true} onChange={() => updateVendorSetting('notifySettlements', !(vendorSettings?.notifySettlements))} disabled={settingsSaving} />
+          </div>
+        )}
+      </SettingsSection>
+
+      {storeMessage && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-          <p className="text-sm text-emerald-700">{message}</p>
+          <p className="text-sm text-emerald-700">{storeMessage}</p>
         </div>
       )}
-      {error && (
+      {storeError && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
-          <p className="text-sm text-rose-700">{error}</p>
+          <p className="text-sm text-rose-700">{storeError}</p>
         </div>
       )}
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} size="lg" className="shadow-lg shadow-royal-blue/20">
-          {saving ? 'Saving...' : 'Save Changes'}
+        <Button onClick={handleStoreSave} disabled={storeSaving} size="lg" className="shadow-lg shadow-royal-blue/20">
+          {storeSaving ? 'Saving...' : 'Save Store Changes'}
+        </Button>
+      </div>
+
+      {settingsMessage && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <p className="text-sm text-emerald-700">{settingsMessage}</p>
+        </div>
+      )}
+      {settingsError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
+          <p className="text-sm text-rose-700">{settingsError}</p>
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <Button onClick={handleVendorSettingSave} disabled={settingsSaving} size="lg" className="shadow-lg shadow-royal-blue/20">
+          {settingsSaving ? 'Saving...' : 'Save Settings'}
         </Button>
       </div>
     </div>
