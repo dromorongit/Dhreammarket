@@ -224,6 +224,31 @@ export default function CustomerSections() {
     }
   }
 
+  const handleSetDefaultPayment = async (id: string) => {
+    setSaving(true)
+    setMessage(null)
+    setError(null)
+    try {
+      const res = await fetch(`/api/settings/payment-methods/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDefault: true }),
+      })
+      if (res.ok) {
+        fetchPaymentMethods()
+        setMessage('Default payment method updated')
+        setTimeout(() => setMessage(null), 3000)
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to update default payment method')
+      }
+    } catch {
+      setError('An error occurred')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleSavePayment = async () => {
     if (!paymentForm.type) return
     setSaving(true)
@@ -344,7 +369,7 @@ export default function CustomerSections() {
                   </div>
                   <div className="flex items-center gap-2">
                     {!pm.isDefault && (
-                      <Button variant="ghost" size="sm" onClick={async () => { await handleSavePayment(); }} disabled={saving}>Set Default</Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleSetDefaultPayment(pm.id)} disabled={saving}>Set Default</Button>
                     )}
                     <Button variant="ghost" size="sm" onClick={() => { setEditingPaymentId(pm.id); setPaymentForm({ type: pm.type, details: pm.details || {}, isDefault: pm.isDefault }) }} disabled={saving}>Edit</Button>
                     <Button variant="ghost" size="sm" onClick={() => handleDeletePayment(pm.id)} disabled={saving}>Remove</Button>

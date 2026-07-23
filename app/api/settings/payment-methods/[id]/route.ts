@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { createAuditLog } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
-export async function PATCH(request: NextRequest) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -17,15 +18,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, type, details, isDefault } = body
-
-    if (!id) {
-      return NextResponse.json({ error: 'Payment method ID is required' }, { status: 400 })
-    }
+    const { type, details, isDefault } = body
 
     const prisma = getPrisma()
     const existing = await prisma.paymentMethod.findFirst({
-      where: { id, userId: payload.userId, isActive: true },
+      where: { id: params.id, userId: payload.userId, isActive: true },
     })
 
     if (!existing) {
@@ -46,9 +43,20 @@ export async function PATCH(request: NextRequest) {
     }
 
     const paymentMethod = await prisma.paymentMethod.update({
-      where: { id },
+      where: { id: params.id },
       data: updateData,
     })
+
+    const action = isDefault ? 'PAYMENT_METHOD_SET_DEFAULT' : 'PAYMENT_METHOD_UPDATED'
+
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action,
+      entityType: 'PAYMENT_METHOD',
+      entityId: params.id,
+      afterData: { paymentMethodId: params.id, action: isDefault ? 'set_default' : 'updated' },
+    }).catch((err) => console.error('Failed to create audit log:', err))
 
     return NextResponse.json({ paymentMethod })
   } catch (error) {
@@ -57,7 +65,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -69,16 +77,9 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'Payment method ID is required' }, { status: 400 })
-    }
-
     const prisma = getPrisma()
     const existing = await prisma.paymentMethod.findFirst({
-      where: { id, userId: payload.userId, isActive: true },
+      where: { id: params.id, userId: payload.userId, isActive: true },
     })
 
     if (!existing) {
@@ -86,9 +87,18 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.paymentMethod.update({
-      where: { id },
+      where: { id: params.id },
       data: { isActive: false },
     })
+
+    await createAuditLog({
+      userId: payload.userId,
+      userRole: payload.role,
+      action: 'PAYMENT_METHOD_DELETED',
+      entityType: 'PAYMENT_METHOD',
+      entityId: params.id,
+      afterData: { paymentMethodId: params.id, action: 'deleted' },
+    }).catch((err) => console.error('Failed to create audit log:', err))
 
     return NextResponse.json({ success: true })
   } catch (error) {

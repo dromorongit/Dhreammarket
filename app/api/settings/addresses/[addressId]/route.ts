@@ -5,7 +5,7 @@ import { createAuditLog } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
-export async function PATCH(request: NextRequest) {
+export async function PATCH(request: NextRequest, { params }: { params: { addressId: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -18,16 +18,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { addressId, label, street, region, city, isDefault } = body
-
-    if (!addressId) {
-      return NextResponse.json({ error: 'Address ID is required' }, { status: 400 })
-    }
+    const { label, street, region, city, isDefault } = body
 
     const prisma = getPrisma()
 
     const existing = await prisma.address.findFirst({
-      where: { id: addressId, userId: payload.userId },
+      where: { id: params.addressId, userId: payload.userId },
     })
 
     if (!existing) {
@@ -49,7 +45,7 @@ export async function PATCH(request: NextRequest) {
     if (isDefault !== undefined) updateData.isDefault = isDefault
 
     const address = await prisma.address.update({
-      where: { id: addressId },
+      where: { id: params.addressId },
       data: updateData,
     })
 
@@ -69,7 +65,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: { addressId: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -81,17 +77,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const addressId = searchParams.get('addressId')
-
-    if (!addressId) {
-      return NextResponse.json({ error: 'Address ID is required' }, { status: 400 })
-    }
-
     const prisma = getPrisma()
 
     const existing = await prisma.address.findFirst({
-      where: { id: addressId, userId: payload.userId },
+      where: { id: params.addressId, userId: payload.userId },
     })
 
     if (!existing) {
@@ -101,7 +90,7 @@ export async function DELETE(request: NextRequest) {
     const wasDefault = existing.isDefault
 
     await prisma.address.delete({
-      where: { id: addressId },
+      where: { id: params.addressId },
     })
 
     if (wasDefault) {
@@ -124,7 +113,7 @@ export async function DELETE(request: NextRequest) {
       action: 'PROFILE_UPDATED',
       entityType: 'USER',
       entityId: payload.userId,
-      afterData: { addressId, action: 'deleted' },
+      afterData: { addressId: params.addressId, action: 'deleted' },
     }).catch((err) => console.error('Failed to create audit log:', err))
 
     return NextResponse.json({ success: true })

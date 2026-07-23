@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
     await createAuditLog({
       userId: payload.userId,
       userRole: payload.role,
-      action: 'PROFILE_UPDATED',
-      entityType: 'USER',
-      entityId: payload.userId,
+      action: 'PAYMENT_METHOD_CREATED',
+      entityType: 'PAYMENT_METHOD',
+      entityId: paymentMethod.id,
       afterData: { paymentMethodId: paymentMethod.id, action: 'created' },
     }).catch((err) => console.error('Failed to create audit log:', err))
 
