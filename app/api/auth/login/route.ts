@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
     const emailServiceEnabled = isEmailServiceEnabled()
 
     // Check email verification (skip for ADMIN and SUPER_ADMIN, and during maintenance)
-    const emailServiceEnabled = isEmailServiceEnabled()
     const requireVerification = await isEmailVerificationRequired()
 
     if (!requireVerification && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
