@@ -31,7 +31,7 @@ function getEmailColors(branding: Record<string, any>) {
     pageBg: branding.emailBackgroundColor || '#f8f9fa',
     cardBg: branding.emailBackgroundColor || '#ffffff',
     borderColor: branding.emailBorderColor || '#e5e7eb',
-    headerText,
+    headerText: headerTextColor,
     subheaderText: subheaderColor,
     footerBg: branding.emailFooterBackgroundColor || '#f9fafb',
     footerText: footerTextColor,
