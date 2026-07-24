@@ -5,9 +5,7 @@ import { SupportTicketType, SupportTicketStatus, SupportTicketPriority } from '@
 import { rateLimit } from '@/lib/rate-limit'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog } from '@/lib/audit-log'
-import { sendEmail, getEmailTemplate } from '@/lib/email'
-
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@dhreamarket.com'
+import { sendEmail, getEmailTemplate, getSupportEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   // Rate limiting - security hardening
@@ -114,6 +112,7 @@ export async function POST(request: NextRequest) {
       
       const submissionTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC'
       const feedbackType = category || 'General'
+      const supportEmail = await getSupportEmail()
       
       const emailContent = `
         <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Support Submission</h2>
@@ -149,9 +148,9 @@ export async function POST(request: NextRequest) {
       `
 
       const emailResult = await sendEmail({
-        to: SUPPORT_EMAIL,
+        to: supportEmail,
         subject: `[${feedbackType}] ${sanitizedSubject}`,
-        htmlContent: getEmailTemplate(emailContent, 'You can reply directly to this email to respond to the user.'),
+        htmlContent: await getEmailTemplate(emailContent, 'You can reply directly to this email to respond to the user.'),
         textContent: `New Help Center Contact Support submission\n\nSource: Help Center\nName: ${fromName}\nEmail: ${userEmail}\nFeedback Type: ${feedbackType}\nSubject: ${sanitizedSubject}\nSubmitted: ${submissionTimestamp}\n\nMessage:\n${sanitizedMessage}`,
         replyTo: userEmail,
       })

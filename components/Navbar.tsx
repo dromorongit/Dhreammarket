@@ -73,7 +73,17 @@ function getAvatarInitials(user: User | null): string {
   return ''
 }
 
-export function Navbar() {
+interface NavbarProps {
+  platformName?: string
+  branding?: {
+    logoUrl?: string
+    primaryColor?: string
+    secondaryColor?: string
+    tagline?: string
+  }
+}
+
+export function Navbar({ platformName = 'Dhream Market', branding }: NavbarProps) {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -271,21 +281,29 @@ export function Navbar() {
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group" onClick={() => { closeMobileMenu(); closeMobileSearch(); }}>
               <div className="relative w-16 h-16 sm:w-20 sm:h-20">
                 <Image
-                  src="/assets/images/dhreammarket.png"
-                  alt="Dhream Market Logo"
+                  src={branding?.logoUrl || '/assets/images/dhreammarket.png'}
+                  alt={platformName ? `${platformName} Logo` : 'Platform Logo'}
                   fill
                   className="object-contain"
                   priority
                 />
               </div>
-              <div className="flex flex-col items-start">
-                <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-deep-navy to-royal-blue bg-clip-text text-transparent group-hover:from-royal-blue group-hover:to-deep-navy transition-colors duration-300">
-                  Dhream Market
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-medium text-muted-text tracking-widest uppercase hidden sm:block">
-                  Smart Commerce Ecosystem
-                </span>
-              </div>
+                <div className="flex flex-col items-start">
+                  <span 
+                    className="text-base sm:text-xl font-bold bg-clip-text text-transparent group-hover:from-royal-blue group-hover:to-deep-navy transition-colors duration-300"
+                    style={{
+                      backgroundImage: branding?.primaryColor 
+                        ? `linear-gradient(to right, ${branding.primaryColor}, ${branding.secondaryColor || branding.primaryColor})`
+                        : undefined,
+                      color: branding?.primaryColor ? 'transparent' : undefined,
+                    }}
+                  >
+                    {platformName}
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-medium text-muted-text tracking-widest uppercase hidden sm:block">
+                    {branding?.tagline || 'Smart Commerce Ecosystem'}
+                  </span>
+                </div>
             </Link>
           </div>
 

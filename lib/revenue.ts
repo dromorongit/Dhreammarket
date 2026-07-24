@@ -1,16 +1,12 @@
 // Centralized revenue calculation logic for Dhream Market
 import { formatCurrency } from './currency'
+import { getPlatformFeeRate } from './platform-preferences'
 
 /**
- * Configuration for commission rates
- * In a real application, this might come from a database or environment variables
+ * Configuration for non-commission rates
  */
 export const COMMISSION_CONFIG = {
-  // Default commission rate (1%)
-  DEFAULT_RATE: 0.01,
-  // Estimated processor fee rate used as fallback when Paystack fee is missing (2%)
   FALLBACK_PROCESSOR_FEE_RATE: 0.02,
-  // Could be extended to support vendor-specific rates in the future
 }
 
 /**
@@ -22,11 +18,17 @@ const vendorCommissionRates: Map<string, number> = new Map()
 /**
  * Get the commission rate for a vendor
  * @param vendorId - The vendor's user ID
- * @returns The commission rate to use (defaults to COMMISSION_CONFIG.DEFAULT_RATE)
+ * @returns The commission rate to use (reads from SuperAdminSettings when no vendor-specific rate is cached)
  */
-export function getVendorCommissionRate(vendorId: string | null | undefined): number {
-  if (!vendorId) return COMMISSION_CONFIG.DEFAULT_RATE
-  return vendorCommissionRates.get(vendorId) ?? COMMISSION_CONFIG.DEFAULT_RATE
+export async function getVendorCommissionRate(vendorId: string | null | undefined): Promise<number> {
+  if (!vendorId) {
+    return getPlatformFeeRate()
+  }
+  const cached = vendorCommissionRates.get(vendorId)
+  if (cached !== undefined) {
+    return cached
+  }
+  return getPlatformFeeRate()
 }
 
 /**
@@ -49,13 +51,13 @@ export function clearVendorCommissionRates(): void {
  * Calculate financial breakdown for an order or order item
  * @param grossAmount - The total amount before any fees
  * @param processorFee - The payment processor fee (if known, otherwise null)
- * @param commissionRate - The commission rate to apply (defaults to COMMISSION_CONFIG.DEFAULT_RATE)
+ * @param commissionRate - The commission rate to apply (must be provided, reads from SuperAdminSettings)
  * @returns Object containing all financial calculations
  */
 export function calculateFinancialBreakdown(
   grossAmount: number,
   processorFee: number | null = null,
-  commissionRate: number = COMMISSION_CONFIG.DEFAULT_RATE
+  commissionRate: number
 ) {
   // Calculate net amount (gross - processor fee) if fee is known
   const netAmount = processorFee !== null ? grossAmount - processorFee : null

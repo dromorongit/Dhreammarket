@@ -3,9 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { rateLimit } from '@/lib/rate-limit'
 import { sanitizeUserContent } from '@/lib/sanitize'
-import { sendEmail, getEmailTemplate } from '@/lib/email'
-
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@dhreamarket.com'
+import { sendEmail, getEmailTemplate, getSupportEmail } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
   try {
@@ -116,6 +114,7 @@ export async function POST(request: NextRequest) {
     try {
       const userEmail = feedback.user?.email || providedEmail || 'Unknown'
       const userName = providedName || feedback.user?.email?.split('@')[0] || 'Anonymous User'
+      const supportEmail = await getSupportEmail()
       
       const escapedMessage = sanitizedMessage
         .replace(/&/g, '&amp;')
@@ -159,9 +158,9 @@ export async function POST(request: NextRequest) {
       `
 
       const emailResult = await sendEmail({
-        to: SUPPORT_EMAIL,
+        to: supportEmail,
         subject: `[${type}] ${sanitizedSubject}`,
-        htmlContent: getEmailTemplate(emailContent, 'You can reply directly to this email to respond to the user.'),
+        htmlContent: await getEmailTemplate(emailContent, 'You can reply directly to this email to respond to the user.'),
         textContent: `New Contact Page submission\n\nSource: Contact Page\nName: ${userName}\nEmail: ${userEmail}\nType: ${type}\nSubject: ${sanitizedSubject}\nSubmitted: ${submissionTimestamp}\n\nMessage:\n${sanitizedMessage}`,
         replyTo: userEmail,
       })

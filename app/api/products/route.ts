@@ -5,6 +5,7 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
+import { isAutoApproveProducts, areProductReviewsEnabled, isWishlistEnabled, isComparisonsEnabled, areDigitalProductsEnabled, isVendorMessagingEnabled } from '@/lib/platform-preferences'
 
 export const dynamic = 'force-dynamic'
 
@@ -294,6 +295,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const autoApprove = await isAutoApproveProducts()
+
     // Create product - use first category as primary, rest will be linked via junction table
     const primaryCategoryId = uniqueCategoryIds[0]
 
@@ -318,6 +321,7 @@ export async function POST(request: NextRequest) {
         expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
         backOrderNotes: backOrderNotes || null,
         slug: slug,
+        isApproved: autoApprove,
       },
       include: {
         category: true,

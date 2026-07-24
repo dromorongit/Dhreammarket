@@ -4,7 +4,14 @@ import { FiInstagram } from 'react-icons/fi'
 import { SiTiktok } from 'react-icons/si'
 import { FaXTwitter } from 'react-icons/fa6'
 
-export function Footer() {
+export function Footer({ branding }: { branding?: { logoUrl?: string; companyAddress?: string; supportEmail?: string; supportPhone?: string; tagline?: string } }) {
+  const platformName = 'Dhream Market'
+  const displayName = platformName
+  const tagline = branding?.tagline || 'Smart Commerce'
+  const supportEmail = branding?.supportEmail || 'support@dhreamarket.com'
+  const address = branding?.companyAddress || 'Ghana'
+  const phone = branding?.supportPhone || '+233 59 652 2239'
+
   return (
     <footer className="relative bg-deep-navy text-white overflow-hidden">
       {/* Decorative gradient blob */}
@@ -19,16 +26,16 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-3 mb-4 group">
               <div className="relative w-10 h-10">
                 <Image
-                  src="/assets/images/dhreammarket.png"
-                  alt="Dhream Market Logo"
+                  src={branding?.logoUrl || '/assets/images/dhreammarket.png'}
+                  alt={displayName ? `${displayName} Logo` : 'Platform Logo'}
                   fill
                   className="object-contain"
                 />
               </div>
               <div>
-                <span className="text-xl font-bold text-white">Dhream Market</span>
+                <span className="text-xl font-bold text-white">{displayName}</span>
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                  Smart Commerce
+                  {tagline}
                 </p>
               </div>
             </Link>
@@ -141,30 +148,36 @@ export function Footer() {
              </ul>
            </div>
 
-           {/* Contact */}
+          {/* Contact */}
            <div>
-             <h4 className="text-sm font-semibold text-white mb-4 tracking-wider uppercase">Contact</h4>
-             <ul className="space-y-3">
-               <li>
-                 <a href="tel:+233596522239" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                   +233 59 652 2239
-                 </a>
-               </li>
-               <li>
-                 <a href="tel:+233508548181" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                   +233 50 854 8181
-                 </a>
-               </li>
-               <li>
-                 <a href="tel:+233279354362" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
-                   <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                   +233 27 935 4362
-                 </a>
-               </li>
-             </ul>
-           </div>
+              <h4 className="text-sm font-semibold text-white mb-4 tracking-wider uppercase">Contact</h4>
+              <ul className="space-y-3">
+                {branding?.supportEmail && (
+                  <li>
+                    <a href={`mailto:${supportEmail}`} className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                      <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                      {supportEmail}
+                    </a>
+                  </li>
+                )}
+                {branding?.supportPhone && (
+                  <li>
+                    <a href={`tel:${phone.replace(/\s/g, '')}`} className="text-slate-400 hover:text-white transition-colors duration-200 text-sm flex items-center gap-2 group">
+                      <span className="w-1 h-1 bg-royal-blue rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                      {phone}
+                    </a>
+                  </li>
+                )}
+                {branding?.companyAddress && (
+                  <li>
+                    <span className="text-slate-400 text-sm flex items-start gap-2">
+                      <span className="w-1 h-1 bg-royal-blue rounded-full mt-2 flex-shrink-0"></span>
+                      {address}
+                    </span>
+                  </li>
+                )}
+              </ul>
+            </div>
          </div>
 
         {/* Trust badges */}
@@ -232,16 +245,16 @@ export function Footer() {
          </div>
 
          {/* Bottom section */}
-        <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-700/50">
-          <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} Dhream Market. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6">
-            <span className="text-slate-500 text-sm">Ghana-First Marketplace</span>
-            <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
-            <span className="text-slate-500 text-sm">Powered by Innovation</span>
-          </div>
-        </div>
+         <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-700/50">
+           <p className="text-slate-500 text-sm">
+             © {new Date().getFullYear()} {displayName}. All rights reserved.
+           </p>
+           <div className="flex items-center gap-6">
+             <span className="text-slate-500 text-sm">Ghana-First Marketplace</span>
+             <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
+             <span className="text-slate-500 text-sm">Powered by Innovation</span>
+           </div>
+         </div>
       </div>
     </footer>
   )

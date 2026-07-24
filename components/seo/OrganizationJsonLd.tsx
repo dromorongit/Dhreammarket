@@ -1,34 +1,35 @@
 import type { FC } from 'react'
 
 const SITE_URL = 'https://www.dhreamarket.com'
-const SITE_LOGO = `${SITE_URL}/assets/images/dhreammarket.png`
 
-export const OrganizationJsonLd: FC = () => {
+interface OrganizationJsonLdProps {
+  name?: string
+  logoUrl?: string
+  supportPhone?: string
+}
+
+export const OrganizationJsonLd: FC<OrganizationJsonLdProps> = ({ name = 'Dhream Market', logoUrl, supportPhone }) => {
+  const siteLogo = logoUrl || `${SITE_URL}/assets/images/dhreammarket.png`
+  const phones = supportPhone ? [supportPhone] : ['+233596522239', '+233508548181']
+  const contactPoints = phones.map((phone) => ({
+    '@type': 'ContactPoint' as const,
+    telephone: phone,
+    contactType: 'customer service',
+    availableLanguage: 'English',
+  }))
+
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Dhream Market',
+    name,
     url: SITE_URL,
-    logo: SITE_LOGO,
+    logo: siteLogo,
     sameAs: [
       'https://www.instagram.com/dhreamarket',
       'https://www.tiktok.com/@dhreamarket',
       'https://www.x.com/dhreamarket',
     ],
-    contactPoint: [
-      {
-        '@type': 'ContactPoint',
-        telephone: '+233596522239',
-        contactType: 'customer service',
-        availableLanguage: 'English',
-      },
-      {
-        '@type': 'ContactPoint',
-        telephone: '+233508548181',
-        contactType: 'customer service',
-        availableLanguage: 'English',
-      },
-    ],
+    contactPoint: contactPoints,
   }
 
   return (

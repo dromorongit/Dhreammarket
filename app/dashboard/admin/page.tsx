@@ -7,6 +7,8 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
+import { formatCurrency } from '@/lib/currency'
+import { formatDateForPlatformClient, getClientPlatformTimezone } from '@/lib/timezone-client'
 
 interface PlatformStats {
   totalUsers: number
@@ -141,19 +143,8 @@ export default function AdminDashboard() {
     fetchStats()
   }, [fetchStats])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount)
-  }
-
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    return formatDateForPlatformClient(dateStr, getClientPlatformTimezone())
   }
 
   if (loading) {
@@ -681,13 +672,7 @@ export default function AdminDashboard() {
                           <div>
                             <p className="font-medium text-deep-navy">Order #{order.id.slice(-8)}</p>
                             <p className="text-sm text-slate-500">
-                              {new Date(order.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                              {formatDateForPlatformClient(order.createdAt, getClientPlatformTimezone())}
                             </p>
                           </div>
                         </div>

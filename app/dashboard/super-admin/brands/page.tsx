@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
+import { getCurrencySymbol } from '@/lib/platform-preferences'
 
 interface Brand {
   id: string
@@ -43,6 +44,13 @@ export default function SuperAdminBrandsPage() {
   const [productTotalPages, setProductTotalPages] = useState(1)
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
   const [assignedProducts, setAssignedProducts] = useState<Product[]>([])
+  const [currency, setCurrency] = useState<string>((typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) || 'GHS')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) {
+      setCurrency(window.__PLATFORM_CURRENCY__)
+    }
+  }, [])
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -316,7 +324,7 @@ export default function SuperAdminBrandsPage() {
                       className={`cursor-pointer rounded-xl border-2 p-2 ${selectedProducts.has(product.id) ? 'border-royal-blue bg-royal-blue/5' : 'border-slate-200'}`}
                     >
                       <p className="text-xs font-medium line-clamp-2">{product.name}</p>
-                      <p className="text-[10px] text-royal-blue font-bold">GH₵ {product.price.toFixed(2)}</p>
+                      <p className="text-[10px] text-royal-blue font-bold">{(getCurrencySymbol(currency))} {product.price.toFixed(2)}</p>
                     </div>
                   ))}
                 </div>

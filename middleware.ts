@@ -4,15 +4,48 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken, type Role } from './lib/auth-middleware'
 import { isEmailServiceEnabled } from './lib/feature-flags'
-import { updateSessionLastActivity } from './lib/session'
+import { isEmailVerificationRequired } from './lib/platform-preferences'
+import { updateSessionLastActivity, isSessionExpired } from './lib/session'
+import { getPlatformPreferences, getAllowedAdminIps, getMonitoringPreferences } from './lib/platform-preferences'
+import { scheduleAuditLogCleanup } from './lib/audit-log'
+import { expireIdleSessions } from './lib/session'
 
-const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
+let lastAuditCleanup = 0
+const AUDIT_CLEANUP_INTERVAL = 60 * 60 * 1000
+
+const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password', '/maintenance']
+const MAINTENANCE_EXEMPT = [
+  '/maintenance',
+  '/login',
+  '/register',
+  '/verify-email',
+  '/forgot-password',
+  '/reset-password',
+  '/api/auth',
+]
 
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   
   const fullUrl = `${pathname}${search || ''}`
   const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route))
+  const isMaintenanceExempt = MAINTENANCE_EXEMPT.some(route => pathname.startsWith(route))
+
+  // Maintenance mode check for all app routes
+  if (!isMaintenanceExempt) {
+    const preferences = await getPlatformPreferences()
+    if (preferences.maintenanceMode) {
+      const token = request.cookies.get('token')?.value
+      if (token) {
+        const payload = await verifyToken(token)
+        if (payload?.role !== 'SUPER_ADMIN') {
+          return NextResponse.redirect(new URL('/maintenance', request.url))
+        }
+      } else {
+        return NextResponse.redirect(new URL('/maintenance', request.url))
+      }
+    }
+  }
 
   // Define protected routes
   const protectedRoutes = {
@@ -57,15 +90,45 @@ export async function middleware(request: NextRequest) {
       request.headers.get('user-agent') || undefined
     )
 
+    const sessionExpired = await isSessionExpired(payload.sessionId)
+    if (sessionExpired) {
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirect', fullUrl)
+      redirectUrl.searchParams.set('reason', 'session_expired')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    const isAdminRoute = pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin')
+    if (isAdminRoute && payload.role !== 'SUPER_ADMIN') {
+      const allowedIps = await getAllowedAdminIps()
+      if (allowedIps.length > 0) {
+        const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
+        const isAllowedIP = allowedIps.some((allowedIp) => {
+          if (clientIp === allowedIp) return true
+          if (allowedIp.endsWith('/*')) {
+            const prefix = allowedIp.slice(0, -2)
+            return clientIp.startsWith(prefix)
+          }
+          return false
+        })
+        if (!isAllowedIP) {
+          return NextResponse.json(
+            { error: 'Access denied. Your IP address is not allowed to access the admin dashboard.', status: 403 }
+          )
+        }
+      }
+    }
+
     const allowedRoles = protectedRoutes[protectedRoute as keyof typeof protectedRoutes]
     if (!allowedRoles.includes(payload.role)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
     const emailServiceEnabled = isEmailServiceEnabled()
+    const requireEmailVerification = await isEmailVerificationRequired()
 
     if (pathname.startsWith('/dashboard/customer') && payload.role === 'CUSTOMER') {
-      if (emailServiceEnabled) {
+      if (requireEmailVerification && emailServiceEnabled) {
         // Check email verification first
         try {
           const { getPrisma } = await import('./lib/prisma')
@@ -89,7 +152,7 @@ export async function middleware(request: NextRequest) {
     
     // Additional onboarding check for vendor routes
     if (pathname.startsWith('/dashboard/vendor') && payload.role === 'VENDOR') {
-      if (emailServiceEnabled) {
+      if (requireEmailVerification && emailServiceEnabled) {
         // Check email verification first
         try {
           const { getPrisma } = await import('./lib/prisma')
@@ -110,15 +173,17 @@ export async function middleware(request: NextRequest) {
         }
       }
       
-      // Allow access to store setup page without onboarding check
-      // Use startsWith to allow all store-related subpaths (e.g., /dashboard/vendor/store, /dashboard/vendor/store/edit)
-      if (pathname.startsWith('/dashboard/vendor/store')) {
-        return NextResponse.next()
-      }
-      
-      // Also allow access to vendor verification page without onboarding check
-      if (pathname.startsWith('/dashboard/vendor/verification')) {
-        return NextResponse.next()
+// Allow access to store setup page without onboarding check
+       // Use startsWith to allow all store-related subpaths (e.g., /dashboard/vendor/store, /dashboard/vendor/store/edit)
+       if (pathname.startsWith('/dashboard/vendor/store')) {
+         await runScheduledCleanup(request)
+         return NextResponse.next()
+       }
+       
+       // Also allow access to vendor verification page without onboarding check
+       if (pathname.startsWith('/dashboard/vendor/verification')) {
+         await runScheduledCleanup(request)
+         return NextResponse.next()
       }
         
         try {
@@ -148,11 +213,45 @@ export async function middleware(request: NextRequest) {
       }
   }
 
+  await runScheduledCleanup(request)
   return NextResponse.next()
+}
+
+// Run scheduled cleanup tasks on admin routes
+async function runScheduledCleanup(request: NextRequest) {
+  const now = Date.now()
+  if (now - lastAuditCleanup < AUDIT_CLEANUP_INTERVAL) return
+  if (!request.nextUrl.pathname.startsWith('/dashboard/admin') && !request.nextUrl.pathname.startsWith('/dashboard/super-admin')) return
+  lastAuditCleanup = now
+  scheduleAuditLogCleanup().catch(() => {})
+  expireIdleSessions().catch(() => {})
 }
 
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/',
+    '/checkout',
+    '/cart',
+    '/search',
+    '/about',
+    '/contact',
+    '/terms',
+    '/privacy',
+    '/refund',
+    '/payment-policy',
+    '/faq',
+    '/help-center',
+    '/marketplace/:path*',
+    '/vendor/:path*',
+    '/help/:path*',
+    '/payment/success',
+    '/payment/failed',
+    '/payment/cancelled',
+    '/login',
+    '/register',
+    '/verify-email',
+    '/forgot-password',
+    '/reset-password/:path*',
   ],
 }

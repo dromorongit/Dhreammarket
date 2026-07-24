@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sendEmail } from '@/lib/email'
+import { getSupportEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
 
       try {
         await sendEmail({
-          to: 'business@dhreamarket.com',
+          to: await getSupportEmail(),
           subject: adminSubject,
           htmlContent: adminHtml,
         })

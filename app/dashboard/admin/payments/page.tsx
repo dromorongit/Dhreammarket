@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import Link from 'next/link'
+import { formatCurrency } from '@/lib/currency'
 
 interface Payment {
   id: string
@@ -62,13 +63,6 @@ export default function AdminPaymentsPage() {
   useEffect(() => {
     fetchPayments()
   }, [fetchPayments])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount)
-  }
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {

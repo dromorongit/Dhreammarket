@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
+import { formatCurrency } from '@/lib/currency'
 
 interface OrderItem {
   id: string
@@ -158,13 +159,6 @@ export default function AdminOrderDetailPage() {
     if (item.size) parts.push(`Size: ${item.size}`)
     if (item.age) parts.push(`Age: ${item.age}`)
     return parts.length > 0 ? ` (${parts.join(', ')})` : ''
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount)
   }
 
   if (loading) {

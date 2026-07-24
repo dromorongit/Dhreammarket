@@ -1,13 +1,16 @@
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import Image from 'next/image'
+import { getBrandingPreferences } from '@/lib/platform-preferences'
 
 export const metadata = {
   title: 'Managing Products - Help Center - Dhream Market',
   description: 'Complete guide for vendors on managing products on Dhream Market. Learn how to add, edit, and organize your product listings.',
 }
 
-export default function ManagingProductsGuide() {
+export default async function ManagingProductsGuide() {
+  const branding = await getBrandingPreferences()
+  const supportPhone = branding.supportPhone || '+233 59 652 2239'
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-gradient-to-br from-deep-navy to-purple-900 relative overflow-hidden">
@@ -128,13 +131,7 @@ export default function ManagingProductsGuide() {
              <div className="flex flex-col sm:flex-row gap-4">
                <a href="/help" className="text-royal-blue hover:underline">Visit Help Center</a>
                <a href="/contact" className="text-royal-blue hover:underline">Contact Support</a>
-               <div className="flex flex-col sm:flex-row gap-2">
-                 <a href="tel:+233596522239" className="text-royal-blue hover:underline">+233 59 652 2239</a>
-                 <span className="text-slate-400 hidden sm:inline">|</span>
-                 <a href="tel:+233508548181" className="text-royal-blue hover:underline">+233 50 854 8181</a>
-                 <span className="text-slate-400 hidden sm:inline">|</span>
-                 <a href="tel:+233279354362" className="text-royal-blue hover:underline">+233 27 935 4362</a>
-               </div>
+               <div className="flex flex-col sm:flex-row gap-2"><a href={`tel:${supportPhone.replace(/\s/g, ``)}`} className="text-royal-blue hover:underline">{supportPhone}</a></div>
              </div>
            </CardContent>
          </Card>
@@ -142,4 +139,7 @@ export default function ManagingProductsGuide() {
     </div>
   )
 }
+
+
+
 

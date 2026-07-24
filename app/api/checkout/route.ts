@@ -6,6 +6,7 @@ import { sendOrderConfirmationEmail } from '@/lib/email'
 import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { createNotification, formatNotificationMessage } from '@/lib/notifications'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
+import { getPlatformFeeRate, checkMaintenanceApi, getDefaultCurrency, isGuestCheckoutAllowed } from '@/lib/platform-preferences'
 import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -20,13 +21,24 @@ export async function POST(request: NextRequest) {
     return rateLimitCheck.response
   }
 
+  // Check maintenance mode at API level
+  const maintenanceResponse = await checkMaintenanceApi(request)
+  if (maintenanceResponse) {
+    return maintenanceResponse
+  }
+
   console.log('[Checkout API] Request received')
   
   try {
     const token = request.cookies.get('token')?.value
+
     if (!token) {
-      console.log('[Checkout API] No token found - Unauthorized')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const guestCheckoutAllowed = await isGuestCheckoutAllowed()
+      if (!guestCheckoutAllowed) {
+        console.log('[Checkout API] No token found - Unauthorized')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      return NextResponse.json({ error: 'Guest checkout session not established' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
@@ -133,9 +145,11 @@ export async function POST(request: NextRequest) {
       vendorBreakdown[storeId].subtotal += item.product.price * item.quantity
     }
 
-    // Calculate vendor earnings (90% of item value, 10% platform commission)
+    // Calculate vendor earnings based on dynamic platform fee
+    const platformFeeRate = await getPlatformFeeRate()
+    const currency = await getDefaultCurrency()
     for (const storeId in vendorBreakdown) {
-      vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * 0.9 * 100) / 100
+      vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * (1 - platformFeeRate) * 100) / 100
     }
 
 // Determine order type and fulfillment status based on product availability
@@ -199,7 +213,7 @@ export async function POST(request: NextRequest) {
             userId: payload.userId,
             orderId: order.id,
             amount: total,
-            currency: 'GHS',
+            currency,
             status: 'PENDING',
             reference,
           },
@@ -270,13 +284,13 @@ export async function POST(request: NextRequest) {
       })
       const customerName = userProfile?.firstName || user?.email.split('@')[0] || 'Customer'
       if (await canSendCustomerEmail(payload.userId)) {
-        sendOrderConfirmationEmail(user.email, customerName, result.order.id, total, 'GHS').catch(err => {
+        sendOrderConfirmationEmail(user.email, customerName, result.order.id, total, currency).catch(err => {
           console.error('Failed to send order confirmation email:', err)
         })
       }
 
 // Create in-app notification for customer
-        createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: GHS ${total.toFixed(2)}`).catch(err => {
+        createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: ${currency} ${total.toFixed(2)}`).catch(err => {
           console.error('Failed to create notification:', err)
         })
 
@@ -292,7 +306,7 @@ export async function POST(request: NextRequest) {
             select: { userId: true }
           })
           if (store?.userId) {
-            createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: GHS ${total.toFixed(2)}`).catch(err => {
+            createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: ${currency} ${total.toFixed(2)}`).catch(err => {
               console.error('Failed to create vendor notification:', err)
             })
           }

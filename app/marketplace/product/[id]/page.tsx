@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import ProductClient from './product-client'
 import { ProductJsonLd } from '@/components/seo/ProductJsonLd'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
+import { areProductReviewsEnabled } from '@/lib/platform-preferences'
 
 const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
@@ -135,6 +136,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
   const product = await getProductInfo(params.id)
 
   if (!product) {
+    const reviewsEnabled = await areProductReviewsEnabled()
     return (
       <>
         <script
@@ -147,7 +149,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
             }),
           }}
         />
-        <ProductClient />
+        <ProductClient reviewsEnabled={reviewsEnabled} />
       </>
     )
   }
@@ -156,6 +158,8 @@ export default async function ProductPage({ params }: { params: { id: string } }
     ...product,
     images: (product.images ?? []).map((img, i) => ({ ...img, id: String(i) })),
   }
+
+  const reviewsEnabled = await areProductReviewsEnabled()
 
   return (
     <>
@@ -167,7 +171,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
           { name: product?.name ?? 'Product', url: `/marketplace/product/${product?.slug ?? product?.id}` },
         ]}
       />
-      <ProductClient />
+      <ProductClient reviewsEnabled={reviewsEnabled} />
     </>
   )
 }

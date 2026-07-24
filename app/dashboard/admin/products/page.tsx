@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import Link from 'next/link'
+import { formatCurrency } from '@/lib/currency'
 
 interface Product {
   id: string
@@ -92,13 +93,6 @@ export default function AdminProductsPage() {
     } finally {
       setActionLoading(null)
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount)
   }
 
   if (error) {

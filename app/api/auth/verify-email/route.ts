@@ -6,6 +6,7 @@ import { generateSlug } from '@/lib/slug'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { rateLimit } from '@/lib/rate-limit'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
+import { isNewVendorApprovalRequired, isAutoApproveVendors } from '@/lib/platform-preferences'
 import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -67,13 +68,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const user = await getPrisma().$transaction(async (tx) => {
+    const newVendorApproval = await isNewVendorApprovalRequired()
+    const autoApproveVendors = await isAutoApproveVendors()
+    const user = await getPrisma().$transaction(async (tx) => {
         const createdUser = await tx.user.create({
           data: {
             email: pendingReg.email,
             password: pendingReg.hashedPassword,
             role: pendingReg.role,
             position: pendingReg.role === 'ADMIN' ? pendingReg.position : null,
+            status: pendingReg.role === 'VENDOR' && newVendorApproval && !autoApproveVendors ? 'SUSPENDED' : 'ACTIVE',
             isEmailVerified: true,
             emailVerifiedAt: new Date(),
           },

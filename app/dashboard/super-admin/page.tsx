@@ -7,6 +7,8 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
+import { formatCurrency } from '@/lib/currency'
+import { formatDateForPlatformClient, getClientPlatformTimezone } from '@/lib/timezone-client'
 
 interface PlatformStats {
   totalUsers: number
@@ -107,19 +109,8 @@ export default function SuperAdminDashboard() {
     fetchData()
   }, [fetchData])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount)
-  }
-
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GH', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    return formatDateForPlatformClient(dateStr, getClientPlatformTimezone())
   }
 
   if (loading) {
