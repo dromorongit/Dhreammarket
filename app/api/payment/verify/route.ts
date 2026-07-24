@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
+import { canSendCustomerEmail, shouldSendNotification } from '@/lib/notification-preferences'
 import { calculateFinancialBreakdown, formatFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { rateLimit } from '@/lib/rate-limit'
@@ -267,12 +268,14 @@ export async function POST(request: NextRequest) {
     })
     if (user) {
       const customerName = user.profile?.firstName || user.email.split('@')[0] || 'Customer'
-      sendPaymentConfirmationEmail(user.email, customerName, payment.orderId, payment.amount, payment.currency).catch(err => {
-        console.error('Failed to send payment confirmation email:', err)
-      })
+      if (await canSendCustomerEmail(user.id)) {
+        sendPaymentConfirmationEmail(user.email, customerName, payment.orderId, payment.amount, payment.currency).catch(err => {
+          console.error('Failed to send payment confirmation email:', err)
+        })
+      }
 
-// Create in-app notification - with idempotency check to prevent duplicates
-        // Only create if one doesn't already exist for this payment
+      // Create in-app notification - with idempotency check to prevent duplicates
+      if (await shouldSendNotification(user.id, 'PAYMENT_SUCCESSFUL')) {
         const existingNotification = await getPrisma().notification.findFirst({
          where: {
            userId: user.id,
@@ -281,41 +284,42 @@ export async function POST(request: NextRequest) {
              contains: payment.orderId.slice(0, 8),
            },
          },
+        })
+        if (!existingNotification) {
+          await getPrisma().notification.create({
+            data: {
+              userId: user.id,
+              type: 'PAYMENT_SUCCESSFUL',
+              title: 'Payment Successful',
+              message: `Your payment of GHS ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
+            },
+          }).catch((err: any) => {
+            console.error('Failed to create notification:', err)
+          })
+        }
+      }
+
+      // Notify vendors that payment was successful and order is confirmed
+      const orderItems = transactionResult.orderItems
+      const vendorStoreIds = Array.from(new Set(orderItems.map((item: any) => item.product?.storeId).filter(Boolean))) as string[]
+     for (const storeId of vendorStoreIds) {
+       const store = await getPrisma().store.findUnique({
+         where: { id: storeId },
+         select: { userId: true }
        })
-       if (!existingNotification) {
+       if (store?.userId && (await shouldSendNotification(store.userId, 'ORDER_STATUS_UPDATED'))) {
          await getPrisma().notification.create({
            data: {
-             userId: user.id,
-             type: 'PAYMENT_SUCCESSFUL',
-             title: 'Payment Successful',
-             message: `Your payment of GHS ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
+             userId: store.userId,
+             type: 'ORDER_STATUS_UPDATED',
+             title: 'Order Payment Confirmed',
+             message: `Payment received for order #${payment.orderId.slice(0, 8)}. Please prepare items for fulfillment.`,
            },
          }).catch((err: any) => {
-           console.error('Failed to create notification:', err)
+           console.error('Failed to create vendor payment notification:', err)
          })
        }
-
-// Notify vendors that payment was successful and order is confirmed
-        const orderItems = transactionResult.orderItems
-        const vendorStoreIds = Array.from(new Set(orderItems.map((item: any) => item.product?.storeId).filter(Boolean))) as string[]
-       for (const storeId of vendorStoreIds) {
-         const store = await getPrisma().store.findUnique({
-           where: { id: storeId },
-           select: { userId: true }
-         })
-         if (store?.userId) {
-           await getPrisma().notification.create({
-             data: {
-               userId: store.userId,
-               type: 'ORDER_STATUS_UPDATED',
-               title: 'Order Payment Confirmed',
-               message: `Payment received for order #${payment.orderId.slice(0, 8)}. Please prepare items for fulfillment.`,
-             },
-           }).catch((err: any) => {
-             console.error('Failed to create vendor payment notification:', err)
-           })
-         }
-       }
+     }
     }
 
     console.log('[Payment Verify API] Payment verified successfully for order:', payment.orderId)

@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { initializePaystackPayment, isPaystackConfigured } from '@/lib/paystack'
 import { sendOrderConfirmationEmail } from '@/lib/email'
+import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { createNotification, formatNotificationMessage } from '@/lib/notifications'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import crypto from 'crypto'
@@ -268,9 +269,11 @@ export async function POST(request: NextRequest) {
         where: { userId: payload.userId },
       })
       const customerName = userProfile?.firstName || user?.email.split('@')[0] || 'Customer'
-      sendOrderConfirmationEmail(user.email, customerName, result.order.id, total, 'GHS').catch(err => {
-        console.error('Failed to send order confirmation email:', err)
-      })
+      if (await canSendCustomerEmail(payload.userId)) {
+        sendOrderConfirmationEmail(user.email, customerName, result.order.id, total, 'GHS').catch(err => {
+          console.error('Failed to send order confirmation email:', err)
+        })
+      }
 
 // Create in-app notification for customer
         createNotification(payload.userId, 'ORDER_PLACED', 'Order Placed', `Your order #${result.order.id.slice(0, 8)} has been placed. Total: GHS ${total.toFixed(2)}`).catch(err => {

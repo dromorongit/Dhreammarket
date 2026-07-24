@@ -2,6 +2,7 @@ import { getPrisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { sendEmail } from '@/lib/email'
 import { formatNotificationMessage } from '@/lib/notifications'
+import { canSendCustomerEmail } from './notification-preferences'
 
 export type FulfillmentEventType = 
   | 'ORDER_CREATED'
@@ -274,6 +275,10 @@ async function sendEventEmailIfNeeded(
   const emailTemplate = EMAIL_TEMPLATES[eventType]
   
   if (!emailTemplate || !order.customerEmail) {
+    return
+  }
+
+  if (!order.userId || !(await canSendCustomerEmail(order.userId))) {
     return
   }
 

@@ -1,5 +1,6 @@
 import { getPrisma } from '@/lib/prisma'
 import { NotificationType } from '@prisma/client'
+import { shouldSendNotification } from './notification-preferences'
 
 export interface NotificationEvent {
   id: string
@@ -66,7 +67,10 @@ export async function createNotification(
   type: NotificationType,
   title: string,
   message: string
-) {
+): Promise<void> {
+  if (!(await shouldSendNotification(userId, type))) {
+    return
+  }
   try {
     await getPrisma().notification.create({
       data: {
@@ -83,7 +87,10 @@ export async function createNotification(
 
 export async function createNotificationEvent(
   data: Omit<NotificationEvent, 'id' | 'createdAt'>
-) {
+): Promise<any | null> {
+  if (!(await shouldSendNotification(data.userId, data.type as NotificationType))) {
+    return null
+  }
   try {
     const notification = await getPrisma().notification.create({
       data: {

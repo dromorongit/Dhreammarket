@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sendOrderStatusUpdateEmail } from '@/lib/email'
+import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { recordFulfillmentEvent, FulfillmentEventType } from '@/lib/fulfillment-events'
 import { consumeInventory } from '@/lib/stock-reservation'
@@ -343,9 +344,11 @@ export async function PATCH(
     if (orderWithUser?.user) {
       const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
       const statusToUpdate = status || updatedOrder.status
-      sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, statusToUpdate).catch(err => {
-        console.error('Failed to send order status update email:', err)
-      })
+      if (await canSendCustomerEmail(orderWithUser.userId)) {
+        sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, statusToUpdate).catch(err => {
+          console.error('Failed to send order status update email:', err)
+        })
+      }
     }
 
     return NextResponse.json({
