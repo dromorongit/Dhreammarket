@@ -973,8 +973,9 @@ onClose={() => {
                setSearchQuery("");
                setProductPage(1);
              }}
-             saving={saving}
-           />
+saving={saving}
+            currency={currency}
+          />
         )}
 
         {/* Trending Settings Modal */}
@@ -1158,6 +1159,7 @@ function ManageSectionModal({
   onReorderProducts,
   onClose,
   saving,
+  currency,
 }: {
   section: HomepageSection;
   products: Product[];
@@ -1187,6 +1189,7 @@ function ManageSectionModal({
   ) => void;
   onClose: () => void;
   saving: boolean;
+  currency: string;
 }) {
   const [activeTab, setActiveTab] = useState<
     "assigned" | "products" | "vendors" | "brands"
