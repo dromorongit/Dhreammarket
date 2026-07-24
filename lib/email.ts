@@ -1,6 +1,8 @@
 import { getPlatformName, getDefaultCurrency, getPlatformPreferences, getBrandingPreferences } from './platform-preferences'
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL
+const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
 
 function getAppUrl(): string {
@@ -80,7 +82,7 @@ export async function sendEmail({ to, subject, htmlContent, textContent, replyTo
 
   try {
     const emailPayload: any = {
-      sender: { email: SENDER_EMAIL, name: SENDER_NAME },
+      sender: { email: BREVO_SENDER_EMAIL, name: BREVO_SENDER_NAME },
       to: [{ email: to }],
       subject,
       htmlContent,
