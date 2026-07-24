@@ -1466,7 +1466,7 @@ function ManageSectionModal({
                           {product.name}
                         </p>
                         <p className="text-[10px] text-royal-blue font-bold mt-1">
-                          {getCurrencySymbol(currency)} {product.price.toFixed(2)}
+                           {getCurrencySymbol(currency || 'GHS')} {product.price.toFixed(2)}
                         </p>
                         {product.store && (
                           <p className="text-[10px] text-slate-400 truncate mt-1">
