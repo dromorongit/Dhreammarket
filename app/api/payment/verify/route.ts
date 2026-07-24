@@ -296,7 +296,7 @@ export async function POST(request: NextRequest) {
               userId: user.id,
               type: 'PAYMENT_SUCCESSFUL',
               title: 'Payment Successful',
-              message: `Your payment of ${currency} ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
+              message: `Your payment of ${payment.currency} ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
             },
           }).catch((err: any) => {
             console.error('Failed to create notification:', err)
