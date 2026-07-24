@@ -1,5 +1,6 @@
 import { getPrisma } from './prisma'
 import { verifyToken } from './auth-middleware'
+import { isEmailServiceEnabled } from './feature-flags'
 import { NextRequest, NextResponse } from 'next/server'
 
 export interface PlatformPreferences {
