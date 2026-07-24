@@ -7,24 +7,20 @@ import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import { Suspense } from 'react'
-import { getPlatformName, getPlatformTimezone, formatDateForPlatform, getDefaultCurrency, getBrandingPreferences } from '@/lib/platform-preferences'
+
+const FALLBACK_PLATFORM = 'Dhream Market'
+const FALLBACK_TIMEZONE = 'Africa/Accra'
+const FALLBACK_CURRENCY = 'GHS'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const platformName = await getPlatformName()
-  const timezone = await getPlatformTimezone()
-  const defaultCurrency = await getDefaultCurrency()
-  const branding = await getBrandingPreferences()
-  const faviconUrl = branding.favicon || '/favicon.ico'
-  const now = new Date()
-  
   return {
     title: {
-      default: `${platformName} - Powering Digital Trade`,
-      template: `%s | ${platformName}`,
+      default: `${FALLBACK_PLATFORM} - Powering Digital Trade`,
+      template: `%s | ${FALLBACK_PLATFORM}`,
     },
     description: 'Ghana\'s premier digital marketplace. Buy and sell securely with Paystack.',
     openGraph: {
-      siteName: platformName,
+      siteName: FALLBACK_PLATFORM,
       locale: 'en_GH',
       type: 'website',
     },
@@ -32,13 +28,12 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
     },
     icons: {
-      icon: [{ url: faviconUrl, sizes: 'any' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }],
+      icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }],
       apple: '/apple-icon.png',
     },
     other: {
-      'platform-timezone': timezone,
-      'platform-currency': defaultCurrency,
-      'current-date': formatDateForPlatform(now, timezone),
+      'platform-timezone': FALLBACK_TIMEZONE,
+      'platform-currency': FALLBACK_CURRENCY,
     },
   }
 }
@@ -48,29 +43,24 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const platformName = await getPlatformName()
-  const timezone = await getPlatformTimezone()
-  const defaultCurrency = await getDefaultCurrency()
-  const branding = await getBrandingPreferences()
-
   return (
     <html lang="en">
       <body className="font-sans">
         <Suspense fallback={null}>
           <GoogleAnalytics />
         </Suspense>
-        <OrganizationJsonLd name={platformName} logoUrl={branding.logoUrl} supportPhone={branding.supportPhone} />
+        <OrganizationJsonLd name={FALLBACK_PLATFORM} />
         <CartProvider>
-          <Navbar platformName={platformName} branding={branding} />
+          <Navbar platformName={FALLBACK_PLATFORM} branding={{}} />
           <main className="min-h-screen">
             {children}
           </main>
-          <Footer branding={branding} />
+          <Footer branding={{}} />
           <CookieConsentBanner />
         </CartProvider>
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__PLATFORM_TIMEZONE__=${JSON.stringify(timezone)};window.__PLATFORM_CURRENCY__=${JSON.stringify(defaultCurrency)}`,
+            __html: `window.__PLATFORM_TIMEZONE__='${FALLBACK_TIMEZONE}';window.__PLATFORM_CURRENCY__='${FALLBACK_CURRENCY}'`,
           }}
         />
       </body>
