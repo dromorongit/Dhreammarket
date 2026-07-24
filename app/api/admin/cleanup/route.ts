@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     endpoints: [
-      { method: 'POST', path: '/api/admin/cleanup', body: { type: 'audit-logs' | 'sessions' | 'all' } },
+      { method: 'POST', path: '/api/admin/cleanup', body: { type: ['audit-logs', 'sessions', 'all'] } },
     ],
   })
 }
