@@ -35,6 +35,12 @@ interface CartItem {
     name: string
     price: number
     stock: number
+    availabilityType?: string
+    expectedArrivalDate?: string | null
+    estimatedFulfillmentDays?: number | null
+    preOrderNotes?: string | null
+    expectedRestockDate?: string | null
+    backOrderNotes?: string | null
     images: Array<{
       id: string
       url: string
