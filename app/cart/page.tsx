@@ -187,7 +187,7 @@ export default function Cart() {
                 {/* Quantity Selector */}
                 <div className="flex items-center gap-0 rounded-xl overflow-hidden border border-gray-200 w-fit">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() => cartUpdateQuantity(item.id, item.quantity - 1)}
                     disabled={updatingItems.has(item.id) || item.quantity <= 1}
                     className="w-9 h-9 flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -206,7 +206,7 @@ export default function Cart() {
                     )}
                   </span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    onClick={() => cartUpdateQuantity(item.id, item.quantity + 1)}
                     disabled={updatingItems.has(item.id) || (item.product.availabilityType === 'IN_STOCK' && item.quantity >= (item.productVariant ? item.productVariant.stock ?? item.product.stock : item.product.stock))}
                     className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white font-medium text-lg hover:bg-blue-700 border-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
