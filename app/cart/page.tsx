@@ -1,67 +1,23 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
-import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
-import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
-
-interface CartItem {
-  id: string
-  quantity: number
-  product: {
-    id: string
-    name: string
-    price: number
-    stock: number
-    availabilityType?: string
-    expectedArrivalDate?: string | null
-    estimatedFulfillmentDays?: number | null
-    preOrderNotes?: string | null
-    expectedRestockDate?: string | null
-    backOrderNotes?: string | null
-    images: Array<{
-      id: string
-      url: string
-      alt: string | null
-    }>
-  }
-  productVariant?: {
-    id: string
-    color?: string | null
-    size?: string | null
-    age?: string | null
-    stock?: number
-  } | null
-  color?: string | null
-  size?: string | null
-  age?: string | null
-}
-
-interface CartResponse {
-  cart: {
-    id: string | null
-    items: CartItem[]
-    total: number
-  }
-}
+import { useCart } from '@/lib/CartContext'
 
 export default function Cart() {
-  const router = useRouter()
-  const [cart, setCart] = useState<CartResponse['cart'] | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
-  
-  // Use cart context for centralized state
-  const { cart: contextCart, fetchCart } = useCart()
+   const router = useRouter()
+   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
+   
+   const { cart: contextCart, updateQuantity: cartUpdateQuantity, removeItem: cartRemoveItem } = useCart()
   
   // Location fields for address collection (no longer affects pricing)
   const [selectedRegion, setSelectedRegion] = useState('')
@@ -70,121 +26,68 @@ export default function Cart() {
   // Get available regions
   const availableRegions = getAvailableRegions()
 
-  useEffect(() => {
-    loadCart()
-  }, [])
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+     if (newQuantity <= 0) return
 
-  // Sync context cart to local state
-  useEffect(() => {
-    if (contextCart) {
-      setCart(contextCart)
-    }
-  }, [contextCart])
+     setUpdatingItems(prev => new Set(prev).add(itemId))
+     try {
+       const success = await cartUpdateQuantity(itemId, newQuantity)
+       if (!success) {
+         console.error('Failed to update quantity')
+       }
+     } catch (error) {
+       console.error('Error updating quantity:', error)
+     } finally {
+       setUpdatingItems(prev => {
+         const next = new Set(prev)
+         next.delete(itemId)
+         return next
+       })
+     }
+   }
 
-  const loadCart = async () => {
-    try {
-      const response = await fetch('/api/cart')
-      if (response.ok) {
-        const data: CartResponse = await response.json()
-        setCart(data.cart)
-      } else if (response.status === 401) {
-        const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
-        window.location.href = `/login?redirect=${currentUrl}`
-      } else {
-        console.error('Failed to fetch cart')
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) return
-
-    setUpdatingItems(prev => new Set(prev).add(itemId))
-    try {
-      const response = await fetch(`/api/cart/items/${itemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ quantity: newQuantity }),
-      })
-
-      if (response.ok) {
-        const data: CartResponse = await response.json()
-        setCart(data.cart)
-        dispatchCartUpdate()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to update quantity')
-      }
-    } catch (error) {
-      console.error('Error updating quantity:', error)
-      alert('Error updating quantity')
-    } finally {
-      setUpdatingItems(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(itemId)
-        return newSet
-      })
-    }
-  }
-
-  const removeItem = async (itemId: string) => {
-    setUpdatingItems(prev => new Set(prev).add(itemId))
-    try {
-      const response = await fetch(`/api/cart/items/${itemId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        const data: CartResponse = await response.json()
-        setCart(data.cart)
-        dispatchCartUpdate()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to remove item')
-      }
-    } catch (error) {
-      console.error('Error removing item:', error)
-      alert('Error removing item')
-    } finally {
-      setUpdatingItems(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(itemId)
-        return newSet
-      })
-    }
-  }
+   const handleRemoveItem = async (itemId: string) => {
+     setUpdatingItems(prev => new Set(prev).add(itemId))
+     try {
+       const success = await cartRemoveItem(itemId)
+       if (!success) {
+         console.error('Failed to remove item')
+       }
+     } catch (error) {
+       console.error('Error removing item:', error)
+     } finally {
+       setUpdatingItems(prev => {
+         const next = new Set(prev)
+         next.delete(itemId)
+         return next
+       })
+     }
+   }
 
 // Calculate totals - Tax and Delivery Fee are always 0 as per business rules
    // Delivery fees are negotiated separately by vendors
-   const subtotal = cart?.total || 0
-   const total = subtotal // Total equals subtotal only
-   const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+   const subtotal = contextCart?.total || 0
+   const totalQuantity = contextCart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse space-y-8">
-            <Skeleton className="h-10 w-32" />
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <SkeletonCard key={i} />
-              ))}
-            </div>
-            <Skeleton className="h-32 w-full" />
-          </div>
-        </div>
-      </div>
-    )
-  }
+   if (contextCart === null) {
+     return (
+       <div className="min-h-screen bg-slate-50 py-12">
+         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="animate-pulse space-y-8">
+             <div className="h-10 w-32 bg-slate-200 rounded" />
+             <div className="space-y-4">
+               {[...Array(3)].map((_, i) => (
+                 <div key={i} className="h-24 bg-slate-200 rounded-2xl" />
+               ))}
+             </div>
+             <div className="h-32 w-full bg-slate-200 rounded" />
+           </div>
+         </div>
+       </div>
+     )
+   }
 
-  if (!cart || cart.items.length === 0) {
+   if (contextCart.items.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -219,7 +122,7 @@ export default function Cart() {
 
 {/* Cart Items */}
         <div>
-          {cart.items.map((item) => (
+          {contextCart.items.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-2xl shadow-sm p-4 mb-3"

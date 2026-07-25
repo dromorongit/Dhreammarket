@@ -15,7 +15,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { event } from '@/lib/gtag'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
-import { handleAuthRedirect, dispatchCartUpdate } from '@/lib/CartContext'
+import { handleAuthRedirect, dispatchCartUpdate, logCartRequest } from '@/lib/CartContext'
 import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
@@ -1029,9 +1029,10 @@ const fetchProducts = async () => {
    }
 
    const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
-     setAddingToCart(prev => new Set(prev).add(productId))
-     try {
-       const response = await fetch('/api/cart', {
+      setAddingToCart(prev => new Set(prev).add(productId))
+      try {
+        logCartRequest('POST /api/cart (homepage addToCart)')
+        const response = await fetch('/api/cart', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ productId, quantity: 1 })

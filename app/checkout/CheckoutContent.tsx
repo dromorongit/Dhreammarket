@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
-import { Skeleton } from '@/components/Skeleton'
 import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
@@ -49,13 +48,6 @@ interface CartItem {
   age?: string | null
 }
 
-interface CartResponse {
-  cart: {
-    id: string | null
-    items: CartItem[]
-    total: number
-  }
-}
 
 interface UserProfile {
   id: string
@@ -288,18 +280,16 @@ function PaymentSummaryDesktop({ total, subtotal, processing, onCheckout }: {
 }
 
 export default function CheckoutContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [cart, setCart] = useState<CartResponse['cart'] | null>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [processing, setProcessing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
-  const [verificationTimeout, setVerificationTimeout] = useState(false)
-  const [processingScreenTimeout, setProcessingScreenTimeout] = useState(false)
-  
-  const { cart: contextCart } = useCart()
+   const router = useRouter()
+   const searchParams = useSearchParams()
+   const [profile, setProfile] = useState<UserProfile | null>(null)
+   const [processing, setProcessing] = useState(false)
+   const [error, setError] = useState<string | null>(null)
+   const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
+   const [verificationTimeout, setVerificationTimeout] = useState(false)
+   const [processingScreenTimeout, setProcessingScreenTimeout] = useState(false)
+   
+   const { cart: contextCart } = useCart()
   const paymentStatus = searchParams?.get('status') ?? null
   
   const [formData, setFormData] = useState({
@@ -312,36 +302,12 @@ export default function CheckoutContent() {
     address: '',
     notes: ''
   })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const processedRefs = useRef<Set<string>>(new Set())
+const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+   const processedRefs = useRef<Set<string>>(new Set())
 
-  useEffect(() => {
-    loadCart()
-    fetchProfile()
-  }, [])
-
-  useEffect(() => {
-    if (contextCart) {
-      setCart(contextCart)
-    }
-  }, [contextCart])
-
-  const loadCart = async () => {
-    try {
-      const response = await fetch('/api/cart')
-      if (response.ok) {
-        const data: CartResponse = await response.json()
-        setCart(data.cart)
-      } else if (response.status === 401) {
-        const currentUrl = encodeURIComponent(`${window.location.pathname}${window.location.search || ''}`)
-        window.location.href = `/login?redirect=${currentUrl}`
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+   useEffect(() => {
+     fetchProfile()
+   }, [])
 
   const fetchProfile = async () => {
     try {
@@ -391,11 +357,11 @@ export default function CheckoutContent() {
   }
 
   const handleCheckout = async () => {
-    if (!cart || cart.items.length === 0) return
+    if (!contextCart || contextCart.items.length === 0) return
 
     event({ action: 'begin_checkout', category: 'ecommerce', value: subtotal })
 
-    for (const item of cart.items) {
+    for (const item of contextCart.items) {
       const isPreorderOrBackorder = item.product.availabilityType === 'PREORDER' ||
                                     item.product.availabilityType === 'BACKORDER'
       if (!isPreorderOrBackorder) {
@@ -525,32 +491,12 @@ export default function CheckoutContent() {
     }
   }, [processing, verificationTimeout])
 
-  const subtotal = cart?.total ?? 0
-  const total = subtotal
-  const totalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
-  const availableRegions = useMemo(() => getAvailableRegions(), [])
+const subtotal = contextCart?.total ?? 0
+   const total = subtotal
+   const totalQuantity = contextCart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+const availableRegions = useMemo(() => getAvailableRegions(), [])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
-          <div className="animate-pulse space-y-8">
-            <Skeleton className="h-10 w-32" />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <Skeleton className="h-48" />
-                <Skeleton className="h-64" />
-                <Skeleton className="h-48" />
-              </div>
-              <Skeleton className="h-96" />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (processing) {
+   if (processing) {
     if (verificationTimeout || processingScreenTimeout) {
       return (
         <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
@@ -609,7 +555,7 @@ export default function CheckoutContent() {
     )
   }
 
-  if (!cart || cart.items.length === 0) {
+  if (!contextCart || contextCart.items.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 py-12 overflow-x-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full max-w-full">
@@ -779,7 +725,7 @@ export default function CheckoutContent() {
           {/* Order Summary - Desktop: sticky in right column */}
           <div className="mt-6 lg:mt-0 lg:col-span-4 w-full max-w-full">
             <div className="lg:sticky lg:top-28 space-y-4">
-              <OrderSummaryDesktop items={cart.items} subtotal={subtotal} />
+              <OrderSummaryDesktop items={contextCart.items} subtotal={subtotal} />
               <div className="hidden lg:block">
                 <PaymentSummaryDesktop total={total} subtotal={subtotal} processing={processing} onCheckout={handleCheckout} />
               </div>
@@ -790,7 +736,7 @@ export default function CheckoutContent() {
         {/* Mobile: Collapsible Order Summary */}
         <div className="mt-6 lg:hidden">
           <MobileOrderSummary
-            items={cart.items}
+            items={contextCart.items}
             totalQuantity={totalQuantity}
             subtotal={subtotal}
             expanded={orderSummaryExpanded}

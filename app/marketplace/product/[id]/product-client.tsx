@@ -13,7 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import WishlistButton from '@/components/WishlistButton'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
-import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
+import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
 import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus } from 'react-icons/fi'
 import { event } from '@/lib/gtag'
@@ -232,6 +232,7 @@ useEffect(() => {
 
     setAddingToCart(true)
     try {
+      logCartRequest('POST /api/cart (product-client addToCart)')
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {

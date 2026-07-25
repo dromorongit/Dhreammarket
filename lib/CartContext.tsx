@@ -1,7 +1,18 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { event } from './gtag'
+
+let cartRequestCounter = 0
+
+function logCartRequest(label: string) {
+  const id = ++cartRequestCounter
+  const timestamp = new Date().toISOString()
+  const stack = new Error().stack || ''
+  console.log(`[CART #${id}] ${label} @ ${timestamp}`)
+  console.log(`[CART #${id}] Stack:\n${stack}`)
+  return id
+}
 
 interface ProductVariant {
   id: string
@@ -44,7 +55,6 @@ interface CartContextType {
   cartItemCount: number
   cartTotalQuantity: number
   loading: boolean
-  fetchCart: () => Promise<void>
   addToCart: (productId: string, quantity?: number, options?: {
     productVariantId?: string
     color?: string
@@ -68,20 +78,33 @@ function getCurrentUrl(): string {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null)
   const [loading, setLoading] = useState(false)
+  const fetchCartPromiseRef = useRef<Promise<void> | null>(null)
 
   const fetchCart = useCallback(async () => {
-    try {
-      const response = await fetch('/api/cart')
-      if (response.ok) {
-        const data = await response.json()
-        setCart(data.cart)
-        dispatchCartUpdate()
-      }
-    } catch (error) {
-      console.error('Error fetching cart:', error)
-    } finally {
-      setLoading(false)
+    if (fetchCartPromiseRef.current) {
+      return fetchCartPromiseRef.current
     }
+
+    const promise = (async () => {
+      logCartRequest('fetchCart()')
+      try {
+        const response = await fetch('/api/cart')
+        if (response.ok) {
+          const data = await response.json()
+          setCart(data.cart)
+        }
+      } catch (error) {
+        console.error('Error fetching cart:', error)
+      } finally {
+        setLoading(false)
+      }
+    })()
+
+    fetchCartPromiseRef.current = promise
+    promise.finally(() => {
+      fetchCartPromiseRef.current = null
+    })
+    return promise
   }, [])
 
   const cartTotalQuantity = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
@@ -98,6 +121,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   ): Promise<boolean> => {
     try {
+        logCartRequest('POST /api/cart (addToCart)')
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,6 +144,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const data = await response.json()
         setCart(data.cart)
         dispatchCartUpdate()
+        fetchCart()
         event({ action: 'add_to_cart', category: 'ecommerce', label: productId, value: 0 })
         return true
       }
@@ -128,12 +153,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error('Error adding to cart:', error)
       return false
     }
-  }, [])
+  }, [fetchCart])
 
   const updateQuantity = useCallback(async (itemId: string, quantity: number): Promise<boolean> => {
     if (quantity <= 0) return false
 
     try {
+      logCartRequest(`PATCH /api/cart/items/${itemId} (updateQuantity)`)
       const response = await fetch(`/api/cart/items/${itemId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -149,6 +175,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const data = await response.json()
         setCart(data.cart)
         dispatchCartUpdate()
+        fetchCart()
         return true
       }
       return false
@@ -156,10 +183,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error('Error updating quantity:', error)
       return false
     }
-  }, [])
+  }, [fetchCart])
 
   const removeItem = useCallback(async (itemId: string): Promise<boolean> => {
     try {
+      logCartRequest(`DELETE /api/cart/items/${itemId} (removeItem)`)
       const response = await fetch(`/api/cart/items/${itemId}`, {
         method: 'DELETE',
       })
@@ -173,6 +201,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const data = await response.json()
         setCart(data.cart)
         dispatchCartUpdate()
+        fetchCart()
         return true
       }
       return false
@@ -180,7 +209,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error('Error removing item:', error)
       return false
     }
-  }, [])
+  }, [fetchCart])
 
   const clearCart = useCallback(() => {
     setCart({ id: null, items: [], total: 0 })
@@ -198,15 +227,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     
     window.addEventListener('storage', handleStorageChange)
     
-    const handleCartUpdate = () => {
-      fetchCart()
-    }
-    
-    window.addEventListener('cart-updated', handleCartUpdate as EventListener)
-
     return () => {
       window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('cart-updated', handleCartUpdate as EventListener)
     }
   }, [fetchCart])
 
@@ -217,7 +239,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cartItemCount,
         cartTotalQuantity,
         loading,
-        fetchCart,
         addToCart,
         updateQuantity,
         removeItem,
@@ -228,6 +249,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     </CartContext.Provider>
   )
 }
+
+export { logCartRequest }
 
 export function useCart() {
   const context = useContext(CartContext)

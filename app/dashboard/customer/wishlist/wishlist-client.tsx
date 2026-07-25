@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { event } from '@/lib/gtag'
+import { logCartRequest } from '@/lib/CartContext'
 
 interface WishlistItem {
   id: string
@@ -92,6 +93,7 @@ export default function WishlistClient() {
 
   const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
     try {
+      logCartRequest('POST /api/cart (wishlist addToCart)')
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {

@@ -79,8 +79,8 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   
-  // Use cart context for centralized cart state
-  const { cartTotalQuantity, fetchCart } = useCart()
+// Use cart context for centralized cart state
+  const { cartTotalQuantity } = useCart()
   
   // Wishlist count
   const [wishlistCount, setWishlistCount] = useState(0)
@@ -106,20 +106,10 @@ export function Navbar() {
       fetchNotifications()
       fetchWishlist()
     }
-  }, [user])
+}, [user])
 
-  // Fetch cart on mount
-  useEffect(() => {
-    fetchCart()
-  }, [fetchCart])
-  
-  // Fetch wishlist count on mount
-  useEffect(() => {
-    fetchWishlist()
-  }, [])
-  
-  // Listen for wishlist updates
-  useEffect(() => {
+   // Listen for wishlist updates
+   useEffect(() => {
     const handleWishlistUpdate = () => {
       fetchWishlist()
     }
@@ -129,22 +119,9 @@ export function Navbar() {
     return () => {
       window.removeEventListener('wishlist-updated', handleWishlistUpdate as EventListener)
     }
-  }, [])
+}, [])
 
-  // Listen for cart updates to sync badge
-  useEffect(() => {
-    const handleCartUpdate = () => {
-      fetchCart()
-    }
-    
-    window.addEventListener('cart-updated', handleCartUpdate as EventListener)
-    
-    return () => {
-      window.removeEventListener('cart-updated', handleCartUpdate as EventListener)
-    }
-  }, [fetchCart])
-  
-  const fetchWishlist = async () => {
+   const fetchWishlist = async () => {
     try {
       const response = await fetch('/api/wishlist')
       if (response.ok) {

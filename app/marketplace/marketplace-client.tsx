@@ -13,7 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
-import { dispatchCartUpdate, handleAuthRedirect } from '@/lib/CartContext'
+import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import WishlistButton from '@/components/WishlistButton'
@@ -265,6 +265,7 @@ function MarketplaceContent() {
   const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
     setAddingToCart(prev => new Set(prev).add(productId))
     try {
+      logCartRequest('POST /api/cart (marketplace-client addToCart)')
       const response = await fetch('/api/cart', {
         method: 'POST',
         headers: {
