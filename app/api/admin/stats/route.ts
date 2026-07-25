@@ -22,6 +22,23 @@ export async function GET(request: NextRequest) {
 
     // Get counts and financial data
     console.log('[ADMIN STATS] Starting Prisma queries for dashboard stats')
+    console.log('[ADMIN STATS] Query: prisma.user.count()')
+    console.log('[ADMIN STATS] Query: prisma.user.count({ role: VENDOR })')
+    console.log('[ADMIN STATS] Query: prisma.product.count()')
+    console.log('[ADMIN STATS] Query: prisma.order.count()')
+    console.log('[ADMIN STATS] Executing prisma.order.findMany({ paymentStatus: PAID })')
+    console.log('[ADMIN STATS] Query: prisma.store.count({ isVerified: true })')
+    console.log('[ADMIN STATS] Query: prisma.vendorVerificationApplication.count({ status: PENDING_REVIEW })')
+    console.log('[ADMIN STATS] Executing prisma.order.findMany({ recent 10 })')
+    console.log('[ADMIN STATS] Executing prisma.user.findMany({ recent 10 })')
+    console.log('[ADMIN STATS] Executing prisma.store.findMany({ recent 10 })')
+    console.log('[ADMIN STATS] Executing prisma.order.findMany({ PREORDER paid })')
+    console.log('[ADMIN STATS] Executing prisma.order.findMany({ BACKORDER paid })')
+    console.log('[ADMIN STATS] Executing prisma.order.count({ overdue })')
+    console.log('[ADMIN STATS] Executing prisma.order.findMany({ completed preorders })')
+    console.log('[ADMIN STATS] Executing prisma.order.count({ READY_TO_FULFILL })')
+    console.log('[ADMIN STATS] Executing prisma.order.count({ PREORDER awaiting stock })')
+    console.log('[ADMIN STATS] Executing prisma.order.count({ BACKORDER awaiting stock })')
     const [
       totalUsers,
       totalVendors,
@@ -41,11 +58,11 @@ export async function GET(request: NextRequest) {
       waitingPreorders,
       waitingBackorders,
     ] = (await Promise.all([
-      console.log('[ADMIN STATS] Query: prisma.user.count()'), prisma.user.count(),
-      console.log('[ADMIN STATS] Query: prisma.user.count({ role: VENDOR })'), prisma.user.count({ where: { role: 'VENDOR' } }),
-      console.log('[ADMIN STATS] Query: prisma.product.count()'), prisma.product.count(),
-      console.log('[ADMIN STATS] Query: prisma.order.count()'), prisma.order.count(),
-      console.log('[ADMIN STATS] Executing prisma.order.findMany({ paymentStatus: PAID })'), prisma.order.findMany({
+      prisma.user.count(),
+      prisma.user.count({ where: { role: 'VENDOR' } }),
+      prisma.product.count(),
+      prisma.order.count(),
+      prisma.order.findMany({
         where: { paymentStatus: 'PAID' },
         select: {
           id: true,
@@ -58,9 +75,9 @@ export async function GET(request: NextRequest) {
           total: true,
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.store.count({ isVerified: true })'), prisma.store.count({ where: { isVerified: true } }),
-      console.log('[ADMIN STATS] Query: prisma.vendorVerificationApplication.count({ status: PENDING_REVIEW })'), prisma.vendorVerificationApplication.count({ where: { status: 'PENDING_REVIEW' } }),
-      console.log('[ADMIN STATS] Executing prisma.order.findMany({ recent 10 })'), prisma.order.findMany({
+      prisma.store.count({ where: { isVerified: true } }),
+      prisma.vendorVerificationApplication.count({ where: { status: 'PENDING_REVIEW' } }),
+      prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: {
@@ -69,7 +86,7 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.user.findMany({ recent 10 })'), prisma.user.findMany({
+      prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
         select: {
@@ -79,7 +96,7 @@ export async function GET(request: NextRequest) {
           createdAt: true,
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.store.findMany({ recent 10 })'), prisma.store.findMany({
+      prisma.store.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: {
@@ -88,15 +105,15 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.findMany({ PREORDER paid })'), prisma.order.findMany({
+      prisma.order.findMany({
         where: { orderType: 'PREORDER', paymentStatus: 'PAID' },
         select: { fulfillmentStatus: true },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.findMany({ BACKORDER paid })'), prisma.order.findMany({
+      prisma.order.findMany({
         where: { orderType: 'BACKORDER', paymentStatus: 'PAID' },
         select: { fulfillmentStatus: true },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.count({ overdue })'), prisma.order.count({
+      prisma.order.count({
         where: {
           orderType: { in: ['PREORDER', 'BACKORDER'] },
           paymentStatus: 'PAID',
@@ -119,7 +136,7 @@ export async function GET(request: NextRequest) {
           ],
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.findMany({ completed preorders })'), prisma.order.findMany({
+      prisma.order.findMany({
         where: {
           orderType: { in: ['PREORDER', 'BACKORDER'] },
           paymentStatus: 'PAID',
@@ -130,21 +147,21 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.count({ READY_TO_FULFILL })'), prisma.order.count({
+      prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: { in: ['PREORDER', 'BACKORDER'] },
           fulfillmentStatus: 'READY_TO_FULFILL',
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.count({ PREORDER awaiting stock })'), prisma.order.count({
+      prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: 'PREORDER',
           fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
         },
       }),
-      console.log('[ADMIN STATS] Executing prisma.order.count({ BACKORDER awaiting stock })'), prisma.order.count({
+      prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: 'BACKORDER',
@@ -162,8 +179,9 @@ export async function GET(request: NextRequest) {
     let totalVendorEarnings = 0
     let totalRevenue = 0 // Total Platform Revenue = platformCommission only
      
-     const orders = paidOrders as any[]
-     orders.forEach((order: any) => {
+      const orders = paidOrders as any[]
+      console.log('[ADMIN STATS DEBUG] orders typeof:', typeof orders, 'Array.isArray:', Array.isArray(orders), 'value:', orders);
+      orders.forEach((order: any) => {
       // Use grossAmount if available, fallback to total
       const gross = order.grossAmount !== null && order.grossAmount !== undefined ? order.grossAmount : order.total
       totalGrossAmount += gross
