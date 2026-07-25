@@ -6,10 +6,14 @@ export const dynamic = 'force-dynamic'
 
 // GET all vendors with optional verification filter
 export async function GET(request: NextRequest) {
+  console.log('[ADMIN VENDORS] GET request started')
   try {
     const prisma = getPrisma()
+    console.log('[ADMIN VENDORS] Prisma client obtained')
     const authCheck = requireAdmin()
+    console.log('[ADMIN VENDORS] Auth check result:', authCheck instanceof NextResponse ? `response ${authCheck.status}` : 'authorized')
     if (authCheck instanceof NextResponse) {
+      console.log('[ADMIN VENDORS] Auth check returned error response:', authCheck.status)
       return authCheck
     }
 
@@ -18,6 +22,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const verified = searchParams.get('verified')
     const search = searchParams.get('search')
+    console.log('[ADMIN VENDORS] Query params:', { page, limit, verified, search })
 
     const skip = (page - 1) * limit
 
@@ -37,6 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get stores and their product IDs for revenue calculation
+    console.log('[ADMIN VENDORS] Query: prisma.store.findMany')
     const storesWithProducts = await prisma.store.findMany({
       where,
       skip,
@@ -60,6 +66,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    console.log('[ADMIN VENDORS] Query: prisma.store.count')
     const total = await prisma.store.count({ where })
     const totalPages = Math.ceil(total / limit)
 
@@ -71,6 +78,7 @@ export async function GET(request: NextRequest) {
       let grossRevenue = 0
       let outstandingBalance = 0
       if (productIds.length > 0) {
+        console.log('[ADMIN VENDORS] Query: prisma.orderItem.findMany for vendor:', store.id)
         const orderItems = await prisma.orderItem.findMany({
           where: {
             productId: { in: productIds },
@@ -91,6 +99,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get total payouts for this vendor
+      console.log('[ADMIN VENDORS] Query: prisma.vendorPayout.aggregate for vendor:', store.userId)
       const totalPayouts = await prisma.vendorPayout.aggregate({
         where: {
           vendorId: store.userId,
@@ -129,6 +138,7 @@ return {
     }))
 
     const vendors = vendorsWithMetrics
+    console.log('[ADMIN VENDORS] Returning response, vendors count:', vendors.length)
 
     return NextResponse.json({
       vendors,
@@ -140,7 +150,8 @@ return {
       },
     })
   } catch (error) {
-    console.error('Admin vendors error:', error)
+    console.error('[ADMIN VENDORS] Error:', error)
+    console.error('[ADMIN VENDORS] Error stack:', error?.stack)
     return NextResponse.json({ error: 'Failed to fetch vendors' }, { status: 500 })
   }
 }

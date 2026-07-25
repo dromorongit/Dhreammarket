@@ -6,9 +6,12 @@ export const dynamic = 'force-dynamic'
 
 // GET /api/admin/support - Fetch all support tickets with filtering
 export async function GET(request: NextRequest) {
+  console.log('[ADMIN SUPPORT] GET request started')
   try {
     const auth = requireAdmin()
+    console.log('[ADMIN SUPPORT] Auth check result:', auth instanceof NextResponse ? `response ${auth.status}` : 'authorized')
     if (auth instanceof NextResponse) {
+      console.log('[ADMIN SUPPORT] Auth check returned error response:', auth.status)
       return auth
     }
 
@@ -18,6 +21,7 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get('priority')
     const userId = searchParams.get('userId')
     const search = searchParams.get('search')
+    console.log('[ADMIN SUPPORT] Query params:', { status, type, priority, userId, search })
 
     const whereClause: any = {}
 
@@ -32,6 +36,7 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    console.log('[ADMIN SUPPORT] Query: prisma.supportTicket.findMany')
     const tickets = await getPrisma().supportTicket.findMany({
       where: whereClause,
       orderBy: [
@@ -70,6 +75,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // Get counts by status
+    console.log('[ADMIN SUPPORT] Query: prisma.supportTicket.groupBy')
     const counts = await getPrisma().supportTicket.groupBy({
       by: ['status'],
       _count: { id: true },
@@ -80,9 +86,11 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, number>)
 
+    console.log('[ADMIN SUPPORT] Returning response, tickets count:', transformedTickets.length, 'statusCounts:', JSON.stringify(statusCounts))
     return NextResponse.json({ tickets: transformedTickets, statusCounts })
   } catch (error) {
-    console.error('Error fetching admin support tickets:', error)
+    console.error('[ADMIN SUPPORT] Error:', error)
+    console.error('[ADMIN SUPPORT] Error stack:', error?.stack)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

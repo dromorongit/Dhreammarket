@@ -23,30 +23,44 @@ export function generateToken(payload: { userId: string; role: Role; sessionId: 
 }
 
 export function verifyToken(token: string): { userId: string; role: Role; sessionId: string } | null {
+  console.log('[AUTH] verifyToken called')
   if (!JWT_SECRET) {
+    console.error('[AUTH] JWT_SECRET is not configured')
     throw new Error('JWT_SECRET environment variable is required')
   }
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & { sessionId?: string }
+    console.log('[AUTH] Token decoded successfully')
     if (typeof decoded === 'object' && decoded.userId && decoded.role && decoded.sessionId) {
+      console.log('[AUTH] Token valid, userId:', decoded.userId, 'role:', decoded.role)
       return { userId: decoded.userId as string, role: decoded.role as Role, sessionId: decoded.sessionId }
     }
+    console.log('[AUTH] Token missing required fields')
     return null
-  } catch {
+  } catch (error) {
+    console.error('[AUTH] Token verification error:', error)
+    console.error('[AUTH] Token verification error stack:', error?.stack)
     return null
   }
 }
 
 export function getTokenFromCookies(): string | null {
   const cookieStore = cookies()
-  return cookieStore.get('token')?.value || null
+  const token = cookieStore.get('token')?.value || null
+  console.log('[AUTH] getTokenFromCookies result:', token ? 'token found' : 'no token')
+  return token
 }
 
 
 
 export function getUserFromToken(): { userId: string; role: Role; sessionId: string } | null {
+  console.log('[AUTH] getUserFromToken called')
   const token = getTokenFromCookies()
-  if (!token) return null
+  if (!token) {
+    console.log('[AUTH] No token found in cookies')
+    return null
+  }
+  console.log('[AUTH] Token found, verifying...')
   return verifyToken(token)
 }
 

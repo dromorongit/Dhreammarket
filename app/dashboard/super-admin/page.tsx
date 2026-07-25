@@ -64,6 +64,8 @@ interface SupportTicket {
 }
 
 export default function SuperAdminDashboard() {
+  console.log('[SuperAdminDashboard] Component render started')
+  try {
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [admins, setAdmins] = useState<AdminUser[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
@@ -72,8 +74,10 @@ export default function SuperAdminDashboard() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
+    console.log('[SuperAdminDashboard] fetchData called')
     try {
       setLoading(true)
+      console.log('[SuperAdminDashboard] Fetching dashboard data from API endpoints')
       const [statsRes, adminsRes, vendorsRes, supportRes] = await Promise.all([
         fetch('/api/admin/stats'),
         fetch('/api/admin/users?role=ADMIN'),
@@ -81,8 +85,22 @@ export default function SuperAdminDashboard() {
         fetch('/api/admin/support'),
       ])
 
+      console.log('[SuperAdminDashboard] API responses:', {
+        statsOk: statsRes.ok,
+        adminsResOk: adminsRes.ok,
+        vendorsResOk: vendorsRes.ok,
+        supportResOk: supportRes.ok,
+      })
+
       if (!statsRes.ok || !adminsRes.ok || !vendorsRes.ok || !supportRes.ok) {
+        console.error('[SuperAdminDashboard] One or more API responses not ok:', {
+          statsStatus: statsRes.status,
+          adminsStatus: adminsRes.status,
+          vendorsStatus: vendorsRes.status,
+          supportStatus: supportRes.status,
+        })
         setError('Failed to load dashboard data')
+        console.log('[SuperAdminDashboard] Returning early from fetchData due to API error')
         return
       }
 
@@ -91,19 +109,31 @@ export default function SuperAdminDashboard() {
       const vendorsData = await vendorsRes.json()
       const supportData = await supportRes.json()
 
+      console.log('[SuperAdminDashboard] Fetched statsData:', statsData)
+      console.log('[SuperAdminDashboard] Fetched adminsData:', adminsData)
+      console.log('[SuperAdminDashboard] Fetched vendorsData:', vendorsData)
+      console.log('[SuperAdminDashboard] Fetched supportData:', supportData)
+
       setStats(statsData.stats)
+      console.log('[SuperAdminDashboard] Set stats:', statsData.stats)
       setAdmins(adminsData.users || [])
+      console.log('[SuperAdminDashboard] Set admins count:', (adminsData.users || []).length)
       setVendors(vendorsData.vendors || [])
+      console.log('[SuperAdminDashboard] Set vendors count:', (vendorsData.vendors || []).length)
       setSupportTickets(supportData.tickets || [])
+      console.log('[SuperAdminDashboard] Set supportTickets count:', (supportData.tickets || []).length)
     } catch (err) {
+      console.error('[SuperAdminDashboard] Error in fetchData:', err)
       setError('Failed to fetch dashboard data')
-      console.error(err)
+      console.error('[SuperAdminDashboard] fetchData error:', err)
     } finally {
+      console.log('[SuperAdminDashboard] fetchData completed, setting loading=false')
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
+    console.log('[SuperAdminDashboard] useEffect triggered, calling fetchData')
     fetchData()
   }, [fetchData])
 
@@ -123,6 +153,7 @@ export default function SuperAdminDashboard() {
   }
 
   if (loading) {
+    console.log('[SuperAdminDashboard] Rendering loading state')
     return (
       <div className="min-h-screen bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -141,6 +172,7 @@ export default function SuperAdminDashboard() {
   }
 
   if (error) {
+    console.log('[SuperAdminDashboard] Rendering error state:', error)
     return (
       <div className="min-h-screen bg-slate-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -162,6 +194,7 @@ export default function SuperAdminDashboard() {
     )
   }
 
+  console.log('[SuperAdminDashboard] Rendering main dashboard, stats:', stats ? 'present' : 'null', 'admins:', admins.length, 'vendors:', vendors.length, 'tickets:', supportTickets.length)
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -784,7 +817,12 @@ export default function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </div>
-  )
+       </div>
+     </div>
+   )
+  } catch (error) {
+    console.error('[SuperAdminDashboard] Error rendering dashboard page:', error)
+    console.error('[SuperAdminDashboard] Error stack:', error?.stack)
+    throw error
+  }
 }
