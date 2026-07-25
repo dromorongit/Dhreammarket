@@ -142,13 +142,19 @@ export async function GET(request: NextRequest) {
       availableQuantity: p.stock - p.reservedQuantity,
     }))
 
-    // Check and update expired pre-orders
-    const preOrderProductIds = productsWithCachedRatings
-      .filter((p: any) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
-      .map((p: any) => p.id)
-    const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderProductIds)
+    // Compute in-memory correction for expired pre-orders (instant)
+    const now = new Date()
+    const expiredIds = new Set(
+      productsWithCachedRatings
+        .filter((p: any) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
+        .map((p: any) => p.id)
+    )
 
-    // Update in-memory objects for expired pre-orders to reflect IN_STOCK
+    // Fire-and-forget DB update for expired pre-orders
+    if (expiredIds.size > 0) {
+      void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+    }
+
     const finalProducts = productsWithCachedRatings.map((p: any) =>
       expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
     )

@@ -5,7 +5,6 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-allocation-engine'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
-import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 export const runtime = 'nodejs'
 
@@ -90,19 +89,21 @@ if (!product) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 })
       }
 
-    // Check if product is an expired pre-order and update it
+    // Check if product is an expired pre-order and update it in-memory
     if (product.availabilityType === 'PREORDER' && product.expectedArrivalDate) {
       const arrivalDate = new Date(product.expectedArrivalDate)
       if (arrivalDate < new Date()) {
-        await getPrisma().product.update({
+        product.availabilityType = 'IN_STOCK'
+        product.expectedArrivalDate = null
+        void getPrisma().product.updateMany({
           where: { id: product.id },
           data: {
             availabilityType: 'IN_STOCK',
             expectedArrivalDate: null,
           },
+        }).catch((err) => {
+          console.error('Failed to update expired pre-order:', err)
         })
-        product.availabilityType = 'IN_STOCK'
-        product.expectedArrivalDate = null
       }
     }
 

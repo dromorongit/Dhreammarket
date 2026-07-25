@@ -18,12 +18,14 @@ export async function checkAndUpdateExpiredPreOrders(productIds: string[]): Prom
 
   if (expiredIds.length === 0) return new Set()
 
-  await getPrisma().product.updateMany({
+  void getPrisma().product.updateMany({
     where: { id: { in: expiredIds } },
     data: {
       availabilityType: 'IN_STOCK',
       expectedArrivalDate: null,
     },
+  }).catch((err) => {
+    console.error('Failed to update expired pre-orders:', err)
   })
 
   return new Set(expiredIds)

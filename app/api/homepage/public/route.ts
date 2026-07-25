@@ -62,11 +62,17 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
     take: 100,
   })
 
-  // Check and update expired pre-orders
-  const preOrderIds = products
-    .filter((p) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
-    .map((p) => p.id)
-  const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderIds)
+  // Compute in-memory correction for expired pre-orders (instant)
+  const expiredIds = new Set(
+    products
+      .filter((p) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
+      .map((p) => p.id)
+  )
+
+  // Fire-and-forget DB update for expired pre-orders
+  if (expiredIds.size > 0) {
+    void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+  }
 
   return products
     .map((product) => {
@@ -232,13 +238,20 @@ const formatted = await Promise.all((sections || []).map(async (section) => {
         .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
     }
 
-    // Check and update expired pre-orders in this section
-    const preOrderIds = sortedProducts
-      .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate)
-      .map((p: any) => p.id)
-    const expiredIds = await checkAndUpdateExpiredPreOrders(preOrderIds)
+    // Compute in-memory correction for expired pre-orders in this section (instant)
+    const expiredIds = new Set(
+      sortedProducts
+        .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
+        .map((p: any) => p.id)
+    )
+
+    // Fire-and-forget DB update for expired pre-orders
+    if (expiredIds.size > 0) {
+      void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+    }
+
     sortedProducts = sortedProducts.map((p: any) =>
-      p && expiredIds?.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
+      p && expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
     )
 
     return {
