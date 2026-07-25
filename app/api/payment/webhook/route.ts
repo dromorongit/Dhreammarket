@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyPaystackPayment } from '@/lib/paystack'
 import { calculateFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
-import { getPlatformFeeRate, getDefaultCurrency } from '@/lib/platform-preferences'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { createAuditLog } from '@/lib/audit-log'
@@ -168,13 +167,11 @@ export async function POST(request: NextRequest) {
       let processorFee = resolveProcessorFee(paystackFees, grossAmount)
 
       if (isFallback) {
-        console.warn('[Payment Webhook] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback')
+        console.warn('[Payment Webhook] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
       }
 
-      const commissionRate = await getPlatformFeeRate()
-
       // Use centralized revenue calculation logic
-      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee, commissionRate)
+      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
 
       // Update order with financial totals
       await prisma.order.update({
@@ -200,8 +197,7 @@ export async function POST(request: NextRequest) {
         
         const itemFinancialBreakdown = calculateFinancialBreakdown(
           itemGross,
-          itemProcessorFee,
-          commissionRate
+          itemProcessorFee
         )
 
         await prisma.orderItem.update({

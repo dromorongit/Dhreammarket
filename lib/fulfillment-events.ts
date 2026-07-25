@@ -1,9 +1,8 @@
 import { getPrisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
-import { sendEmail, getEmailTemplate } from '@/lib/email'
+import { sendEmail } from '@/lib/email'
 import { formatNotificationMessage } from '@/lib/notifications'
 import { canSendCustomerEmail } from './notification-preferences'
-import { getPlatformName, getBrandingPreferences } from './platform-preferences'
 
 export type FulfillmentEventType = 
   | 'ORDER_CREATED'
@@ -285,22 +284,56 @@ async function sendEventEmailIfNeeded(
 
   try {
     const customerName = order.user.profile?.firstName || 'Customer'
-    const platformName = await getPlatformName()
-    const branding = await getBrandingPreferences()
     const subject = emailTemplate.subject.replace('{productName}', metadata?.productName || '')
     const message = formatNotificationMessage(emailTemplate.message, {
       productName: metadata?.productName,
       orderId: order.id.slice(0, 8),
     })
 
-    const content = `
-      <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">${subject}</h2>
-      <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
-      <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">${message}</p>
-      <p style="margin: 0; font-size: 14px; color: #6b7280;">Thank you for shopping with us!</p>
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8f9fa;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; padding: 20px 0;">
+          <tr>
+            <td align="center">
+              <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <tr>
+                  <td style="padding: 24px; border-bottom: 1px solid #e5e7eb;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #1a1a2e;">Dhream Market</h1>
+                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">The Smart Commerce Ecosystem</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 32px 24px;">
+                    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">${subject}</h2>
+                    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+                    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">${message}</p>
+                    <p style="margin: 0; font-size: 14px; color: #6b7280;">Thank you for shopping with Dhream Market!</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 24px; border-top: 1px solid #e5e7eb; background-color: #f9fafb; border-radius: 0 0 8px 8px;">
+                    <p style="margin: 0; font-size: 12px; color: #6b7280; text-align: center;">
+                      This is an automated message from Dhream Market. Please do not reply to this email.
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                      &copy; 2026 Dhream Market. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `
-
-    const htmlContent = await getEmailTemplate(content, '', platformName)
 
     await sendEmail({
       to: order.customerEmail,

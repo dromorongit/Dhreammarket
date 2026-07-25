@@ -7,7 +7,6 @@ import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
 import { isVendorOnboarded } from '@/lib/onboarding'
-import { isRegistrationOpen, isNewVendorApprovalRequired, isAutoApproveVendors, isEmailVerificationRequired } from '@/lib/platform-preferences'
 import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -39,17 +38,6 @@ export async function POST(request: NextRequest) {
     if (role === 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'SUPER_ADMIN accounts cannot be created via public registration' }, { status: 403 })
     }
-
-    const registrationOpen = await isRegistrationOpen()
-    if (!registrationOpen && (role === 'CUSTOMER' || role === 'VENDOR')) {
-      return NextResponse.json({ 
-        error: 'Registration is currently unavailable. Please contact support or try again later.',
-        registrationOpen: false 
-      }, { status: 403 })
-    }
-
-    const newVendorApproval = await isNewVendorApprovalRequired()
-    const autoApproveVendors = await isAutoApproveVendors()
 
     let normalizedPhone: string | null = null
     if (mobileNumber) {
@@ -137,7 +125,6 @@ export async function POST(request: NextRequest) {
             password: hashedPassword,
             role,
             position: role === 'ADMIN' ? position?.trim() : null,
-            status: role === 'VENDOR' && newVendorApproval && !autoApproveVendors ? 'SUSPENDED' : 'ACTIVE',
             isEmailVerified: true,
             emailVerifiedAt: new Date(),
           },

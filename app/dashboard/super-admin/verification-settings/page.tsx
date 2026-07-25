@@ -6,7 +6,6 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { Input } from '@/components/Input'
 import Link from 'next/link'
-import { getCurrencySymbol } from '@/lib/platform-preferences'
 
 interface VerificationSettings {
   verificationFee: number
@@ -27,20 +26,6 @@ export default function SuperAdminVerificationSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [currency, setCurrency] = useState<string>('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) {
-      setCurrency(window.__PLATFORM_CURRENCY__)
-    } else {
-      fetch('/api/platform')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.defaultCurrency) setCurrency(data.defaultCurrency)
-        })
-        .catch(() => setCurrency('GHS'))
-    }
-  }, [])
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -119,7 +104,7 @@ export default function SuperAdminVerificationSettings() {
               {/* Verification Fee */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Fee ({getCurrencySymbol(currency)})
+                  Verification Fee (GH₵)
                 </label>
                 <Input
                   type="number"

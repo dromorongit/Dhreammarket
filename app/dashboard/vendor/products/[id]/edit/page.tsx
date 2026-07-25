@@ -9,8 +9,6 @@ import ImageUpload from '@/components/ImageUpload'
 import { SearchableCategorySelector } from '@/components/SearchableCategorySelector'
 import Link from 'next/link'
 
-import { getCurrencySymbol } from '@/lib/platform-preferences'
-
 interface Category {
   id: string
   name: string
@@ -110,20 +108,6 @@ export default function EditProduct() {
     backOrderNotes: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [currency, setCurrency] = useState<string>('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) {
-      setCurrency(window.__PLATFORM_CURRENCY__)
-    } else {
-      fetch('/api/platform')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.defaultCurrency) setCurrency(data.defaultCurrency)
-        })
-        .catch(() => setCurrency('GHS'))
-    }
-  }, [])
 
   const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
   const AGE_OPTIONS = ['0-3 Months', '3-6 Months', '6-9 Months', '9-12 Months', '1-2 Years', '2-3 Years', '3-4 Years', '4-5 Years', '5-7 Years', '7-9 Years', '9-11 Years', '11-13 Years', '13-15 Years', '15-17 Years', '18+']
@@ -423,7 +407,7 @@ export default function EditProduct() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                    Price ({getCurrencySymbol(currency)}) *
+                    Price (GHS) *
                   </label>
                   <Input
                     id="price"

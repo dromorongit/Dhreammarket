@@ -5,7 +5,6 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
-import { areProductReviewsEnabled, isWishlistEnabled, isComparisonsEnabled, areDigitalProductsEnabled, isVendorMessagingEnabled } from '@/lib/platform-preferences'
 
 export const dynamic = 'force-dynamic'
 

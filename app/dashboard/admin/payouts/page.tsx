@@ -6,7 +6,6 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
-import { formatCurrency } from '@/lib/currency'
 
 interface VendorPayout {
   id: string
@@ -58,20 +57,6 @@ export default function AdminPayoutsPage() {
   const [payoutReference, setPayoutReference] = useState('')
   const [payoutNote, setPayoutNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [currency, setCurrency] = useState<string>('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) {
-      setCurrency(window.__PLATFORM_CURRENCY__)
-    } else {
-      fetch('/api/platform')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.defaultCurrency) setCurrency(data.defaultCurrency)
-        })
-        .catch(() => setCurrency('GHS'))
-    }
-  }, [])
 
   const fetchPayouts = useCallback(async () => {
     try {
@@ -116,6 +101,13 @@ export default function AdminPayoutsPage() {
     fetchPayouts()
     fetchVendors()
   }, [fetchPayouts, fetchVendors])
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS',
+    }).format(amount)
+  }
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-GH', {
@@ -386,7 +378,7 @@ export default function AdminPayoutsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount ({currency})</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (GHS)</label>
                   <input
                     type="number"
                     step="0.01"

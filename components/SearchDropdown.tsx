@@ -8,7 +8,6 @@ import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import WishlistButton from '@/components/WishlistButton'
 import { event } from '@/lib/gtag'
-import { getCurrencySymbol } from '@/lib/platform-preferences'
 
 interface SearchProduct {
   id: string
@@ -79,13 +78,6 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
-  const [platformCurrency, setPlatformCurrency] = useState<string>((typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) || 'GHS')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) {
-      setPlatformCurrency(window.__PLATFORM_CURRENCY__)
-    }
-  }, [])
 
   const flatResults: FlatSearchItem[] = results
     ? [
@@ -421,10 +413,12 @@ if (isProductItem(item)) {
                           <p className="text-sm font-medium text-slate-800 truncate">
                             {highlightMatch(product.name, query)}
                           </p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-xs font-semibold text-royal-blue">
-                                {getCurrencySymbol(platformCurrency)}{product.price.toFixed(2)}
-                              </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-xs font-semibold text-royal-blue">
+                              {typeof product.price === 'number'
+                                ? `₵${product.price.toFixed(2)}`
+                                : '₵0.00'}
+                            </span>
                             {product.brand && (
                               <span className="text-[10px] text-slate-400">· {highlightMatch(product.brand, query)}</span>
                             )}

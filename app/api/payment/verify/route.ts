@@ -5,7 +5,6 @@ import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
 import { canSendCustomerEmail, shouldSendNotification } from '@/lib/notification-preferences'
 import { calculateFinancialBreakdown, formatFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
-import { getPlatformFeeRate, getDefaultCurrency } from '@/lib/platform-preferences'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -183,14 +182,11 @@ export async function POST(request: NextRequest) {
       let processorFee = resolveProcessorFee(paystackFees, grossAmount)
 
       if (isFallback) {
-        console.warn('[Payment Verify API] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback')
+        console.warn('[Payment Verify API] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
       }
 
-      const commissionRate = await getPlatformFeeRate()
-      const currency = await getDefaultCurrency()
-
       // Use centralized revenue calculation logic
-      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee, commissionRate)
+      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
 
         // Update order with financial totals
         await prisma.order.update({
@@ -216,8 +212,7 @@ export async function POST(request: NextRequest) {
           
           const itemFinancialBreakdown = calculateFinancialBreakdown(
             itemGross,
-            itemProcessorFee,
-            commissionRate
+            itemProcessorFee
           )
 
           await prisma.orderItem.update({
@@ -296,7 +291,7 @@ export async function POST(request: NextRequest) {
               userId: user.id,
               type: 'PAYMENT_SUCCESSFUL',
               title: 'Payment Successful',
-              message: `Your payment of ${payment.currency} ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
+              message: `Your payment of GHS ${payment.amount.toFixed(2)} for order #${payment.orderId.slice(0, 8)} has been confirmed.`,
             },
           }).catch((err: any) => {
             console.error('Failed to create notification:', err)

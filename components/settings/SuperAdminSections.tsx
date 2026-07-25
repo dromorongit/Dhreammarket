@@ -193,7 +193,7 @@ export default function SuperAdminSections({ platformName }: SuperAdminSectionsP
         )}
       </SettingsSection>
 
-      <SettingsSection title="Monitoring Preferences" description="Control monitoring alerts and notifications">
+      <SettingsSection title="Global Notification Preferences" description="Platform-wide notification settings">
         {loading ? (
           <div className="space-y-4">
             <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
@@ -201,19 +201,17 @@ export default function SuperAdminSections({ platformName }: SuperAdminSectionsP
           </div>
         ) : (
           <div className="space-y-2">
-            <Toggle label="Enable All Monitoring Alerts" description="Master toggle for all monitoring alerts" checked={settings?.monitoringPreferences?.alertsEnabled ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), alertsEnabled: !(settings?.monitoringPreferences?.alertsEnabled) })} disabled={saving} />
-            <Toggle label="Email Alerts" description="Send email notifications for alerts" checked={settings?.monitoringPreferences?.emailAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), emailAlerts: !(settings?.monitoringPreferences?.emailAlerts) })} disabled={saving} />
-            <Toggle label="System Outage Alerts" description="Alerts when system outages are detected" checked={settings?.monitoringPreferences?.systemOutageAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), systemOutageAlerts: !(settings?.monitoringPreferences?.systemOutageAlerts) })} disabled={saving} />
-            <Toggle label="Feature Announcement Alerts" description="Notifications for new features" checked={settings?.monitoringPreferences?.featureAnnouncementAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), featureAnnouncementAlerts: !(settings?.monitoringPreferences?.featureAnnouncementAlerts) })} disabled={saving} />
-            <Toggle label="Policy Update Alerts" description="Notifications for policy changes" checked={settings?.monitoringPreferences?.policyUpdateAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), policyUpdateAlerts: !(settings?.monitoringPreferences?.policyUpdateAlerts) })} disabled={saving} />
-            <Toggle label="Security Alerts" description="Immediate alerts for security events" checked={settings?.monitoringPreferences?.securityAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), securityAlerts: !(settings?.monitoringPreferences?.securityAlerts) })} disabled={saving} />
-            <Toggle label="Infrastructure Alerts" description="Server and infrastructure notifications" checked={settings?.monitoringPreferences?.infrastructureAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), infrastructureAlerts: !(settings?.monitoringPreferences?.infrastructureAlerts) })} disabled={saving} />
-            <Toggle label="Finance Alerts" description="Payout, settlement, and finance notifications" checked={settings?.monitoringPreferences?.financeAlerts ?? true} onChange={() => updateSetting('monitoringPreferences', { ...(settings?.monitoringPreferences || {}), financeAlerts: !(settings?.monitoringPreferences?.financeAlerts) })} disabled={saving} />
+            <Toggle label="System Outage Alerts" description="Notify all users during outages" checked={settings?.notifySystemOutage ?? true} onChange={() => updateSetting('notifySystemOutage', !(settings?.notifySystemOutage))} disabled={saving} />
+            <Toggle label="Feature Announcements" description="Send emails for new features" checked={settings?.notifyFeatureAnnouncements ?? true} onChange={() => updateSetting('notifyFeatureAnnouncements', !(settings?.notifyFeatureAnnouncements))} disabled={saving} />
+            <Toggle label="Policy Updates" description="Notify users of terms or policy changes" checked={settings?.notifyPolicyUpdates ?? true} onChange={() => updateSetting('notifyPolicyUpdates', !(settings?.notifyPolicyUpdates))} disabled={saving} />
+            <Toggle label="Security Alerts" description="Immediate alerts for security events" checked={settings?.notifySecurityAlerts ?? true} onChange={() => updateSetting('notifySecurityAlerts', !(settings?.notifySecurityAlerts))} disabled={saving} />
+            <Toggle label="Infrastructure Alerts" description="Monitoring and infrastructure notifications" checked={settings?.notifyInfrastructureAlerts ?? true} onChange={() => updateSetting('notifyInfrastructureAlerts', !(settings?.notifyInfrastructureAlerts))} disabled={saving} />
+            <Toggle label="Finance Alerts" description="Payout, settlement, and finance notifications" checked={settings?.notifyFinanceAlerts ?? true} onChange={() => updateSetting('notifyFinanceAlerts', !(settings?.notifyFinanceAlerts))} disabled={saving} />
           </div>
         )}
       </SettingsSection>
 
-      <SettingsSection title="Platform Behaviour Preferences" description="Control platform-wide behavioural settings">
+      <SettingsSection title="System Administration Preferences" description="Administration tool configuration">
         {loading ? (
           <div className="space-y-4">
             <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
@@ -221,118 +219,42 @@ export default function SuperAdminSections({ platformName }: SuperAdminSectionsP
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Toggle label="Require Email Verification" description="Users must verify email before accessing full platform" checked={settings?.platformBehaviourPreferences?.requireEmailVerification ?? false} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), requireEmailVerification: !(settings?.platformBehaviourPreferences?.requireEmailVerification) })} disabled={saving} />
-            <Toggle label="Auto-approve Vendors" description="Automatically approve new vendor registrations" checked={settings?.platformBehaviourPreferences?.autoApproveVendors ?? false} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), autoApproveVendors: !(settings?.platformBehaviourPreferences?.autoApproveVendors) })} disabled={saving} />
-            <Toggle label="Vendor Messaging" description="Allow vendors to message customers" checked={settings?.platformBehaviourPreferences?.enableVendorMessaging ?? true} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), enableVendorMessaging: !(settings?.platformBehaviourPreferences?.enableVendorMessaging) })} disabled={saving} />
-            <Toggle label="Product Reviews" description="Allow customers to leave product reviews" checked={settings?.platformBehaviourPreferences?.enableProductReviews ?? true} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), enableProductReviews: !(settings?.platformBehaviourPreferences?.enableProductReviews) })} disabled={saving} />
-            <Toggle label="Wishlist" description="Allow users to save products to a wishlist" checked={settings?.platformBehaviourPreferences?.enableWishlist ?? true} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), enableWishlist: !(settings?.platformBehaviourPreferences?.enableWishlist) })} disabled={saving} />
-            <Toggle label="Product Comparisons" description="Allow users to compare products side by side" checked={settings?.platformBehaviourPreferences?.enableComparisons ?? true} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), enableComparisons: !(settings?.platformBehaviourPreferences?.enableComparisons) })} disabled={saving} />
-            <Toggle label="Guest Checkout" description="Allow users to purchase without creating an account" checked={settings?.platformBehaviourPreferences?.allowGuestCheckout ?? false} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), allowGuestCheckout: !(settings?.platformBehaviourPreferences?.allowGuestCheckout) })} disabled={saving} />
-            <Toggle label="Digital Products" description="Allow selling digital products" checked={settings?.platformBehaviourPreferences?.enableDigitalProducts ?? true} onChange={() => updateSetting('platformBehaviourPreferences', { ...(settings?.platformBehaviourPreferences || {}), enableDigitalProducts: !(settings?.platformBehaviourPreferences?.enableDigitalProducts) })} disabled={saving} />
-          </div>
-        )}
-      </SettingsSection>
-
-      <SettingsSection title="Branding Preferences" description="Customize platform branding">
-        {loading ? (
-          <div className="space-y-4">
-            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
-            <div className="h-10 bg-slate-200 rounded-xl animate-pulse" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Input
-                label="Logo URL"
-                value={settings?.brandingPreferences?.logoUrl || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), logoUrl: e.target.value })}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Audit Log Retention</label>
+              <select
+                value={settings?.auditLogRetention || 'forever'}
+                onChange={(e) => updateSetting('auditLogRetention', e.target.value)}
                 disabled={saving}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="Favicon URL"
-                value={settings?.brandingPreferences?.favicon || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), favicon: e.target.value })}
-                disabled={saving}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="Company Address"
-                value={settings?.brandingPreferences?.companyAddress || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), companyAddress: e.target.value })}
-                disabled={saving}
-              />
+                className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+              >
+                <option value="30">30 days</option>
+                <option value="90">90 days</option>
+                <option value="180">180 days</option>
+                <option value="365">1 year</option>
+                <option value="forever">Forever</option>
+              </select>
             </div>
             <div>
-              <Input
-                label="Support Email"
-                value={settings?.brandingPreferences?.supportEmail || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), supportEmail: e.target.value })}
+              <label className="block text-sm font-medium text-slate-700 mb-2">Session Timeout</label>
+              <select
+                value={settings?.sessionTimeout || '8'}
+                onChange={(e) => updateSetting('sessionTimeout', e.target.value)}
                 disabled={saving}
-              />
-            </div>
-            <div>
-              <Input
-                label="Support Phone"
-                value={settings?.brandingPreferences?.supportPhone || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), supportPhone: e.target.value })}
-                disabled={saving}
-              />
-            </div>
-            <div>
-              <Input
-                label="Primary Color"
-                value={settings?.brandingPreferences?.primaryColor || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), primaryColor: e.target.value })}
-                disabled={saving}
-                placeholder="#1a1a2e"
-              />
-            </div>
-            <div>
-              <Input
-                label="Secondary Color"
-                value={settings?.brandingPreferences?.secondaryColor || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), secondaryColor: e.target.value })}
-                disabled={saving}
-                placeholder="#6b7280"
-              />
+                className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"
+              >
+                <option value="1">1 hour</option>
+                <option value="4">4 hours</option>
+                <option value="8">8 hours</option>
+                <option value="24">24 hours</option>
+              </select>
             </div>
             <div className="md:col-span-2">
-              <Input
-                label="Tagline"
-                value={settings?.brandingPreferences?.tagline || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), tagline: e.target.value })}
-                disabled={saving}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Input
-                label="OG Image URL"
-                value={settings?.brandingPreferences?.ogImage || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), ogImage: e.target.value })}
-                disabled={saving}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email Header Color</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Allowed Admin IPs (comma separated)</label>
               <Input
                 label=""
-                value={settings?.brandingPreferences?.emailHeaderColor || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), emailHeaderColor: e.target.value })}
+                value={(settings?.allowedAdminIps || []).join(', ')}
+                onChange={(e) => updateSetting('allowedAdminIps', e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
                 disabled={saving}
-                placeholder="#1a1a2e"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email Background Color</label>
-              <Input
-                label=""
-                value={settings?.brandingPreferences?.emailBackgroundColor || ''}
-                onChange={(e) => updateSetting('brandingPreferences', { ...(settings?.brandingPreferences || {}), emailBackgroundColor: e.target.value })}
-                disabled={saving}
-                placeholder="#f8f9fa"
               />
             </div>
           </div>

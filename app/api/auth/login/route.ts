@@ -5,7 +5,6 @@ import { randomBytes } from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
-import { isEmailVerificationRequired } from '@/lib/platform-preferences'
 import { parseUserAgent } from '@/lib/device-detector'
 
 export async function POST(request: NextRequest) {
@@ -38,11 +37,9 @@ export async function POST(request: NextRequest) {
     const emailServiceEnabled = isEmailServiceEnabled()
 
     // Check email verification (skip for ADMIN and SUPER_ADMIN, and during maintenance)
-    const requireVerification = await isEmailVerificationRequired()
-
-    if (!requireVerification && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
-      // Allow login when email verification is not required
-    } else if (requireVerification && emailServiceEnabled && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+    if (!emailServiceEnabled && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      // Allow login during email service maintenance
+    } else if (emailServiceEnabled && !user.isEmailVerified && user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ 
         needsVerification: true,
         message: 'Please verify your email before logging in' 

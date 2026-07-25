@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import SettingsSection from '@/components/settings/SettingsSection'
 import Toggle from '@/components/settings/Toggle'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
-import { getDefaultCurrency, getCurrencySymbol } from '@/lib/platform-preferences'
 
 interface PreferencesSectionProps {
   initialPreferences: {
@@ -41,21 +40,12 @@ export default function PreferencesSection({ initialPreferences }: PreferencesSe
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [platformCurrency, setPlatformCurrency] = useState<string>('')
   const [preferences, setPreferences] = useState(initialPreferences)
   const { refreshUser } = useSettingsUser()
 
   useEffect(() => {
     setPreferences(initialPreferences)
   }, [initialPreferences])
-
-  useEffect(() => {
-    getDefaultCurrency().then((curr) => {
-      setPlatformCurrency(curr)
-    }).catch(() => {
-      setPlatformCurrency('GHS')
-    })
-  }, [])
 
   const savePreferences = async (next: typeof preferences) => {
     setSaving(true)
@@ -95,8 +85,6 @@ export default function PreferencesSection({ initialPreferences }: PreferencesSe
     savePreferences(next)
   }
 
-  const effectiveCurrency = preferences.currency || platformCurrency
-
   return (
     <SettingsSection title="Preferences" description="Customize your experience">
       <div className="space-y-4">
@@ -120,7 +108,7 @@ export default function PreferencesSection({ initialPreferences }: PreferencesSe
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Currency</label>
             <select
-              value={effectiveCurrency}
+              value={preferences.currency}
               onChange={(e) => handleSelect('currency', e.target.value)}
               disabled={saving}
               className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow disabled:opacity-50"

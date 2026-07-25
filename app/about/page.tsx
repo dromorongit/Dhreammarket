@@ -1,4 +1,3 @@
-import { getDefaultCurrency, getBrandingPreferences } from '@/lib/platform-preferences'
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -9,10 +8,7 @@ export const metadata = {
   description: 'Learn about Dhream Market - The Smart Commerce Ecosystem powering digital trade in Ghana.',
 }
 
-export default async function AboutPage() {
-  const branding = await getBrandingPreferences()
-  const defaultCurrency = await getDefaultCurrency()
-  const tagline = branding.tagline || 'Smart Commerce Ecosystem'
+export default function AboutPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
@@ -33,7 +29,7 @@ export default async function AboutPage() {
               About Dhream Market
             </h1>
             <p className="text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-              {tagline} powering digital trade in Ghana. We are dedicated to 
+              The Smart Commerce Ecosystem powering digital trade in Ghana. We are dedicated to 
               connecting vendors and customers through a seamless, secure, and modern e-commerce platform.
             </p>
           </div>
@@ -245,9 +241,9 @@ export default async function AboutPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-deep-navy mb-2">{defaultCurrency} Pricing</h3>
+                <h3 className="text-lg font-semibold text-deep-navy mb-2">GHS Pricing</h3>
                 <p className="text-sm text-slate-600">
-                  All prices displayed in {defaultCurrency} for complete clarity and transparency
+                  All prices displayed in Ghana Cedis for complete clarity and transparency
                 </p>
               </CardContent>
             </Card>

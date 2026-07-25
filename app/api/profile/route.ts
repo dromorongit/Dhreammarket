@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
-import { getDefaultCurrency } from '@/lib/platform-preferences'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,8 +44,6 @@ export async function PUT(request: NextRequest) {
     if (!payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const defaultCurrency = await getDefaultCurrency()
 
     const body = await request.json()
     const {
@@ -95,7 +92,7 @@ export async function PUT(request: NextRequest) {
         avatar: avatar || null,
         darkMode: darkMode ?? false,
         language: language ?? 'en',
-        currency: currency ?? defaultCurrency,
+        currency: currency ?? 'GHS',
         timezone: timezone ?? 'Africa/Accra',
         emailNotifications: emailNotifications ?? true,
         orderNotifications: orderNotifications ?? true,

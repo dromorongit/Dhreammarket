@@ -1,6 +1,5 @@
 import { getPrisma } from '@/lib/prisma'
 import { NotificationType } from '@prisma/client'
-import { getMonitoringPreferences } from './platform-preferences'
 
 export async function getCustomerNotificationPreferences(userId: string) {
   return getPrisma().profile.findUnique({
@@ -112,38 +111,6 @@ function shouldNotifySuperAdmin(
   type: NotificationType
 ): boolean {
   if (!prefs) return true
-  switch (type) {
-    case 'SYSTEM_OUTAGE':
-      return prefs.notifySystemOutage
-    case 'FEATURE_ANNOUNCEMENT':
-      return prefs.notifyFeatureAnnouncements
-    case 'POLICY_UPDATE':
-      return prefs.notifyPolicyUpdates
-    case 'SECURITY_ALERT':
-      return prefs.notifySecurityAlerts
-    case 'INFRASTRUCTURE_ALERT':
-      return prefs.notifyInfrastructureAlerts
-    case 'FINANCE_ALERT':
-      return prefs.notifyFinanceAlerts
-    default:
-      return true
-  }
-}
-
-const monitoringAlertMap: Record<string, string> = {
-  SYSTEM_OUTAGE: 'systemOutageAlerts',
-  FEATURE_ANNOUNCEMENT: 'featureAnnouncementAlerts',
-  POLICY_UPDATE: 'policyUpdateAlerts',
-  SECURITY_ALERT: 'securityAlerts',
-  INFRASTRUCTURE_ALERT: 'infrastructureAlerts',
-  FINANCE_ALERT: 'financeAlerts',
-}
-
-export async function isMonitoringAlertEnabled(alertType: string): Promise<boolean> {
-  const prefs = await getMonitoringPreferences()
-  if (prefs.alertsEnabled === false) return false
-  const field = monitoringAlertMap[alertType]
-  if (field && prefs[field as keyof typeof prefs] === false) return false
   return true
 }
 
@@ -172,15 +139,11 @@ export async function shouldSendNotification(userId: string, type: NotificationT
       const prefs = await getAdminNotificationPreferences(userId)
       if (!shouldNotifyAdmin(prefs, type)) return false
       const superPrefs = await getSuperAdminNotificationPreferences()
-      if (!shouldNotifySuperAdmin(superPrefs, type)) return false
-      const monitoringAlertType = type as string
-      if (!await isMonitoringAlertEnabled(monitoringAlertType)) return false
-      break
+      return shouldNotifySuperAdmin(superPrefs, type)
     }
     default:
       return true
   }
-  return true
 }
 
 export async function canSendCustomerEmail(userId: string): Promise<boolean> {

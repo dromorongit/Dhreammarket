@@ -8,10 +8,6 @@ import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
-
-interface ProductClientProps {
-  reviewsEnabled?: boolean
-}
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
@@ -131,7 +127,7 @@ function renderStars(rating: number, size: 'sm' | 'md' = 'md'): React.ReactNode 
   ))
 }
 
-export default function ProductClient({ reviewsEnabled = true }: ProductClientProps) {
+export default function ProductClient() {
   const params = useParams()
   const productId = params!.id as string
 
@@ -429,26 +425,24 @@ useEffect(() => {
                 {product.name}
               </h1>
 
-<div className="flex items-center gap-2 mb-4">
-                 <div className="flex items-center gap-1">
-                   {renderStars(product.averageRating, 'sm')}
-                 </div>
-<span className="text-sm text-slate-600">
-                    ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
-                  </span>
-                  {reviewsEnabled && (
-                    <button
-                      onClick={() => {
-                        setActiveTab('reviews')
-                        const reviewsSection = document.getElementById('reviews-tab')
-                        reviewsSection?.scrollIntoView({ behavior: 'smooth' })
-                      }}
-                      className="text-xs text-[#1E40AF] hover:underline ml-1"
-                    >
-                      See all reviews
-                    </button>
-                  )}
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-1">
+                  {renderStars(product.averageRating, 'sm')}
                 </div>
+                <span className="text-sm text-slate-600">
+                  ({product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'})
+                </span>
+                <button
+                  onClick={() => {
+                    setActiveTab('reviews')
+                    const reviewsSection = document.getElementById('reviews-tab')
+                    reviewsSection?.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  className="text-xs text-[#1E40AF] hover:underline ml-1"
+                >
+                  See all reviews
+                </button>
+              </div>
 
               <div className="flex items-center gap-2 mb-4">
                 <WishlistButton productId={product.id} initialIsWishlisted={isWishlisted} size="md" />
@@ -627,16 +621,16 @@ useEffect(() => {
             >
               Description
             </button>
-<button
-               id="reviews-tab"
-               onClick={() => setActiveTab('reviews')}
-               className={`pb-3 px-1 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
-                 activeTab === 'reviews'
-                   ? 'text-[#1E40AF] border-b-2 border-[#1E40AF]'
-                   : 'text-slate-600 hover:text-[#0F1F3D]'
-               } ${!reviewsEnabled ? 'hidden' : ''}`}
-             >
-               Reviews ({product.reviewCount})
+            <button
+              id="reviews-tab"
+              onClick={() => setActiveTab('reviews')}
+              className={`pb-3 px-1 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'reviews'
+                  ? 'text-[#1E40AF] border-b-2 border-[#1E40AF]'
+                  : 'text-slate-600 hover:text-[#0F1F3D]'
+              }`}
+            >
+              Reviews ({product.reviewCount})
             </button>
           </div>
 

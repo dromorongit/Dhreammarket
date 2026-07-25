@@ -1,16 +1,13 @@
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
-import { getBrandingPreferences } from '@/lib/platform-preferences'
 
 export const metadata = {
   title: 'Payment Policy - Dhream Market',
   description: 'Dhream Market Payment Policy - Marketplace payment processing and vendor payout policy.',
 }
 
-export default async function PaymentPolicyPage() {
-  const branding = await getBrandingPreferences()
-  const supportEmail = branding.supportEmail || 'support@dhreamarket.com'
+export default function PaymentPolicyPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -189,7 +186,7 @@ export default async function PaymentPolicyPage() {
                 </h2>
                 <p className="text-slate-600 leading-relaxed">
                   For questions about this Payment Policy, please contact us through our 
-                  Contact page or email us at {supportEmail}.
+                  Contact page or email us at support@dhreamarket.com.
                 </p>
               </section>
             </div>

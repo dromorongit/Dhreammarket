@@ -48,7 +48,7 @@ function AdminSettingsContent() {
         initialPreferences={{
           darkMode: user?.profile?.darkMode ?? false,
           language: user?.profile?.language ?? 'en',
-          currency: user?.profile?.currency ?? '',
+          currency: user?.profile?.currency ?? 'GHS',
           timezone: user?.profile?.timezone ?? 'Africa/Accra',
         }}
       />

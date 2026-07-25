@@ -1,5 +1,4 @@
 import { getPrisma } from './prisma'
-import { getAuditLogRetention } from './platform-preferences'
 
 export type EntityType = 'USER' | 'VENDOR' | 'SESSION' | 'PRODUCT' | 'ORDER' | 'SUPPORT_TICKET' | 'RESTOCK_ORDER' | 'PURCHASE_ORDER' | 'KYC_APPLICATION' | 'INVENTORY' | 'SYSTEM' | 'PAYMENT_METHOD' | 'ADDRESS'
 
@@ -157,56 +156,5 @@ export async function getAuditLogs(params: {
       total,
       totalPages: Math.ceil(total / limit),
     },
-  }
-}
-
-export async function cleanupOldAuditLogs(): Promise<number> {
-  const retention = await getAuditLogRetention()
-  if (retention === 'forever') {
-    return 0
-  }
-
-  const days = parseInt(retention, 10)
-  if (isNaN(days) || days <= 0) {
-    return 0
-  }
-
-  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-  const prisma = getPrisma()
-
-  const result = await prisma.auditLog.deleteMany({
-    where: {
-      createdAt: { lt: cutoff },
-    },
-  })
-
-  return result.count
-}
-
-let cleanupScheduled = false
-
-export async function scheduleAuditLogCleanup(): Promise<void> {
-  if (cleanupScheduled) return
-  cleanupScheduled = true
-
-  try {
-    const retention = await getAuditLogRetention()
-    if (retention === 'forever') return
-
-    const days = parseInt(retention, 10)
-    if (isNaN(days) || days <= 0) return
-
-    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    const prisma = getPrisma()
-
-    await prisma.auditLog.deleteMany({
-      where: {
-        createdAt: { lt: cutoff },
-      },
-    })
-  } catch (error) {
-    console.error('Scheduled audit log cleanup failed:', error)
-  } finally {
-    cleanupScheduled = false
   }
 }

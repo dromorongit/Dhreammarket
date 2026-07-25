@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-import { getDefaultCurrency } from '@/lib/platform-preferences'
 
 interface ProductImage {
   id: string
@@ -41,10 +40,9 @@ interface ProductJsonLdProps {
   product: ProductForJsonLd
 }
 
-export const ProductJsonLd: FC<ProductJsonLdProps> = async ({ product }) => {
+export const ProductJsonLd: FC<ProductJsonLdProps> = ({ product }) => {
   const productImages = product.images?.map((img) => img.url) ?? []
   const availability = getAvailabilityStatus(product.availabilityType ?? null, product.stock)
-  const defaultCurrency = await getDefaultCurrency()
 
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -55,7 +53,7 @@ export const ProductJsonLd: FC<ProductJsonLdProps> = async ({ product }) => {
     offers: {
       '@type': 'Offer',
       price: product.price ?? 0,
-      priceCurrency: defaultCurrency,
+      priceCurrency: 'GHS',
       availability,
       url: `${SITE_URL}/marketplace/product/${product.id}`,
       seller: product.store?.name ? {

@@ -9,7 +9,6 @@ import { Badge } from "@/components/Badge";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/Skeleton";
 import { isManagedSectionSlug } from "@/lib/homepage-constants";
-import { getCurrencySymbol } from "@/lib/platform-preferences";
 
 
 interface HomepageSectionProduct {
@@ -205,20 +204,6 @@ export default function SuperAdminHomepagePage() {
     excludeHiddenProducts: true,
     excludeArchivedProducts: true,
   });
-  const [currency, setCurrency] = useState<string>('')
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.__PLATFORM_CURRENCY__) {
-      setCurrency(window.__PLATFORM_CURRENCY__)
-    } else {
-      fetch('/api/platform')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.defaultCurrency) setCurrency(data.defaultCurrency)
-        })
-        .catch(() => setCurrency('GHS'))
-    }
-  }, [])
 
   const fetchSections = useCallback(async () => {
     try {
@@ -973,9 +958,8 @@ onClose={() => {
                setSearchQuery("");
                setProductPage(1);
              }}
-saving={saving}
-            currency={currency}
-          />
+             saving={saving}
+           />
         )}
 
         {/* Trending Settings Modal */}
@@ -1159,7 +1143,6 @@ function ManageSectionModal({
   onReorderProducts,
   onClose,
   saving,
-  currency,
 }: {
   section: HomepageSection;
   products: Product[];
@@ -1189,7 +1172,6 @@ function ManageSectionModal({
   ) => void;
   onClose: () => void;
   saving: boolean;
-  currency: string;
 }) {
   const [activeTab, setActiveTab] = useState<
     "assigned" | "products" | "vendors" | "brands"
@@ -1469,7 +1451,7 @@ function ManageSectionModal({
                           {product.name}
                         </p>
                         <p className="text-[10px] text-royal-blue font-bold mt-1">
-                           {getCurrencySymbol(currency || 'GHS')} {product.price.toFixed(2)}
+                          GH₵ {product.price.toFixed(2)}
                         </p>
                         {product.store && (
                           <p className="text-[10px] text-slate-400 truncate mt-1">

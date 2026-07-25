@@ -1,17 +1,13 @@
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
-import { getBrandingPreferences, getDefaultCurrency } from '@/lib/platform-preferences'
 
 export const metadata = {
   title: 'Terms and Conditions - Dhream Market',
   description: 'Dhream Market Terms and Conditions - Platform usage terms and conditions.',
 }
 
-export default async function TermsAndConditionsPage() {
-  const branding = await getBrandingPreferences()
-  const defaultCurrency = await getDefaultCurrency()
-  const supportEmail = branding.supportEmail || 'support@dhreamarket.com'
+export default function TermsAndConditionsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -178,7 +174,7 @@ export default async function TermsAndConditionsPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">Prices are displayed in {defaultCurrency} unless otherwise stated</span>
+                    <span className="text-slate-600">Prices are displayed in Ghana Cedis (GHS) unless otherwise stated</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span>
@@ -486,10 +482,10 @@ export default async function TermsAndConditionsPage() {
                    <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white text-sm font-bold">17</span>
                    Contact Information
                  </h2>
-                  <p className="text-slate-600 leading-relaxed">
-                    For questions about these Terms and Conditions, please contact us through our 
-                    Contact page or email us at {supportEmail}.
-                  </p>
+                 <p className="text-slate-600 leading-relaxed">
+                   For questions about these Terms and Conditions, please contact us through our 
+                   Contact page or email us at support@dhreamarket.com.
+                 </p>
                </section>
              </div>
           </CardContent>

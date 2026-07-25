@@ -3,7 +3,6 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncProductRating } from '@/lib/rating-sync'
 import { sanitizeUserContent } from '@/lib/sanitize'
-import { areProductReviewsEnabled } from '@/lib/platform-preferences'
 
 // Valid order statuses for review eligibility
 const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
@@ -146,11 +145,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { productId, rating, comment } = await request.json()
-
-    const reviewsEnabled = await areProductReviewsEnabled()
-    if (!reviewsEnabled) {
-      return NextResponse.json({ error: 'Product reviews are currently disabled' }, { status: 403 })
-    }
 
     // Validate rating is an integer
     if (rating === undefined || rating === null) {
