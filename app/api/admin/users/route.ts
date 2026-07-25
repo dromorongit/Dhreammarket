@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic'
 
 // GET all users with pagination
 export async function GET(request: NextRequest) {
-  console.log('[ADMIN USERS] GET request started')
+  console.log('[ADMIN USERS API] Route reached');
+  console.log('[ADMIN USERS] GET request started');
   try {
     const prisma = getPrisma()
     console.log('[ADMIN USERS] Prisma client obtained')
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
       return authCheck
     }
 
+    console.log('[ADMIN USERS API] Query Params:', Object.fromEntries(new URL(request.url).searchParams.entries()));
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -41,8 +43,10 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[ADMIN USERS] Querying users with where:', JSON.stringify(where))
+    console.log('[ADMIN USERS] Query:', where, 'role=', role)
+    console.log('[ADMIN USERS] Query: prisma.user.findMany');
     const [users, total] = (await Promise.all([
-      console.log('[ADMIN USERS] Query: prisma.user.findMany'), prisma.user.findMany({
+      prisma.user.findMany({
         where,
         skip,
         take: limit,
@@ -97,8 +101,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(responseData)
   } catch (error) {
-    console.error('[ADMIN USERS] Error:', error)
-    console.error('[ADMIN USERS] Error stack:', (error as any)?.stack)
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
+    console.error('[ADMIN USERS API ERROR]', error);
+    console.error('Message:', error instanceof Error ? error.message : error);
+    console.error('Stack:', error instanceof Error ? error.stack : null);
+    return NextResponse.json({
+      success: false,
+      message: 'Internal Server Error',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : null,
+    }, { status: 500 })
   }
 }

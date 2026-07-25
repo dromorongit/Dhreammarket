@@ -6,10 +6,12 @@ import { getAdminDemandAnalytics } from '@/lib/demand-forecast'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  console.log('[ADMIN STATS API] Route reached');
   console.log('[ADMIN STATS] GET request started')
   try {
     const prisma = getPrisma()
     console.log('[ADMIN STATS] Prisma client obtained')
+    console.log('[ADMIN STATS API] Query Params:', Object.fromEntries(new URL(request.url).searchParams.entries()));
     // Check admin authorization
     const authCheck = requireAdmin()
     console.log('[ADMIN STATS] Auth check result:', authCheck instanceof NextResponse ? `response ${authCheck.status}` : 'authorized')
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest) {
       console.log('[ADMIN STATS] Query: prisma.user.count({ role: VENDOR })'), prisma.user.count({ where: { role: 'VENDOR' } }),
       console.log('[ADMIN STATS] Query: prisma.product.count()'), prisma.product.count(),
       console.log('[ADMIN STATS] Query: prisma.order.count()'), prisma.order.count(),
-      console.log('[ADMIN STATS] Query: prisma.order.findMany({ paymentStatus: PAID })'), prisma.order.findMany({
+      console.log('[ADMIN STATS] Executing prisma.order.findMany({ paymentStatus: PAID })'), prisma.order.findMany({
         where: { paymentStatus: 'PAID' },
         select: {
           id: true,
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
       }),
       console.log('[ADMIN STATS] Query: prisma.store.count({ isVerified: true })'), prisma.store.count({ where: { isVerified: true } }),
       console.log('[ADMIN STATS] Query: prisma.vendorVerificationApplication.count({ status: PENDING_REVIEW })'), prisma.vendorVerificationApplication.count({ where: { status: 'PENDING_REVIEW' } }),
-      console.log('[ADMIN STATS] Query: prisma.order.findMany({ recent 10 })'), prisma.order.findMany({
+      console.log('[ADMIN STATS] Executing prisma.order.findMany({ recent 10 })'), prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: {
@@ -67,7 +69,7 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.user.findMany({ recent 10 })'), prisma.user.findMany({
+      console.log('[ADMIN STATS] Executing prisma.user.findMany({ recent 10 })'), prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
         select: {
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
           createdAt: true,
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.store.findMany({ recent 10 })'), prisma.store.findMany({
+      console.log('[ADMIN STATS] Executing prisma.store.findMany({ recent 10 })'), prisma.store.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
         include: {
@@ -86,15 +88,15 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.findMany({ PREORDER paid })'), prisma.order.findMany({
+      console.log('[ADMIN STATS] Executing prisma.order.findMany({ PREORDER paid })'), prisma.order.findMany({
         where: { orderType: 'PREORDER', paymentStatus: 'PAID' },
         select: { fulfillmentStatus: true },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.findMany({ BACKORDER paid })'), prisma.order.findMany({
+      console.log('[ADMIN STATS] Executing prisma.order.findMany({ BACKORDER paid })'), prisma.order.findMany({
         where: { orderType: 'BACKORDER', paymentStatus: 'PAID' },
         select: { fulfillmentStatus: true },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.count({ overdue })'), prisma.order.count({
+      console.log('[ADMIN STATS] Executing prisma.order.count({ overdue })'), prisma.order.count({
         where: {
           orderType: { in: ['PREORDER', 'BACKORDER'] },
           paymentStatus: 'PAID',
@@ -117,7 +119,7 @@ export async function GET(request: NextRequest) {
           ],
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.findMany({ completed preorders })'), prisma.order.findMany({
+      console.log('[ADMIN STATS] Executing prisma.order.findMany({ completed preorders })'), prisma.order.findMany({
         where: {
           orderType: { in: ['PREORDER', 'BACKORDER'] },
           paymentStatus: 'PAID',
@@ -128,21 +130,21 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.count({ READY_TO_FULFILL })'), prisma.order.count({
+      console.log('[ADMIN STATS] Executing prisma.order.count({ READY_TO_FULFILL })'), prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: { in: ['PREORDER', 'BACKORDER'] },
           fulfillmentStatus: 'READY_TO_FULFILL',
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.count({ PREORDER awaiting stock })'), prisma.order.count({
+      console.log('[ADMIN STATS] Executing prisma.order.count({ PREORDER awaiting stock })'), prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: 'PREORDER',
           fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
         },
       }),
-      console.log('[ADMIN STATS] Query: prisma.order.count({ BACKORDER awaiting stock })'), prisma.order.count({
+      console.log('[ADMIN STATS] Executing prisma.order.count({ BACKORDER awaiting stock })'), prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: 'BACKORDER',
@@ -307,8 +309,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(responseData)
   } catch (error) {
-    console.error('[ADMIN STATS] Error:', error)
-    console.error('[ADMIN STATS] Error stack:', (error as any)?.stack)
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
+    console.error('[ADMIN STATS API ERROR]', error);
+    console.error('Message:', error instanceof Error ? error.message : error);
+    console.error('Stack:', error instanceof Error ? error.stack : null);
+    return NextResponse.json({
+      success: false,
+      message: 'Internal Server Error',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : null,
+    }, { status: 500 })
   }
 }
