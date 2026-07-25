@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     console.log('[ADMIN USERS] Querying users with where:', JSON.stringify(where))
     console.log('[ADMIN USERS] Query:', where, 'role=', role)
     console.log('[ADMIN USERS] Query: prisma.user.findMany');
+    console.log('[ADMIN USERS] Query: prisma.user.count')
     const [users, total] = (await Promise.all([
       prisma.user.findMany({
         where,
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
           },
         },
       }),
-      console.log('[ADMIN USERS] Query: prisma.user.count'), prisma.user.count({ where }),
+      prisma.user.count({ where }),
     ])) as any[]
     console.log('[ADMIN USERS] Query results:', { usersCount: users.length, total })
 
