@@ -16,6 +16,6 @@ export async function updateSessionLastActivity(sessionId: string, ipAddress?: s
     console.log('[SESSION] Session last activity updated successfully')
   } catch (error) {
     console.error('[SESSION] Failed to update session last activity:', error)
-    console.error('[SESSION] Error stack:', error?.stack)
+    console.error('[SESSION] Error stack:', (error as any)?.stack)
   }
 }

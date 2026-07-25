@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ tickets: transformedTickets, statusCounts })
   } catch (error) {
     console.error('[ADMIN SUPPORT] Error:', error)
-    console.error('[ADMIN SUPPORT] Error stack:', error?.stack)
+    console.error('[ADMIN SUPPORT] Error stack:', (error as any)?.stack)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

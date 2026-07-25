@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       readyToFulfillOrders,
       waitingPreorders,
       waitingBackorders,
-    ] = await Promise.all([
+    ] = (await Promise.all([
       console.log('[ADMIN STATS] Query: prisma.user.count()'), prisma.user.count(),
       console.log('[ADMIN STATS] Query: prisma.user.count({ role: VENDOR })'), prisma.user.count({ where: { role: 'VENDOR' } }),
       console.log('[ADMIN STATS] Query: prisma.product.count()'), prisma.product.count(),
@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
           fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
         },
       }),
-    ])
+    ]) as any[])
     console.log('[ADMIN STATS] All Prisma queries completed')
 
     // Calculate financial totals from paid orders
@@ -160,7 +160,8 @@ export async function GET(request: NextRequest) {
     let totalVendorEarnings = 0
     let totalRevenue = 0 // Total Platform Revenue = platformCommission only
      
-    paidOrders.forEach((order: any) => {
+     const orders = paidOrders as any[]
+     orders.forEach((order: any) => {
       // Use grossAmount if available, fallback to total
       const gross = order.grossAmount !== null && order.grossAmount !== undefined ? order.grossAmount : order.total
       totalGrossAmount += gross
@@ -232,7 +233,7 @@ export async function GET(request: NextRequest) {
     // Calculate average fulfillment days
     let avgFulfillmentDays = 0
     if (completedPreorderOrders.length > 0) {
-      const totalDays = completedPreorderOrders.reduce((sum, order) => {
+      const totalDays = completedPreorderOrders.reduce((sum: number, order: any) => {
         const days = Math.floor(
           (new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()) /
           (1000 * 60 * 60 * 24)
@@ -307,7 +308,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(responseData)
   } catch (error) {
     console.error('[ADMIN STATS] Error:', error)
-    console.error('[ADMIN STATS] Error stack:', error?.stack)
+    console.error('[ADMIN STATS] Error stack:', (error as any)?.stack)
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
   }
 }

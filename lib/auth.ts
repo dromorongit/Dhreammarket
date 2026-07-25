@@ -39,7 +39,7 @@ export function verifyToken(token: string): { userId: string; role: Role; sessio
     return null
   } catch (error) {
     console.error('[AUTH] Token verification error:', error)
-    console.error('[AUTH] Token verification error stack:', error?.stack)
+    console.error('[AUTH] Token verification error stack:', (error as any)?.stack)
     return null
   }
 }

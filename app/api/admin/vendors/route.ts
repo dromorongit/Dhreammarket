@@ -151,7 +151,7 @@ return {
     })
   } catch (error) {
     console.error('[ADMIN VENDORS] Error:', error)
-    console.error('[ADMIN VENDORS] Error stack:', error?.stack)
+    console.error('[ADMIN VENDORS] Error stack:', (error as any)?.stack)
     return NextResponse.json({ error: 'Failed to fetch vendors' }, { status: 500 })
   }
 }

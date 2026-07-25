@@ -313,7 +313,7 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
   console.log('[DEMAND FORECAST] getAdminDemandAnalytics called')
   const prisma = getPrisma()
 
-  const [mostPreordered, mostBackordered, categoryDemand, vendorDemand, stockoutFrequency] = await Promise.all([
+  const [mostPreordered, mostBackordered, categoryDemand, vendorDemand, stockoutFrequency] = (await Promise.all([
     console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy PREORDER'),
     prisma.orderItem.groupBy({
       by: ['productId'],
@@ -361,13 +361,13 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
         reservedQuantity: true,
       },
     }),
-  ])
+  ])) as any[]
   console.log('[DEMAND FORECAST] Admin demand analytics queries completed')
 
   const productIds = Array.from(new Set([
-    ...mostPreordered.map((p) => p.productId),
-    ...mostBackordered.map((p) => p.productId),
-    ...categoryDemand.map((c) => c.productId),
+    ...mostPreordered.map((p: any) => p.productId),
+    ...mostBackordered.map((p: any) => p.productId),
+    ...categoryDemand.map((c: any) => c.productId),
   ]))
 
   const products = await prisma.product.findMany({
@@ -378,13 +378,13 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
 
   const productMap = new Map(products.map((p) => [p.id, p]))
 
-  const mostPreorderedProducts = mostPreordered.map((item) => ({
+  const mostPreorderedProducts = mostPreordered.map((item: any) => ({
     productId: item.productId,
     productName: productMap.get(item.productId)?.name || 'Unknown',
     preorderCount: item._sum.quantity || 0,
   }))
 
-  const mostBackorderedProducts = mostBackordered.map((item) => ({
+  const mostBackorderedProducts = mostBackordered.map((item: any) => ({
     productId: item.productId,
     productName: productMap.get(item.productId)?.name || 'Unknown',
     backorderCount: item._sum.quantity || 0,
@@ -431,12 +431,12 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     .slice(0, 10)
 
   const stockoutFrequencyResult = stockoutFrequency
-    .map((p) => ({
+    .map((p: any) => ({
       productId: p.id,
       productName: p.name,
       stockoutCount: p.stock - p.reservedQuantity <= 0 ? 1 : 0,
     }))
-    .filter((p) => p.stockoutCount > 0)
+    .filter((p: any) => p.stockoutCount > 0)
 
   console.log('[DEMAND FORECAST] Returning admin demand analytics')
   return {
@@ -493,7 +493,7 @@ export async function trackProductView(productId: string): Promise<void> {
     data: { updatedAt: new Date() },
   }).catch((err) => {
     console.error('[DEMAND FORECAST] trackProductView error:', err)
-    console.error('[DEMAND FORECAST] trackProductView error stack:', err?.stack)
+    console.error('[DEMAND FORECAST] trackProductView error stack:', (err as any)?.stack)
   })
   console.log('[DEMAND FORECAST] trackProductView completed for product:', productId)
 }

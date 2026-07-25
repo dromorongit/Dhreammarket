@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('[ADMIN USERS] Querying users with where:', JSON.stringify(where))
-    const [users, total] = await Promise.all([
+    const [users, total] = (await Promise.all([
       console.log('[ADMIN USERS] Query: prisma.user.findMany'), prisma.user.findMany({
         where,
         skip,
@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
         },
       }),
       console.log('[ADMIN USERS] Query: prisma.user.count'), prisma.user.count({ where }),
-    ])
+    ])) as any[]
     console.log('[ADMIN USERS] Query results:', { usersCount: users.length, total })
 
     const totalPages = Math.ceil(total / limit)
 
-    const transformedUsers = users.map((user) => ({
+    const transformedUsers = users.map((user: any) => ({
       id: user.id,
       email: user.email,
       role: user.role,
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(responseData)
   } catch (error) {
     console.error('[ADMIN USERS] Error:', error)
-    console.error('[ADMIN USERS] Error stack:', error?.stack)
+    console.error('[ADMIN USERS] Error stack:', (error as any)?.stack)
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
   }
 }

@@ -820,9 +820,9 @@ export default function SuperAdminDashboard() {
        </div>
      </div>
    )
-  } catch (error) {
-    console.error('[SuperAdminDashboard] Error rendering dashboard page:', error)
-    console.error('[SuperAdminDashboard] Error stack:', error?.stack)
-    throw error
-  }
+   } catch (error) {
+     console.error('[SuperAdminDashboard] Error rendering dashboard page:', error)
+     console.error('[SuperAdminDashboard] Error stack:', (error as any)?.stack)
+     throw error
+   }
 }
