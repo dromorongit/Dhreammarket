@@ -313,8 +313,12 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
   console.log('[DEMAND FORECAST] getAdminDemandAnalytics called')
   const prisma = getPrisma()
 
+  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy PREORDER')
+  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy BACKORDER')
+  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy category demand')
+  console.log('[DEMAND FORECAST] Query: prisma.store.findMany')
+  console.log('[DEMAND FORECAST] Query: prisma.product.findMany')
   const [mostPreordered, mostBackordered, categoryDemand, vendorDemand, stockoutFrequency] = (await Promise.all([
-    console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy PREORDER'),
     prisma.orderItem.groupBy({
       by: ['productId'],
       where: {
@@ -324,7 +328,6 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
       orderBy: { _sum: { quantity: 'desc' } },
       take: 10,
     }),
-    console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy BACKORDER'),
     prisma.orderItem.groupBy({
       by: ['productId'],
       where: {
@@ -334,7 +337,6 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
       orderBy: { _sum: { quantity: 'desc' } },
       take: 10,
     }),
-    console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy category demand'),
     prisma.orderItem.groupBy({
       by: ['productId'],
       where: {
@@ -342,7 +344,6 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
       },
       _sum: { quantity: true },
     }),
-    console.log('[DEMAND FORECAST] Query: prisma.store.findMany'),
     prisma.store.findMany({
       select: {
         id: true,
@@ -352,7 +353,6 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
         },
       },
     }),
-    console.log('[DEMAND FORECAST] Query: prisma.product.findMany'),
     prisma.product.findMany({
       select: {
         id: true,

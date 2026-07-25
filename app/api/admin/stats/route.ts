@@ -225,6 +225,12 @@ export async function GET(request: NextRequest) {
       for (const order of orders) {
         statusCounts[order.fulfillmentStatus] = (statusCounts[order.fulfillmentStatus] || 0) + 1
       }
+      console.log('MAP DEBUG', {
+        variableName: 'statusCounts',
+        type: typeof statusCounts,
+        isArray: Array.isArray(statusCounts),
+        value: statusCounts,
+      });
       return Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
     }
 
