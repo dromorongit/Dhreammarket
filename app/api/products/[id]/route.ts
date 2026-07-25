@@ -7,6 +7,7 @@ import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 export const runtime = 'nodejs'
+export const revalidate = 60
 
 export async function GET(
    request: NextRequest,
@@ -35,13 +36,8 @@ const product = await getPrisma().product.findUnique({
               badgeTier: true,
             },
           },
-         images: true,
-         productReviews: {
-           select: {
-             rating: true,
-           },
-         },
-         categoryAssignments: {
+          images: true,
+          categoryAssignments: {
            include: {
              productCategory: true,
            },
@@ -70,13 +66,8 @@ store: {
               badgeTier: true,
             },
           },
-          images: true,
-         productReviews: {
-           select: {
-             rating: true,
-           },
-         },
-         categoryAssignments: {
+           images: true,
+          categoryAssignments: {
            include: {
              productCategory: true,
            },
@@ -107,16 +98,8 @@ if (!product) {
       }
     }
 
-    // Calculate average rating
-    const reviews = product.productReviews || []
-    const avgRating = reviews.length > 0
-      ? reviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviews.length
-      : 0
-
     const productWithRating = {
       ...product,
-      averageRating: parseFloat(avgRating.toFixed(1)),
-      reviewCount: reviews.length,
       availableQuantity: product.stock - product.reservedQuantity,
     }
 

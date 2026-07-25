@@ -7,6 +7,7 @@ import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,40 +24,55 @@ export async function GET(request: NextRequest) {
     const sortBy = url.searchParams.get('sortBy') || 'createdAt'
     const sortOrder = url.searchParams.get('sortOrder') || 'desc'
     const page = parseInt(url.searchParams.get('page') || '1', 10)
-    const limit = parseInt(url.searchParams.get('limit') || '50', 10)
+    const limit = parseInt(url.searchParams.get('limit') || '24', 10)
+    const skip = (page - 1) * limit
     const createdAtMin = url.searchParams.get('createdAtMin')
 
     // For authenticated vendors, get only their products
     if (payload && payload.role === 'VENDOR') {
       const store = await getPrisma().store.findUnique({
         where: { userId: payload.userId },
-        include: {
-          products: {
-            include: {
-              category: true,
-              images: true,
-              variants: true,
-            },
-          },
-        },
       })
 
       if (!store) {
-        const response = NextResponse.json({ products: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } })
+        const response = NextResponse.json({ products: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } })
         response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         response.headers.set('Pragma', 'no-cache')
         return response
       }
 
-      // Transform products to include availableStock
-      const productsWithStock = store.products.map((p: any) => ({
+      const vendorProducts = await getPrisma().product.findMany({
+        where: { storeId: store.id },
+        skip,
+        take: limit,
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          price: true,
+          salesPrice: true,
+          dealsPrice: true,
+          stock: true,
+          reservedQuantity: true,
+          availabilityType: true,
+          category: { select: { id: true, name: true, slug: true } },
+        images: { take: 1, select: { id: true, url: true, alt: true } },
+        },
+      })
+
+      const vendorTotal = await getPrisma().product.count({ where: { storeId: store.id } })
+
+      const productsWithStock = vendorProducts.map((p) => ({
         ...p,
         availableStock: p.stock - (p.reservedQuantity || 0),
       }))
 
-      const response = NextResponse.json({ 
+      const response = NextResponse.json({
         products: productsWithStock,
-        pagination: { page, limit, total: productsWithStock.length, totalPages: 1 }
+        pagination: { page, limit, total: vendorTotal, totalPages: Math.ceil(vendorTotal / limit) },
       })
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       response.headers.set('Pragma', 'no-cache')
@@ -74,8 +90,6 @@ export async function GET(request: NextRequest) {
     if (createdAtMin) {
       whereClause.createdAt = { gte: new Date(createdAtMin) }
     }
-
-    const skip = (page - 1) * limit
 
     // Get total count for pagination
     const total = await getPrisma().product.count({ where: whereClause })
@@ -112,7 +126,7 @@ export async function GET(request: NextRequest) {
         backOrderNotes: true,
         averageRating: true,
         reviewCount: true,
-        images: { select: { id: true, url: true, alt: true } },
+        images: { take: 1, select: { id: true, url: true, alt: true } },
         category: { select: { id: true, name: true, slug: true } },
         brandRelation: {
           select: {
