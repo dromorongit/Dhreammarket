@@ -26,7 +26,7 @@ export function getPrisma(): PrismaClient {
       })
       const adapter = new PrismaPg(pool)
       globalForPrisma.pool = pool
-      globalForPrisma.prisma = new PrismaClient({ adapter })
+      globalForPrisma.prisma = new PrismaClient({ adapter, log: ['query', 'info', 'warn', 'error'] })
     } else {
       // Fallback to default SQLite connection
       console.log('[PRISMA] Using SQLite connection')

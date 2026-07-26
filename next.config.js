@@ -4,6 +4,7 @@ const nextConfig = {
     serverComponentsExternalPackages: [
       "@prisma/client",
       "prisma",
+      "@prisma/adapter-pg",
       "cloudinary",
       "pg",
     ],
