@@ -3,6 +3,7 @@ import './globals.css'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { CartProvider } from '@/lib/CartContext'
+import QueryProvider from '@/components/QueryProvider'
 import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
@@ -41,12 +42,14 @@ export default function RootLayout({
         </Suspense>
         <OrganizationJsonLd />
         <CartProvider>
-          <Navbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer />
-          <CookieConsentBanner />
+          <QueryProvider>
+            <Navbar />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <Footer />
+            <CookieConsentBanner />
+          </QueryProvider>
         </CartProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -33,11 +34,9 @@ interface Notification {
   createdAt: string
 }
 
-// Helper function to get display name based on role
 function getDisplayName(user: User | null): string {
   if (!user) return ''
   
-  // VENDOR users: show store name first, then fallback to profile name, then email
   if (user.role === 'VENDOR') {
     if (user.store?.name) return user.store.name
     if (user.profile?.firstName && user.profile?.lastName) {
@@ -46,18 +45,15 @@ function getDisplayName(user: User | null): string {
     return user.email
   }
   
-  // All other roles (CUSTOMER, ADMIN, SUPER_ADMIN): show profile name, then email
   if (user.profile?.firstName && user.profile?.lastName) {
     return `${user.profile.firstName} ${user.profile.lastName}`
   }
   return user.email
 }
 
-// Helper function to get avatar initials based on role
 function getAvatarInitials(user: User | null): string {
   if (!user) return ''
   
-  // VENDOR users: prioritize store name initials
   if (user.role === 'VENDOR' && user.store?.name) {
     const words = user.store.name.trim().split(/\s+/)
     if (words.length >= 2) {
@@ -66,7 +62,6 @@ function getAvatarInitials(user: User | null): string {
     return user.store.name.charAt(0).toUpperCase()
   }
   
-  // All other roles: use profile initials or email initial
   if (user.profile?.firstName?.charAt(0)) return user.profile.firstName.charAt(0).toUpperCase()
   if (user.profile?.lastName?.charAt(0)) return user.profile.lastName.charAt(0).toUpperCase()
   if (user.email?.charAt(0)) return user.email.charAt(0).toUpperCase()
@@ -74,18 +69,16 @@ function getAvatarInitials(user: User | null): string {
 }
 
 export function Navbar() {
+  const queryClient = useQueryClient()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   
-// Use cart context for centralized cart state
   const { cartTotalQuantity } = useCart()
   
-  // Wishlist count
   const [wishlistCount, setWishlistCount] = useState(0)
   
-  // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -93,25 +86,60 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    // Fetch user
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => setUser(data.user))
-      .catch(err => console.error('Failed to get user:', err))
-  }, [])
+  const { data: userData } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const response = await fetch('/api/auth/me')
+      if (!response.ok) throw new Error('Failed to fetch user')
+      const data = await response.json()
+      return data.user
+    },
+  })
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications()
-      fetchWishlist()
+    if (userData !== undefined) {
+      setUser(userData)
     }
-}, [user])
+  }, [userData])
 
-   // Listen for wishlist updates
-   useEffect(() => {
+  const { data: notificationsData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const response = await fetch('/api/notifications')
+      if (!response.ok) throw new Error('Failed to fetch notifications')
+      const data = await response.json()
+      return data
+    },
+    enabled: !!user,
+  })
+
+  useEffect(() => {
+    if (notificationsData) {
+      setNotifications(notificationsData.notifications ?? [])
+      setUnreadCount(notificationsData.unreadCount ?? 0)
+    }
+  }, [notificationsData])
+
+  const { data: wishlistData } = useQuery({
+    queryKey: ['wishlist'],
+    queryFn: async () => {
+      const response = await fetch('/api/wishlist')
+      if (!response.ok) throw new Error('Failed to fetch wishlist')
+      const data = await response.json()
+      return data
+    },
+    enabled: !!user,
+  })
+
+  useEffect(() => {
+    if (wishlistData) {
+      setWishlistCount(wishlistData.wishlist?.items?.length ?? 0)
+    }
+  }, [wishlistData])
+
+  useEffect(() => {
     const handleWishlistUpdate = () => {
-      fetchWishlist()
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] })
     }
     
     window.addEventListener('wishlist-updated', handleWishlistUpdate as EventListener)
@@ -119,21 +147,8 @@ export function Navbar() {
     return () => {
       window.removeEventListener('wishlist-updated', handleWishlistUpdate as EventListener)
     }
-}, [])
+  }, [queryClient])
 
-   const fetchWishlist = async () => {
-    try {
-      const response = await fetch('/api/wishlist')
-      if (response.ok) {
-        const data = await response.json()
-        setWishlistCount(data.wishlist?.items?.length ?? 0)
-      }
-    } catch (error) {
-      console.error('Error fetching wishlist:', error)
-    }
-  }
-
-  // Close notifications dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
@@ -144,7 +159,6 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Close user menu dropdown when clicking outside
   useEffect(() => {
     function handleUserMenuClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -157,19 +171,6 @@ export function Navbar() {
     }
   }, [userMenuOpen])
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch('/api/notifications')
-      if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.notifications)
-        setUnreadCount(data.unreadCount)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    }
-  }
-
   const markAsRead = async (notificationId?: string) => {
     try {
       const response = await fetch('/api/notifications', {
@@ -181,7 +182,7 @@ export function Navbar() {
         }),
       })
       if (response.ok) {
-        fetchNotifications()
+        queryClient.invalidateQueries({ queryKey: ['notifications'] })
       }
     } catch (error) {
       console.error('Error marking notification as read:', error)
@@ -308,7 +309,7 @@ export function Navbar() {
               <span>Support</span>
               <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
-{user && (
+            {user && (
               <>
                 <Link
                   href="/cart"
@@ -528,10 +529,10 @@ export function Navbar() {
               <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {mobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-)}
-            </svg>
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
             </button>
           </div>
         </div>
@@ -546,7 +547,7 @@ export function Navbar() {
         </div>
       </div>
 
-{/* Mobile Menu */}
+      {/* Mobile Menu */}
        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out relative ${
          mobileMenuOpen ? 'max-h-[600px] opacity-100 z-50' : 'max-h-0 opacity-0'
        }`}>
@@ -581,7 +582,7 @@ export function Navbar() {
            >
              Support
            </button>
-{user && (
+           {user && (
               <>
                 <button
                   onClick={() => navigateAndCloseMobileMenu('/cart')}
@@ -684,12 +685,12 @@ export function Navbar() {
                >
                  Sign In
                </button>
-<button
-                  onClick={() => navigateAndCloseMobileMenu('/register')}
-                  className="w-full block px-4 py-3 rounded-xl bg-deep-navy text-white text-center font-medium hover:bg-royal-blue transition-colors mt-2"
-                >
-                  Get Started
-                </button>
+               <button
+                 onClick={() => navigateAndCloseMobileMenu('/register')}
+                 className="w-full block px-4 py-3 rounded-xl bg-deep-navy text-white text-center font-medium hover:bg-royal-blue transition-colors mt-2"
+               >
+                 Get Started
+               </button>
              </>
            )}
          </div>
