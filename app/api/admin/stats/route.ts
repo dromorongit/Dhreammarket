@@ -131,13 +131,13 @@ export async function GET(request: NextRequest) {
         total_vendor: number | null
       }>>`
         SELECT
-          SUM(COALESCE(gross_amount, total)) as total_gross,
-          SUM(processor_fee) as total_processor,
-          SUM(net_amount) as total_net,
-          SUM(platform_commission) as total_platform,
-          SUM(vendor_earnings) as total_vendor
-        FROM orders
-        WHERE payment_status = 'PAID'
+          SUM(COALESCE("grossAmount", "total")) as total_gross,
+          SUM("processorFee") as total_processor,
+          SUM("netAmount") as total_net,
+          SUM("platformCommission") as total_platform,
+          SUM("vendorEarnings") as total_vendor
+        FROM "orders"
+        WHERE "paymentStatus" = 'PAID'
       `,
     )
     console.log('[ADMIN STATS FINISHED] revenueAgg')
@@ -147,22 +147,22 @@ export async function GET(request: NextRequest) {
 
     const waitingAvgResult = await runQuery('waitingAvg_raw', () =>
       prisma.$queryRaw<Array<{ avg_days: number | null }>>`
-        SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM now() - created_at) / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
-        FROM orders
-        WHERE payment_status = 'PAID'
-          AND order_type IN ('PREORDER', 'BACKORDER')
-          AND fulfillment_status IN ('AWAITING_STOCK', 'AWAITING_RESTOCK')
+        SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM now() - "createdAt") / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
+        FROM "orders"
+        WHERE "paymentStatus" = 'PAID'
+          AND "orderType" IN ('PREORDER', 'BACKORDER')
+          AND "fulfillmentStatus" IN ('AWAITING_STOCK', 'AWAITING_RESTOCK')
       `,
     )
     console.log('[ADMIN STATS FINISHED] waitingAvg')
 
     const fulfillmentAvgResult = await runQuery('fulfillmentAvg_raw', () =>
       prisma.$queryRaw<Array<{ avg_days: number | null }>>`
-        SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM updated_at - created_at) / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
-        FROM orders
-        WHERE payment_status = 'PAID'
-          AND order_type IN ('PREORDER', 'BACKORDER')
-          AND status IN ('DELIVERED', 'COMPLETED')
+        SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM "updatedAt" - "createdAt") / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
+        FROM "orders"
+        WHERE "paymentStatus" = 'PAID'
+          AND "orderType" IN ('PREORDER', 'BACKORDER')
+          AND "status" IN ('DELIVERED', 'COMPLETED')
       `,
     )
     console.log('[ADMIN STATS FINISHED] fulfillmentAvg')

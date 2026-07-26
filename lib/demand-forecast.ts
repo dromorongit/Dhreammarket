@@ -423,8 +423,8 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     product_name: string
   }>>`
     SELECT p.id as product_id, p.name as product_name
-    FROM products p
-    WHERE p.stock - p.reserved_quantity <= 0
+    FROM "products" p
+    WHERE p."stock" - p."reservedQuantity" <= 0
   `
   console.log('[DEMAND FORECAST] Query: raw SQL stockoutFrequency count:', stockoutFrequencyResult.length)
 
