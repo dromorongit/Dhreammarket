@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { PerformanceLogger } from '@/lib/performance'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     const categories = await getPrisma().vendorCategory.findMany({
       where: {
@@ -21,6 +24,7 @@ export async function GET(request: NextRequest) {
         },
       },
     })
+    perf.markPrismaEnd(prismaPerfStart)
 
     const categoriesWithCounts = categories.map((cat) => ({
       id: cat.id,
@@ -30,11 +34,11 @@ export async function GET(request: NextRequest) {
     }))
 
     const response = NextResponse.json({ categories: categoriesWithCounts })
-    // Prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-    response.headers.set('Pragma', 'no-cache')
+    perf.log()
     return response
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('Error fetching vendor categories:', error)
     return NextResponse.json({ error: 'Failed to fetch vendor categories' }, { status: 500 })
   }

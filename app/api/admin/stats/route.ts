@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { getAdminDemandAnalytics } from '@/lib/demand-forecast'
+import { PerformanceLogger } from '@/lib/performance'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   console.log('[ADMIN STATS API] Route reached');
   console.log('[ADMIN STATS] GET request started')
   try {
@@ -17,6 +20,8 @@ export async function GET(request: NextRequest) {
     console.log('[ADMIN STATS] Auth check result:', authCheck instanceof NextResponse ? `response ${authCheck.status}` : 'authorized')
     if (authCheck instanceof NextResponse) {
       console.log('[ADMIN STATS] Auth check returned error response:', authCheck.status)
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return authCheck
     }
 
@@ -170,6 +175,7 @@ export async function GET(request: NextRequest) {
       }),
     ]) as any[])
     console.log('[ADMIN STATS] All Prisma queries completed')
+    perf.markPrismaEnd(prismaPerfStart)
 
     // Calculate financial totals from paid orders
     let totalGrossAmount = 0
@@ -185,26 +191,26 @@ export async function GET(request: NextRequest) {
       // Use grossAmount if available, fallback to total
       const gross = order.grossAmount !== null && order.grossAmount !== undefined ? order.grossAmount : order.total
       totalGrossAmount += gross
-       
+        
       // Processor fee might be null (legacy orders without stored fees)
       if (order.processorFee !== null && order.processorFee !== undefined) {
         totalProcessorFee += order.processorFee
       }
-       
+        
       // Net amount might be null (legacy orders without stored fees)
       if (order.netAmount !== null && order.netAmount !== undefined) {
         totalNetAmount += order.netAmount
       }
-       
+        
       // Platform commission and vendor earnings
       if (order.platformCommission !== null && order.platformCommission !== undefined) {
         totalPlatformCommission += order.platformCommission
       }
-       
+        
       if (order.vendorEarnings !== null && order.vendorEarnings !== undefined) {
         totalVendorEarnings += order.vendorEarnings
       }
-       
+        
       // Total Platform Revenue = platform commission only (per accounting model)
       if (order.platformCommission !== null && order.platformCommission !== undefined) {
         totalRevenue += order.platformCommission
@@ -274,7 +280,7 @@ export async function GET(request: NextRequest) {
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
-     
+      
     console.log('[ADMIN STATS] Query: prisma.order.count({ allocatedToday })')
     const allocatedToday = await prisma.order.count({
        where: {
@@ -288,6 +294,7 @@ export async function GET(request: NextRequest) {
     console.log('[ADMIN STATS] Calling getAdminDemandAnalytics()')
     const demandAnalytics = await getAdminDemandAnalytics()
     console.log('[ADMIN STATS] getAdminDemandAnalytics() completed')
+    perf.markPrismaEnd(prismaPerfStart)
 
     const responseData = {
       stats: {
@@ -331,8 +338,11 @@ export async function GET(request: NextRequest) {
     }
     console.log('[ADMIN STATS] Returning response data:', JSON.stringify(responseData).substring(0, 1000))
 
+    perf.log()
     return NextResponse.json(responseData)
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('[ADMIN STATS API ERROR]', error);
     console.error('Message:', error instanceof Error ? error.message : error);
     console.error('Stack:', error instanceof Error ? error.stack : null);

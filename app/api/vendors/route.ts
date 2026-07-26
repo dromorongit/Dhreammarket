@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { PerformanceLogger } from '@/lib/performance'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     const { searchParams } = new URL(request.url)
     const vendorCategoryId = searchParams.get('vendorCategoryId')
@@ -75,6 +78,7 @@ export async function GET(request: NextRequest) {
       }),
       getPrisma().store.count({ where }),
     ])
+    perf.markPrismaEnd(prismaPerfStart)
 
 // Use cached ratings from database
      const vendorsWithMetrics = await Promise.all(
@@ -140,11 +144,11 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     })
-    // Prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-    response.headers.set('Pragma', 'no-cache')
+    perf.log()
     return response
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('Vendors error:', error)
     return NextResponse.json({ error: 'Failed to fetch vendors' }, { status: 500 })
   }

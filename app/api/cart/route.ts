@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { PerformanceLogger } from '@/lib/performance'
 
 export async function GET(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -46,8 +53,10 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       console.error('[cart/GET] cart.findUnique FAILED:', e)
     }
+    perf.markPrismaEnd(prismaPerfStart)
 
     if (!cart) {
+      perf.log()
       return NextResponse.json({
         cart: {
           id: null,
@@ -63,6 +72,7 @@ export async function GET(request: NextRequest) {
       0
     )
 
+    perf.log()
     return NextResponse.json({
       cart: {
         id: cart.id,
@@ -71,6 +81,8 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('Error fetching cart:', error)
     return NextResponse.json({
       cart: { id: null, items: [], total: 0 }
@@ -79,24 +91,34 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { productId, quantity = 1, productVariantId, color, size, age } = await request.json()
 
     if (!productId) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
     }
 
     if (quantity <= 0) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Quantity must be positive' }, { status: 400 })
     }
 
@@ -113,8 +135,10 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('[cart/POST] product.findUnique FAILED:', e)
     }
+    perf.markPrismaEnd(prismaPerfStart)
 
     if (!product) {
+      perf.log()
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
@@ -131,6 +155,7 @@ export async function POST(request: NextRequest) {
 
     // Skip stock validation for preorder/backorder items
     if (!isPreorderOrBackorder && availableStock < quantity) {
+      perf.log()
       return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
     }
 
@@ -144,6 +169,7 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('[cart/POST] cart.findUnique FAILED:', e)
     }
+    perf.markPrismaEnd(prismaPerfStart)
 
     if (!cart) {
       try {
@@ -153,6 +179,7 @@ export async function POST(request: NextRequest) {
         console.log('[cart/POST] cart.create succeeded, newCartId:', cart.id)
       } catch (e) {
         console.error('[cart/POST] cart.create FAILED:', e)
+        perf.log()
         return NextResponse.json({ error: 'Could not create cart' }, { status: 500 })
       }
     }
@@ -185,10 +212,11 @@ export async function POST(request: NextRequest) {
       console.error('[cart/POST] cartItem.findFirst FAILED:', e)
     }
 
-if (existingItem) {
+    if (existingItem) {
         // Update quantity - validate against stock again
         const newTotalQuantity = existingItem.quantity + quantity
         if (!isPreorderOrBackorder && availableStock < newTotalQuantity) {
+          perf.log()
           return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
         }
        try {
@@ -201,24 +229,24 @@ if (existingItem) {
          console.error('[cart/POST] cartItem.update FAILED:', e)
        }
      } else {
-      // Create new item
-      try {
-        await getPrisma().cartItem.create({
-          data: {
-            cartId: cart.id,
-            productId,
-            productVariantId: productVariantId || null,
-            quantity,
-            color: color || null,
-            size: size || null,
-            age: age || null,
-          },
-        })
-        console.log('[cart/POST] cartItem.create succeeded')
-      } catch (e) {
-        console.error('[cart/POST] cartItem.create FAILED:', e)
-      }
-    }
+       // Create new item
+       try {
+         await getPrisma().cartItem.create({
+           data: {
+             cartId: cart.id,
+             productId,
+             productVariantId: productVariantId || null,
+             quantity,
+             color: color || null,
+             size: size || null,
+             age: age || null,
+           },
+         })
+         console.log('[cart/POST] cartItem.create succeeded')
+       } catch (e) {
+         console.error('[cart/POST] cartItem.create FAILED:', e)
+       }
+     }
 
     // Return updated cart
     let updatedCart: any = null
@@ -252,12 +280,14 @@ if (existingItem) {
     } catch (e) {
       console.error('[cart/POST] updated cart.findUnique FAILED:', e)
     }
+    perf.markPrismaEnd(prismaPerfStart)
 
     const total = (updatedCart?.items || []).reduce(
       (sum: number, item: any) => sum + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)),
       0
     )
 
+    perf.log()
     return NextResponse.json({
       cart: {
         id: updatedCart?.id,
@@ -266,6 +296,8 @@ if (existingItem) {
       }
     })
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('Error adding to cart:', error)
     return NextResponse.json({
       cart: { id: null, items: [], total: 0 }

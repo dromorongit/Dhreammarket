@@ -5,11 +5,14 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
+import { PerformanceLogger } from '@/lib/performance'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
 
 export async function GET(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     const token = request.cookies.get('token')?.value
     let payload = null
@@ -38,6 +41,8 @@ export async function GET(request: NextRequest) {
         const response = NextResponse.json({ products: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } })
         response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         response.headers.set('Pragma', 'no-cache')
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
         return response
       }
 
@@ -64,6 +69,7 @@ export async function GET(request: NextRequest) {
       })
 
       const vendorTotal = await getPrisma().product.count({ where: { storeId: store.id } })
+      perf.markPrismaEnd(prismaPerfStart)
 
       const productsWithStock = vendorProducts.map((p) => ({
         ...p,
@@ -76,6 +82,7 @@ export async function GET(request: NextRequest) {
       })
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       response.headers.set('Pragma', 'no-cache')
+      perf.log()
       return response
     }
 
@@ -148,6 +155,7 @@ export async function GET(request: NextRequest) {
         },
       },
     })
+    perf.markPrismaEnd(prismaPerfStart)
 
     // Products already include averageRating and reviewCount from select
     // Add computed availableQuantity
@@ -182,8 +190,11 @@ export async function GET(request: NextRequest) {
     // Prevent caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
+    perf.log()
     return response
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('Error fetching products:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
@@ -194,14 +205,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
     if (!payload || payload.role !== 'VENDOR') {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -223,20 +240,28 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !name.trim()) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
     if (finalCategoryIds.length === 0) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'At least one product category is required' }, { status: 400 })
     }
     
     // Validate max categories
     if (finalCategoryIds.length > MAX_CATEGORIES) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: `Maximum of ${MAX_CATEGORIES} categories allowed` }, { status: 400 })
     }
     
     // Validate no duplicate category IDs
     const uniqueCategoryIds = Array.from(new Set(finalCategoryIds))
     if (uniqueCategoryIds.length !== finalCategoryIds.length) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'Duplicate category IDs are not allowed' }, { status: 400 })
     }
     
@@ -246,12 +271,18 @@ export async function POST(request: NextRequest) {
     })
     
     if (validCategories.length !== uniqueCategoryIds.length) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ error: 'One or more invalid category IDs provided' }, { status: 400 })
     }
      if (price === undefined || price < 0) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
        return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
      }
      if (stock === undefined || stock < 0) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
        return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
      }
      
@@ -259,191 +290,212 @@ export async function POST(request: NextRequest) {
      if (salesPrice !== undefined && salesPrice !== null) {
        const salesPriceNum = parseFloat(salesPrice)
        if (isNaN(salesPriceNum) || salesPriceNum < 0) {
+         perf.markPrismaEnd(prismaPerfStart)
+         perf.log()
          return NextResponse.json({ error: 'Invalid sales price' }, { status: 400 })
        }
      }
      if (dealsPrice !== undefined && dealsPrice !== null) {
        const dealsPriceNum = parseFloat(dealsPrice)
        if (isNaN(dealsPriceNum) || dealsPriceNum < 0) {
+         perf.markPrismaEnd(prismaPerfStart)
+         perf.log()
          return NextResponse.json({ error: 'Invalid deals price' }, { status: 400 })
        }
      }
 
 // Check if vendor has completed onboarding (store and vendor category)
-    const isOnboarded = await isVendorOnboarded(payload.userId);
-    if (!isOnboarded) {
-      return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
-    }
-
-    // Get vendor's store
-    const store = await getPrisma().store.findUnique({
-      where: { userId: payload.userId },
-    });
-
-    if (!store) {
-      return NextResponse.json({ error: 'Store not found' }, { status: 400 })
-    }
-
-    // Validate availability type based on store settings
-    const validAvailabilityTypes = ['IN_STOCK']
-    if (store.acceptsPreOrders) {
-      validAvailabilityTypes.push('PREORDER')
-    }
-    if (store.acceptsBackOrders) {
-      validAvailabilityTypes.push('BACKORDER')
-    }
-
-    const finalAvailabilityType = availabilityType || 'IN_STOCK'
-    if (!validAvailabilityTypes.includes(finalAvailabilityType)) {
-      return NextResponse.json({ error: 'Invalid availability type for this store' }, { status: 400 })
-    }
-
-    // Validate preorder/backorder specific fields
-    if (finalAvailabilityType === 'PREORDER') {
-      if (expectedArrivalDate && isNaN(new Date(expectedArrivalDate).getTime())) {
-        return NextResponse.json({ error: 'Invalid expected arrival date' }, { status: 400 })
-      }
-    }
-
-    if (finalAvailabilityType === 'BACKORDER') {
-      if (!expectedRestockDate) {
-        return NextResponse.json({ error: 'Expected restock date is required for backorder items' }, { status: 400 })
-      }
-      if (isNaN(new Date(expectedRestockDate).getTime())) {
-        return NextResponse.json({ error: 'Invalid expected restock date' }, { status: 400 })
-      }
-    }
-
-    // Create product - use first category as primary, rest will be linked via junction table
-    const primaryCategoryId = uniqueCategoryIds[0]
-
-    // Generate unique slug
-    const slug = await generateSlug({ baseText: name.trim(), target: 'Product' })
-
-    const product = await getPrisma().product.create({
-      data: {
-        storeId: store.id,
-        categoryId: primaryCategoryId,
-        name: name.trim(),
-        description: description?.trim() || null,
-        price: parseFloat(price),
-        stock: parseInt(stock),
-        brandId: brandId || null,
-        salesPrice: salesPrice ? parseFloat(salesPrice) : null,
-        dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
-        availabilityType: finalAvailabilityType as any,
-        expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
-        estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays) : null,
-        preOrderNotes: preOrderNotes || null,
-        expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
-        backOrderNotes: backOrderNotes || null,
-        slug: slug,
-      },
-      include: {
-        category: true,
-        images: true,
-      },
-    })
-
-     // Create variants if provided
-     if (variants && Array.isArray(variants) && variants.length > 0) {
-       await getPrisma().productVariant.createMany({
-         data: variants.map((variant: any) => ({
-           productId: product.id,
-           color: variant.color || null,
-           size: variant.size || null,
-           age: variant.age || null,
-           sku: variant.sku || null,
-           stock: variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock) : 0,
-           active: variant.active !== undefined ? variant.active : true,
-         })),
-       });
+     const isOnboarded = await isVendorOnboarded(payload.userId);
+     if (!isOnboarded) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
+       return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
      }
 
-     // Create category assignments for all selected categories
-    if (uniqueCategoryIds.length > 1) {
-      await getPrisma().productCategoryAssignment.createMany({
-        data: uniqueCategoryIds.map((catId, index) => ({
-          productId: product.id,
-          productCategoryId: catId,
-          isPrimary: index === 0,
-        })),
-        skipDuplicates: true,
-      })
-    } else {
-      // For single category, create the assignment record too for consistency
-      await getPrisma().productCategoryAssignment.create({
-        data: {
-          productId: product.id,
-          productCategoryId: primaryCategoryId,
-          isPrimary: true,
-        },
-      })
-    }
+     // Get vendor's store
+     const store = await getPrisma().store.findUnique({
+       where: { userId: payload.userId },
+     });
 
-    // Add images if provided
-    if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
-      await getPrisma().productImage.createMany({
-        data: imageUrls.map((url: string) => ({
-          productId: product.id,
-          url: url.trim(),
-          alt: product.name,
-        })),
-      })
+     if (!store) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
+       return NextResponse.json({ error: 'Store not found' }, { status: 400 })
+     }
 
-      // Refetch product with images
-      const productWithImages = await getPrisma().product.findUnique({
-        where: { id: product.id },
-        include: {
-          category: true,
-          images: true,
-        },
-      })
+     // Validate availability type based on store settings
+     const validAvailabilityTypes = ['IN_STOCK']
+     if (store.acceptsPreOrders) {
+       validAvailabilityTypes.push('PREORDER')
+     }
+     if (store.acceptsBackOrders) {
+       validAvailabilityTypes.push('BACKORDER')
+     }
 
-      // Create audit log for product creation
-      await createAuditLog({
-        userId: payload.userId,
-        userRole: payload.role,
-        action: 'PRODUCT_CREATED',
-        entityType: 'PRODUCT',
-        entityId: product.id,
-        afterData: {
-          name: productWithImages?.name,
-          price: productWithImages?.price,
-          stock: productWithImages?.stock,
-          categoryId: productWithImages?.categoryId,
-          storeId: productWithImages?.storeId,
-        },
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-      })
+     const finalAvailabilityType = availabilityType || 'IN_STOCK'
+     if (!validAvailabilityTypes.includes(finalAvailabilityType)) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
+       return NextResponse.json({ error: 'Invalid availability type for this store' }, { status: 400 })
+     }
 
-      return NextResponse.json({ product: productWithImages }, { status: 201 })
-    }
+     // Validate preorder/backorder specific fields
+     if (finalAvailabilityType === 'PREORDER') {
+       if (expectedArrivalDate && isNaN(new Date(expectedArrivalDate).getTime())) {
+         perf.markPrismaEnd(prismaPerfStart)
+         perf.log()
+         return NextResponse.json({ error: 'Invalid expected arrival date' }, { status: 400 })
+       }
+     }
 
-    // Create audit log for product creation
-    await createAuditLog({
-      userId: payload.userId,
-      userRole: payload.role,
-      action: 'PRODUCT_CREATED',
-      entityType: 'PRODUCT',
-      entityId: product.id,
-      afterData: {
-        name: product.name,
-        price: product.price,
-        stock: product.stock,
-        categoryId: product.categoryId,
-        storeId: product.storeId,
-      },
-      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-    })
+     if (finalAvailabilityType === 'BACKORDER') {
+       if (!expectedRestockDate) {
+         perf.markPrismaEnd(prismaPerfStart)
+         perf.log()
+         return NextResponse.json({ error: 'Expected restock date is required for backorder items' }, { status: 400 })
+       }
+       if (isNaN(new Date(expectedRestockDate).getTime())) {
+         perf.markPrismaEnd(prismaPerfStart)
+         perf.log()
+         return NextResponse.json({ error: 'Invalid expected restock date' }, { status: 400 })
+       }
+     }
 
-    return NextResponse.json({ product }, { status: 201 })
-  } catch (error) {
-    console.error('Error creating product:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
-    }, { status: 500 })
-  }
-}
+     // Create product - use first category as primary, rest will be linked via junction table
+     const primaryCategoryId = uniqueCategoryIds[0]
+
+     // Generate unique slug
+     const slug = await generateSlug({ baseText: name.trim(), target: 'Product' })
+
+     const product = await getPrisma().product.create({
+       data: {
+         storeId: store.id,
+         categoryId: primaryCategoryId,
+         name: name.trim(),
+         description: description?.trim() || null,
+         price: parseFloat(price),
+         stock: parseInt(stock),
+         brandId: brandId || null,
+         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
+         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+         availabilityType: finalAvailabilityType as any,
+         expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
+         estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays) : null,
+         preOrderNotes: preOrderNotes || null,
+         expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
+         backOrderNotes: backOrderNotes || null,
+         slug: slug,
+       },
+       include: {
+         category: true,
+         images: true,
+       },
+     })
+     perf.markPrismaEnd(prismaPerfStart)
+
+      // Create variants if provided
+      if (variants && Array.isArray(variants) && variants.length > 0) {
+        await getPrisma().productVariant.createMany({
+          data: variants.map((variant: any) => ({
+            productId: product.id,
+            color: variant.color || null,
+            size: variant.size || null,
+            age: variant.age || null,
+            sku: variant.sku || null,
+            stock: variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock) : 0,
+            active: variant.active !== undefined ? variant.active : true,
+          })),
+        });
+      }
+
+      // Create category assignments for all selected categories
+     if (uniqueCategoryIds.length > 1) {
+       await getPrisma().productCategoryAssignment.createMany({
+         data: uniqueCategoryIds.map((catId, index) => ({
+           productId: product.id,
+           productCategoryId: catId,
+           isPrimary: index === 0,
+         })),
+         skipDuplicates: true,
+       })
+     } else {
+       // For single category, create the assignment record too for consistency
+       await getPrisma().productCategoryAssignment.create({
+         data: {
+           productId: product.id,
+           productCategoryId: primaryCategoryId,
+           isPrimary: true,
+         },
+       })
+     }
+
+     // Add images if provided
+     if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
+       await getPrisma().productImage.createMany({
+         data: imageUrls.map((url: string) => ({
+           productId: product.id,
+           url: url.trim(),
+           alt: product.name,
+         })),
+       })
+
+       // Refetch product with images
+       const productWithImages = await getPrisma().product.findUnique({
+         where: { id: product.id },
+         include: {
+           category: true,
+           images: true,
+         },
+       })
+
+       // Create audit log for product creation
+       await createAuditLog({
+         userId: payload.userId,
+         userRole: payload.role,
+         action: 'PRODUCT_CREATED',
+         entityType: 'PRODUCT',
+         entityId: product.id,
+         afterData: {
+           name: productWithImages?.name,
+           price: productWithImages?.price,
+           stock: productWithImages?.stock,
+           categoryId: productWithImages?.categoryId,
+           storeId: productWithImages?.storeId,
+         },
+         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+       })
+
+       perf.log()
+       return NextResponse.json({ product: productWithImages }, { status: 201 })
+     }
+
+     // Create audit log for product creation
+     await createAuditLog({
+       userId: payload.userId,
+       userRole: payload.role,
+       action: 'PRODUCT_CREATED',
+       entityType: 'PRODUCT',
+       entityId: product.id,
+       afterData: {
+         name: product.name,
+         price: product.price,
+         stock: product.stock,
+         categoryId: product.categoryId,
+         storeId: product.storeId,
+       },
+       ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+     })
+
+     perf.log()
+     return NextResponse.json({ product }, { status: 201 })
+   } catch (error) {
+     perf.markPrismaEnd(prismaPerfStart)
+     perf.log()
+     console.error('Error creating product:', error)
+     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+     return NextResponse.json({ 
+       error: 'Internal server error', 
+       details: errorMessage 
+     }, { status: 500 })
+   }
+ }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
+import { PerformanceLogger } from '@/lib/performance'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,14 +63,12 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
     take: 100,
   })
 
-  // Compute in-memory correction for expired pre-orders (instant)
   const expiredIds = new Set(
     products
       .filter((p) => p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
       .map((p) => p.id)
   )
 
-  // Fire-and-forget DB update for expired pre-orders
   if (expiredIds.size > 0) {
     void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
   }
@@ -80,7 +79,6 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
       const reviewScore = (product.averageRating ?? 0) * DEFAULT_WEIGHTS.averageRating
       const reviewCountScore = (product._count?.productReviews ?? 0) * DEFAULT_WEIGHTS.recentReviews * 0.1
 
-      // If this was an expired pre-order, update the in-memory object
       if (expiredIds.has(product.id) && product.availabilityType === 'PREORDER') {
         return {
           ...product,
@@ -126,15 +124,15 @@ const productSelect = {
   },
 } as const
 
-// GET /api/homepage/public - Managed homepage sections + brands (public)
 export async function GET(_request: NextRequest) {
-  let sections: any[] = []
-  let brands: any[] = []
-  let prismaInstance: ReturnType<typeof getPrisma> | null = null
-
+  const perf = new PerformanceLogger('GET', _request.url)
   try {
+    const prismaStartTime = perf.markPrismaStart()
     const prisma = getPrisma()
-    prismaInstance = prisma
+    let sections: any[] = []
+    let brands: any[] = []
+    let prismaInstance: ReturnType<typeof getPrisma> | null = null
+
     try {
       await ensureDefaultHomepageSections(prisma)
       console.log('[homepage/public] ensureDefaultHomepageSections completed')
@@ -142,7 +140,6 @@ export async function GET(_request: NextRequest) {
       console.error('[homepage/public] ensureDefaultHomepageSections failed:', e)
     }
 
-    // Fetch sections with individual try/catch
     try {
       sections = await prisma.homepageSection.findMany({
         where: { isEnabled: true },
@@ -185,7 +182,6 @@ export async function GET(_request: NextRequest) {
       sections = []
     }
 
-    // Fetch brands with individual try/catch
     try {
       brands = await prisma.brand.findMany({
         where: { isActive: true },
@@ -211,83 +207,85 @@ export async function GET(_request: NextRequest) {
       console.error('[homepage/public] brand.findMany FAILED:', e)
       brands = []
     }
-  } catch (error) {
-    console.error('Error fetching public homepage sections (outer):', error)
-  }
 
-const formatted = await Promise.all((sections || []).map(async (section) => {
-    let sortedProducts: any[] = []
-    const now = new Date()
-    
-    if (section.type === 'TRENDING_NOW' && prismaInstance) {
-      const settings = section.settings as any
-      if (settings?.mode === 'AUTOMATIC') {
-        const trendingSettings = {
-          ...DEFAULT_WEIGHTS,
-          timeWindow: settings?.timeWindow || '7D',
+    perf.markPrismaEnd(prismaStartTime)
+    prismaInstance = prisma
+
+    const formatted = await Promise.all((sections || []).map(async (section) => {
+      let sortedProducts: any[] = []
+      const now = new Date()
+
+      if (section.type === 'TRENDING_NOW' && prismaInstance) {
+        const settings = section.settings as any
+        if (settings?.mode === 'AUTOMATIC') {
+          const trendingSettings = {
+            ...DEFAULT_WEIGHTS,
+            timeWindow: settings?.timeWindow || '7D',
+          }
+          sortedProducts = await getAutomaticTrendingProducts(prismaInstance, trendingSettings, settings?.maxProducts || 20)
+        } else {
+          sortedProducts = (section.products || [])
+            .map((sp: any) => sp.product)
+            .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
         }
-        sortedProducts = await getAutomaticTrendingProducts(prismaInstance, trendingSettings, settings?.maxProducts || 20)
       } else {
         sortedProducts = (section.products || [])
           .map((sp: any) => sp.product)
           .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
       }
-    } else {
-      sortedProducts = (section.products || [])
-        .map((sp: any) => sp.product)
-        .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
-    }
 
-    // Compute in-memory correction for expired pre-orders in this section (instant)
-    const expiredIds = new Set(
-      sortedProducts
-        .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
-        .map((p: any) => p.id)
-    )
+      const expiredIds = new Set(
+        sortedProducts
+          .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
+          .map((p: any) => p.id)
+      )
 
-    // Fire-and-forget DB update for expired pre-orders
-    if (expiredIds.size > 0) {
-      void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
-    }
+      if (expiredIds.size > 0) {
+        void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+      }
 
-    sortedProducts = sortedProducts.map((p: any) =>
-      p && expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
-    )
+      sortedProducts = sortedProducts.map((p: any) =>
+        p && expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
+      )
 
-    return {
-      id: section.id,
-      name: section.name,
-      slug: section.slug,
-      type: section.type,
-      subtitle: section.subtitle,
-      displayOrder: section.displayOrder,
-      products: sortedProducts,
-vendors: (section.vendors || [])
-        .map((sv: any) => ({
-          ...sv.vendor,
-          slug: sv.vendor.store?.slug ?? null,
-          badgeTier: sv.vendor.store?.badgeTier ?? null,
-          storeName: sv.vendor.store?.name ?? sv.vendor.name,
-          productCount: sv.vendor.store?._count?.products ?? 0,
-        }))
-        .filter(Boolean),
-    }
-  }))
+      return {
+        id: section.id,
+        name: section.name,
+        slug: section.slug,
+        type: section.type,
+        subtitle: section.subtitle,
+        displayOrder: section.displayOrder,
+        products: sortedProducts,
+        vendors: (section.vendors || [])
+          .map((sv: any) => ({
+            ...sv.vendor,
+            slug: sv.vendor.store?.slug ?? null,
+            badgeTier: sv.vendor.store?.badgeTier ?? null,
+            storeName: sv.vendor.store?.name ?? sv.vendor.name,
+            productCount: sv.vendor.store?._count?.products ?? 0,
+          }))
+          .filter(Boolean),
+      }
+    }))
 
-  const formattedBrands = (brands || []).map((brand) => ({
-    id: brand.id,
-    name: brand.name,
-    slug: brand.slug,
-    logo: brand.logo,
-    description: brand.description,
-    productCount: brand._count?.products ?? 0,
-  }))
+    const formattedBrands = (brands || []).map((brand) => ({
+      id: brand.id,
+      name: brand.name,
+      slug: brand.slug,
+      logo: brand.logo,
+      description: brand.description,
+      productCount: brand._count?.products ?? 0,
+    }))
 
-  const response = NextResponse.json({
-    sections: formatted,
-    brands: formattedBrands,
-  })
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-  response.headers.set('Pragma', 'no-cache')
-  return response
+    const response = NextResponse.json({
+      sections: formatted,
+      brands: formattedBrands,
+    })
+    perf.log()
+    return response
+  } catch (error) {
+    perf.log()
+    console.error('Error fetching public homepage sections (outer):', error)
+    return NextResponse.json({ sections: [], brands: [] }, { status: 200 })
+  }
 }

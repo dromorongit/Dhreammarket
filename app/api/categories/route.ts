@@ -1,12 +1,17 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { PerformanceLogger } from '@/lib/performance'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const perf = new PerformanceLogger(request.method, request.url)
+  const prismaPerfStart = perf.markPrismaStart()
   try {
     // During build, if database is not available, return empty categories to allow static generation
     if (process.env.NEXT_PHASE === 'phase-production-build') {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
       return NextResponse.json({ categories: [] })
     }
     // Fetch only top-level active product categories with children for hierarchical display
@@ -29,6 +34,7 @@ export async function GET() {
         },
       },
     })
+    perf.markPrismaEnd(prismaPerfStart)
 
     // Return hierarchical list of categories
     const hierarchicalCategories = categories.map(cat => ({
@@ -42,13 +48,13 @@ export async function GET() {
     console.log('[API] Categories returned:', hierarchicalCategories.length)
     console.log('[API] First category:', JSON.stringify(hierarchicalCategories[0], null, 2))
     console.log('[API] All category IDs:', hierarchicalCategories.map(c => c.id))
-    
+
     const response = NextResponse.json({ categories: hierarchicalCategories })
-    // Prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-    response.headers.set('Pragma', 'no-cache')
+    perf.log()
     return response
   } catch (error) {
+    perf.markPrismaEnd(prismaPerfStart)
+    perf.log()
     console.error('Error fetching categories:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
