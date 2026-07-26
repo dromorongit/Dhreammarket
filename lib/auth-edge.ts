@@ -11,7 +11,6 @@ export interface TokenPayload {
 
 export async function verifyTokenEdge(token: string): Promise<TokenPayload | null> {
   if (!JWT_SECRET) {
-    console.error('[AUTH_EDGE] JWT_SECRET is not configured')
     return null
   }
   try {
@@ -31,7 +30,6 @@ export async function verifyTokenEdge(token: string): Promise<TokenPayload | nul
     }
     return null
   } catch (error) {
-    console.error('[AUTH_EDGE] Token verification error:', error)
     return null
   }
 }

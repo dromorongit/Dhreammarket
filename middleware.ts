@@ -12,8 +12,6 @@ const protectedRoutes: Record<string, string[]> = {
 }
 
 export async function middleware(request: NextRequest) {
-  console.log('[MIDDLEWARE] Request:', request.method, request.nextUrl.pathname)
-
   const pathname = request.nextUrl.pathname
   const search = request.nextUrl.search
   const fullUrl = `${pathname}${search || ''}`
@@ -33,34 +31,25 @@ export async function middleware(request: NextRequest) {
     if (!isAuthRoute) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', fullUrl)
-      console.log('[MIDDLEWARE] No token – redirecting to login')
       return NextResponse.redirect(loginUrl)
     }
-    console.log('[MIDDLEWARE] No token – auth route, redirecting to login')
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   const payload: TokenPayload | null = await verifyTokenEdge(token)
-  console.log('[MIDDLEWARE] Token verification payload:', payload ? 'valid' : 'null/invalid')
 
   if (!payload) {
     if (!isAuthRoute) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('redirect', fullUrl)
-      console.log('[MIDDLEWARE] Invalid token – redirecting to login')
       return NextResponse.redirect(loginUrl)
     }
-    console.log('[MIDDLEWARE] Invalid token – auth route, redirecting to login')
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  console.log('[MIDDLEWARE] User authenticated:', payload.userId, 'role:', payload.role)
-
   const allowedRoles = protectedRoutes[matchedRoute]
-  console.log('[MIDDLEWARE] Allowed roles for', matchedRoute, ':', allowedRoles, 'user role:', payload.role)
 
   if (!allowedRoles.includes(payload.role)) {
-    console.log('[MIDDLEWARE] Role not authorized – redirecting to home')
     return NextResponse.redirect(new URL('/', request.url))
   }
 

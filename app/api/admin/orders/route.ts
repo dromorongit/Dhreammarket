@@ -43,80 +43,77 @@ export async function GET(request: NextRequest) {
       where.fulfillmentStatus = fulfillmentStatus
     }
 
-const [orders, total] = await Promise.all([
-       prisma.order.findMany({
-         where,
-         skip,
-         take: limit,
-         orderBy: { createdAt: 'desc' },
-         include: {
-           user: {
-             select: {
-               id: true,
-               email: true,
-               role: true,
-               profile: {
-                 select: {
-                   firstName: true,
-                   lastName: true,
-                   phone: true,
-                 },
-               },
-             },
-           },
-           items: {
-             select: {
-               id: true,
-               quantity: true,
-               price: true,
-               product: {
-                 select: {
-                   store: {
-                     select: {
-                       id: true,
-                       name: true,
-                       mainPhoneNumber: true,
-                     },
-                   },
-                 },
-               },
-             },
-           },
-           _count: {
-             select: { items: true },
-           },
-           payment: {
-             select: {
-               id: true,
-               status: true,
-               amount: true,
-               reference: true,
-             },
-           },
-         },
-       }),
-       prisma.order.count({ where }),
-     ])
+const [orders, total, summary, paymentSummary] = await Promise.all([
+        prisma.order.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                profile: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+            items: {
+              select: {
+                id: true,
+                quantity: true,
+                price: true,
+                product: {
+                  select: {
+                    store: {
+                      select: {
+                        id: true,
+                        name: true,
+                        mainPhoneNumber: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            _count: {
+              select: { items: true },
+            },
+            payment: {
+              select: {
+                id: true,
+                status: true,
+                amount: true,
+                reference: true,
+              },
+            },
+          },
+        }),
+        prisma.order.count({ where }),
+        prisma.order.groupBy({
+          by: ['status'],
+          _count: true,
+        }),
+        prisma.order.groupBy({
+          by: ['paymentStatus'],
+          _count: true,
+        }),
+      ])
 
-    const ordersWithDaysOutstanding = orders.map((order) => ({
-          ...order,
-       daysOutstanding: order.orderType !== 'NORMAL' 
-         ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-         : undefined,
-     }))
+const ordersWithDaysOutstanding = orders.map((order) => ({
+        ...order,
+        daysOutstanding: order.orderType !== 'NORMAL'
+          ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+          : undefined,
+      }))
 
     const totalPages = Math.ceil(total / limit)
-
-    // Calculate summary stats
-    const summary = await prisma.order.groupBy({
-      by: ['status'],
-      _count: true,
-    })
-
-    const paymentSummary = await prisma.order.groupBy({
-      by: ['paymentStatus'],
-      _count: true,
-    })
 
 return NextResponse.json({
       orders: ordersWithDaysOutstanding.map((order) => {

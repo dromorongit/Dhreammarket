@@ -325,6 +325,11 @@ export async function getAdminRestockAnalytics(): Promise<{
         actualArrivalDate: { not: null },
         expectedArrivalDate: { not: null },
       },
+      select: {
+        expectedArrivalDate: true,
+        actualArrivalDate: true,
+        quantityReceived: true,
+      },
     }),
     prisma.restockOrder.groupBy({
       by: ['productId'],

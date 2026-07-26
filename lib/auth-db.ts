@@ -17,19 +17,15 @@ export async function validateSession(sessionId: string): Promise<SessionValidat
     })
 
     if (!session) {
-      console.log('[AUTH_DB] Session not found:', sessionId)
       return { valid: false, reason: 'SESSION_NOT_FOUND' }
     }
 
     if (session.isExpired) {
-      console.log('[AUTH_DB] Session expired:', sessionId)
       return { valid: false, reason: 'SESSION_EXPIRED' }
     }
 
-    console.log('[AUTH_DB] Session valid:', sessionId)
     return { valid: true }
   } catch (error) {
-    console.error('[AUTH_DB] Error validating session:', error)
     return { valid: false, reason: 'VALIDATION_ERROR' }
   }
 }
@@ -61,7 +57,6 @@ export async function getUserStatus(userId: string, role: string): Promise<UserS
       isOnboarded,
     }
   } catch (error) {
-    console.error('[AUTH_DB] Error fetching user status:', error)
     return { isEmailVerified: false, isOnboarded: true }
   }
 }

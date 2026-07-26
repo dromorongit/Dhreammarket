@@ -41,21 +41,16 @@ export async function getAvailableStock(productId: string): Promise<{
   reservedQuantity: number
   stock: number
 }> {
-  console.log('[DEMAND FORECAST] getAvailableStock called for product:', productId)
   const prisma = getPrisma()
-  console.log('[DEMAND FORECAST] Query: prisma.product.findUnique for product:', productId)
   const product = await prisma.product.findUnique({
     where: { id: productId },
     select: { stock: true, reservedQuantity: true },
   })
-  console.log('[DEMAND FORECAST] Product found:', product ? 'yes' : 'no')
 
   if (!product) {
-    console.log('[DEMAND FORECAST] Returning zero stock for missing product')
     return { availableStock: 0, reservedQuantity: 0, stock: 0 }
   }
 
-  console.log('[DEMAND FORECAST] Returning stock data for product:', productId)
   return {
     stock: product.stock,
     reservedQuantity: product.reservedQuantity,
@@ -64,10 +59,8 @@ export async function getAvailableStock(productId: string): Promise<{
 }
 
 export async function getProductDemandMetrics(productId: string): Promise<DemandMetrics | null> {
-  console.log('[DEMAND FORECAST] getProductDemandMetrics called for product:', productId)
   const prisma = getPrisma()
 
-  console.log('[DEMAND FORECAST] Query: prisma.product.findUnique for product:', productId)
   const product = await prisma.product.findUnique({
     where: { id: productId },
     select: {
@@ -78,17 +71,14 @@ export async function getProductDemandMetrics(productId: string): Promise<Demand
       lowStockThreshold: true,
     },
   })
-  console.log('[DEMAND FORECAST] Product found:', product ? 'yes' : 'no')
 
   if (!product) {
-    console.log('[DEMAND FORECAST] Returning null for missing product')
     return null
   }
 
   const availableStock = product.stock - product.reservedQuantity
   const threshold = product.lowStockThreshold ?? 5
 
-  console.log('[DEMAND FORECAST] Query: prisma.order.count PREORDER, prisma.order.count BACKORDER, prisma.orderItem.findMany')
   const [preorderOrders, backorderOrders, recentOrders] = await Promise.all([
     prisma.order.count({
       where: {
@@ -115,7 +105,6 @@ export async function getProductDemandMetrics(productId: string): Promise<Demand
       select: { quantity: true, createdAt: true },
     }),
   ])
-  console.log('[DEMAND FORECAST] Order counts - preorder:', preorderOrders, 'backorder:', backorderOrders, 'recent orders count:', recentOrders.length)
 
   const orderCount = recentOrders.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -137,7 +126,6 @@ export async function getProductDemandMetrics(productId: string): Promise<Demand
     recommendedRestock = Math.ceil(avgDailySales * 30)
   }
 
-  console.log('[DEMAND FORECAST] Returning metrics for product:', productId)
   return {
     productId: product.id,
     productName: product.name,
@@ -159,10 +147,8 @@ export async function getProductDemandMetrics(productId: string): Promise<Demand
 }
 
 export async function getVendorDemandAnalytics(vendorId: string): Promise<VendorDemandAnalytics> {
-  console.log('[DEMAND FORECAST] getVendorDemandAnalytics called for vendor:', vendorId)
   const prisma = getPrisma()
 
-  console.log('[DEMAND FORECAST] Query: prisma.store.findUnique for vendor:', vendorId)
   const store = await prisma.store.findUnique({
     where: { userId: vendorId },
     include: {
@@ -171,10 +157,8 @@ export async function getVendorDemandAnalytics(vendorId: string): Promise<Vendor
       },
     },
   })
-  console.log('[DEMAND FORECAST] Store found:', store ? 'yes' : 'no', 'products count:', store?.products?.length || 0)
 
   if (!store || store.products.length === 0) {
-    console.log('[DEMAND FORECAST] Returning empty analytics for vendor:', vendorId)
     return {
       mostRequested: [],
       lowStockProducts: [],
@@ -186,7 +170,6 @@ export async function getVendorDemandAnalytics(vendorId: string): Promise<Vendor
 
   const productIds = store.products.map((p) => p.id)
 
-  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy x4 for vendor:', vendorId)
   const [preorderCounts, backorderCounts, completedOrderCounts, recentSales] = await Promise.all([
     prisma.orderItem.groupBy({
       by: ['productId'],
@@ -225,7 +208,6 @@ export async function getVendorDemandAnalytics(vendorId: string): Promise<Vendor
       select: { productId: true, quantity: true },
     }),
   ])
-  console.log('[DEMAND FORECAST] Vendor demand analytics queries completed for vendor:', vendorId)
 
   const productMap = new Map(store.products.map((p) => [p.id, p]))
 
@@ -276,19 +258,48 @@ export async function getVendorDemandAnalytics(vendorId: string): Promise<Vendor
     }))
     .filter((p) => p.availableStock === 0)
 
-  const recommendedRestocks = await Promise.all(
-    store.products
-      .filter((p) => p.stock - p.reservedQuantity < (p.lowStockThreshold ?? 5))
-      .map(async (p) => {
-        const metrics = await getProductDemandMetrics(p.id)
-        return {
-          productId: p.id,
-          productName: p.name,
-          recommendedQuantity: metrics?.recommendedRestock ?? Math.ceil((p.lowStockThreshold ?? 5) * 2),
-          daysUntilStockout: metrics?.daysUntilStockout || null,
-        }
+  const lowStockProductIds = lowStockProducts.map((p) => p.productId)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+  const lowStockSales = lowStockProductIds.length > 0
+    ? await prisma.orderItem.findMany({
+        where: {
+          productId: { in: lowStockProductIds },
+          order: {
+            paymentStatus: 'PAID',
+            createdAt: { gte: thirtyDaysAgo },
+          },
+        },
+        select: { productId: true, quantity: true },
       })
-  )
+    : []
+
+  const salesByProduct = new Map<string, number>()
+  for (const item of lowStockSales) {
+    salesByProduct.set(item.productId, (salesByProduct.get(item.productId) || 0) + item.quantity)
+  }
+
+  const recommendedRestocks = lowStockProducts.map((p) => {
+    const availableStock = p.availableStock
+    const threshold = p.threshold
+    const orderCount = salesByProduct.get(p.productId) || 0
+    const avgDailySales = orderCount / 30
+
+    let recommendedQuantity = 0
+    let daysUntilStockout: number | null = null
+
+    if (avgDailySales > 0 && availableStock > 0) {
+      daysUntilStockout = Math.floor(availableStock / avgDailySales)
+      recommendedQuantity = Math.ceil(avgDailySales * 30)
+    }
+
+    return {
+      productId: p.productId,
+      productName: p.productName,
+      recommendedQuantity,
+      daysUntilStockout,
+    }
+  })
 
   const demandRankings = Array.from(demandByProduct.entries())
     .map(([productId, demand]) => ({
@@ -310,15 +321,8 @@ export async function getVendorDemandAnalytics(vendorId: string): Promise<Vendor
 }
 
 export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
-  console.log('[DEMAND FORECAST] getAdminDemandAnalytics called')
   const prisma = getPrisma()
 
-  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy PREORDER')
-  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy BACKORDER')
-  console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy category demand')
-  console.log('[DEMAND FORECAST] Query: prisma.product.findMany for needed products')
-  console.log('[DEMAND FORECAST] Query: prisma.store.findMany for needed stores')
-  console.log('[DEMAND FORECAST] Query: raw SQL stockoutFrequency')
   const [mostPreordered, mostBackordered, categoryDemand] = (await Promise.all([
     prisma.orderItem.groupBy({
       by: ['productId'],
@@ -346,7 +350,6 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
       _sum: { quantity: true },
     }),
   ])) as any[]
-  console.log('[DEMAND FORECAST] Admin demand analytics queries completed')
 
   const productIds = Array.from(new Set([
     ...mostPreordered.map((p: any) => p.productId),
@@ -358,14 +361,12 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     where: { id: { in: productIds } },
     select: { id: true, name: true, categoryId: true, storeId: true },
   })
-  console.log('[DEMAND FORECAST] Query: prisma.product.findMany for productIds count:', productIds.length)
 
   const storeIds = Array.from(new Set(products.map((p) => p.storeId).filter(Boolean))) as string[]
   const stores = await prisma.store.findMany({
     where: { id: { in: storeIds } },
     select: { id: true, name: true },
   })
-  console.log('[DEMAND FORECAST] Query: prisma.store.findMany for storeIds count:', storeIds.length)
 
   const productMap = new Map(products.map((p) => [p.id, p]))
   const storeMap = new Map(stores.map((s) => [s.id, s.name]))
@@ -383,10 +384,18 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
   }))
 
   const categoryMap = new Map<string, number>()
+  const vendorDemandMap = new Map<string, number>()
   for (const item of categoryDemand) {
     const product = productMap.get(item.productId)
+    const qty = item._sum.quantity || 0
     if (product?.categoryId) {
-      categoryMap.set(product.categoryId, (categoryMap.get(product.categoryId) || 0) + (item._sum.quantity || 0))
+      categoryMap.set(product.categoryId, (categoryMap.get(product.categoryId) || 0) + qty)
+    }
+    if (product?.storeId) {
+      const vendorName = storeMap.get(product.storeId)
+      if (vendorName) {
+        vendorDemandMap.set(vendorName, (vendorDemandMap.get(vendorName) || 0) + qty)
+      }
     }
   }
 
@@ -394,24 +403,12 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     where: { id: { in: Array.from(categoryMap.keys()) } },
     select: { id: true, name: true },
   })
-  console.log('[DEMAND FORECAST] Query: prisma.productCategory.findMany, categories count:', categories.length)
 
   const topDemandCategories = categories.map((cat) => ({
     categoryId: cat.id,
     categoryName: cat.name,
     demandCount: categoryMap.get(cat.id) || 0,
   }))
-
-  const vendorDemandMap = new Map<string, number>()
-  for (const item of categoryDemand) {
-    const product = productMap.get(item.productId)
-    if (product?.storeId) {
-      const vendorName = storeMap.get(product.storeId)
-      if (vendorName) {
-        vendorDemandMap.set(vendorName, (vendorDemandMap.get(vendorName) || 0) + (item._sum.quantity || 0))
-      }
-    }
-  }
 
   const topDemandVendors = Array.from(vendorDemandMap.entries())
     .map(([vendorName, demandCount]) => ({ vendorId: vendorName.toLowerCase().replace(/\s+/g, '-'), vendorName, demandCount }))
@@ -426,9 +423,7 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     FROM "products" p
     WHERE p."stock" - p."reservedQuantity" <= 0
   `
-  console.log('[DEMAND FORECAST] Query: raw SQL stockoutFrequency count:', stockoutFrequencyResult.length)
 
-  console.log('[DEMAND FORECAST] Returning admin demand analytics')
   return {
     mostPreorderedProducts,
     mostBackorderedProducts,
@@ -446,11 +441,9 @@ export async function getWaitingCustomerCount(
   productId: string,
   availabilityType: ProductAvailabilityType
 ): Promise<number> {
-  console.log('[DEMAND FORECAST] getWaitingCustomerCount called for product:', productId, 'type:', availabilityType)
   const prisma = getPrisma()
 
   if (availabilityType === 'PREORDER') {
-    console.log('[DEMAND FORECAST] Query: prisma.order.count PREORDER for product:', productId)
     return await prisma.order.count({
       where: {
         orderType: 'PREORDER',
@@ -462,7 +455,6 @@ export async function getWaitingCustomerCount(
   }
 
   if (availabilityType === 'BACKORDER') {
-    console.log('[DEMAND FORECAST] Query: prisma.order.count BACKORDER for product:', productId)
     return await prisma.order.count({
       where: {
         orderType: 'BACKORDER',
@@ -473,23 +465,18 @@ export async function getWaitingCustomerCount(
     })
   }
 
-  console.log('[DEMAND FORECAST] Returning 0 for unknown availability type:', availabilityType)
   return 0
 }
 
 export async function trackProductView(productId: string): Promise<void> {
-  console.log('[DEMAND FORECAST] trackProductView called for product:', productId)
   const prisma = getPrisma()
 
-  console.log('[DEMAND FORECAST] Query: prisma.product.update for product:', productId)
   await prisma.product.update({
     where: { id: productId },
     data: { updatedAt: new Date() },
   }).catch((err) => {
-    console.error('[DEMAND FORECAST] trackProductView error:', err)
-    console.error('[DEMAND FORECAST] trackProductView error stack:', (err as any)?.stack)
+    console.error('trackProductView error:', err)
   })
-  console.log('[DEMAND FORECAST] trackProductView completed for product:', productId)
 }
 
 export function getStockStatus(stock: number, threshold: number): {

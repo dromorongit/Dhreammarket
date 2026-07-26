@@ -8,15 +8,11 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 export function getPrisma(): PrismaClient {
-  console.log('[PRISMA] getPrisma called')
   if (!globalForPrisma.prisma) {
     const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db'
-    console.log('[PRISMA] Initializing new Prisma client, DATABASE_URL starts with:', databaseUrl.substring(0, 10))
-    
-    // Use PostgreSQL adapter if DATABASE_URL is provided, otherwise use default SQLite
+
     if (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) {
-      console.log('[PRISMA] Using PostgreSQL adapter')
-      const pool = new Pool({ 
+      const pool = new Pool({
         connectionString: databaseUrl,
         max: 10,
         idleTimeoutMillis: 30000,
@@ -26,14 +22,16 @@ export function getPrisma(): PrismaClient {
       })
       const adapter = new PrismaPg(pool)
       globalForPrisma.pool = pool
-      globalForPrisma.prisma = new PrismaClient({ adapter, log: ['query', 'info', 'warn', 'error'] })
+      globalForPrisma.prisma = new PrismaClient({
+        adapter,
+        log: process.env.NODE_ENV !== 'production' ? ['query', 'info', 'warn', 'error'] : ['error'],
+      })
     } else {
-      // Fallback to default SQLite connection
-      console.log('[PRISMA] Using SQLite connection')
-      globalForPrisma.prisma = new PrismaClient()
+      globalForPrisma.prisma = new PrismaClient({
+        log: process.env.NODE_ENV !== 'production' ? ['query', 'info', 'warn', 'error'] : ['error'],
+      })
     }
   }
-  console.log('[PRISMA] Returning existing Prisma client')
   return globalForPrisma.prisma
 }
 

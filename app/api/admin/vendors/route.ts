@@ -70,72 +70,97 @@ export async function GET(request: NextRequest) {
     const total = await prisma.store.count({ where })
     const totalPages = Math.ceil(total / limit)
 
-    // Fetch revenue and payout data for each vendor
-    const vendorsWithMetrics = await Promise.all(storesWithProducts.map(async (store) => {
-      const productIds = store.products.map(p => p.id)
-      
-      // Calculate gross revenue from completed/paid orders
+    // Fetch revenue and payout data for all vendors in bulk
+    const productIds = storesWithProducts.flatMap((store) => store.products.map((p) => p.id))
+    const vendorUserIds = storesWithProducts.map((store) => store.userId)
+
+    const paidOutByVendor = new Map<string, number>()
+    const grossRevenueByProduct = new Map<string, number>()
+    const vendorEarningsByProduct = new Map<string, number>()
+
+    await Promise.all([
+      vendorUserIds.length > 0
+        ? prisma.vendorPayout.groupBy({
+            by: ['vendorId'],
+            where: {
+              vendorId: { in: vendorUserIds },
+              status: 'PAID',
+            },
+            _sum: { amount: true },
+          }).then((payoutGroups) => {
+            for (const group of payoutGroups) {
+              paidOutByVendor.set(group.vendorId, group._sum.amount || 0)
+            }
+          })
+        : Promise.resolve(),
+      productIds.length > 0
+        ? prisma.orderItem.findMany({
+            where: {
+              productId: { in: productIds },
+              order: {
+                paymentStatus: 'PAID',
+                status: { in: ['COMPLETED', 'DELIVERED'] },
+              },
+            },
+            select: {
+              productId: true,
+              price: true,
+              quantity: true,
+              vendorEarnings: true,
+            },
+          }).then((allOrderItems) => {
+            for (const item of allOrderItems) {
+              grossRevenueByProduct.set(
+                item.productId,
+                (grossRevenueByProduct.get(item.productId) || 0) + item.price * item.quantity
+              )
+              vendorEarningsByProduct.set(
+                item.productId,
+                (vendorEarningsByProduct.get(item.productId) || 0) + (item.vendorEarnings || 0)
+              )
+            }
+          })
+        : Promise.resolve(),
+    ])
+
+    const vendorsWithMetrics = storesWithProducts.map((store) => {
+      const storeProductIds = store.products.map((p) => p.id)
+
       let grossRevenue = 0
       let outstandingBalance = 0
-      if (productIds.length > 0) {
-        console.log('[ADMIN VENDORS] Query: prisma.orderItem.findMany for vendor:', store.id)
-        const orderItems = await prisma.orderItem.findMany({
-          where: {
-            productId: { in: productIds },
-            order: {
-              paymentStatus: 'PAID',
-              status: { in: ['COMPLETED', 'DELIVERED'] },
-            },
-          },
-          select: {
-            price: true,
-            quantity: true,
-            vendorEarnings: true,
-          },
-        })
-        
-        grossRevenue = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-        outstandingBalance = orderItems.reduce((sum, item) => sum + (item.vendorEarnings || 0), 0)
+      for (const pid of storeProductIds) {
+        grossRevenue += grossRevenueByProduct.get(pid) || 0
+        outstandingBalance += vendorEarningsByProduct.get(pid) || 0
       }
 
-      // Get total payouts for this vendor
-      console.log('[ADMIN VENDORS] Query: prisma.vendorPayout.aggregate for vendor:', store.userId)
-      const totalPayouts = await prisma.vendorPayout.aggregate({
-        where: {
-          vendorId: store.userId,
-          status: 'PAID',
-        },
-        _sum: { amount: true },
-      })
-
-      const paidOut = totalPayouts._sum.amount || 0
+      const paidOut = paidOutByVendor.get(store.userId) || 0
       outstandingBalance = Math.max(0, outstandingBalance - paidOut)
 
-return {
-          id: store.id,
-          name: store.name,
-          description: store.description,
-          isVerified: store.isVerified,
-          isFeatured: store.isFeatured,
-          badgeTier: store.badgeTier,
-          featuredUntil: store.featuredUntil ? store.featuredUntil.toISOString() : null,
+      return {
+        id: store.id,
+        name: store.name,
+        description: store.description,
+        isVerified: store.isVerified,
+        isFeatured: store.isFeatured,
+        badgeTier: store.badgeTier,
+        featuredUntil: store.featuredUntil ? store.featuredUntil.toISOString() : null,
+        createdAt: store.user.createdAt,
+        mobileNumber: store.mainPhoneNumber,
+        location: store.location,
+        user: {
+          id: store.user.id,
+          email: store.user.email,
+          role: store.user.role,
           createdAt: store.user.createdAt,
-          mobileNumber: store.mainPhoneNumber,
-          location: store.location,
-          user: {
-            id: store.user.id,
-            email: store.user.email,
-            role: store.user.role,
-            createdAt: store.user.createdAt,
-          },
-          _count: {
-            products: store._count.products,
-          },
-          grossRevenue,
-          totalPayouts: paidOut,
-          outstandingBalance,
-        }
-    }))
+        },
+        _count: {
+          products: store._count.products,
+        },
+        grossRevenue,
+        totalPayouts: paidOut,
+        outstandingBalance,
+      }
+    })
 
     const vendors = vendorsWithMetrics
     console.log('[ADMIN VENDORS] Returning response, vendors count:', vendors.length)
