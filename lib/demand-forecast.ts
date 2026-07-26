@@ -316,9 +316,10 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
   console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy PREORDER')
   console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy BACKORDER')
   console.log('[DEMAND FORECAST] Query: prisma.orderItem.groupBy category demand')
-  console.log('[DEMAND FORECAST] Query: prisma.store.findMany')
-  console.log('[DEMAND FORECAST] Query: prisma.product.findMany')
-  const [mostPreordered, mostBackordered, categoryDemand, vendorDemand, stockoutFrequency] = (await Promise.all([
+  console.log('[DEMAND FORECAST] Query: prisma.product.findMany for needed products')
+  console.log('[DEMAND FORECAST] Query: prisma.store.findMany for needed stores')
+  console.log('[DEMAND FORECAST] Query: raw SQL stockoutFrequency')
+  const [mostPreordered, mostBackordered, categoryDemand] = (await Promise.all([
     prisma.orderItem.groupBy({
       by: ['productId'],
       where: {
@@ -344,23 +345,6 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
       },
       _sum: { quantity: true },
     }),
-    prisma.store.findMany({
-      select: {
-        id: true,
-        name: true,
-        products: {
-          select: { id: true },
-        },
-      },
-    }),
-    prisma.product.findMany({
-      select: {
-        id: true,
-        name: true,
-        stock: true,
-        reservedQuantity: true,
-      },
-    }),
   ])) as any[]
   console.log('[DEMAND FORECAST] Admin demand analytics queries completed')
 
@@ -376,7 +360,15 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
   })
   console.log('[DEMAND FORECAST] Query: prisma.product.findMany for productIds count:', productIds.length)
 
+  const storeIds = Array.from(new Set(products.map((p) => p.storeId).filter(Boolean))) as string[]
+  const stores = await prisma.store.findMany({
+    where: { id: { in: storeIds } },
+    select: { id: true, name: true },
+  })
+  console.log('[DEMAND FORECAST] Query: prisma.store.findMany for storeIds count:', storeIds.length)
+
   const productMap = new Map(products.map((p) => [p.id, p]))
+  const storeMap = new Map(stores.map((s) => [s.id, s.name]))
 
   const mostPreorderedProducts = mostPreordered.map((item: any) => ({
     productId: item.productId,
@@ -410,18 +402,14 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     demandCount: categoryMap.get(cat.id) || 0,
   }))
 
-  const vendorProductMap = new Map<string, string>()
-  for (const store of vendorDemand) {
-    for (const p of store.products) {
-      vendorProductMap.set(p.id, store.name)
-    }
-  }
-
   const vendorDemandMap = new Map<string, number>()
   for (const item of categoryDemand) {
-    const vendorName = vendorProductMap.get(item.productId)
-    if (vendorName) {
-      vendorDemandMap.set(vendorName, (vendorDemandMap.get(vendorName) || 0) + (item._sum.quantity || 0))
+    const product = productMap.get(item.productId)
+    if (product?.storeId) {
+      const vendorName = storeMap.get(product.storeId)
+      if (vendorName) {
+        vendorDemandMap.set(vendorName, (vendorDemandMap.get(vendorName) || 0) + (item._sum.quantity || 0))
+      }
     }
   }
 
@@ -430,13 +418,15 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     .sort((a, b) => b.demandCount - a.demandCount)
     .slice(0, 10)
 
-  const stockoutFrequencyResult = stockoutFrequency
-    .map((p: any) => ({
-      productId: p.id,
-      productName: p.name,
-      stockoutCount: p.stock - p.reservedQuantity <= 0 ? 1 : 0,
-    }))
-    .filter((p: any) => p.stockoutCount > 0)
+  const stockoutFrequencyResult = await prisma.$queryRaw<Array<{
+    product_id: string
+    product_name: string
+  }>>`
+    SELECT p.id as product_id, p.name as product_name
+    FROM products p
+    WHERE p.stock - p.reserved_quantity <= 0
+  `
+  console.log('[DEMAND FORECAST] Query: raw SQL stockoutFrequency count:', stockoutFrequencyResult.length)
 
   console.log('[DEMAND FORECAST] Returning admin demand analytics')
   return {
@@ -444,7 +434,11 @@ export async function getAdminDemandAnalytics(): Promise<AdminDemandAnalytics> {
     mostBackorderedProducts,
     topDemandCategories,
     topDemandVendors,
-    stockoutFrequency: stockoutFrequencyResult,
+    stockoutFrequency: stockoutFrequencyResult.map((p) => ({
+      productId: p.product_id,
+      productName: p.product_name,
+      stockoutCount: 1,
+    })),
   }
 }
 

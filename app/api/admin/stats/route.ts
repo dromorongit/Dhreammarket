@@ -9,86 +9,53 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
-  console.log('[ADMIN STATS API] Route reached');
-  console.log('[ADMIN STATS] GET request started')
   try {
     const prisma = getPrisma()
-    console.log('[ADMIN STATS] Prisma client obtained')
-    console.log('[ADMIN STATS API] Query Params:', Object.fromEntries(new URL(request.url).searchParams.entries()));
-    // Check admin authorization
     const authCheck = requireAdmin()
-    console.log('[ADMIN STATS] Auth check result:', authCheck instanceof NextResponse ? `response ${authCheck.status}` : 'authorized')
     if (authCheck instanceof NextResponse) {
-      console.log('[ADMIN STATS] Auth check returned error response:', authCheck.status)
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return authCheck
     }
 
-    // Get counts and financial data
-    console.log('[ADMIN STATS] Starting Prisma queries for dashboard stats')
-    console.log('[ADMIN STATS] Query: prisma.user.count()')
-    console.log('[ADMIN STATS] Query: prisma.user.count({ role: VENDOR })')
-    console.log('[ADMIN STATS] Query: prisma.product.count()')
-    console.log('[ADMIN STATS] Query: prisma.order.count()')
-    console.log('[ADMIN STATS] Executing prisma.order.findMany({ paymentStatus: PAID })')
-    console.log('[ADMIN STATS] Query: prisma.store.count({ isVerified: true })')
-    console.log('[ADMIN STATS] Query: prisma.vendorVerificationApplication.count({ status: PENDING_REVIEW })')
-    console.log('[ADMIN STATS] Executing prisma.order.findMany({ recent 10 })')
-    console.log('[ADMIN STATS] Executing prisma.user.findMany({ recent 10 })')
-    console.log('[ADMIN STATS] Executing prisma.store.findMany({ recent 10 })')
-    console.log('[ADMIN STATS] Executing prisma.order.findMany({ PREORDER paid })')
-    console.log('[ADMIN STATS] Executing prisma.order.findMany({ BACKORDER paid })')
-    console.log('[ADMIN STATS] Executing prisma.order.count({ overdue })')
-    console.log('[ADMIN STATS] Executing prisma.order.findMany({ completed preorders })')
-    console.log('[ADMIN STATS] Executing prisma.order.count({ READY_TO_FULFILL })')
-    console.log('[ADMIN STATS] Executing prisma.order.count({ PREORDER awaiting stock })')
-    console.log('[ADMIN STATS] Executing prisma.order.count({ BACKORDER awaiting stock })')
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
     const [
       totalUsers,
       totalVendors,
       totalProducts,
       totalOrders,
-      paidOrders,
       verifiedVendors,
       pendingVerifications,
       recentOrders,
       recentUsers,
       recentVendors,
-      preorderOrders,
-      backorderOrders,
       overdueOrders,
-      completedPreorderOrders,
-      readyToFulfillOrders,
-      waitingPreorders,
-      waitingBackorders,
-    ] = (await Promise.all([
+      totalReviews,
+      totalProductCategories,
+      totalVendorCategories,
+      revenueAgg,
+      paidOrderCount,
+      waitingAvgResult,
+      fulfillmentAvgResult,
+    ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { role: 'VENDOR' } }),
       prisma.product.count(),
       prisma.order.count(),
-      prisma.order.findMany({
-        where: { paymentStatus: 'PAID' },
-        select: {
-          id: true,
-          grossAmount: true,
-          processorFee: true,
-          netAmount: true,
-          platformCommission: true,
-          vendorEarnings: true,
-          commissionRate: true,
-          total: true,
-        },
-      }),
       prisma.store.count({ where: { isVerified: true } }),
       prisma.vendorVerificationApplication.count({ where: { status: 'PENDING_REVIEW' } }),
       prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: {
-          user: {
-            select: { email: true, role: true },
-          },
+        select: {
+          id: true,
+          total: true,
+          createdAt: true,
+          user: { select: { email: true, role: true } },
         },
       }),
       prisma.user.findMany({
@@ -104,19 +71,11 @@ export async function GET(request: NextRequest) {
       prisma.store.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: {
-          user: {
-            select: { email: true, role: true },
-          },
+        select: {
+          id: true,
+          createdAt: true,
+          user: { select: { email: true, role: true } },
         },
-      }),
-      prisma.order.findMany({
-        where: { orderType: 'PREORDER', paymentStatus: 'PAID' },
-        select: { fulfillmentStatus: true },
-      }),
-      prisma.order.findMany({
-        where: { orderType: 'BACKORDER', paymentStatus: 'PAID' },
-        select: { fulfillmentStatus: true },
       }),
       prisma.order.count({
         where: {
@@ -124,177 +83,124 @@ export async function GET(request: NextRequest) {
           paymentStatus: 'PAID',
           fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
           OR: [
-            {
-              items: {
-                some: {
-                  expectedArrivalDate: { lt: new Date() },
-                },
-              },
-            },
-            {
-              items: {
-                some: {
-                  expectedRestockDate: { lt: new Date() },
-                },
-              },
-            },
+            { items: { some: { expectedArrivalDate: { lt: new Date() } } } },
+            { items: { some: { expectedRestockDate: { lt: new Date() } } } },
           ],
         },
       }),
-      prisma.order.findMany({
-        where: {
-          orderType: { in: ['PREORDER', 'BACKORDER'] },
-          paymentStatus: 'PAID',
-          status: { in: ['DELIVERED', 'COMPLETED'] },
-        },
-        select: {
-          createdAt: true,
-          updatedAt: true,
-        },
-      }),
-      prisma.order.count({
-        where: {
-          paymentStatus: 'PAID',
-          orderType: { in: ['PREORDER', 'BACKORDER'] },
-          fulfillmentStatus: 'READY_TO_FULFILL',
-        },
-      }),
-      prisma.order.count({
-        where: {
-          paymentStatus: 'PAID',
-          orderType: 'PREORDER',
-          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
-        },
-      }),
-      prisma.order.count({
-        where: {
-          paymentStatus: 'PAID',
-          orderType: 'BACKORDER',
-          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
-        },
-      }),
-    ]) as any[])
-    console.log('[ADMIN STATS] All Prisma queries completed')
+      prisma.productReview.count(),
+      prisma.productCategory.count(),
+      prisma.vendorCategory.count(),
+      prisma.$queryRaw<Array<{
+        total_gross: number | null
+        total_processor: number | null
+        total_net: number | null
+        total_platform: number | null
+        total_vendor: number | null
+      }>>`
+        SELECT
+          SUM(COALESCE(gross_amount, total)) as total_gross,
+          SUM(processor_fee) as total_processor,
+          SUM(net_amount) as total_net,
+          SUM(platform_commission) as total_platform,
+          SUM(vendor_earnings) as total_vendor
+        FROM orders
+        WHERE payment_status = 'PAID'
+      `,
+      prisma.order.count({ where: { paymentStatus: 'PAID' } }),
+      prisma.$queryRaw<Array<{ avg_days: number | null }>>`
+        SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM now() - created_at) / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
+        FROM orders
+        WHERE payment_status = 'PAID'
+          AND order_type IN ('PREORDER', 'BACKORDER')
+          AND fulfillment_status IN ('AWAITING_STOCK', 'AWAITING_RESTOCK')
+      `,
+      prisma.$queryRaw<Array<{ avg_days: number | null }>>`
+        SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM updated_at - created_at) / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
+        FROM orders
+        WHERE payment_status = 'PAID'
+          AND order_type IN ('PREORDER', 'BACKORDER')
+          AND status IN ('DELIVERED', 'COMPLETED')
+      `,
+    ])
     perf.markPrismaEnd(prismaPerfStart)
 
-    // Calculate financial totals from paid orders
     let totalGrossAmount = 0
     let totalProcessorFee = 0
     let totalNetAmount = 0
     let totalPlatformCommission = 0
     let totalVendorEarnings = 0
-    let totalRevenue = 0 // Total Platform Revenue = platformCommission only
-     
-      const orders = paidOrders as any[]
-      console.log('[ADMIN STATS DEBUG] orders typeof:', typeof orders, 'Array.isArray:', Array.isArray(orders), 'value:', orders);
-      orders.forEach((order: any) => {
-      // Use grossAmount if available, fallback to total
-      const gross = order.grossAmount !== null && order.grossAmount !== undefined ? order.grossAmount : order.total
-      totalGrossAmount += gross
-        
-      // Processor fee might be null (legacy orders without stored fees)
-      if (order.processorFee !== null && order.processorFee !== undefined) {
-        totalProcessorFee += order.processorFee
-      }
-        
-      // Net amount might be null (legacy orders without stored fees)
-      if (order.netAmount !== null && order.netAmount !== undefined) {
-        totalNetAmount += order.netAmount
-      }
-        
-      // Platform commission and vendor earnings
-      if (order.platformCommission !== null && order.platformCommission !== undefined) {
-        totalPlatformCommission += order.platformCommission
-      }
-        
-      if (order.vendorEarnings !== null && order.vendorEarnings !== undefined) {
-        totalVendorEarnings += order.vendorEarnings
-      }
-        
-      // Total Platform Revenue = platform commission only (per accounting model)
-      if (order.platformCommission !== null && order.platformCommission !== undefined) {
-        totalRevenue += order.platformCommission
-      }
-    })
-
-    // Count reviews and categories
-    console.log('[ADMIN STATS] Query: prisma.productReview.count(), prisma.productCategory.count(), prisma.vendorCategory.count()')
-    const [totalReviews, totalProductCategories, totalVendorCategories] = await Promise.all([
-      prisma.productReview.count(),
-      prisma.productCategory.count(),
-      prisma.vendorCategory.count(),
-    ])
-
-    // Group fulfillment status for preorder/backorder orders
-    const groupByFulfillmentStatus = (orders: { fulfillmentStatus: string }[]) => {
-      const statusCounts: Record<string, number> = {}
-      for (const order of orders) {
-        statusCounts[order.fulfillmentStatus] = (statusCounts[order.fulfillmentStatus] || 0) + 1
-      }
-      console.log('MAP DEBUG', {
-        variableName: 'statusCounts',
-        type: typeof statusCounts,
-        isArray: Array.isArray(statusCounts),
-        value: statusCounts,
-      });
-      return Object.entries(statusCounts).map(([status, count]) => ({ status, count }))
+    let totalRevenue = 0
+    if (revenueAgg[0]) {
+      totalGrossAmount = revenueAgg[0].total_gross || 0
+      totalProcessorFee = revenueAgg[0].total_processor || 0
+      totalNetAmount = revenueAgg[0].total_net || 0
+      totalPlatformCommission = revenueAgg[0].total_platform || 0
+      totalVendorEarnings = revenueAgg[0].total_vendor || 0
+      totalRevenue = totalPlatformCommission
     }
 
-    // Calculate average waiting days
-    let avgWaitingDays = 0
-    if (waitingPreorders > 0 || waitingBackorders > 0) {
-      console.log('[ADMIN STATS] Query: prisma.order.findMany({ waiting orders })')
-      const waitingOrders = await prisma.order.findMany({
+    const [preorderStatusGroups, backorderStatusGroups, allocatedToday] = await Promise.all([
+      prisma.order.groupBy({
+        by: ['fulfillmentStatus'],
+        where: { orderType: 'PREORDER', paymentStatus: 'PAID' },
+        _count: true,
+      }),
+      prisma.order.groupBy({
+        by: ['fulfillmentStatus'],
+        where: { orderType: 'BACKORDER', paymentStatus: 'PAID' },
+        _count: true,
+      }),
+      prisma.order.count({
         where: {
           paymentStatus: 'PAID',
           orderType: { in: ['PREORDER', 'BACKORDER'] },
-          fulfillmentStatus: { in: ['AWAITING_STOCK', 'AWAITING_RESTOCK'] },
+          allocatedAt: { gte: today, lt: tomorrow },
         },
-        select: { createdAt: true },
-      })
-       
-      if (waitingOrders.length > 0) {
-        const totalDays = waitingOrders.reduce((sum, order) => {
-          const days = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / (1000 * 60 * 60 * 24))
-          return sum + days
-        }, 0)
-        avgWaitingDays = Math.round(totalDays / waitingOrders.length)
-      }
+      }),
+    ])
+    const prismaPerfEnd2 = perf.markPrismaStart()
+
+    const groupByFulfillmentStatus = (groups: { fulfillmentStatus: string; _count: number }[]) => {
+      return groups.map(({ fulfillmentStatus, _count }) => ({ status: fulfillmentStatus, count: _count }))
     }
 
-    // Calculate average fulfillment days
+    const preorderAnalytics = {
+      total: preorderStatusGroups.reduce((sum, g) => sum + g._count, 0),
+      byStatus: groupByFulfillmentStatus(preorderStatusGroups),
+    }
+
+    const backorderAnalytics = {
+      total: backorderStatusGroups.reduce((sum, g) => sum + g._count, 0),
+      byStatus: groupByFulfillmentStatus(backorderStatusGroups),
+    }
+
+    const readyToFulfill =
+      (preorderStatusGroups.find(g => g.fulfillmentStatus === 'READY_TO_FULFILL')?._count || 0) +
+      (backorderStatusGroups.find(g => g.fulfillmentStatus === 'READY_TO_FULFILL')?._count || 0)
+
+    const waitingPreorders = preorderStatusGroups
+      .filter(g => g.fulfillmentStatus === 'AWAITING_STOCK' || g.fulfillmentStatus === 'AWAITING_RESTOCK')
+      .reduce((sum, g) => sum + g._count, 0)
+
+    const waitingBackorders = backorderStatusGroups
+      .filter(g => g.fulfillmentStatus === 'AWAITING_STOCK' || g.fulfillmentStatus === 'AWAITING_RESTOCK')
+      .reduce((sum, g) => sum + g._count, 0)
+
+    let avgWaitingDays = 0
+    const waitingAvg = waitingAvgResult[0]?.avg_days
+    if (waitingAvg !== null && waitingAvg !== undefined) {
+      avgWaitingDays = waitingAvg
+    }
+
     let avgFulfillmentDays = 0
-    if (completedPreorderOrders.length > 0) {
-      const totalDays = completedPreorderOrders.reduce((sum: number, order: any) => {
-        const days = Math.floor(
-          (new Date(order.updatedAt).getTime() - new Date(order.createdAt).getTime()) /
-          (1000 * 60 * 60 * 24)
-        )
-        return sum + days
-      }, 0)
-      avgFulfillmentDays = Math.round(totalDays / completedPreorderOrders.length)
+    const fulfillmentAvg = fulfillmentAvgResult[0]?.avg_days
+    if (fulfillmentAvg !== null && fulfillmentAvg !== undefined) {
+      avgFulfillmentDays = fulfillmentAvg
     }
 
-    // Calculate allocated today
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-      
-    console.log('[ADMIN STATS] Query: prisma.order.count({ allocatedToday })')
-    const allocatedToday = await prisma.order.count({
-       where: {
-         paymentStatus: 'PAID',
-         orderType: { in: ['PREORDER', 'BACKORDER'] },
-         allocatedAt: { gte: today, lt: tomorrow },
-       },
-     })
-
-    // Get demand analytics
-    console.log('[ADMIN STATS] Calling getAdminDemandAnalytics()')
     const demandAnalytics = await getAdminDemandAnalytics()
-    console.log('[ADMIN STATS] getAdminDemandAnalytics() completed')
-    perf.markPrismaEnd(prismaPerfStart)
+    perf.markPrismaEnd(prismaPerfEnd2)
 
     const responseData = {
       stats: {
@@ -313,19 +219,13 @@ export async function GET(request: NextRequest) {
         totalCategories: totalProductCategories,
         totalProductCategories,
         totalVendorCategories,
-        paidOrderCount: paidOrders.length,
+        paidOrderCount,
         pendingVerifications,
-        preorderAnalytics: {
-          total: preorderOrders.length,
-          byStatus: groupByFulfillmentStatus(preorderOrders),
-        },
-        backorderAnalytics: {
-          total: backorderOrders.length,
-          byStatus: groupByFulfillmentStatus(backorderOrders),
-        },
+        preorderAnalytics,
+        backorderAnalytics,
         overdueOrders,
         avgFulfillmentDays,
-        readyToFulfill: readyToFulfillOrders,
+        readyToFulfill,
         waitingPreorders,
         waitingBackorders,
         avgWaitingDays,
@@ -336,16 +236,14 @@ export async function GET(request: NextRequest) {
       recentUsers,
       recentVendors,
     }
-    console.log('[ADMIN STATS] Returning response data:', JSON.stringify(responseData).substring(0, 1000))
-
     perf.log()
     return NextResponse.json(responseData)
   } catch (error) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
-    console.error('[ADMIN STATS API ERROR]', error);
-    console.error('Message:', error instanceof Error ? error.message : error);
-    console.error('Stack:', error instanceof Error ? error.stack : null);
+    console.error('[ADMIN STATS API ERROR]', error)
+    console.error('Message:', error instanceof Error ? error.message : error)
+    console.error('Stack:', error instanceof Error ? error.stack : null)
     return NextResponse.json({
       success: false,
       message: 'Internal Server Error',
