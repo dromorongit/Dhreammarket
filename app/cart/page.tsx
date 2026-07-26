@@ -291,7 +291,7 @@ export default function Cart() {
             <div className="border-t border-slate-200 pt-4 mb-6">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-deep-navy">Total</span>
-                <span className="text-3xl font-bold text-royal-blue">{formatPrice(total)}</span>
+                <span className="text-3xl font-bold text-royal-blue">{formatPrice(subtotal)}</span>
               </div>
             </div>
           </CardContent>
