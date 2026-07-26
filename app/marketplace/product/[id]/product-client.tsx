@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -131,10 +132,6 @@ export default function ProductClient() {
   const params = useParams()
   const productId = params!.id as string
 
-  const [product, setProduct] = useState<ProductData | null>(null)
-  const [reviews, setReviews] = useState<ProductReview[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [addingToCart, setAddingToCart] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
@@ -142,90 +139,72 @@ export default function ProductClient() {
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [showFloatingCTA, setShowFloatingCTA] = useState(false)
-  const [isWishlisted, setIsWishlisted] = useState(false)
 
   const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
-  const fetchProduct = useCallback(async () => {
-    if (!productId) return
+  const { data: productData, isPending: productPending, error: productError } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/products/${productId}`)
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error ?? 'Failed to load product')
+        }
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching product:', error)
+        throw error
+      }
+    },
+  })
 
-    try {
-      setLoading(true)
-      const response = await fetch(`/api/products/${productId}`)
-      if (response.ok) {
+  const product = productData?.product ?? null
+
+  useEffect(() => {
+    if (product?.images?.length > 0) {
+      setSelectedImage(product.images[0].url)
+    } else {
+      setSelectedImage(null)
+    }
+    if (product?.variants?.length > 0) {
+      const activeVariant = product.variants.find((v: ProductVariant) => v.active)
+      setSelectedVariant(activeVariant ?? null)
+    } else {
+      setSelectedVariant(null)
+    }
+  }, [product])
+
+  const { data: wishlistData } = useQuery({
+    queryKey: ['wishlist', 'status', productId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/wishlist/check?productIds=${productId}`)
+        if (!response.ok) throw new Error('Failed to fetch wishlist status')
         const data = await response.json()
-        setProduct(data.product)
-        if (data.product?.images?.length > 0) {
-          setSelectedImage(data.product.images[0].url)
-        } else {
-          setSelectedImage(null)
-        }
-        if (data.product?.variants?.length > 0) {
-          const activeVariant = data.product.variants.find((v: ProductVariant) => v.active)
-          setSelectedVariant(activeVariant ?? null)
-        } else {
-          setSelectedVariant(null)
-        }
-        if (data.product?.reviews) {
-          setReviews(data.product.reviews)
-        }
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error ?? 'Failed to load product')
+        return data.productIds ?? []
+      } catch (error) {
+        console.error('Error fetching wishlist status:', error)
+        throw error
       }
-    } catch {
-      setError('Failed to load product')
-    } finally {
-      setLoading(false)
+    },
+    enabled: !!productId,
+  })
+
+  const reviews = productData?.product?.reviews ?? []
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFloatingCTA(!entry.isIntersecting)
+      },
+      { threshold: 0 }
+    )
+    if (addToCartButtonRef.current) {
+      observer.observe(addToCartButtonRef.current)
     }
-  }, [productId])
-
-useEffect(() => {
-     fetchProduct()
-     fetchWishlistStatus()
-   }, [fetchProduct])
-
-   useEffect(() => {
-     const observer = new IntersectionObserver(
-       ([entry]) => {
-         setShowFloatingCTA(!entry.isIntersecting)
-       },
-       { threshold: 0 }
-     )
-
-     if (addToCartButtonRef.current) {
-       observer.observe(addToCartButtonRef.current)
-     }
-
-     return () => observer.disconnect()
-   }, [])
-
-   const fetchWishlistStatus = useCallback(async () => {
-     if (!productId) return
-     try {
-       const response = await fetch(`/api/wishlist/check?productIds=${productId}`)
-       if (response.ok) {
-         const data = await response.json()
-         setIsWishlisted(data.productIds?.includes(productId) ?? false)
-       }
-     } catch {
-       console.error('Failed to fetch wishlist status')
-     }
-   }, [productId])
-
-   const fetchReviews = useCallback(async () => {
-    if (!productId) return
-
-    try {
-      const response = await fetch(`/api/products/${productId}/reviews`)
-      if (response.ok) {
-        const data: ReviewsResponse = await response.json()
-        setReviews(data.reviews)
-      }
-    } catch {
-      console.error('Failed to fetch reviews')
-    }
-  }, [productId])
+    return () => observer.disconnect()
+  }, [])
 
   const addToCart = async () => {
     if (!product) return
@@ -274,7 +253,7 @@ useEffect(() => {
     setQuantity(Math.min(Math.max(minQty, newQuantity), maxQty))
   }
 
-  if (loading) {
+  if (productPending) {
     return (
       <div className="min-h-screen bg-[#F8F9FC] py-6 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -305,7 +284,7 @@ useEffect(() => {
     )
   }
 
-  if (error || !product) {
+  if (productError || !product) {
     return (
       <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center py-12 px-4">
         <Card className="max-w-md w-full text-center">
@@ -316,7 +295,7 @@ useEffect(() => {
               </svg>
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-[#0F1F3D] mb-2">Product Not Found</h2>
-            <p className="text-slate-600 mb-6">{error ?? "The product you're looking for doesn't exist."}</p>
+            <p className="text-slate-600 mb-6">{productError?.message ?? "The product you're looking for doesn't exist."}</p>
             <Link href="/marketplace">
               <Button variant="primary" size="md" fullWidth>Back to Marketplace</Button>
             </Link>
@@ -337,7 +316,7 @@ useEffect(() => {
     ? product.description.substring(0, 150).trim() + '...'
     : product.description ?? ''
 
-  const currentImageIndex = product.images?.findIndex(img => img.url === selectedImage) ?? 0
+  const currentImageIndex = (product.images as ProductImage[])?.findIndex(img => img.url === selectedImage) ?? 0
   const totalImages = product.images?.length ?? 0
 
   return (
@@ -393,7 +372,7 @@ useEffect(() => {
 
             {product.images && product.images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:pb-0">
-                {product.images.map((img) => (
+                {product.images.map((img: ProductImage) => (
                   <button
                     key={img.id}
                     onClick={() => setSelectedImage(img.url)}
@@ -446,7 +425,7 @@ useEffect(() => {
               </div>
 
               <div className="flex items-center gap-2 mb-4">
-                <WishlistButton productId={product.id} initialIsWishlisted={isWishlisted} size="md" />
+                <WishlistButton productId={product.id} initialIsWishlisted={wishlistData?.includes(product.id) ?? false} size="md" />
               </div>
 
               <div className="mb-4">
@@ -655,7 +634,7 @@ useEffect(() => {
                     description="Be the first to review this product."
                   />
                 ) : (
-                  reviews.map((review) => (
+                  reviews.map((review: ProductReview) => (
                     <div key={review.id} className="border border-slate-200 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex items-center gap-1">

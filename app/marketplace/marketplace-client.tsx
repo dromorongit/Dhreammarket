@@ -1,9 +1,10 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -86,23 +87,13 @@ interface Vendor {
 function MarketplaceContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [products, setProducts] = useState<Product[]>([])
-  const [vendors, setVendors] = useState<Vendor[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [vendorCategories, setVendorCategories] = useState<Category[]>([])
-  const [totalProductCount, setTotalProductCount] = useState(0)
-  const [totalProductCategoryCount, setTotalProductCategoryCount] = useState(0)
-  const [totalVendorCount, setTotalVendorCount] = useState(0)
-  const [totalVendorCategoryCount, setTotalVendorCategoryCount] = useState(0)
-  const [productPagination, setProductPagination] = useState({ page: 1, limit: 50, totalPages: 0 })
-  const [vendorPagination, setVendorPagination] = useState({ page: 1, limit: 20, totalPages: 0 })
-  const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'products' | 'vendors'>('products')
-  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+  const [productPagination, setProductPagination] = useState({ page: 1, limit: 50, totalPages: 0 })
+  const [vendorPagination, setVendorPagination] = useState({ page: 1, limit: 20, totalPages: 0 })
 
   useEffect(() => {
     if (viewMode === 'products') {
@@ -112,22 +103,119 @@ function MarketplaceContent() {
     }
   }, [viewMode])
 
-  useEffect(() => {
-    fetchCategories()
-    fetchVendorCategories()
-    fetchCounts()
-    fetchVendors()
-    fetchWishlistStatus()
-  }, [])
+  const { data: productsData, isPending: productsPending } = useQuery({
+    queryKey: ['products', 'marketplace', productPagination.page, productPagination.limit],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/products?page=${productPagination.page}&limit=${productPagination.limit}`)
+        if (!response.ok) throw new Error('Failed to fetch products')
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching products:', error)
+        throw error
+      }
+    },
+  })
 
-  useEffect(() => {
-    fetchProducts()
-    fetchWishlistStatus()
-  }, [productPagination.page])
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/categories')
+        if (!response.ok) throw new Error('Failed to fetch categories')
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        throw error
+      }
+    },
+  })
 
-  useEffect(() => {
-    fetchVendors()
-  }, [vendorPagination.page, selectedVendorCategory])
+  const { data: vendorCategoriesData } = useQuery({
+    queryKey: ['vendor-categories'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/vendor-categories')
+        if (!response.ok) throw new Error('Failed to fetch vendor categories')
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching vendor categories:', error)
+        throw error
+      }
+    },
+  })
+
+  const { data: productsCountData } = useQuery({
+    queryKey: ['products', 'count'],
+    queryFn: async () => {
+      try {
+        const countResponse = await fetch('/api/products/count')
+        if (countResponse.ok) {
+          const countData = await countResponse.json()
+          return countData.count ?? 0
+        }
+        const productsResponse = await fetch('/api/products?limit=1')
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json()
+          return productsData.pagination?.total ?? 0
+        }
+        return 0
+      } catch (error) {
+        console.error('Error fetching product count:', error)
+        throw error
+      }
+    },
+  })
+
+  const { data: vendorsData, isPending: vendorsPending } = useQuery({
+    queryKey: ['vendors', 'marketplace', vendorPagination.page, vendorPagination.limit, selectedVendorCategory],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/vendors?page=${vendorPagination.page}&limit=${vendorPagination.limit}${selectedVendorCategory ? `&vendorCategoryId=${selectedVendorCategory}` : ''}`)
+        if (!response.ok) throw new Error('Failed to fetch vendors')
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching vendors:', error)
+        throw error
+      }
+    },
+  })
+
+  const productIdsForWishlist = productsData?.products?.map((p: any) => p.id).join(',') ?? ''
+
+
+  const { data: wishlistData } = useQuery({
+    queryKey: ['wishlist', 'status', productIdsForWishlist],
+    queryFn: async () => {
+      if (!productIdsForWishlist) return []
+      try {
+        const response = await fetch(`/api/wishlist/check?productIds=${productIdsForWishlist}`)
+        if (!response.ok) throw new Error('Failed to fetch wishlist status')
+        const data = await response.json()
+        return data.productIds ?? []
+      } catch (error) {
+        console.error('Error fetching wishlist status:', error)
+        throw error
+      }
+    },
+    enabled: productIdsForWishlist.length > 0,
+  })
+
+  const products = (productsData?.products ?? []) as Product[]
+  const vendors = (vendorsData?.vendors ?? []) as Vendor[]
+  const categories = (categoriesData?.categories ?? []) as Category[]
+  const vendorCategories = (vendorCategoriesData?.categories ?? []) as Category[]
+  const totalProductCount = productsCountData ?? productsData?.pagination?.total ?? 0
+  const totalVendorCount = vendorsData?.pagination?.total ?? 0
+  const countAllCategories = (cats: Category[]): number => {
+    return cats.reduce((sum: number, cat: Category) => {
+      return sum + 1 + (cat.children ? countAllCategories(cat.children) : 0)
+    }, 0)
+  }
+
+  const totalProductCategoryCount = countAllCategories(categories)
+  const totalVendorCategoryCount = vendorCategories.reduce((sum: number, cat: Category) => sum + (cat.productCount ?? 0), 0)
+  const wishlistedProductIds = new Set(wishlistData ?? [])
 
   useEffect(() => {
     setVendorPagination({ page: 1, limit: 20, totalPages: vendorPagination.totalPages })
@@ -145,122 +233,6 @@ function MarketplaceContent() {
     setSelectedBrand(brandParam)
     setSelectedVendorCategory(vendorCategoryParam)
   }, [searchParams])
-
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch(`/api/products?page=${productPagination.page}&limit=${productPagination.limit}`)
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products)
-        setProductPagination(prev => ({ ...prev, totalPages: data.pagination?.totalPages ?? 0 }))
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories')
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.categories)
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
-  }
-
-  const fetchVendorCategories = async () => {
-    try {
-      const response = await fetch('/api/vendor-categories')
-      if (response.ok) {
-        const data = await response.json()
-        setVendorCategories(data.categories)
-      }
-    } catch (error) {
-      console.error('Error fetching vendor categories:', error)
-    }
-  }
-
-  const fetchVendors = async () => {
-    try {
-      const response = await fetch(`/api/vendors?page=${vendorPagination.page}&limit=${vendorPagination.limit}${selectedVendorCategory ? `&vendorCategoryId=${selectedVendorCategory}` : ''}`)
-      if (response.ok) {
-        const data = await response.json()
-        const sortedVendors = data.vendors.sort((a: Vendor, b: Vendor) => {
-          if (a.isFeatured && !b.isFeatured) return -1
-          if (!a.isFeatured && b.isFeatured) return 1
-          if (b.rating !== a.rating) return b.rating - a.rating
-          return b.productCount - a.productCount
-        })
-        setVendors(sortedVendors)
-        setVendorPagination(prev => ({ ...prev, totalPages: data.pagination?.totalPages ?? 0 }))
-      }
-    } catch (error) {
-      console.error('Error fetching vendors:', error)
-    }
-  }
-
-  const fetchCounts = async () => {
-    try {
-      const countResponse = await fetch('/api/products/count')
-      let totalProducts = 0
-      if (countResponse.ok) {
-        const countData = await countResponse.json()
-        totalProducts = countData.count ?? 0
-      } else {
-        const productsResponse = await fetch('/api/products?limit=1')
-        if (productsResponse.ok) {
-          const productsData = await productsResponse.json()
-          totalProducts = productsData.pagination?.total ?? 0
-        }
-      }
-      setTotalProductCount(totalProducts)
-
-      const categoriesResponse = await fetch('/api/categories')
-      if (categoriesResponse.ok) {
-        const categoriesData = await categoriesResponse.json()
-        const countAllCategories = (cats: Category[]): number => {
-          return cats.reduce((count, cat) => {
-            return count + 1 + (cat.children ? countAllCategories(cat.children) : 0)
-          }, 0)
-        }
-        setTotalProductCategoryCount(countAllCategories(categoriesData.categories ?? []))
-      }
-
-      const vendorsResponse = await fetch('/api/vendors?limit=1')
-      if (vendorsResponse.ok) {
-        const vendorsData = await vendorsResponse.json()
-        setTotalVendorCount(vendorsData.pagination?.total ?? 0)
-      }
-
-      const vendorCategoriesResponse = await fetch('/api/vendor-categories')
-      if (vendorCategoriesResponse.ok) {
-        const vendorCategoriesData = await vendorCategoriesResponse.json()
-        const totalVendorCats = vendorCategoriesData.categories?.reduce((sum: number, cat: { productCount?: number }) => sum + (cat.productCount ?? 0), 0) ?? 0
-        setTotalVendorCategoryCount(totalVendorCats)
-      }
-    } catch (error) {
-      console.error('Error fetching counts:', error)
-    }
-  }
-
-  const fetchWishlistStatus = useCallback(async () => {
-    if (products.length === 0) return
-    try {
-      const productIds = products.map(p => p.id).join(',')
-      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
-      if (response.ok) {
-        const data = await response.json()
-        setWishlistedProductIds(new Set(data.productIds ?? []))
-      }
-    } catch (error) {
-      console.error('Error fetching wishlist status:', error)
-    }
-  }, [products])
 
   const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
     setAddingToCart(prev => new Set(prev).add(productId))
@@ -406,7 +378,7 @@ function MarketplaceContent() {
 
   const filteredVendors = vendors
 
-  if (loading) {
+  if (productsPending) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
