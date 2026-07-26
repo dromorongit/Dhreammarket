@@ -218,7 +218,7 @@ export default function Cart() {
 
                 {/* Remove Button */}
                 <button
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => cartRemoveItem(item.id)}
                   disabled={updatingItems.has(item.id)}
                   className="flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
                 >
