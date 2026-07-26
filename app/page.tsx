@@ -10,6 +10,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { useState, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { event } from '@/lib/gtag'
@@ -63,8 +64,15 @@ interface FeaturedVendor {
  }
 
 export default function Home() {
-  const [featuredVendors, setFeaturedVendors] = useState<FeaturedVendor[]>([])
-  const [loadingFeatured, setLoadingFeatured] = useState(true)
+  const { data: featuredVendorsData, isLoading: loadingFeatured } = useQuery<{ vendors: FeaturedVendor[] }>({
+    queryKey: ['vendors', 'featured'],
+    queryFn: async () => {
+      const response = await fetch('/api/vendors/featured')
+      if (!response.ok) throw new Error('Failed to fetch featured vendors')
+      return response.json()
+    },
+  })
+  const featuredVendors = featuredVendorsData?.vendors ?? []
   const { data: enterpriseData, loading: loadingEnterprise } = useEnterpriseHomepageData()
   const { sectionsBySlug, data: managedData, loading: loadingManaged } = useManagedHomepageData()
   const enterpriseSections = useMemo(
@@ -94,24 +102,7 @@ export default function Home() {
     [managedData.sections]
   )
 
-  useEffect(() => {
-    const fetchFeaturedVendors = async () => {
-      try {
-        const response = await fetch('/api/vendors/featured')
-        if (response.ok) {
-          const data = await response.json()
-          setFeaturedVendors(data.vendors)
-        }
-      } catch (error) {
-        console.error('Error fetching featured vendors:', error)
-      } finally {
-        setLoadingFeatured(false)
-      }
-    }
-    fetchFeaturedVendors()
-  }, [])
-
-return (
+ return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -548,42 +539,28 @@ return (
 // ─── Existing Section Components (preserved as fallback) ───
 
 function VendorCategorySection() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [allVendors, setAllVendors] = useState<any[]>([])
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
-  const [loading, setLoading] = useState(true)
 
-  // Fetch categories and vendors once on mount
-  useEffect(() => {
-    Promise.all([fetchCategories(), fetchVendors()])
-  }, [])
-
-  const fetchCategories = async () => {
-    try {
+  const { data: categoriesData, isLoading: loadingCategories } = useQuery<{ categories: Category[] }>({
+    queryKey: ['vendor-categories'],
+    queryFn: async () => {
       const response = await fetch('/api/vendor-categories')
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.categories)
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
-  }
+      if (!response.ok) throw new Error('Failed to fetch categories')
+      return response.json()
+    },
+  })
+  const categories = categoriesData?.categories ?? []
 
-  const fetchVendors = async () => {
-    setLoading(true)
-    try {
+  const { data: vendorsData, isLoading: loadingVendors } = useQuery<{ vendors: any[] }>({
+    queryKey: ['vendors', 'all'],
+    queryFn: async () => {
       const response = await fetch('/api/vendors')
-      if (response.ok) {
-        const data = await response.json()
-        setAllVendors(data.vendors)
-      }
-    } catch (error) {
-      console.error('Error fetching vendors:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      if (!response.ok) throw new Error('Failed to fetch vendors')
+      return response.json()
+    },
+  })
+  const allVendors = vendorsData?.vendors ?? []
+  const loading = loadingCategories || loadingVendors
 
   // Client-side filtering - no refetch on category change
   // Use categoryId (the direct foreign key) instead of vendor_categories[0].id
@@ -708,28 +685,17 @@ function VendorCategorySection() {
 
 // Top Vendors Section Component
 function TopVendorsSection() {
-  const [vendors, setVendors] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchTopVendors()
-  }, [])
-
-  const fetchTopVendors = async () => {
-    try {
+  const { data, isLoading } = useQuery<{ vendors: any[] }>({
+    queryKey: ['vendors', { limit: 4, sortBy: 'rating' }],
+    queryFn: async () => {
       const response = await fetch('/api/vendors?limit=4&sortBy=rating')
-      if (response.ok) {
-        const data = await response.json()
-        setVendors(data.vendors.slice(0, 4))
-      }
-    } catch (error) {
-      console.error('Error fetching top vendors:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      if (!response.ok) throw new Error('Failed to fetch top vendors')
+      return response.json()
+    },
+  })
+  const vendors = data?.vendors?.slice(0, 4) ?? []
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
         {[...Array(4)].map((_, i) => (
@@ -802,28 +768,17 @@ function TopVendorsSection() {
 
 // New Vendors Section Component
 function NewVendorsSection() {
-  const [vendors, setVendors] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchNewVendors()
-  }, [])
-
-  const fetchNewVendors = async () => {
-    try {
+  const { data, isLoading } = useQuery<{ vendors: any[] }>({
+    queryKey: ['vendors', 'all', { limit: 4 }],
+    queryFn: async () => {
       const response = await fetch('/api/vendors?limit=4')
-      if (response.ok) {
-        const data = await response.json()
-        setVendors(data.vendors)
-      }
-    } catch (error) {
-      console.error('Error fetching new vendors:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      if (!response.ok) throw new Error('Failed to fetch new vendors')
+      return response.json()
+    },
+  })
+  const vendors = data?.vendors ?? []
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
         {[...Array(4)].map((_, i) => (
@@ -896,30 +851,22 @@ function NewVendorsSection() {
 
 // Popular Categories Section Component
 function PopularCategoriesSection() {
-  const [categories, setCategories] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
-  const fetchCategories = async () => {
-    try {
+  const { data: categoriesData, isLoading } = useQuery<{ categories: any[] }>({
+    queryKey: ['categories'],
+    queryFn: async () => {
       const response = await fetch('/api/categories')
-      if (response.ok) {
-        const data = await response.json()
-        // Shuffle categories and take 4 random ones
-        const shuffled = [...data.categories].sort(() => Math.random() - 0.5)
-        setCategories(shuffled.slice(0, 4))
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      if (!response.ok) throw new Error('Failed to fetch categories')
+      return response.json()
+    },
+  })
+  const categories = categoriesData?.categories ?? []
 
-  if (loading) {
+  const shuffledCategories = useMemo(() => {
+    const shuffled = [...categories].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, 4)
+  }, [categories])
+
+  if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {[...Array(4)].map((_, i) => (
@@ -948,9 +895,9 @@ function PopularCategoriesSection() {
     'Home & Garden': 'from-green-500 to-emerald-600',
   }
 
-  return (
+   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-      {categories.map((category) => (
+      {shuffledCategories.map((category) => (
         <Link key={category.id} href={`/marketplace?category=${category.id}`}>
           <Card variant="elevated" className="group text-center p-6 hover:shadow-xl transition-all duration-300">
             <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${categoryColors[category.name] || 'from-gray-500 to-gray-600'} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
@@ -1002,31 +949,25 @@ interface Product {
 }
 
 function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const excludeKey = useMemo(() => excludeIds ? Array.from(excludeIds).sort().join(',') : '', [excludeIds])
+
+  const { data, isLoading } = useQuery<{ products: any[] }>({
+    queryKey: ['products', 'featured', excludeKey],
+    queryFn: async () => {
+      const response = await fetch('/api/products')
+      if (!response.ok) throw new Error('Failed to fetch products')
+      return response.json()
+    },
+  })
+  const allProducts = data?.products ?? []
+  const products = useMemo(() => {
+    return allProducts
+      .filter((p: Product) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+      .slice(0, 20)
+  }, [allProducts, excludeIds])
+  const loading = isLoading
+
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
-  const excludeKey = excludeIds ? Array.from(excludeIds).sort().join(',') : ''
-
-  useEffect(() => {
-    fetchProducts()
-  }, [excludeKey])
-
-const fetchProducts = async () => {
-      try {
-        const response = await fetch('/api/products')
-        if (response.ok) {
-          const data = await response.json()
-          const availableProducts = (data.products || [])
-            .filter((p: Product) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
-            .slice(0, 20)
-          setProducts(availableProducts)
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error)
-      } finally {
-        setLoading(false)
-     }
-   }
 
    const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
       setAddingToCart(prev => new Set(prev).add(productId))

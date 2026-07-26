@@ -1,39 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {
-  type ManagedHomepageData,
-  EMPTY_MANAGED_DATA,
-  sectionsBySlug,
-} from '@/lib/homepage-product-utils'
+import { useQuery } from '@tanstack/react-query'
+import { type ManagedHomepageData, EMPTY_MANAGED_DATA, sectionsBySlug } from '@/lib/homepage-product-utils'
 
 export function useManagedHomepageData() {
-  const [data, setData] = useState<ManagedHomepageData>(EMPTY_MANAGED_DATA)
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading } = useQuery<{ sections: unknown[]; brands: unknown[] }>({
+    queryKey: ['homepage-public'],
+    queryFn: async () => {
+      const response = await fetch('/api/homepage/public', { cache: 'no-store' })
+      if (!response.ok) throw new Error('Failed to fetch managed homepage data')
+      return response.json()
+    },
+  })
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/homepage/public', { cache: 'no-store' })
-        const json = await response.json()
-        if (json && typeof json === 'object') {
-          setData({
-            sections: Array.isArray(json.sections) ? json.sections : [],
-            brands: Array.isArray(json.brands) ? json.brands : [],
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching managed homepage data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
+  const managedData = (data ?? EMPTY_MANAGED_DATA) as ManagedHomepageData
 
   return {
-    data,
-    loading,
-    sectionsBySlug: sectionsBySlug(data.sections),
+    data: managedData,
+    loading: isLoading,
+    sectionsBySlug: sectionsBySlug(managedData.sections),
   }
 }

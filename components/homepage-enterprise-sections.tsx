@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, type ReactNode, useCallback } from 'react';
+import { useState, useEffect, type ReactNode, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -16,33 +17,20 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { TrendingNowSection } from './TrendingNowSection';
 
 export function useEnterpriseHomepageData() {
-  const [data, setData] = useState<EnterpriseHomepageData>(
-    EMPTY_ENTERPRISE_DATA,
-  );
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading } = useQuery<{ topSelling: EnterpriseProduct[] }>({
+    queryKey: ['homepage-enterprise'],
+    queryFn: async () => {
+      const response = await fetch('/api/homepage/enterprise', {
+        cache: 'no-store',
+      });
+      if (!response.ok) throw new Error('Failed to fetch enterprise homepage data');
+      return response.json();
+    },
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/homepage/enterprise', {
-          cache: 'no-store',
-        });
-        const json = await response.json();
-        if (json && typeof json === 'object') {
-          setData({
-            topSelling: Array.isArray(json.topSelling) ? json.topSelling : [],
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching enterprise homepage data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const enterpriseData = data ?? EMPTY_ENTERPRISE_DATA;
 
-  return { data, loading };
+  return { data: enterpriseData, loading: isLoading };
 }
 
 function CountdownTimer({ endTime }: { endTime: string }) {
@@ -1550,13 +1538,23 @@ export function QuickLinksSection() {
 }
 
 export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> }) {
-  const [products, setProducts] = useState<EnterpriseProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+  const excludeKey = useMemo(() => excludeIds ? Array.from(excludeIds).sort().join(',') : '', [excludeIds])
 
-  useEffect(() => {
-    fetchProducts()
-  }, [excludeIds])
+  const { data, isLoading } = useQuery<{ products: EnterpriseProduct[] }>({
+    queryKey: ['products', 'new-arrivals', excludeKey],
+    queryFn: async () => {
+      const response = await fetch('/api/products?sortBy=createdAt&sortOrder=desc&limit=20')
+      if (!response.ok) throw new Error('Failed to fetch new arrivals')
+      return response.json()
+    },
+  })
+  const allProducts = data?.products ?? []
+  const products = useMemo(() => {
+    return allProducts
+      .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+      .slice(0, 20)
+  }, [allProducts, excludeIds])
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
   const fetchWishlistStatus = useCallback(async () => {
     if (!products.length) return
@@ -1576,24 +1574,7 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
     fetchWishlistStatus()
   }, [fetchWishlistStatus])
 
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch('/api/products?sortBy=createdAt&sortOrder=desc&limit=20')
-      if (response.ok) {
-        const data = await response.json()
-const availableProducts = (data.products || [])
-           .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
-           .slice(0, 20)
-        setProducts(availableProducts)
-      }
-    } catch (error) {
-      console.error('Error fetching new arrivals:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) return <EnterpriseSectionSkeleton />
+  if (isLoading) return <EnterpriseSectionSkeleton />
   if (!products.length) return null
 
   return (
@@ -1627,13 +1608,25 @@ const availableProducts = (data.products || [])
 }
 
 export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> }) {
-  const [products, setProducts] = useState<EnterpriseProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+  const excludeKey = useMemo(() => excludeIds ? Array.from(excludeIds).sort().join(',') : '', [excludeIds])
 
-  useEffect(() => {
-    fetchProducts()
-  }, [excludeIds])
+  const { data, isLoading } = useQuery<{ products: EnterpriseProduct[] }>({
+    queryKey: ['products', 'new-this-week', excludeKey],
+    queryFn: async () => {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      const response = await fetch(`/api/products?sortBy=createdAt&sortOrder=desc&limit=20&createdAtMin=${sevenDaysAgo.toISOString()}`)
+      if (!response.ok) throw new Error('Failed to fetch new this week')
+      return response.json()
+    },
+  })
+  const allProducts = data?.products ?? []
+  const products = useMemo(() => {
+    return allProducts
+      .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+      .slice(0, 20)
+  }, [allProducts, excludeIds])
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
   const fetchWishlistStatus = useCallback(async () => {
     if (!products.length) return
@@ -1653,26 +1646,7 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
     fetchWishlistStatus()
   }, [fetchWishlistStatus])
 
-  const fetchProducts = async () => {
-    try {
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-      const response = await fetch(`/api/products?sortBy=createdAt&sortOrder=desc&limit=20&createdAtMin=${sevenDaysAgo.toISOString()}`)
-      if (response.ok) {
-        const data = await response.json()
-const availableProducts = (data.products || [])
-           .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
-           .slice(0, 20)
-        setProducts(availableProducts)
-      }
-    } catch (error) {
-      console.error('Error fetching new this week:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) return <EnterpriseSectionSkeleton />
+  if (isLoading) return <EnterpriseSectionSkeleton />
   if (!products.length) return null
 
   return (

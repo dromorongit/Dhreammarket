@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
 import { EnterpriseProduct, ManagedHomepageSection } from '@/lib/homepage-product-utils'
@@ -371,35 +372,35 @@ const CATEGORY_GRADIENTS = [
 ]
 
 export function QuicklinksSection({ section }: HomepageSectionProps) {
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
-  const [loading, setLoading] = useState(true)
+  const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/api/categories')
-        if (response.ok) {
-          const data = await response.json()
-          const flattenCategories = (cats: any[]): Array<{ id: string; name: string; slug: string }> => {
-            let result: Array<{ id: string; name: string; slug: string }> = []
-            for (const cat of cats) {
-              result.push({ id: cat.id, name: cat.name, slug: cat.slug })
-              if (cat.children && cat.children.length > 0) {
-                result = result.concat(flattenCategories(cat.children))
-              }
-            }
-            return result
-          }
-          setCategories(flattenCategories(data.categories || []))
-        }
-      } catch (error) {
-        console.error('Error fetching categories for quicklinks:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCategories()
-  }, [])
+  const { data: categoriesData, isLoading: loadingCategories } = useQuery<{ categories: Array<{ id: string; name: string; slug: string }> }>({
+    queryKey: ['categories', 'quicklinks'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories')
+      if (!response.ok) throw new Error('Failed to fetch categories')
+      return response.json()
+    },
+  })
+  const categories = categoriesData?.categories ?? []
+
+  const { data: vendorsData, isLoading: loadingVendors } = useQuery<{ vendors: any[] }>({
+    queryKey: ['vendors', 'all'],
+    queryFn: async () => {
+      const response = await fetch('/api/vendors')
+      if (!response.ok) throw new Error('Failed to fetch vendors')
+      return response.json()
+    },
+  })
+  const allVendors = vendorsData?.vendors ?? []
+  const loading = loadingCategories || loadingVendors
+
+  // Client-side filtering - no refetch on category change
+  // Use categoryId (the direct foreign key) instead of vendor_categories[0].id
+  // The API returns vendor_categories as a single object, not an array
+  const filteredVendors = selectedVendorCategory
+    ? allVendors.filter((vendor) => vendor.categoryId === selectedVendorCategory)
+    : allVendors
 
   const specialNames = SPECIAL_QUICKLINKS.map(s => s.name)
   const dynamicCategoryLinks = categories
