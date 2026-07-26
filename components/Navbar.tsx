@@ -171,6 +171,16 @@ export function Navbar() {
     }
   }, [userMenuOpen])
 
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const previousOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = previousOverflow
+      }
+    }
+  }, [mobileMenuOpen])
+
   const markAsRead = async (notificationId?: string) => {
     try {
       const response = await fetch('/api/notifications', {
@@ -548,10 +558,10 @@ export function Navbar() {
       </div>
 
       {/* Mobile Menu */}
-       <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out relative ${
-         mobileMenuOpen ? 'max-h-[600px] opacity-100 z-50' : 'max-h-0 opacity-0'
-       }`}>
-         <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white">
+        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out relative ${
+          mobileMenuOpen ? 'max-h-[100dvh] opacity-100 z-50' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
            <button
              onClick={() => navigateAndCloseMobileMenu('/')}
              className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
