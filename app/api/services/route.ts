@@ -14,11 +14,19 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
     const categoryId = url.searchParams.get('categoryId')
     const vendorId = url.searchParams.get('vendorId')
-    const isActive = url.searchParams.get('isActive')
+    const pricingType = url.searchParams.get('pricingType')
+    const availabilityStatus = url.searchParams.get('availabilityStatus')
+    const deliveryType = url.searchParams.get('deliveryType')
+    const minPrice = url.searchParams.get('minPrice')
+    const maxPrice = url.searchParams.get('maxPrice')
+    const search = url.searchParams.get('search')
     const sortBy = url.searchParams.get('sortBy') || 'createdAt'
     const sortOrder = url.searchParams.get('sortOrder') || 'desc'
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = {
+      status: 'PUBLISHED',
+      isActive: true,
+    }
 
     if (categoryId) {
       where.categoryId = categoryId
@@ -28,8 +36,50 @@ export async function GET(request: NextRequest) {
       where.vendorId = vendorId
     }
 
-    if (isActive !== null) {
-      where.isActive = isActive === 'true'
+    if (pricingType) {
+      where.pricingType = pricingType
+    }
+
+    if (availabilityStatus) {
+      where.availabilityStatus = availabilityStatus
+    }
+
+    if (deliveryType) {
+      where.deliveryType = deliveryType
+    }
+
+    if (minPrice !== null) {
+      where.startingPrice = { ...(where.startingPrice as Record<string, unknown> ?? {}), gte: parseFloat(minPrice) }
+    }
+
+    if (maxPrice !== null) {
+      where.startingPrice = { ...(where.startingPrice as Record<string, unknown> ?? {}), lte: parseFloat(maxPrice) }
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { shortDescription: { contains: search, mode: 'insensitive' } },
+        { tags: { hasSome: [search] } },
+      ]
+    }
+
+    let orderBy: Record<string, string>
+    switch (sortBy) {
+      case 'price-low':
+        orderBy = { startingPrice: sortOrder }
+        break
+      case 'price-high':
+        orderBy = { startingPrice: sortOrder === 'asc' ? 'desc' : 'asc' }
+        break
+      case 'oldest':
+        orderBy = { createdAt: sortOrder === 'asc' ? 'desc' : 'asc' }
+        break
+      case 'newest':
+      default:
+        orderBy = { createdAt: sortOrder }
+        break
     }
 
     const [services, total] = await Promise.all([
@@ -37,9 +87,7 @@ export async function GET(request: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
+        orderBy,
         include: {
           store: {
             select: {
@@ -49,6 +97,8 @@ export async function GET(request: NextRequest) {
               isVerified: true,
               logo: true,
               badgeTier: true,
+              averageRating: true,
+              reviewCount: true,
             },
           },
           category: {

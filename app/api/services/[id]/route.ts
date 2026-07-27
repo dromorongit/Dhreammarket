@@ -26,6 +26,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             badgeTier: true,
             location: true,
             email: true,
+            mainPhoneNumber: true,
+            alternativePhoneNumber: true,
+            whatsappNumber: true,
+            averageRating: true,
+            reviewCount: true,
           },
         },
         category: {
@@ -51,6 +56,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     perf.markPrismaEnd(prismaPerfStart)
 
     if (!service) {
+      return NextResponse.json({ error: 'Service not found' }, { status: 404 })
+    }
+
+    if (service.status !== 'PUBLISHED' || !service.isActive) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 })
     }
 

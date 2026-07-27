@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 
-export async function DELETE(request: NextRequest, { params }: { params: { productId: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: { serviceId: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -14,7 +14,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { produ
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { productId } = params
+    const { serviceId } = params
 
     let wishlist: { id: string } | null = null
     try {
@@ -22,7 +22,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { produ
         where: { userId: payload.userId },
       })
     } catch (e) {
-      console.error('[wishlist/DELETE] wishlist.findUnique FAILED:', e)
+      console.error('[wishlist/service/DELETE] wishlist.findUnique FAILED:', e)
     }
 
     if (!wishlist) {
@@ -33,14 +33,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { produ
       await getPrisma().wishlistItem.deleteMany({
         where: {
           wishlistId: wishlist.id,
-          productId,
+          serviceId,
         },
       })
     } catch (e: any) {
       if (e?.code === 'P2025') {
         return NextResponse.json({ error: 'Item not found in wishlist' }, { status: 404 })
       }
-      console.error('[wishlist/DELETE] wishlistItem.deleteMany FAILED:', e)
+      console.error('[wishlist/service/DELETE] wishlistItem.deleteMany FAILED:', e)
       return NextResponse.json({ error: 'Could not remove from wishlist' }, { status: 500 })
     }
 
@@ -70,7 +70,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { produ
         },
       })
     } catch (e) {
-      console.error('[wishlist/DELETE] updated wishlist.findUnique FAILED:', e)
+      console.error('[wishlist/service/DELETE] updated wishlist.findUnique FAILED:', e)
     }
 
     return NextResponse.json({
@@ -80,7 +80,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { produ
       },
     })
   } catch (error) {
-    console.error('Error removing from wishlist:', error)
+    console.error('Error removing service from wishlist:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

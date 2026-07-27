@@ -8,23 +8,22 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ productIds: [] })
+      return NextResponse.json({ productIds: [], serviceIds: [] })
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ productIds: [] })
+      return NextResponse.json({ productIds: [], serviceIds: [] })
     }
 
     const productIdsParam = request.nextUrl.searchParams.get('productIds')
-    if (!productIdsParam) {
-      return NextResponse.json({ productIds: [] })
-    }
+    const serviceIdsParam = request.nextUrl.searchParams.get('serviceIds')
 
-    const productIds = productIdsParam.split(',').filter(Boolean)
+    const productIds = productIdsParam?.split(',').filter(Boolean) ?? []
+    const serviceIds = serviceIdsParam?.split(',').filter(Boolean) ?? []
 
-    if (productIds.length === 0) {
-      return NextResponse.json({ productIds: [] })
+    if (productIds.length === 0 && serviceIds.length === 0) {
+      return NextResponse.json({ productIds: [], serviceIds: [] })
     }
 
     let wishlist: { id: string } | null = null
@@ -34,26 +33,33 @@ export async function GET(request: NextRequest) {
       })
     } catch (e) {
       console.error('[wishlist/check] wishlist.findUnique FAILED:', e)
-      return NextResponse.json({ productIds: [] })
+      return NextResponse.json({ productIds: [], serviceIds: [] })
     }
 
     if (!wishlist) {
-      return NextResponse.json({ productIds: [] })
+      return NextResponse.json({ productIds: [], serviceIds: [] })
     }
 
-    const wishlistItems = await getPrisma().wishlistItem.findMany({
-      where: {
-        wishlistId: wishlist.id,
-        productId: { in: productIds },
-      },
-      select: { productId: true },
+    const wishlistedProductIds = productIds.length > 0
+      ? (await getPrisma().wishlistItem.findMany({
+          where: { wishlistId: wishlist.id, productId: { in: productIds } },
+          select: { productId: true },
+        })).map((item) => item.productId!)
+      : []
+
+    const wishlistedServiceIds = serviceIds.length > 0
+      ? (await getPrisma().wishlistItem.findMany({
+          where: { wishlistId: wishlist.id, serviceId: { in: serviceIds } },
+          select: { serviceId: true },
+        })).map((item) => item.serviceId!)
+      : []
+
+    return NextResponse.json({
+      productIds: wishlistedProductIds,
+      serviceIds: wishlistedServiceIds,
     })
-
-    const wishlistedProductIds = wishlistItems.map((item) => item.productId)
-
-    return NextResponse.json({ productIds: wishlistedProductIds })
   } catch (error) {
     console.error('Error checking wishlist status:', error)
-    return NextResponse.json({ productIds: [] })
+    return NextResponse.json({ productIds: [], serviceIds: [] })
   }
 }

@@ -216,9 +216,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Service search infrastructure (prepared for future use)
-    // Services are not exposed to customers yet in this phase.
-    // To enable service search, uncomment the block below and update the typeFilter check.
-    /*
     if (!typeFilter || typeFilter === 'services' || typeFilter === 'service-categories') {
       const services = await prisma.service.findMany({
         where: {
@@ -227,6 +224,7 @@ export async function GET(request: NextRequest) {
             { description: { contains: query, mode: 'insensitive' } },
             { shortDescription: { contains: query, mode: 'insensitive' } },
           ],
+          status: 'PUBLISHED',
           isActive: true,
         },
         include: {
@@ -276,7 +274,6 @@ export async function GET(request: NextRequest) {
         type: 'service-category',
       }))
     }
-    */
 
     const total = results.products.length + results.vendors.length + results.productCategories.length + results.vendorCategories.length + results.brands.length + results.services.length + results.serviceCategories.length
 

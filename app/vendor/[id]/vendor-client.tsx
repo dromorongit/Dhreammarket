@@ -75,6 +75,17 @@ interface VendorData {
     slug: string
   } | null
   products: VendorProduct[]
+  services: Array<{
+    id: string
+    slug: string
+    title: string
+    shortDescription: string | null
+    description: string | null
+    startingPrice: number
+    pricingType: string
+    thumbnail: string | null
+    category: { id: string; name: string; slug: string } | null
+  }>
   productCount: number
 }
 
@@ -618,6 +629,76 @@ useEffect(() => {
                   </Card>
                 )
               })}
+            </div>
+          )}
+        </section>
+
+        <section className="py-12 border-t border-slate-200">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-bold text-deep-navy">
+              Services from {vendor.name}
+            </h2>
+            <span className="text-sm text-slate-500">
+              {vendor.services?.length ?? 0} services
+            </span>
+          </div>
+
+          {(vendor.services?.length ?? 0) === 0 ? (
+            <Card variant="elevated" className="p-12">
+              <EmptyState
+                icon={
+                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                }
+                title="No services yet"
+                description="This vendor hasn't added any services yet. Check back soon!"
+              />
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {vendor.services.map((service: any) => (
+                <Card key={service.id} variant="elevated" className="group flex flex-col overflow-hidden h-full">
+                  <Link href={`/services/${service.slug}`} className="block">
+                    <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                      {service.thumbnail ? (
+                        <Image
+                          src={service.thumbnail}
+                          alt={service.title}
+                          className="object-cover"
+                          fill
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                          <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                  <div className="p-3 flex flex-col flex-1">
+                    <Link href={`/services/${service.slug}`} className="block">
+                      <h3 className="text-sm font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight mb-1">
+                        {service.title}
+                      </h3>
+                    </Link>
+                    <p className="text-xs text-slate-500 mb-2 line-clamp-2">
+                      {service.shortDescription || service.description || 'No description'}
+                    </p>
+                    <div className="flex items-center justify-between mt-auto pt-1">
+                      <span className="text-sm font-bold text-royal-blue">
+                        {formatPrice(Number(service.startingPrice))}
+                      </span>
+                      <Link href={`/services/${service.slug}`} className="w-full">
+                        <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           )}
         </section>
