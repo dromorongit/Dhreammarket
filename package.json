@@ -14,6 +14,14 @@
     "db:seed": "tsx prisma/seed.ts",
     "audit-vendor-onboarding": "tsx _scripts/audit-vendor-onboarding.ts",
     "create-super-admin": "node _scripts/create-super-admin.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test:coverage && npm run test:e2e",
     "postinstall": "prisma generate",
     "prepare": "prisma generate"
   },
@@ -57,17 +65,23 @@
     "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.2",
     "@types/react": "^18.3.0",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/ui": "^4.1.10",
     "autoprefixer": "^10.4.27",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
     "iconutil": "^1.0.2",
     "png-to-ico": "^3.0.2",
     "postcss": "^8.5.8",
+    "supertest": "^7.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }

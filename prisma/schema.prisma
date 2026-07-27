@@ -132,7 +132,10 @@ model Store {
   acceptsPreOrders         Boolean                         @default(false)
   acceptsBackOrders        Boolean                         @default(false)
   badgeTier                VendorBadgeTier?
+  canSellProducts          Boolean                         @default(true)
+  canOfferServices         Boolean                         @default(false)
   products                 Product[]
+  services                 Service[]
   vendor_categories        VendorCategory?                 @relation(fields: [categoryId], references: [id])
   user                     User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorPayouts            VendorPayout[]                  @relation("VendorPayoutStore")
@@ -232,6 +235,57 @@ model Product {
   @@map("products")
   @@index([storeId])
   @@index([categoryId])
+}
+
+model Service {
+  id                  String             @id @default(cuid())
+  vendorId            String
+  categoryId          String
+  title               String
+  slug                String             @unique
+  description         String?
+  shortDescription    String?
+  startingPrice       Decimal            @default(0)
+  pricingType         PricingType        @default(FIXED)
+  deliveryType        DeliveryType       @default(ONLINE)
+  availabilityStatus  AvailabilityStatus @default(AVAILABLE)
+  thumbnail           String?
+  gallery             String[]           @default([])
+  isActive            Boolean            @default(true)
+  isFeatured          Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  store               Store              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category            ServiceCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  images              ServiceImage[]
+
+  @@map("services")
+  @@index([vendorId])
+  @@index([categoryId])
+}
+
+model ServiceCategory {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  icon        String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  services    Service[]
+
+  @@map("service_categories")
+}
+
+model ServiceImage {
+  id           String   @id @default(cuid())
+  serviceId    String
+  imageUrl     String
+  displayOrder Int      @default(0)
+  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("service_images")
+  @@index([serviceId])
 }
 
 model ProductVariant {
@@ -1159,4 +1213,27 @@ enum MessageType {
   REFUND_REQUEST
   REFUND_APPROVAL
   REFUND_REJECTION
+}
+
+enum PricingType {
+  FIXED
+  STARTING_FROM
+  NEGOTIABLE
+  HOURLY
+  DAILY
+}
+
+enum DeliveryType {
+  ONLINE
+  REMOTE
+  ON_SITE
+  HOME_SERVICE
+  HYBRID
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  BUSY
+  PAUSED
 }

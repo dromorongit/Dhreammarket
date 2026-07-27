@@ -1,7 +1,7 @@
 import { getPrisma } from '@/lib/prisma'
 import { PrismaClient } from '@prisma/client'
 
-export type SlugTarget = 'Store' | 'Product' | 'ProductCategory' | 'Brand'
+export type SlugTarget = 'Store' | 'Product' | 'ProductCategory' | 'Brand' | 'Service' | 'ServiceCategory'
 
 export interface SlugOptions {
   baseText: string
@@ -15,6 +15,8 @@ const prismaModelName: Record<SlugTarget, string> = {
   Product: 'product',
   ProductCategory: 'productCategory',
   Brand: 'brand',
+  Service: 'service',
+  ServiceCategory: 'serviceCategory',
 }
 
 export async function generateSlug({

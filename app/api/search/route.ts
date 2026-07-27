@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get('q')?.trim()
-    const typeFilter = searchParams.get('type') // optional: products | vendors | categories | brands
+    const typeFilter = searchParams.get('type') // optional: products | vendors | categories | brands | services | service-categories
 
     if (!query || query.length < 1) {
       return NextResponse.json({
         query: '',
-        results: { products: [], vendors: [], categories: [], brands: [] },
+        results: { products: [], vendors: [], categories: [], brands: [], services: [], serviceCategories: [] },
         total: 0,
       })
     }
@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
       vendorCategories: [],
       categories: [], // Alias for productCategories for backward compatibility
       brands: [],
+      services: [],
+      serviceCategories: [],
     }
 
     // Search Products
@@ -213,7 +215,70 @@ export async function GET(request: NextRequest) {
         }))
     }
 
-    const total = results.products.length + results.vendors.length + results.productCategories.length + results.vendorCategories.length + results.brands.length
+    // Service search infrastructure (prepared for future use)
+    // Services are not exposed to customers yet in this phase.
+    // To enable service search, uncomment the block below and update the typeFilter check.
+    /*
+    if (!typeFilter || typeFilter === 'services' || typeFilter === 'service-categories') {
+      const services = await prisma.service.findMany({
+        where: {
+          OR: [
+            { title: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+            { shortDescription: { contains: query, mode: 'insensitive' } },
+          ],
+          isActive: true,
+        },
+        include: {
+          store: { select: { id: true, slug: true, name: true, isVerified: true, badgeTier: true } },
+          category: { select: { id: true, name: true } },
+        },
+        take: typeFilter === 'services' ? 20 : LIMIT_PER_TYPE,
+        orderBy: { createdAt: 'desc' },
+      })
+
+      results.services = services.map((s) => ({
+        id: s.id,
+        slug: s.slug,
+        title: s.title,
+        shortDescription: s.shortDescription,
+        startingPrice: s.startingPrice,
+        pricingType: s.pricingType,
+        deliveryType: s.deliveryType,
+        availabilityStatus: s.availabilityStatus,
+        thumbnail: s.thumbnail,
+        store: s.store,
+        category: s.category,
+        type: 'service',
+      }))
+    }
+
+    if (!typeFilter || typeFilter === 'service-categories') {
+      const serviceCategories = await prisma.serviceCategory.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { slug: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          _count: { select: { services: true } },
+        },
+        take: LIMIT_PER_TYPE,
+        orderBy: { name: 'asc' },
+      })
+
+      results.serviceCategories = serviceCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        serviceCount: c._count?.services || 0,
+        type: 'service-category',
+      }))
+    }
+    */
+
+    const total = results.products.length + results.vendors.length + results.productCategories.length + results.vendorCategories.length + results.brands.length + results.services.length + results.serviceCategories.length
 
     return NextResponse.json({
       query,
