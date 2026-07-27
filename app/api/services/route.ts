@@ -20,12 +20,17 @@ export async function GET(request: NextRequest) {
     const minPrice = url.searchParams.get('minPrice')
     const maxPrice = url.searchParams.get('maxPrice')
     const search = url.searchParams.get('search')
+    const isFeatured = url.searchParams.get('isFeatured')
     const sortBy = url.searchParams.get('sortBy') || 'createdAt'
     const sortOrder = url.searchParams.get('sortOrder') || 'desc'
 
     const where: Record<string, unknown> = {
       status: 'PUBLISHED',
       isActive: true,
+    }
+
+    if (isFeatured !== null) {
+      where.isFeatured = isFeatured === 'true'
     }
 
     if (categoryId) {
@@ -88,7 +93,19 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         orderBy,
-        include: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          shortDescription: true,
+          description: true,
+          startingPrice: true,
+          pricingType: true,
+          thumbnail: true,
+          tags: true,
+          isFeatured: true,
+          status: true,
+          createdAt: true,
           store: {
             select: {
               id: true,

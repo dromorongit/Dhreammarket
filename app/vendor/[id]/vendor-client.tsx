@@ -96,7 +96,7 @@ interface User {
 }
 
 const SITE_URL = 'https://www.dhreamarket.com'
-const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
+const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreamarket.png`
 
 export default function VendorProfilePage() {
   const params = useParams()
@@ -120,6 +120,7 @@ export default function VendorProfilePage() {
   const [userReview, setUserReview] = useState<VendorReview | null>(null)
   const [editingReview, setEditingReview] = useState<VendorReview | null>(null)
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'products' | 'services' | 'about' | 'reviews'>('products')
 
   useEffect(() => {
     if (!vendorId) return
@@ -153,7 +154,7 @@ export default function VendorProfilePage() {
     }
   }, [vendorId])
 
-useEffect(() => {
+  useEffect(() => {
     if (user && user.role === 'CUSTOMER' && vendorId) {
       checkCanReviewVendor()
     } else {
@@ -336,20 +337,18 @@ useEffect(() => {
 
   if (error || !vendor) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <EmptyState
-            icon={
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            }
-            title="Vendor Not Found"
-            description={error || "The vendor you're looking for doesn't exist or hasn't completed their profile yet."}
-            actionLabel="Back to Marketplace"
-            onAction={() => window.location.href = '/marketplace'}
-          />
-        </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <EmptyState
+          icon={
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          }
+          title="Vendor Not Found"
+          description={error || "The vendor you're looking for doesn't exist or hasn't completed their profile yet."}
+          actionLabel="Back to Marketplace"
+          onAction={() => window.location.href = '/marketplace'}
+        />
       </div>
     )
   }
@@ -443,69 +442,69 @@ useEffect(() => {
                 <p className="text-slate-600 max-w-2xl mb-6">{vendor.description}</p>
               )}
 
-{(vendor.mainPhoneNumber || vendor.alternativePhoneNumber || vendor.whatsappNumber || vendor.location) && (
-                 <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-                   <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
-                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314-11.314l1.414 1.414" />
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                     </svg>
-                     Store Information
-                   </h3>
-                   <div className="space-y-2">
-                     {vendor.location && (
-                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                         <span className="text-sm text-slate-600">📍 Location:</span>
-                         <span className="text-sm font-medium text-slate-900">
-                           {vendor.location}
-                         </span>
-                       </div>
-                     )}
-                     {vendor.mainPhoneNumber && (
-                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                         <span className="text-sm text-slate-600">📞 Main Call:</span>
-                         <a 
-                           href={getTelLink(vendor.mainPhoneNumber) || '#'}
-                           className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                         >
-                           {formatGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
-                         </a>
-                       </div>
-                     )}
-                     {vendor.alternativePhoneNumber && (
-                       <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
-                         <span className="text-sm text-slate-600">📞 Alternative:</span>
-                         <a 
-                           href={getTelLink(vendor.alternativePhoneNumber) || '#'}
-                           className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
-                         >
-                           {formatGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
-                         </a>
-                       </div>
-                     )}
-                     {vendor.whatsappNumber && (
-                       <div className="flex items-center justify-between py-2">
-                         <span className="text-sm text-slate-600">💬 WhatsApp:</span>
-                         <a 
-                           href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
-                           target="_blank"
-                           rel="noopener noreferrer"
-                           className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
-                         >
-                           {formatGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
-                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                             <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
-                           </svg>
-                         </a>
-                       </div>
-                     )}
-                   </div>
-                 </div>
-               )}
+              {(vendor.mainPhoneNumber || vendor.alternativePhoneNumber || vendor.whatsappNumber || vendor.location) && (
+                <div className="mb-6 p-4 bg-slate-50 rounded-lg">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314-11.314l1.414 1.414" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Store Information
+                  </h3>
+                  <div className="space-y-2">
+                    {vendor.location && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                        <span className="text-sm text-slate-600">📍 Location:</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {vendor.location}
+                        </span>
+                      </div>
+                    )}
+                    {vendor.mainPhoneNumber && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                        <span className="text-sm text-slate-600">📞 Main Call:</span>
+                        <a
+                          href={getTelLink(vendor.mainPhoneNumber) || '#'}
+                          className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                        >
+                          {formatGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
+                        </a>
+                      </div>
+                    )}
+                    {vendor.alternativePhoneNumber && (
+                      <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0">
+                        <span className="text-sm text-slate-600">📞 Alternative:</span>
+                        <a
+                          href={getTelLink(vendor.alternativePhoneNumber) || '#'}
+                          className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors"
+                        >
+                          {formatGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
+                        </a>
+                      </div>
+                    )}
+                    {vendor.whatsappNumber && (
+                      <div className="flex items-center justify-between py-2">
+                        <span className="text-sm text-slate-600">💬 WhatsApp:</span>
+                        <a
+                          href={getWhatsAppLink(vendor.whatsappNumber) || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors flex items-center gap-1"
+                        >
+                          {formatGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                          </svg>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-3">
                 {vendor.whatsappNumber && getWhatsAppLinks(vendor.whatsappNumber).map((link, index) => (
-                  <a 
+                  <a
                     key={index}
                     href={link}
                     target="_blank"
@@ -525,348 +524,453 @@ useEffect(() => {
                 </Link>
               </div>
             </div>
+          </div>
         </div>
       </div>
 
-        <section className="py-12">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-deep-navy">
-              Products from {vendor.name}
-            </h2>
-            <span className="text-sm text-slate-500">
-              {vendor.products.length} products
-            </span>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-2 inline-flex gap-1">
+          {[
+            { key: 'products' as const, label: 'Products' },
+            { key: 'services' as const, label: 'Services' },
+            { key: 'about' as const, label: 'About' },
+            { key: 'reviews' as const, label: `Reviews${vendorReviewCount > 0 ? ` (${vendorReviewCount})` : ''}` },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? 'bg-royal-blue text-white'
+                  : 'text-slate-600 hover:text-royal-blue hover:bg-slate-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          {vendor.products.length === 0 ? (
-            <Card variant="elevated" className="p-12">
-              <EmptyState
-                icon={
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {activeTab === 'products' && (
+          <section className="py-12">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-deep-navy">
+                Products from {vendor.name}
+              </h2>
+              <span className="text-sm text-slate-500">
+                {vendor.products.length} products
+              </span>
+            </div>
+
+            {vendor.products.length === 0 ? (
+              <Card variant="elevated" className="p-12">
+                <EmptyState
+                  icon={
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  }
+                  title="No products yet"
+                  description="This vendor hasn't added any products yet. Check back soon!"
+                />
+              </Card>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {vendor.products.map((product) => {
+                  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+                  const badgeData = calculateProductBadges({
+                    price: product.price,
+                    flashSalePrice: product.flashSalePrice,
+                    salesPrice: product.salesPrice,
+                    dealsPrice: product.dealsPrice,
+                    stock: product.stock,
+                    availabilityType: product.availabilityType,
+                    expectedArrivalDate: product.expectedArrivalDate,
+                    expectedRestockDate: product.expectedRestockDate,
+                  })
+                  return (
+                    <Card
+                      key={product.id}
+                      variant="elevated"
+                      className="group flex flex-col overflow-hidden h-full p-0"
+                    >
+                      <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
+                          {product.images?.length > 0 ? (
+                            <Image
+                              src={product.images[0].url}
+                              alt={product.images[0].alt || product.name}
+                              className="object-cover"
+                              fill
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                          )}
+                          <ProductBadges product={badgeData} />
+                        </div>
+                      </Link>
+                      <div className="p-2 space-y-1 flex-1 flex flex-col">
+                        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                            {product.name}
+                          </h3>
+                        </Link>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[11px] font-bold text-royal-blue">
+                            {formatPrice(effectivePrice)}
+                          </span>
+                          {(badgeData.discountPercentage ?? 0) > 0 && (
+                            <span className="text-[10px] text-slate-400 line-through">
+                              {formatPrice(product.price)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <p className="text-[10px] text-slate-500 truncate">
+                            {vendor.name}
+                          </p>
+                          {(() => {
+                            const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
+                            if (badgeInfo) {
+                              const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                              return (
+                                <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                              )
+                            }
+                            if (vendor.isVerified) {
+                              return (
+                                <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                              )
+                            }
+                            return null
+                          })()}
+                        </div>
+                      </div>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === 'about' && (
+          <section className="py-12 border-t border-slate-200">
+            {vendor.description && (
+              <Card variant="elevated" className="p-8 mb-6">
+                <h2 className="text-xl font-bold text-deep-navy mb-4">About {vendor.name}</h2>
+                <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">{vendor.description}</p>
+              </Card>
+            )}
+            {(vendor.mainPhoneNumber || vendor.alternativePhoneNumber || vendor.whatsappNumber || vendor.location) && (
+              <Card variant="elevated" className="p-8">
+                <h2 className="text-xl font-bold text-deep-navy mb-6 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                }
-                title="No products yet"
-                description="This vendor hasn't added any products yet. Check back soon!"
-              />
-            </Card>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {vendor.products.map((product) => {
-                const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                const badgeData = calculateProductBadges({
-                  price: product.price,
-                  flashSalePrice: product.flashSalePrice,
-                  salesPrice: product.salesPrice,
-                  dealsPrice: product.dealsPrice,
-                  stock: product.stock,
-                  availabilityType: product.availabilityType,
-                  expectedArrivalDate: product.expectedArrivalDate,
-                  expectedRestockDate: product.expectedRestockDate,
-                })
-                return (
-                  <Card
-                    key={product.id}
-                    variant="elevated"
-                    className="group flex flex-col overflow-hidden h-full p-0"
-                  >
-                    <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+                  Store Information
+                </h2>
+                <div className="space-y-3">
+                  {vendor.location && (
+                    <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314-11.314l1.414 1.414" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Location
+                      </span>
+                      <span className="text-sm font-medium text-slate-900">{vendor.location}</span>
+                    </div>
+                  )}
+                  {vendor.mainPhoneNumber && (
+                    <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        Main Call
+                      </span>
+                      <a href={getTelLink(vendor.mainPhoneNumber) || '#'} className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors">
+                        {formatGhanaPhoneNumber(vendor.mainPhoneNumber) || vendor.mainPhoneNumber}
+                      </a>
+                    </div>
+                  )}
+                  {vendor.alternativePhoneNumber && (
+                    <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        Alternative
+                      </span>
+                      <a href={getTelLink(vendor.alternativePhoneNumber) || '#'} className="text-sm font-medium text-royal-blue hover:text-purple-600 transition-colors">
+                        {formatGhanaPhoneNumber(vendor.alternativePhoneNumber) || vendor.alternativePhoneNumber}
+                      </a>
+                    </div>
+                  )}
+                  {vendor.whatsappNumber && (
+                    <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                      <span className="text-sm text-slate-600 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12.04 2.01A9.99 9.99 0 002.03 11.91c0 1.7.43 3.33 1.18 4.76L2 22l5.34-1.32a9.93 9.93 0 004.6-1.22 9.99 9.99 0 008.9-8.9c0-2.73-1.08-5.24-2.83-7.03A9.96 9.96 0 0012.04 2.01z" />
+                        </svg>
+                        WhatsApp
+                      </span>
+                      <a href={getWhatsAppLink(vendor.whatsappNumber) || '#'} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-green-600 hover:text-green-700 transition-colors">
+                        {formatGhanaPhoneNumber(vendor.whatsappNumber) || vendor.whatsappNumber}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+          </section>
+        )}
+
+        {activeTab === 'services' && (
+          <section className="py-12 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-deep-navy">
+                Services from {vendor.name}
+              </h2>
+              <span className="text-sm text-slate-500">
+                {vendor.services?.length ?? 0} services
+              </span>
+            </div>
+
+            {(vendor.services?.length ?? 0) === 0 ? (
+              <Card variant="elevated" className="p-12">
+                <EmptyState
+                  icon={
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-3.582 9 8z" />
+                    </svg>
+                  }
+                  title="No services yet"
+                  description="This vendor hasn't added any services yet. Check back soon!"
+                />
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {vendor.services.map((service: any) => (
+                  <Card key={service.id} variant="elevated" className="group flex flex-col overflow-hidden h-full">
+                    <Link href={`/services/${service.slug}`} className="block">
                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                        {product.images?.length > 0 ? (
+                        {service.thumbnail ? (
                           <Image
-                            src={product.images[0].url}
-                            alt={product.images[0].alt || product.name}
+                            src={service.thumbnail}
+                            alt={service.title}
                             className="object-cover"
                             fill
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-slate-100">
                             <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-3.582 9 8z" />
                             </svg>
                           </div>
                         )}
-                        <ProductBadges product={badgeData} />
                       </div>
                     </Link>
-                    <div className="p-2 space-y-1 flex-1 flex flex-col">
-<Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-                        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                          {product.name}
+                    <div className="p-3 flex flex-col flex-1">
+                      <Link href={`/services/${service.slug}`} className="block">
+                        <h3 className="text-sm font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight mb-1">
+                          {service.title}
                         </h3>
                       </Link>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[11px] font-bold text-royal-blue">
-                          {formatPrice(effectivePrice)}
+                      <p className="text-xs text-slate-500 mb-2 line-clamp-2">
+                        {service.shortDescription || service.description || 'No description'}
+                      </p>
+                      <div className="flex items-center justify-between mt-auto pt-1">
+                        <span className="text-sm font-bold text-royal-blue">
+                          {formatPrice(Number(service.startingPrice))}
                         </span>
-                        {(badgeData.discountPercentage ?? 0) > 0 && (
-                          <span className="text-[10px] text-slate-400 line-through">
-                            {formatPrice(product.price)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 min-w-0">
-                        <p className="text-[10px] text-slate-500 truncate">
-                          {vendor.name}
-                        </p>
-                        {(() => {
-                          const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                          if (badgeInfo) {
-                            const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                            return (
-                              <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
-                            )
-                          }
-                          if (vendor.isVerified) {
-                            return (
-                              <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
-                            )
-                          }
-                          return null
-                        })()}
+                        <Link href={`/services/${service.slug}`} className="w-full">
+                          <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                            View Details
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </Card>
-                )
-              })}
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === 'reviews' && (
+          <section className="py-12 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-deep-navy">Store Reviews</h2>
+                {vendorReviewCount > 0 && (
+                  <p className="text-slate-600 mt-1">
+                    {vendorRating.toFixed(1)} out of 5 ({vendorReviewCount} review{vendorReviewCount !== 1 ? 's' : ''})
+                  </p>
+                )}
+              </div>
+              {user && user.role === 'CUSTOMER' && canReviewVendor && !showReviewForm && (
+                <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+                  Write a Review
+                </Button>
+              )}
             </div>
-          )}
-        </section>
 
-        <section className="py-12 border-t border-slate-200">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-deep-navy">
-              Services from {vendor.name}
-            </h2>
-            <span className="text-sm text-slate-500">
-              {vendor.services?.length ?? 0} services
-            </span>
-          </div>
+            {user && user.role === 'CUSTOMER' && !canReviewVendor && !showReviewForm && eligibilityReason && (
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-700 text-sm">
+                  {eligibilityReason === 'already_reviewed'
+                    ? 'You have already reviewed this store. Thank you for your feedback!'
+                    : 'You can only review this store after your order is PROCESSING, SHIPPED, DELIVERED, or COMPLETED.'}
+                </p>
+              </div>
+            )}
 
-          {(vendor.services?.length ?? 0) === 0 ? (
-            <Card variant="elevated" className="p-12">
+            {!user && (
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-700 text-sm">
+                  Please <Link href="/login" className="text-royal-blue hover:underline">log in</Link> as a customer to review this store.
+                </p>
+              </div>
+            )}
+
+            {showReviewForm && (
+              <Card variant="elevated" className="mb-8">
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-semibold text-deep-navy mb-4">
+                    {editingReview ? 'Edit Your Review' : 'Rate This Store'}
+                  </h3>
+                  {reviewError && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                      {reviewError}
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
+                      {renderStars(reviewRating, true, (r) => setReviewRating(r))}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-3">
+                        Your Comment <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        rows={4}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
+                        placeholder="Share your experience with this store..."
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <Button onClick={editingReview ? updateVendorReview : submitVendorReview} disabled={submittingReview}>
+                        {submittingReview ? (editingReview ? 'Updating...' : 'Submitting...') : (editingReview ? 'Update Review' : 'Submit Review')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setShowReviewForm(false)
+                          setReviewRating(5)
+                          setReviewComment('')
+                          setEditingReview(null)
+                          setReviewError(null)
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {reviewsLoading ? (
+              <SkeletonReviews count={3} />
+            ) : vendorReviews.length === 0 ? (
               <EmptyState
                 icon={
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 }
-                title="No services yet"
-                description="This vendor hasn't added any services yet. Check back soon!"
+                title="No reviews yet"
+                description={canReviewVendor ? 'Be the first to review this store!' : 'No reviews for this store yet.'}
               />
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {vendor.services.map((service: any) => (
-                <Card key={service.id} variant="elevated" className="group flex flex-col overflow-hidden h-full">
-                  <Link href={`/services/${service.slug}`} className="block">
-                    <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
-                      {service.thumbnail ? (
-                        <Image
-                          src={service.thumbnail}
-                          alt={service.title}
-                          className="object-cover"
-                          fill
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                          <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="p-3 flex flex-col flex-1">
-                    <Link href={`/services/${service.slug}`} className="block">
-                      <h3 className="text-sm font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight mb-1">
-                        {service.title}
-                      </h3>
-                    </Link>
-                    <p className="text-xs text-slate-500 mb-2 line-clamp-2">
-                      {service.shortDescription || service.description || 'No description'}
-                    </p>
-                    <div className="flex items-center justify-between mt-auto pt-1">
-                      <span className="text-sm font-bold text-royal-blue">
-                        {formatPrice(Number(service.startingPrice))}
-                      </span>
-                      <Link href={`/services/${service.slug}`} className="w-full">
-                        <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="py-12 border-t border-slate-200">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-deep-navy">Store Reviews</h2>
-              {vendorReviewCount > 0 && (
-                <p className="text-slate-600 mt-1">
-                  {vendorRating.toFixed(1)} out of 5 ({vendorReviewCount} review{vendorReviewCount !== 1 ? 's' : ''})
-                </p>
-              )}
-            </div>
-            {user && user.role === 'CUSTOMER' && canReviewVendor && !showReviewForm && (
-              <Button variant="outline" onClick={() => setShowReviewForm(true)}>
-                Write a Review
-              </Button>
-            )}
-          </div>
-
-          {user && user.role === 'CUSTOMER' && !canReviewVendor && !showReviewForm && eligibilityReason && (
-            <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-slate-700 text-sm">
-                {eligibilityReason === 'already_reviewed'
-                  ? 'You have already reviewed this store. Thank you for your feedback!'
-                  : 'You can only review this store after your order is PROCESSING, SHIPPED, DELIVERED, or COMPLETED.'}
-              </p>
-            </div>
-          )}
-
-          {!user && (
-            <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-              <p className="text-slate-700 text-sm">
-                Please <Link href="/login" className="text-royal-blue hover:underline">log in</Link> as a customer to review this store.
-              </p>
-            </div>
-          )}
-
-          {showReviewForm && (
-            <Card variant="elevated" className="mb-8">
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-semibold text-deep-navy mb-4">
-                  {editingReview ? 'Edit Your Review' : 'Rate This Store'}
-                </h3>
-                {reviewError && (
-                  <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-                    {reviewError}
-                  </div>
-                )}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
-                    {renderStars(reviewRating, true, (r) => setReviewRating(r))}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">
-                      Your Comment <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      rows={4}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
-                      placeholder="Share your experience with this store..."
-                    />
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <Button onClick={editingReview ? updateVendorReview : submitVendorReview} disabled={submittingReview}>
-                      {submittingReview ? (editingReview ? 'Updating...' : 'Submitting...') : (editingReview ? 'Update Review' : 'Submit Review')}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setShowReviewForm(false)
-                        setReviewRating(5)
-                        setReviewComment('')
-                        setEditingReview(null)
-                        setReviewError(null)
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {reviewsLoading ? (
-            <SkeletonReviews count={3} />
-          ) : vendorReviews.length === 0 ? (
-            <EmptyState
-              icon={
-                <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              }
-              title="No reviews yet"
-              description={canReviewVendor ? 'Be the first to review this store!' : 'No reviews for this store yet.'}
-            />
-          ) : (
-            <div className="space-y-4">
-              {vendorReviews.map((review) => (
-                <Card key={review.id} variant="elevated">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-royal-blue/10 flex items-center justify-center text-royal-blue font-semibold">
-                          {getCustomerInitials(review.reviewer)}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-deep-navy">{review.reviewer}</p>
-                            {review.isVerifiedPurchase && (
-                              <Badge variant="success" size="sm" className="text-[10px] px-1.5 py-0">
-                                Verified Purchase
-                              </Badge>
-                            )}
+            ) : (
+              <div className="space-y-4">
+                {vendorReviews.map((review) => (
+                  <Card key={review.id} variant="elevated">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-royal-blue/10 flex items-center justify-center text-royal-blue font-semibold">
+                            {getCustomerInitials(review.reviewer)}
                           </div>
-                          {renderStars(review.rating)}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-deep-navy">{review.reviewer}</p>
+                              {review.isVerifiedPurchase && (
+                                <Badge variant="success" size="sm" className="text-[10px] px-1.5 py-0">
+                                  Verified Purchase
+                                </Badge>
+                              )}
+                            </div>
+                            {renderStars(review.rating)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-500">
+                            {new Date(review.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                          {userReview && userReview.id === review.id && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingReview(review)
+                                  setReviewRating(review.rating)
+                                  setReviewComment(review.comment || '')
+                                  setShowReviewForm(true)
+                                }}
+                                className="text-xs"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteVendorReview(review.id)}
+                                disabled={deletingReviewId === review.id}
+                                className="text-xs text-red-600 hover:text-red-700"
+                              >
+                                {deletingReviewId === review.id ? 'Deleting...' : 'Delete'}
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-500">
-                          {new Date(review.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                        {userReview && userReview.id === review.id && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingReview(review)
-                                setReviewRating(review.rating)
-                                setReviewComment(review.comment || '')
-                                setShowReviewForm(true)
-                              }}
-                              className="text-xs"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteVendorReview(review.id)}
-                              disabled={deletingReviewId === review.id}
-                              className="text-xs text-red-600 hover:text-red-700"
-                            >
-                              {deletingReviewId === review.id ? 'Deleting...' : 'Delete'}
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {review.comment && (
-                      <p className="text-slate-700 leading-relaxed">{review.comment}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>
+                      {review.comment && (
+                        <p className="text-slate-700 leading-relaxed">{review.comment}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

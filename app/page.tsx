@@ -9,6 +9,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
+import ServiceCard from '@/components/ServiceCard'
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { formatPrice } from '@/lib/currency'
@@ -255,6 +256,9 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* ─── Featured Services (always shown) ─── */}
+      <FeaturedServicesSection />
 
       {/* ─── Quick Links Section (hardcoded) ─── */}
       {!loadingManaged && (
@@ -1337,5 +1341,83 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
         </Link>
       </div>
     </>
+  )
+}
+
+function FeaturedServicesSection() {
+  const { data, isLoading } = useQuery<{ services: any[] }>({
+    queryKey: ['services', 'featured'],
+    queryFn: async () => {
+      const response = await fetch('/api/services?isFeatured=true&limit=8')
+      if (!response.ok) throw new Error('Failed to fetch featured services')
+      return response.json()
+    },
+  })
+  const services = data?.services ?? []
+  const loading = isLoading
+
+  return (
+    <section className="relative py-24 lg:py-32 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <Badge variant="premium" className="mb-4">Featured Services</Badge>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+            Explore Services
+          </h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Discover premium services from our trusted vendors
+          </p>
+        </div>
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
+            {[...Array(8)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : services.length === 0 ? (
+          <EmptyState
+            icon={
+              <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            }
+            title="No services available"
+            description="Check back soon for new services from our vendors."
+          />
+        ) : (
+          <>
+            {/* Mobile: 2 columns, up to 8 services */}
+            <div className="grid grid-cols-2 gap-4 lg:gap-6 sm:hidden">
+              {services.slice(0, 8).map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+
+            {/* Tablet: 3 columns, up to 8 services */}
+            <div className="hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6">
+              {services.slice(0, 8).map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+
+            {/* Desktop: 4 columns, up to 8 services */}
+            <div className="hidden lg:grid lg:grid-cols-4 gap-4 lg:gap-6">
+              {services.slice(0, 8).map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+
+            {/* See More button - always visible */}
+            <div className="mt-8 text-center">
+              <Link href="/services">
+                <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+                  See More
+                </Button>
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    </section>
   )
 }

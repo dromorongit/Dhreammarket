@@ -45,6 +45,29 @@ interface SearchBrand {
   type: string
 }
 
+interface SearchService {
+  id: string
+  slug: string
+  title: string
+  shortDescription: string | null
+  startingPrice: number
+  pricingType: string
+  deliveryType: string
+  availabilityStatus: string
+  thumbnail: string | null
+  store: { id: string; name: string; isVerified: boolean; badgeTier?: string | null } | null
+  category: { id: string; name: string; slug: string } | null
+  type: string
+}
+
+interface SearchServiceCategory {
+  id: string
+  name: string
+  slug: string
+  serviceCount: number
+  type: string
+}
+
 interface SearchResults {
   query: string
   results: {
@@ -52,6 +75,8 @@ interface SearchResults {
     vendors: SearchVendor[]
     categories: SearchCategory[]
     brands: SearchBrand[]
+    services: SearchService[]
+    serviceCategories: SearchServiceCategory[]
   }
   total: number
 }
@@ -61,6 +86,8 @@ type FlatSearchItem =
   | (SearchVendor & { _group: 'Vendors' })
   | (SearchCategory & { _group: 'Categories' })
   | (SearchBrand & { _group: 'Brands' })
+  | (SearchService & { _group: 'Services' })
+  | (SearchServiceCategory & { _group: 'Service Categories' })
 
 interface SearchDropdownProps {
   onNavigate?: () => void
@@ -82,9 +109,11 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
   const flatResults: FlatSearchItem[] = results
     ? [
         ...results.results.products.map((p) => ({ ...p, _group: 'Products' as const })),
+        ...results.results.services.map((s) => ({ ...s, _group: 'Services' as const })),
         ...results.results.vendors.map((v) => ({ ...v, _group: 'Vendors' as const })),
         ...results.results.categories.map((c) => ({ ...c, _group: 'Categories' as const })),
         ...results.results.brands.map((b) => ({ ...b, _group: 'Brands' as const })),
+        ...results.results.serviceCategories.map((sc) => ({ ...sc, _group: 'Service Categories' as const })),
       ]
     : []
 
@@ -208,6 +237,12 @@ const performSearch = useCallback(async (searchQuery: string) => {
   const isBrandItem = (item: FlatSearchItem): item is SearchBrand & { _group: 'Brands' } =>
     item.type === 'brand'
 
+  const isServiceItem = (item: FlatSearchItem): item is SearchService & { _group: 'Services' } =>
+    item.type === 'service'
+
+  const isServiceCategoryItem = (item: FlatSearchItem): item is SearchServiceCategory & { _group: 'Service Categories' } =>
+    item.type === 'service-category'
+
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen || flatResults.length === 0) {
@@ -231,14 +266,18 @@ const performSearch = useCallback(async (searchQuery: string) => {
         e.preventDefault()
         if (activeIndex >= 0 && flatResults[activeIndex]) {
           const item = flatResults[activeIndex]
-if (isProductItem(item)) {
+          if (isProductItem(item)) {
              router.push(`/marketplace/product/${item.slug ?? item.id}`)
-           } else if (isVendorItem(item)) {
+          } else if (isServiceItem(item)) {
+             router.push(`/services/${item.slug}`)
+          } else if (isVendorItem(item)) {
              router.push(`/vendor/${item.slug ?? item.id}`)
           } else if (isCategoryItem(item)) {
-            router.push(`/marketplace?category=${encodeURIComponent(item.id)}`)
+             router.push(`/marketplace?category=${encodeURIComponent(item.id)}`)
+          } else if (isServiceCategoryItem(item)) {
+             router.push(`/services/category/${item.slug}`)
           } else if (isBrandItem(item)) {
-            router.push(`/marketplace?brand=${encodeURIComponent(item.name)}`)
+             router.push(`/marketplace?brand=${encodeURIComponent(item.name)}`)
           }
           onNavigate?.()
         } else {
@@ -305,7 +344,7 @@ if (isProductItem(item)) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query.trim() && results && setIsOpen(true)}
-          placeholder="Search products, vendors, categories, brands..."
+          placeholder="Search products, services, vendors, categories, brands..."
           className="w-full h-10 pl-10 pr-10 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-sm text-base md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/30 focus:border-royal-blue/50 focus:bg-white shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200"
           aria-label="Search marketplace"
           aria-autocomplete="list"
@@ -546,6 +585,86 @@ if (isProductItem(item)) {
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {category.productCount} products
+                        </p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Services */}
+            {results.results.services.length > 0 && (
+              <div className="p-2 border-t border-slate-100">
+                <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Services
+                </p>
+                {results.results.services.slice(0, 3).map((service) => {
+                  const flatIdx = flatResults.findIndex(
+                    (r) => r.type === 'service' && (r as SearchService).id === service.id
+                  )
+                  return (
+                    <Link
+                      key={service.id}
+                      href={`/services/${service.slug}`}
+                      onClick={handleResultClick}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+                        flatIdx === activeIndex ? 'bg-royal-blue/8' : 'hover:bg-slate-50'
+                      }`}
+                      role="option"
+                      aria-selected={flatIdx === activeIndex}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">
+                          {highlightMatch(service.title, query)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          From {typeof service.startingPrice === 'number' ? `₵${service.startingPrice.toFixed(2)}` : '₵0.00'}
+                        </p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Service Categories */}
+            {results.results.serviceCategories.length > 0 && (
+              <div className="p-2 border-t border-slate-100">
+                <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                  Service Categories
+                </p>
+                {results.results.serviceCategories.slice(0, 3).map((serviceCategory) => {
+                  const flatIdx = flatResults.findIndex(
+                    (r) => r.type === 'service-category' && (r as SearchServiceCategory).id === serviceCategory.id
+                  )
+                  return (
+                    <Link
+                      key={serviceCategory.id}
+                      href={`/services/category/${serviceCategory.slug}`}
+                      onClick={handleResultClick}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+                        flatIdx === activeIndex ? 'bg-royal-blue/8' : 'hover:bg-slate-50'
+                      }`}
+                      role="option"
+                      aria-selected={flatIdx === activeIndex}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">
+                          {highlightMatch(serviceCategory.name, query)}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {serviceCategory.serviceCount} services
                         </p>
                       </div>
                     </Link>

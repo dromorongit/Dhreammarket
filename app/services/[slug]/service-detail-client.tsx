@@ -63,11 +63,53 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
 
   const fetchRelatedServices = async () => {
     try {
-      const response = await fetch(`/api/services?limit=8&sortBy=createdAt&sortOrder=desc`)
-      if (response.ok) {
-        const data = await response.json()
-        setRelatedServices(data.services || [])
+      if (!service) return
+      const categoryId = service.category?.id
+      const vendorId = service.store?.id
+      const serviceTags = service.tags || []
+
+      const seen = new Set<string>([service.id])
+      const related: RelatedService[] = []
+
+      const addServices = (items: any[]) => {
+        for (const item of items) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id)
+            related.push(item)
+          }
+        }
       }
+
+      if (categoryId) {
+        const res = await fetch(`/api/services?categoryId=${categoryId}&limit=8&sortBy=createdAt&sortOrder=desc`)
+        if (res.ok) {
+          const data = await res.json()
+          addServices((data.services || []).filter((s: any) => s.id !== service.id))
+        }
+      }
+
+      if (related.length < 4 && vendorId) {
+        const res = await fetch(`/api/services?vendorId=${vendorId}&limit=8&sortBy=createdAt&sortOrder=desc`)
+        if (res.ok) {
+          const data = await res.json()
+          addServices((data.services || []).filter((s: any) => s.id !== service.id))
+        }
+      }
+
+      if (related.length < 4 && serviceTags.length > 0) {
+        const res = await fetch(`/api/services?limit=20&sortBy=createdAt&sortOrder=desc`)
+        if (res.ok) {
+          const data = await res.json()
+          const tagged = (data.services || []).filter((s: any) => {
+            if (s.id === service.id) return false
+            const common = s.tags?.filter((t: string) => serviceTags.includes(t)) || []
+            return common.length > 0
+          })
+          addServices(tagged)
+        }
+      }
+
+      setRelatedServices(related.slice(0, 4))
     } catch (error) {
       console.error('Error fetching related services:', error)
     }
