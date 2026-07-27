@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         products: {
           select: { id: true },
         },
+        services: true,
       },
     })
 
@@ -258,6 +259,13 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
     const vendorAnalytics = await getVendorDemandAnalytics(payload.userId)
     const procurementDashboard = await getVendorProcurementDashboard(payload.userId)
 
+    const services = store.services || []
+    const totalServices = services.length
+    const publishedServices = services.filter((s: any) => s.status === 'PUBLISHED').length
+    const draftServices = services.filter((s: any) => s.status === 'DRAFT').length
+    const availableServices = services.filter((s: any) => s.availabilityStatus === 'AVAILABLE').length
+    const busyServices = services.filter((s: any) => s.availabilityStatus === 'BUSY').length
+
     return NextResponse.json({
       productCount,
       activeOrderCount,
@@ -292,6 +300,13 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
       lowStockProducts,
       demandAnalytics: vendorAnalytics,
       procurement: procurementDashboard,
+      services: {
+        total: totalServices,
+        published: publishedServices,
+        draft: draftServices,
+        available: availableServices,
+        busy: busyServices,
+      },
     })
   } catch (error) {
     console.error('Error fetching vendor metrics:', error)
@@ -316,6 +331,13 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
       outstandingBalance: 0,
       lastPayoutDate: null,
       verificationStatus: 'NOT_APPLIED',
+      services: {
+        total: 0,
+        published: 0,
+        draft: 0,
+        available: 0,
+        busy: 0,
+      },
       error: 'Internal server error',
       details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
     }, { status: 500 })

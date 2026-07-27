@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 interface ImageUploadProps {
   value: string[];
   onChange: (urls: string[]) => void;
-  folder?: 'products' | 'logos' | 'banners' | 'verification';
+  folder?: 'products' | 'logos' | 'banners' | 'verification' | 'services';
   maxFiles?: number;
   maxSizeMB?: number;
   label?: string;

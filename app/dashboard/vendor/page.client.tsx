@@ -66,6 +66,13 @@ interface VendorMetrics {
     recommendedRestocks: Array<{ productId: string; productName: string; recommendedQuantity: number; daysUntilStockout: number | null }>
     demandRankings: Array<{ productId: string; productName: string; totalDemand: number; avgDailySales: number }>
   }
+  services?: {
+    total: number
+    published: number
+    draft: number
+    available: number
+    busy: number
+  }
 }
 
 interface OnboardingStep {
@@ -93,7 +100,14 @@ export default function VendorDashboard() {
     grossRevenue: 0,
     totalPayouts: 0,
     outstandingBalance: 0,
-    verificationStatus: 'NOT_APPLIED'
+    verificationStatus: 'NOT_APPLIED',
+    services: {
+      total: 0,
+      published: 0,
+      draft: 0,
+      available: 0,
+      busy: 0,
+    },
   })
   const [loading, setLoading] = useState(true)
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set())
@@ -177,6 +191,7 @@ export default function VendorDashboard() {
           fulfillment: data?.fulfillment || { preorder: { total: 0, byStatus: [] }, backorder: { total: 0, byStatus: [] } },
           lowStockProducts: Array.isArray(data?.lowStockProducts) ? data.lowStockProducts : [],
           demandAnalytics: data?.demandAnalytics || null,
+          services: data?.services || prev.services || { total: 0, published: 0, draft: 0, available: 0, busy: 0 },
         }))
       }
     } catch (error) {
@@ -593,6 +608,16 @@ export default function VendorDashboard() {
                 </Link>
               </Button>
               <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group min-h-[44px]">
+                <Link href="/dashboard/vendor/services">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 21c-2.767 0-5.387-.631-7.727-1.707M9 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">Manage Services</span>
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group min-h-[44px]">
                 <Link href="/dashboard/vendor/orders">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -634,7 +659,42 @@ export default function VendorDashboard() {
               </div>
             </div>
           </CardContent>
-</Card>
+        </Card>
+
+        {metrics.services && (
+          <Card variant="elevated" className="mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-deep-navy">Service Analytics</h3>
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/dashboard/vendor/services">View All Services</Link>
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="bg-slate-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-deep-navy">{metrics.services.total}</p>
+                  <p className="text-xs text-slate-500 mt-1">Total Services</p>
+                </div>
+                <div className="bg-green-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-green-700">{metrics.services.published}</p>
+                  <p className="text-xs text-slate-500 mt-1">Published</p>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-amber-700">{metrics.services.draft}</p>
+                  <p className="text-xs text-slate-500 mt-1">Draft</p>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-blue-700">{metrics.services.available}</p>
+                  <p className="text-xs text-slate-500 mt-1">Available</p>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-purple-700">{metrics.services.busy}</p>
+                  <p className="text-xs text-slate-500 mt-1">Busy</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </ErrorBoundary>
   )

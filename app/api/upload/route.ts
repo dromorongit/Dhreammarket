@@ -102,6 +102,8 @@ export async function POST(request: NextRequest) {
       uploadFolder = 'dhream-market/logos';
     } else if (folder === 'banners') {
       uploadFolder = 'dhream-market/banners';
+    } else if (folder === 'services') {
+      uploadFolder = 'dhream-market/services';
     }
 
     // Debug: Log upload start

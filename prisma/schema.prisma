@@ -238,26 +238,30 @@ model Product {
 }
 
 model Service {
-  id                  String             @id @default(cuid())
-  vendorId            String
-  categoryId          String
-  title               String
-  slug                String             @unique
-  description         String?
-  shortDescription    String?
-  startingPrice       Decimal            @default(0)
-  pricingType         PricingType        @default(FIXED)
-  deliveryType        DeliveryType       @default(ONLINE)
-  availabilityStatus  AvailabilityStatus @default(AVAILABLE)
-  thumbnail           String?
-  gallery             String[]           @default([])
-  isActive            Boolean            @default(true)
-  isFeatured          Boolean            @default(false)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  store               Store              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  category            ServiceCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  images              ServiceImage[]
+  id                      String             @id @default(cuid())
+  vendorId                String
+  categoryId              String
+  title                   String
+  slug                    String             @unique
+  description             String?
+  shortDescription        String?
+  startingPrice           Decimal            @default(0)
+  pricingType             PricingType        @default(FIXED_PRICE)
+  deliveryType            DeliveryType       @default(ONLINE)
+  availabilityStatus      AvailabilityStatus @default(AVAILABLE)
+  status                  ServiceStatus      @default(DRAFT)
+  thumbnail               String?
+  gallery                 String[]           @default([])
+  isActive                Boolean            @default(true)
+  isFeatured              Boolean            @default(false)
+  requirementsFromCustomer String?
+  estimatedDeliveryTime   String?
+  tags                    String[]           @default([])
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  store                   Store              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category                ServiceCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  images                  ServiceImage[]
 
   @@map("services")
   @@index([vendorId])
@@ -1217,10 +1221,10 @@ enum MessageType {
 
 enum PricingType {
   FIXED
+  FIXED_PRICE
   STARTING_FROM
-  NEGOTIABLE
   HOURLY
-  DAILY
+  CUSTOM_QUOTE
 }
 
 enum DeliveryType {
@@ -1233,7 +1237,13 @@ enum DeliveryType {
 
 enum AvailabilityStatus {
   AVAILABLE
-  UNAVAILABLE
   BUSY
+  UNAVAILABLE
   PAUSED
+  TEMPORARILY_CLOSED
+}
+
+enum ServiceStatus {
+  DRAFT
+  PUBLISHED
 }
