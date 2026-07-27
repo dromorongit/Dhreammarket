@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
           },
         },
       })
-      console.log('[cart/GET] cart.findUnique succeeded, cartId:', cart?.id)
     } catch (e) {
       console.error('[cart/GET] cart.findUnique FAILED:', e)
     }
@@ -131,7 +130,6 @@ export async function POST(request: NextRequest) {
           variants: true,
         },
       })
-      console.log('[cart/POST] product.findUnique succeeded, productId:', productId)
     } catch (e) {
       console.error('[cart/POST] product.findUnique FAILED:', e)
     }
@@ -165,7 +163,6 @@ export async function POST(request: NextRequest) {
       cart = await getPrisma().cart.findUnique({
         where: { userId: payload.userId },
       })
-      console.log('[cart/POST] cart.findUnique succeeded, existingCart:', cart?.id)
     } catch (e) {
       console.error('[cart/POST] cart.findUnique FAILED:', e)
     }
@@ -220,32 +217,30 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: `Insufficient stock. Available: ${availableStock}` }, { status: 400 })
         }
        try {
-         await getPrisma().cartItem.update({
-           where: { id: existingItem.id },
-           data: { quantity: newTotalQuantity },
-         })
-         console.log('[cart/POST] cartItem.update succeeded')
-       } catch (e) {
-         console.error('[cart/POST] cartItem.update FAILED:', e)
-       }
+          await getPrisma().cartItem.update({
+            where: { id: existingItem.id },
+            data: { quantity: newTotalQuantity },
+          })
+        } catch (e) {
+          console.error('[cart/POST] cartItem.update FAILED:', e)
+        }
      } else {
        // Create new item
        try {
-         await getPrisma().cartItem.create({
-           data: {
-             cartId: cart.id,
-             productId,
-             productVariantId: productVariantId || null,
-             quantity,
-             color: color || null,
-             size: size || null,
-             age: age || null,
-           },
-         })
-         console.log('[cart/POST] cartItem.create succeeded')
-       } catch (e) {
-         console.error('[cart/POST] cartItem.create FAILED:', e)
-       }
+          await getPrisma().cartItem.create({
+            data: {
+              cartId: cart.id,
+              productId,
+              productVariantId: productVariantId || null,
+              quantity,
+              color: color || null,
+              size: size || null,
+              age: age || null,
+            },
+          })
+        } catch (e) {
+          console.error('[cart/POST] cartItem.create FAILED:', e)
+        }
      }
 
     // Return updated cart
@@ -276,7 +271,6 @@ export async function POST(request: NextRequest) {
           },
         },
       })
-      console.log('[cart/POST] updated cart.findUnique succeeded')
     } catch (e) {
       console.error('[cart/POST] updated cart.findUnique FAILED:', e)
     }

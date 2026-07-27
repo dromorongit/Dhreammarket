@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-middleware'
 import { uploadMultipleImages } from '@/lib/cloudinary'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const rateLimitCheck = rateLimit('admin-upload')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {

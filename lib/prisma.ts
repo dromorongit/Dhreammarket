@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
+import { logInfo } from './logger'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
   pool: Pool | undefined
+  disconnectHandlersRegistered: boolean
 }
 
 export function getPrisma(): PrismaClient {
@@ -31,21 +33,33 @@ export function getPrisma(): PrismaClient {
         log: process.env.NODE_ENV !== 'production' ? ['query', 'info', 'warn', 'error'] : ['error'],
       })
     }
+
+    registerDisconnectHandlers()
   }
   return globalForPrisma.prisma
 }
 
-declare global {
-  function onTerminate(): void
-}
+function registerDisconnectHandlers(): void {
+  if (globalThis.process?.env?.NODE_ENV === 'test') return
+  if (globalForPrisma.disconnectHandlersRegistered) return
 
-if (typeof onTerminate !== 'undefined') {
-  process.on('SIGTERM', () => {
-    globalForPrisma.pool?.end()
-    globalForPrisma.prisma?.$disconnect()
-  })
-  process.on('SIGINT', () => {
-    globalForPrisma.pool?.end()
-    globalForPrisma.prisma?.$disconnect()
-  })
+  const gracefulShutdown = async (signal: string) => {
+    logInfo(`Received ${signal} - initiating graceful shutdown`)
+    try {
+      await globalForPrisma.pool?.end()
+      await globalForPrisma.prisma?.$disconnect()
+      logInfo('Prisma disconnected successfully')
+    } catch (error) {
+      console.error('Error during Prisma graceful shutdown:', error)
+    } finally {
+      process.exit(0)
+    }
+  }
+
+  if (typeof process !== 'undefined') {
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'))
+    globalForPrisma.disconnectHandlersRegistered = true
+    logInfo('Graceful shutdown handlers registered for Prisma')
+  }
 }

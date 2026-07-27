@@ -45,13 +45,9 @@ export async function GET(request: NextRequest) {
       children: cat.children || [],
     }))
 
-    console.log('[API] Categories returned:', hierarchicalCategories.length)
-    console.log('[API] First category:', JSON.stringify(hierarchicalCategories[0], null, 2))
-    console.log('[API] All category IDs:', hierarchicalCategories.map(c => c.id))
-
-    const response = NextResponse.json({ categories: hierarchicalCategories })
-    perf.log()
-    return response
+     const response = NextResponse.json({ categories: hierarchicalCategories })
+     perf.log()
+     return response
   } catch (error) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()

@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { verifyVerificationPayment } from '@/lib/verification-paystack'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  console.log('[Verification Payment Verify API] Request received')
+  const rateLimitCheck = rateLimit('verification-payment-verify')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
 
   try {
     const { reference } = await request.json()

@@ -146,13 +146,13 @@ export async function GET(request: NextRequest) {
       getAdminDemandAnalytics(),
     ])
 
-    perf.markPrismaEnd(prismaPerfStart)
+     perf.markPrismaEnd(prismaPerfStart)
 
-    const groupByFulfillmentStatus = (groups: { fulfillmentStatus: string; _count: number }[]) => {
-      return groups.map(({ fulfillmentStatus, _count }) => ({ status: fulfillmentStatus, count: _count }))
-    }
+     const groupByFulfillmentStatus = (groups: { fulfillmentStatus: string; _count: number }[]) => {
+       return groups.map(({ fulfillmentStatus, _count }) => ({ status: fulfillmentStatus, count: _count }))
+     }
 
-    const preorderAnalytics = {
+     const preorderAnalytics = {
       total: preorderStatusGroups.reduce((sum, g) => sum + g._count, 0),
       byStatus: groupByFulfillmentStatus(preorderStatusGroups),
     }
@@ -245,7 +245,6 @@ export async function GET(request: NextRequest) {
       success: false,
       message: 'Internal Server Error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : null,
     }, { status: 500 })
   }
 }

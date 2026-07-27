@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
+import { rateLimit } from '@/lib/rate-limit'
 
 const prisma = getPrisma()
 
@@ -8,6 +9,11 @@ export const dynamic = 'force-dynamic'
 
 // GET all payments with optional filters
 export async function GET(request: NextRequest) {
+  const rateLimitCheck = rateLimit('admin-orders')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const authCheck = requireAdmin()
     if (authCheck instanceof NextResponse) {
@@ -55,13 +61,13 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
-    // Calculate total revenue from paid payments
-    const paidPayments = await prisma.payment.findMany({
+    // Calculate total revenue from paid payments using aggregation
+    const totalRevenueResult = await prisma.payment.aggregate({
       where: { status: 'PAID' },
-      select: { amount: true },
+      _sum: { amount: true },
     })
-    
-    const totalRevenue = paidPayments.reduce((accumulator: number, currentValue: { amount: number }) => accumulator + currentValue.amount, 0)
+
+    const totalRevenue = totalRevenueResult._sum.amount || 0
 
     // Payment status summary
     const summary = await prisma.payment.groupBy({

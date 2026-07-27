@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 // GET all users with pagination
 export async function GET(request: NextRequest) {
-  console.log('[ADMIN USERS API] Route reached');
-  console.log('[ADMIN USERS] GET request started');
+  const rateLimitCheck = rateLimit('admin-users')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const prisma = getPrisma()
     console.log('[ADMIN USERS] Prisma client obtained')
@@ -98,18 +102,13 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     }
-    console.log('[ADMIN USERS] Returning response:', JSON.stringify(responseData).substring(0, 1000))
-
     return NextResponse.json(responseData)
   } catch (error) {
-    console.error('[ADMIN USERS API ERROR]', error);
-    console.error('Message:', error instanceof Error ? error.message : error);
-    console.error('Stack:', error instanceof Error ? error.stack : null);
+    console.error('[ADMIN USERS API ERROR]', error)
     return NextResponse.json({
       success: false,
       message: 'Internal Server Error',
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : null,
     }, { status: 500 })
   }
 }

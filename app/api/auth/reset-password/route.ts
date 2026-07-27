@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyResetToken, hashPassword } from '@/lib/auth'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  const rateLimitCheck = rateLimit('reset-password')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const { selector, token, password } = await request.json()
 

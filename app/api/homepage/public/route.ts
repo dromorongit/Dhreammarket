@@ -135,7 +135,6 @@ export async function GET(_request: NextRequest) {
 
     try {
       await ensureDefaultHomepageSections(prisma)
-      console.log('[homepage/public] ensureDefaultHomepageSections completed')
     } catch (e) {
       console.error('[homepage/public] ensureDefaultHomepageSections failed:', e)
     }
@@ -176,7 +175,6 @@ export async function GET(_request: NextRequest) {
           },
         },
       })
-      console.log('[homepage/public] homepageSection.findMany succeeded, count:', sections.length)
     } catch (e) {
       console.error('[homepage/public] homepageSection.findMany FAILED:', e)
       sections = []
@@ -202,7 +200,6 @@ export async function GET(_request: NextRequest) {
           },
         },
       })
-      console.log('[homepage/public] brand.findMany succeeded, count:', brands.length)
     } catch (e) {
       console.error('[homepage/public] brand.findMany FAILED:', e)
       brands = []

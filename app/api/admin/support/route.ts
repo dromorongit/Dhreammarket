@@ -86,11 +86,9 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, number>)
 
-    console.log('[ADMIN SUPPORT] Returning response, tickets count:', transformedTickets.length, 'statusCounts:', JSON.stringify(statusCounts))
     return NextResponse.json({ tickets: transformedTickets, statusCounts })
   } catch (error) {
     console.error('[ADMIN SUPPORT] Error:', error)
-    console.error('[ADMIN SUPPORT] Error stack:', (error as any)?.stack)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

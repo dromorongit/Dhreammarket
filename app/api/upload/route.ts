@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth-middleware';
 import { uploadImage, uploadMultipleImages } from '@/lib/cloudinary';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Force Node.js runtime (required for Cloudinary stream operations)
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const rateLimitCheck = rateLimit('upload')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     // Debug: Log environment variable status (safe - no secrets exposed)
     console.log('[Upload] Route execution started');

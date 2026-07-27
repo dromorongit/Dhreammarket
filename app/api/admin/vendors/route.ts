@@ -1,19 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
+import { rateLimit } from '@/lib/rate-limit'
+import { logInfo, logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
 // GET all vendors with optional verification filter
 export async function GET(request: NextRequest) {
-  console.log('[ADMIN VENDORS] GET request started')
+  const rateLimitCheck = rateLimit('admin-orders')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const prisma = getPrisma()
-    console.log('[ADMIN VENDORS] Prisma client obtained')
     const authCheck = requireAdmin()
-    console.log('[ADMIN VENDORS] Auth check result:', authCheck instanceof NextResponse ? `response ${authCheck.status}` : 'authorized')
     if (authCheck instanceof NextResponse) {
-      console.log('[ADMIN VENDORS] Auth check returned error response:', authCheck.status)
       return authCheck
     }
 
@@ -22,18 +25,18 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const verified = searchParams.get('verified')
     const search = searchParams.get('search')
-    console.log('[ADMIN VENDORS] Query params:', { page, limit, verified, search })
+    logInfo('Admin vendors list requested', { page, limit, verified, search })
 
     const skip = (page - 1) * limit
 
     const where: Record<string, unknown> = {
       user: { role: 'VENDOR' },
     }
-    
+
     if (verified !== null) {
       where.isVerified = verified === 'true'
     }
-    
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -41,8 +44,6 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Get stores and their product IDs for revenue calculation
-    console.log('[ADMIN VENDORS] Query: prisma.store.findMany')
     const storesWithProducts = await prisma.store.findMany({
       where,
       skip,
@@ -66,11 +67,9 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    console.log('[ADMIN VENDORS] Query: prisma.store.count')
     const total = await prisma.store.count({ where })
     const totalPages = Math.ceil(total / limit)
 
-    // Fetch revenue and payout data for all vendors in bulk
     const productIds = storesWithProducts.flatMap((store) => store.products.map((p) => p.id))
     const vendorUserIds = storesWithProducts.map((store) => store.userId)
 
@@ -162,11 +161,10 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const vendors = vendorsWithMetrics
-    console.log('[ADMIN VENDORS] Returning response, vendors count:', vendors.length)
+    logInfo('Admin vendors response ready', { count: vendorsWithMetrics.length, page, totalPages })
 
     return NextResponse.json({
-      vendors,
+      vendors: vendorsWithMetrics,
       pagination: {
         page,
         limit,
@@ -175,8 +173,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[ADMIN VENDORS] Error:', error)
-    console.error('[ADMIN VENDORS] Error stack:', (error as any)?.stack)
+    logError('Admin vendors fetch failed', error)
     return NextResponse.json({ error: 'Failed to fetch vendors' }, { status: 500 })
   }
 }

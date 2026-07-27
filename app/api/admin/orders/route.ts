@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 const prisma = getPrisma()
 import { requireAdmin } from '@/lib/adminAuth'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 // GET all orders with optional filters
 export async function GET(request: NextRequest) {
+  const rateLimitCheck = rateLimit('admin-orders')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const authCheck = requireAdmin()
     if (authCheck instanceof NextResponse) {

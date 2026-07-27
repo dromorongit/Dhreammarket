@@ -93,6 +93,59 @@ const nextConfig = {
 
     return config;
   },
+  async headers() {
+    const isProduction = process.env.NODE_ENV === "production"
+
+    const headers = [
+      {
+        key: "X-Content-Type-Options",
+        value: "nosniff",
+      },
+      {
+        key: "X-Frame-Options",
+        value: "DENY",
+      },
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+      },
+    ]
+
+    if (isProduction) {
+      headers.push({
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      })
+    }
+
+    return [
+      {
+        source: "/(.*)",
+        headers,
+      },
+    ]
+  },
 };
 
-module.exports = nextConfig;
+// Sentry configuration for error monitoring in production
+const { withSentryConfig } = require("@sentry/nextjs");
+
+module.exports = withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.SENTRY_DSN,
+  disableServerWebpackPlugin: !process.env.SENTRY_DSN,
+  disableClientWebpackPlugin: !process.env.SENTRY_DSN,
+  disableEdgeWebpackPlugin: !process.env.SENTRY_DSN,
+  release: {
+    name:
+      process.env.NODE_ENV === "production"
+        ? require("./package.json").version
+        : undefined,
+  },
+});

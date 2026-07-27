@@ -16,12 +16,20 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'email-verification': { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 requests per 15 minutes
   'otp-resend': { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3 requests per hour
   'password-reset-new': { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3 requests per hour
+  'reset-password': { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 requests per 15 minutes
   'support-ticket': { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 tickets per hour
   'contact-form': { windowMs: 60 * 60 * 1000, maxRequests: 5 }, // 5 contacts per hour
   checkout: { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 checkouts per hour
   'payment-verification': { windowMs: 60 * 60 * 1000, maxRequests: 20 }, // 20 verifications per hour
   search: { windowMs: 60 * 1000, maxRequests: 60 }, // 60 searches per minute
   'change-password': { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 requests per 15 minutes
+  upload: { windowMs: 60 * 60 * 1000, maxRequests: 30 }, // 30 uploads per hour
+  'admin-upload': { windowMs: 60 * 60 * 1000, maxRequests: 50 }, // 50 uploads per hour
+  'verification-payment-verify': { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 verifications per hour
+  'vendor-verification-apply': { windowMs: 60 * 60 * 1000, maxRequests: 5 }, // 5 applications per hour
+  'admin-users': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
+  'admin-products': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
+  'admin-orders': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
 }
 
 function getClientIP(request: NextRequest): string {

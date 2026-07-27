@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 // This endpoint now creates the application record but payment is handled separately
 // Payment initialization should use /api/verification-payment
 export async function POST(request: NextRequest) {
+  const rateLimitCheck = rateLimit('vendor-verification-apply')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
