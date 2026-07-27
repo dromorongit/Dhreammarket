@@ -23,7 +23,11 @@ export default defineConfig({
     hookTimeout: 30000,
     teardownTimeout: 30000,
     pool: 'threads',
-    maxThreads: 4,
+    poolOptions: {
+      threads: {
+        maxThreads: 4,
+      },
+    },
   },
   resolve: {
     alias: {
