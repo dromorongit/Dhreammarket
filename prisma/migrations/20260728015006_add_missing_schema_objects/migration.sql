@@ -1,12 +1,19 @@
 -- CreateEnum
-DO $$ BEGIN
-    CREATE TYPE "ServiceRequestStatus" AS ENUM ('PENDING', 'UNDER_REVIEW', 'QUOTED', 'ACCEPTED', 'DECLINED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+CREATE TYPE "ServiceRequestStatus" AS ENUM ('PENDING', 'UNDER_REVIEW', 'QUOTED', 'ACCEPTED', 'DECLINED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED');
+
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'SERVICE_REQUEST_CREATED';
+ALTER TYPE "NotificationType" ADD VALUE 'QUOTE_SENT';
+ALTER TYPE "NotificationType" ADD VALUE 'QUOTE_ACCEPTED';
+ALTER TYPE "NotificationType" ADD VALUE 'QUOTE_REJECTED';
+ALTER TYPE "NotificationType" ADD VALUE 'PROJECT_STARTED';
+ALTER TYPE "NotificationType" ADD VALUE 'PROJECT_COMPLETED';
+
+-- AlterTable
+ALTER TABLE "wishlist_items" ALTER COLUMN "productId" DROP NOT NULL;
 
 -- CreateTable
-CREATE TABLE IF NOT EXISTS "service_requests" (
+CREATE TABLE "service_requests" (
     "id" TEXT NOT NULL,
     "serviceId" TEXT NOT NULL,
     "customerId" TEXT NOT NULL,
@@ -30,7 +37,7 @@ CREATE TABLE IF NOT EXISTS "service_requests" (
 );
 
 -- CreateTable
-CREATE TABLE IF NOT EXISTS "service_request_attachments" (
+CREATE TABLE "service_request_attachments" (
     "id" TEXT NOT NULL,
     "serviceRequestId" TEXT NOT NULL,
     "fileName" TEXT NOT NULL,
@@ -44,7 +51,7 @@ CREATE TABLE IF NOT EXISTS "service_request_attachments" (
 );
 
 -- CreateTable
-CREATE TABLE IF NOT EXISTS "service_request_status_history" (
+CREATE TABLE "service_request_status_history" (
     "id" TEXT NOT NULL,
     "serviceRequestId" TEXT NOT NULL,
     "status" "ServiceRequestStatus" NOT NULL,
@@ -56,7 +63,7 @@ CREATE TABLE IF NOT EXISTS "service_request_status_history" (
 );
 
 -- CreateTable
-CREATE TABLE IF NOT EXISTS "service_quotations" (
+CREATE TABLE "service_quotations" (
     "id" TEXT NOT NULL,
     "serviceRequestId" TEXT NOT NULL,
     "vendorId" TEXT NOT NULL,
@@ -75,40 +82,57 @@ CREATE TABLE IF NOT EXISTS "service_quotations" (
 
 -- CreateIndex
 CREATE INDEX "service_requests_serviceId_idx" ON "service_requests"("serviceId");
+
+-- CreateIndex
 CREATE INDEX "service_requests_customerId_idx" ON "service_requests"("customerId");
+
+-- CreateIndex
 CREATE INDEX "service_requests_vendorId_idx" ON "service_requests"("vendorId");
+
+-- CreateIndex
 CREATE INDEX "service_requests_status_idx" ON "service_requests"("status");
+
+-- CreateIndex
 CREATE INDEX "service_requests_createdAt_idx" ON "service_requests"("createdAt");
+
+-- CreateIndex
 CREATE INDEX "service_request_attachments_serviceRequestId_idx" ON "service_request_attachments"("serviceRequestId");
+
+-- CreateIndex
 CREATE INDEX "service_request_status_history_serviceRequestId_idx" ON "service_request_status_history"("serviceRequestId");
+
+-- CreateIndex
 CREATE INDEX "service_quotations_serviceRequestId_idx" ON "service_quotations"("serviceRequestId");
+
+-- CreateIndex
 CREATE INDEX "service_quotations_vendorId_idx" ON "service_quotations"("vendorId");
 
 -- AddForeignKey
 ALTER TABLE "service_requests" ADD CONSTRAINT "service_requests_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "services"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "service_requests" ADD CONSTRAINT "service_requests_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "service_requests" ADD CONSTRAINT "service_requests_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "service_requests" ADD CONSTRAINT "service_requests_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "service_request_attachments" ADD CONSTRAINT "service_request_attachments_serviceRequestId_fkey" FOREIGN KEY ("serviceRequestId") REFERENCES "service_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "service_request_attachments" ADD CONSTRAINT "service_request_attachments_uploadedBy_fkey" FOREIGN KEY ("uploadedBy") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "service_request_status_history" ADD CONSTRAINT "service_request_status_history_serviceRequestId_fkey" FOREIGN KEY ("serviceRequestId") REFERENCES "service_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "service_request_status_history" ADD CONSTRAINT "service_request_status_history_changedBy_fkey" FOREIGN KEY ("changedBy") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "service_quotations" ADD CONSTRAINT "service_quotations_serviceRequestId_fkey" FOREIGN KEY ("serviceRequestId") REFERENCES "service_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "service_quotations" ADD CONSTRAINT "service_quotations_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Add serviceRequests relation to Store
-DO $$ BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints
-        WHERE constraint_type = 'foreign key'
-        AND constraint_name = 'service_requests_storeId_fkey'
-    ) THEN
-        ALTER TABLE "service_requests" ADD CONSTRAINT "service_requests_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-    END IF;
-END $$;
+-- AddForeignKey
+ALTER TABLE "service_quotations" ADD CONSTRAINT "service_quotations_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
