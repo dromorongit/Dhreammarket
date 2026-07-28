@@ -54,6 +54,9 @@ interface Category {
   name: string
   slug: string
   description: string | null
+  isActive: boolean
+  isFeatured: boolean
+  serviceCount?: number
 }
 
 interface ServicePagination {

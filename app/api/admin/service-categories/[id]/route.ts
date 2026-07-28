@@ -73,7 +73,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Service category not found' }, { status: 404 })
     }
 
-    const { name, slug, description, icon } = body
+    const { name, slug, description, icon, banner, displayOrder, isActive, isFeatured, metaTitle, metaDescription } = body
 
     if (name !== undefined && !name.trim()) {
       perf.markPrismaEnd(prismaPerfStart)
@@ -108,6 +108,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (slug !== undefined) updateData.slug = slug.trim().toLowerCase()
     if (description !== undefined) updateData.description = description?.trim() || null
     if (icon !== undefined) updateData.icon = icon
+    if (banner !== undefined) updateData.banner = banner || null
+    if (displayOrder !== undefined) updateData.displayOrder = displayOrder
+    if (isActive !== undefined) updateData.isActive = isActive
+    if (isFeatured !== undefined) updateData.isFeatured = isFeatured
+    if (metaTitle !== undefined) updateData.metaTitle = metaTitle || null
+    if (metaDescription !== undefined) updateData.metaDescription = metaDescription || null
 
     const category = await getPrisma().serviceCategory.update({
       where: { id },

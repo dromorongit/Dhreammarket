@@ -27,9 +27,16 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const search = searchParams.get('search')
+    const includeInactive = searchParams.get('includeInactive') === 'true'
+    const sortBy = searchParams.get('sortBy') || 'displayOrder'
+    const sortOrder = searchParams.get('sortOrder') || 'asc'
     const skip = (page - 1) * limit
 
     const where: Record<string, unknown> = {}
+
+    if (!includeInactive) {
+      where.isActive = true
+    }
 
     if (search) {
       where.OR = [
@@ -39,12 +46,21 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    const orderBy: Record<string, string> = {}
+    if (sortBy === 'displayOrder') {
+      orderBy.displayOrder = sortOrder
+    } else if (sortBy === 'name') {
+      orderBy.name = sortOrder
+    } else {
+      orderBy.displayOrder = 'asc'
+    }
+
     const [categories, total] = await Promise.all([
       getPrisma().serviceCategory.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy,
         include: {
           _count: {
             select: { services: true },
@@ -85,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, description, icon } = body
+    const { name, slug, description, icon, banner, displayOrder, isActive, isFeatured, metaTitle, metaDescription } = body
 
     if (!name || !name.trim()) {
       perf.markPrismaEnd(prismaPerfStart)
@@ -123,6 +139,12 @@ export async function POST(request: NextRequest) {
         slug: slug.trim().toLowerCase(),
         description: description?.trim() || null,
         icon: icon || null,
+        banner: banner || null,
+        displayOrder: displayOrder ?? 0,
+        isActive: isActive ?? true,
+        isFeatured: isFeatured ?? false,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
       },
     })
     perf.markPrismaEnd(prismaPerfStart)

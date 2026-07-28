@@ -771,6 +771,20 @@ export default function SuperAdminDashboard() {
                   <span className="text-sm font-medium text-slate-700 group-hover:text-cyan-700 transition-colors">Product Categories</span>
                 </div>
               </Link>
+              {/* Services Section */}
+              <div className="col-span-full mt-4 mb-2">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">Services</h3>
+              </div>
+              <Link href="/dashboard/super-admin/service-categories" className="group">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-violet-50 hover:border-violet-200 border border-transparent transition-all">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 group-hover:text-violet-700 transition-colors">Service Categories</span>
+                </div>
+              </Link>
               <Link href="/dashboard/admin/verification-applications" className="group">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-transparent transition-all">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">

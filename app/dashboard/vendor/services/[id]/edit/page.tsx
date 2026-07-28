@@ -14,6 +14,9 @@ interface Category {
   slug?: string
   description?: string
   icon?: string
+  isActive: boolean
+  isFeatured: boolean
+  serviceCount?: number
 }
 
 interface ServiceImage {
@@ -51,6 +54,11 @@ export default function EditService() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null)
+  const [categorySearch, setCategorySearch] = useState('')
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const filteredCategories = categories.filter(cat =>
+    cat.isActive && cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+  )
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -403,43 +411,69 @@ export default function EditService() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
-                    Service Category *
-                  </label>
-                  <select
-                    id="categoryId"
-                    name="categoryId"
-                    value={formData.categoryId}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                  {errors.categoryId && <div className="text-red-600 text-sm mt-1">{errors.categoryId}</div>}
+<div className="grid grid-cols-2 gap-4">
+                  <div className="relative">
+                    <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-2">
+                      Service Category *
+                    </label>
+                    <input
+                      id="categoryId"
+                      type="text"
+                      value={categorySearch}
+                      onChange={(e) => {
+                        setCategorySearch(e.target.value)
+                        setShowCategoryDropdown(true)
+                      }}
+                      onFocus={() => setShowCategoryDropdown(true)}
+                      placeholder="Search and select a category..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      autoComplete="off"
+                    />
+                    {showCategoryDropdown && (
+                      <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+                        {filteredCategories.length === 0 ? (
+                          <div className="px-3 py-2 text-sm text-gray-500">No active categories found</div>
+                        ) : (
+                          filteredCategories.map(cat => (
+                            <div
+                              key={cat.id}
+                              className="px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, categoryId: cat.id }))
+                                setCategorySearch(cat.name)
+                                setShowCategoryDropdown(false)
+                              }}
+                            >
+                              <span className="font-medium">{cat.name}</span>
+                              {cat.isFeatured && (
+                                <span className="ml-2 text-xs text-amber-600">Featured</span>
+                              )}
+                              <span className="ml-2 text-xs text-gray-400">({cat.serviceCount || 0} services)</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {errors.categoryId && <div className="text-red-600 text-sm mt-1">{errors.categoryId}</div>}
+                  </div>
+                  <div>
+                    <label htmlFor="availabilityStatus" className="block text-sm font-medium text-gray-700 mb-2">
+                      Availability Status
+                    </label>
+                    <select
+                      id="availabilityStatus"
+                      name="availabilityStatus"
+                      value={formData.availabilityStatus}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="AVAILABLE">Available</option>
+                      <option value="BUSY">Busy</option>
+                      <option value="UNAVAILABLE">Unavailable</option>
+                      <option value="TEMPORARILY_CLOSED">Temporarily Closed</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="availabilityStatus" className="block text-sm font-medium text-gray-700 mb-2">
-                    Availability Status
-                  </label>
-                  <select
-                    id="availabilityStatus"
-                    name="availabilityStatus"
-                    value={formData.availabilityStatus}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="AVAILABLE">Available</option>
-                    <option value="BUSY">Busy</option>
-                    <option value="UNAVAILABLE">Unavailable</option>
-                    <option value="TEMPORARILY_CLOSED">Temporarily Closed</option>
-                  </select>
-                </div>
-              </div>
 
               <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">

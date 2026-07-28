@@ -15,7 +15,19 @@ export async function GET(request: NextRequest) {
     }
 
     const categories = await getPrisma().serviceCategory.findMany({
-      orderBy: { name: 'asc' },
+      where: {
+        isActive: true,
+      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { displayOrder: 'asc' },
+        { name: 'asc' },
+      ],
+      include: {
+        _count: {
+          select: { services: true },
+        },
+      },
     })
     perf.markPrismaEnd(prismaPerfStart)
 
@@ -25,6 +37,13 @@ export async function GET(request: NextRequest) {
       slug: cat.slug,
       description: cat.description,
       icon: cat.icon,
+      banner: cat.banner,
+      displayOrder: cat.displayOrder,
+      isActive: cat.isActive,
+      isFeatured: cat.isFeatured,
+      metaTitle: cat.metaTitle,
+      metaDescription: cat.metaDescription,
+      serviceCount: cat._count?.services || 0,
     }))
 
     const response = NextResponse.json({ categories: hierarchicalCategories })

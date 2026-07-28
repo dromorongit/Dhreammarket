@@ -282,6 +282,12 @@ model ServiceCategory {
   slug        String        @unique
   description String?
   icon        String?
+  banner      String?
+  displayOrder Int         @default(0)
+  isActive    Boolean       @default(true)
+  isFeatured  Boolean       @default(false)
+  metaTitle   String?
+  metaDescription String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   services    Service[]
