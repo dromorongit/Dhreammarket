@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 
 interface TimelineStep {
+  id: string
   status: string
   notes: string | null
   createdAt: string
