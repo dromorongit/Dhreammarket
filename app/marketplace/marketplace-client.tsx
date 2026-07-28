@@ -17,6 +17,7 @@ import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import ServiceCard from '@/components/ServiceCard'
 import WishlistButton from '@/components/WishlistButton'
 
 interface Product {
@@ -84,6 +85,53 @@ interface Vendor {
   category: { id: string; name: string; slug: string } | null
 }
 
+interface Service {
+  id: string
+  slug: string
+  title: string
+  shortDescription: string | null
+  startingPrice: number
+  pricingType: string
+  deliveryType: string
+  availabilityStatus: string
+  status: string
+  thumbnail: string | null
+  gallery: string[]
+  category: {
+    id: string
+    name: string
+    slug: string
+  }
+  store: {
+    id: string
+    name: string
+    slug: string
+    isVerified: boolean
+    badgeTier: string | null
+    averageRating: number
+    reviewCount: number
+    logo: string | null
+  }
+  images: Array<{
+    id: string
+    imageUrl: string
+    displayOrder: number
+  }>
+  tags: string[]
+  estimatedDeliveryTime: string | null
+  requirementsFromCustomer?: string | null
+}
+
+interface ServiceCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  isActive: boolean
+  isFeatured: boolean
+  serviceCount?: number
+}
+
 function MarketplaceContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -91,15 +139,24 @@ function MarketplaceContent() {
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
   const [selectedBrand, setSelectedBrand] = useState<string>('')
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
-  const [viewMode, setViewMode] = useState<'products' | 'vendors'>('products')
+  const [viewMode, setViewMode] = useState<'products' | 'services' | 'vendors'>('products')
   const [productPagination, setProductPagination] = useState({ page: 1, limit: 50, totalPages: 0 })
   const [vendorPagination, setVendorPagination] = useState({ page: 1, limit: 20, totalPages: 0 })
+  const [servicePagination, setServicePagination] = useState({ page: 1, limit: 12, totalPages: 0 })
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState('')
+  const [serviceSortBy, setServiceSortBy] = useState('newest')
+  const [serviceMinPrice, setServiceMinPrice] = useState('')
+  const [serviceMaxPrice, setServiceMaxPrice] = useState('')
+  const [serviceSearchQuery, setServiceSearchQuery] = useState('')
 
   useEffect(() => {
     if (viewMode === 'products') {
       setSelectedVendorCategory('')
+    } else if (viewMode === 'vendors') {
+      setSelectedCategory('')
     } else {
       setSelectedCategory('')
+      setSelectedVendorCategory('')
     }
   }, [viewMode])
 
@@ -141,6 +198,63 @@ function MarketplaceContent() {
       } catch (error) {
         console.error('Error fetching vendor categories:', error)
         throw error
+      }
+    },
+  })
+
+  const { data: serviceCategoriesData } = useQuery({
+    queryKey: ['service-categories'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/service-categories')
+        if (!response.ok) throw new Error('Failed to fetch service categories')
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching service categories:', error)
+        throw error
+      }
+    },
+  })
+
+  const { data: servicesData, isPending: servicesPending } = useQuery({
+    queryKey: ['services', 'marketplace', servicePagination.page, servicePagination.limit, selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams()
+        params.set('page', String(servicePagination.page))
+        params.set('limit', String(servicePagination.limit))
+        params.set('sortBy', serviceSortBy === 'newest' ? 'createdAt' : serviceSortBy === 'price-low' ? 'startingPrice' : 'startingPrice')
+        params.set('sortOrder', serviceSortBy === 'price-high' ? 'asc' : 'desc')
+        if (selectedServiceCategory) params.set('categoryId', selectedServiceCategory)
+        if (serviceMinPrice) params.set('minPrice', serviceMinPrice)
+        if (serviceMaxPrice) params.set('maxPrice', serviceMaxPrice)
+        const response = await fetch(`/api/services?${params.toString()}`)
+        if (!response.ok) throw new Error('Failed to fetch services')
+        return response.json()
+      } catch (error) {
+        console.error('Error fetching services:', error)
+        throw error
+      }
+    },
+  })
+
+  const { data: servicesCountData } = useQuery({
+    queryKey: ['services', 'count'],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams()
+        if (selectedServiceCategory) params.set('categoryId', selectedServiceCategory)
+        if (serviceMinPrice) params.set('minPrice', serviceMinPrice)
+        if (serviceMaxPrice) params.set('maxPrice', serviceMaxPrice)
+        const countResponse = await fetch(`/api/services?${params.toString()}&limit=1`)
+        if (countResponse.ok) {
+          const countData = await countResponse.json()
+          return countData.pagination?.total ?? 0
+        }
+        return 0
+      } catch (error) {
+        console.error('Error fetching services count:', error)
+        return 0
       }
     },
   })
@@ -207,6 +321,9 @@ function MarketplaceContent() {
   const vendorCategories = (vendorCategoriesData?.categories ?? []) as Category[]
   const totalProductCount = productsCountData ?? productsData?.pagination?.total ?? 0
   const totalVendorCount = vendorsData?.pagination?.total ?? 0
+  const services = (servicesData?.services ?? []) as Service[]
+  const totalServiceCount = servicesCountData ?? servicesData?.pagination?.total ?? 0
+  const serviceCategories = (serviceCategoriesData?.categories ?? []) as ServiceCategory[]
   const countAllCategories = (cats: Category[]): number => {
     return cats.reduce((sum: number, cat: Category) => {
       return sum + 1 + (cat.children ? countAllCategories(cat.children) : 0)
@@ -224,6 +341,10 @@ function MarketplaceContent() {
   useEffect(() => {
     setProductPagination({ page: 1, limit: 50, totalPages: productPagination.totalPages })
   }, [selectedCategory])
+
+  useEffect(() => {
+    setServicePagination({ page: 1, limit: 12, totalPages: servicePagination.totalPages })
+  }, [selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice])
 
   useEffect(() => {
     const categoryParam = searchParams?.get('category') ?? ''
@@ -467,6 +588,14 @@ function MarketplaceContent() {
                 <span className="ml-2 text-xs opacity-70">({totalProductCount})</span>
               </Button>
               <Button
+                variant={viewMode === 'services' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('services')}
+              >
+                Services
+                <span className="ml-2 text-xs opacity-70">({totalServiceCount})</span>
+              </Button>
+              <Button
                 variant={viewMode === 'vendors' ? 'primary' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('vendors')}
@@ -520,6 +649,12 @@ function MarketplaceContent() {
                 <span>{filteredProducts.length} products</span>
                 <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                 <span>Verified sellers</span>
+              </>
+            ) : viewMode === 'services' ? (
+              <>
+                <span>{services.length} services</span>
+                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                <span>Verified vendors</span>
               </>
             ) : (
               <>
@@ -741,6 +876,103 @@ function MarketplaceContent() {
                 ))}
               </div>
             )
+          )}
+
+          {viewMode === 'services' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-700">Service Categories:</span>
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  <Button
+                    variant={selectedServiceCategory === '' ? 'primary' : 'ghost'}
+                    size="sm"
+                    className="rounded-2xl whitespace-nowrap min-h-[40px] px-4 py-2 font-semibold"
+                    onClick={() => setSelectedServiceCategory('')}
+                  >
+                    All
+                  </Button>
+                  {serviceCategories.map(cat => (
+                    <Button
+                      key={cat.id}
+                      variant={selectedServiceCategory === cat.id ? 'primary' : 'ghost'}
+                      size="sm"
+                      className="rounded-2xl whitespace-nowrap min-h-[40px] px-4 py-2 font-semibold"
+                      onClick={() => setSelectedServiceCategory(cat.id)}
+                    >
+                      {cat.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <div className="p-4 flex items-center gap-3 border-b border-slate-100">
+                <input
+                  type="text"
+                  placeholder="Search services..."
+                  value={serviceSearchQuery}
+                  onChange={(e) => setServiceSearchQuery(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
+                />
+                <select value={serviceSortBy} onChange={(e) => setServiceSortBy(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50">
+                  <option value="newest">Newest</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                </select>
+              </div>
+              
+              {servicesPending ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                  {[...Array(6)].map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              ) : services.length === 0 ? (
+                <div className="p-12">
+                  <EmptyState
+                    icon={
+                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    }
+                    title="No services found"
+                    description="Try adjusting your filters or search query."
+                    actionLabel="Clear Filters"
+                    onAction={() => { setSelectedServiceCategory(''); setServiceSearchQuery(''); setServiceMinPrice(''); setServiceMaxPrice(''); setServiceSortBy('newest'); }}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                    {services.map((service) => (
+                      <ServiceCard key={service.id} service={service} wishlistServiceIds={wishlistedProductIds as Set<string>} />
+                    ))}
+                  </div>
+
+                  {servicePagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t pt-6 px-6">
+                      <div className="text-sm text-slate-600">
+                        Page {servicePagination.page} of {servicePagination.totalPages}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setServicePagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                          disabled={servicePagination.page === 1}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => setServicePagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                          disabled={servicePagination.page >= servicePagination.totalPages}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           )}
 
           {viewMode === 'products' && productPagination.totalPages > 1 && (

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const prismaPerfStart = perf.markPrismaStart()
   try {
     const { id } = await params
-    const service = await getPrisma().service.findUnique({
+    let service = await getPrisma().service.findUnique({
       where: { id },
       include: {
         store: {
@@ -53,6 +53,50 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
       },
     })
+
+    if (!service) {
+      service = await getPrisma().service.findUnique({
+        where: { slug: id },
+        include: {
+          store: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              isVerified: true,
+              logo: true,
+              badgeTier: true,
+              location: true,
+              email: true,
+              mainPhoneNumber: true,
+              alternativePhoneNumber: true,
+              whatsappNumber: true,
+              averageRating: true,
+              reviewCount: true,
+            },
+          },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              description: true,
+            },
+          },
+          images: {
+            orderBy: {
+              displayOrder: 'asc',
+            },
+            select: {
+              id: true,
+              imageUrl: true,
+              displayOrder: true,
+            },
+          },
+        },
+      })
+    }
+
     perf.markPrismaEnd(prismaPerfStart)
 
     if (!service) {

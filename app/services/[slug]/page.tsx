@@ -105,7 +105,7 @@ export default async function ServiceDetailPage({ params }: { params: { slug: st
   const service = await getServiceInfo(params.slug)
 
   if (!service) {
-    return (
+return (
       <>
         <script
           type="application/ld+json"
@@ -142,7 +142,7 @@ export default async function ServiceDetailPage({ params }: { params: { slug: st
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <ServiceDetailClient serviceId={params.slug} />
+      <ServiceDetailClient serviceId={service.id} />
     </>
   )
 }

@@ -10,7 +10,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import WishlistButton from '@/components/WishlistButton'
-import { PricingType, AvailabilityStatus } from '@prisma/client'
+import { PricingType } from '@prisma/client'
 
 interface Service {
   id: string
@@ -46,6 +46,7 @@ interface Service {
   }>
   tags: string[]
   estimatedDeliveryTime: string | null
+  requirementsFromCustomer?: string | null
 }
 
 interface ServiceCardProps {
@@ -53,36 +54,30 @@ interface ServiceCardProps {
   wishlistServiceIds?: Set<string>
 }
 
-const pricingTypeLabels: Record<string, string> = {
-  FIXED_PRICE: 'Fixed Price',
-  FIXED: 'Fixed Price',
-  STARTING_FROM: 'Starting From',
-  HOURLY: 'Hourly',
-  CUSTOM_QUOTE: 'Custom Quote',
-}
-
-function getAvailabilityLabel(status: AvailabilityStatus): string {
+function getPricingLabel(pricingType: string): string {
   const labels: Record<string, string> = {
-    AVAILABLE: 'Available',
-    BUSY: 'Busy',
-    UNAVAILABLE: 'Unavailable',
-    TEMPORARILY_CLOSED: 'Temporarily Closed',
+    FIXED_PRICE: 'Fixed Price',
+    FIXED: 'Fixed Price',
+    STARTING_FROM: 'Starting From',
+    HOURLY: 'Hourly',
+    CUSTOM_QUOTE: 'Custom Quote',
   }
-  return labels[status] || status
+  return labels[pricingType] || pricingType
 }
 
 export default function ServiceCard({ service, wishlistServiceIds }: ServiceCardProps) {
   const badgeInfo = service.store ? getVendorBadgeInfo(service.store.badgeTier) : null
   const hasImage = service.thumbnail || (service.images && service.images.length > 0)
   const imageUrl = service.thumbnail || service.images?.[0]?.imageUrl
+  const isCustomQuote = service.pricingType === 'CUSTOM_QUOTE'
 
   return (
     <Card
       variant="elevated"
-      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full"
+      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
     >
       <Link href={`/services/${service.slug}`} className="block">
-        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
           {hasImage ? (
             <Image
               src={imageUrl!}
@@ -98,15 +93,11 @@ export default function ServiceCard({ service, wishlistServiceIds }: ServiceCard
               </svg>
             </div>
           )}
-          {service.store && (
+          {service.category && (
             <div className="absolute top-2 left-2">
-              {badgeInfo ? (
-                <Badge variant={badgeInfo.variant as any} size="sm">
-                  {badgeInfo.displayLabel}
-                </Badge>
-              ) : service.store.isVerified ? (
-                <Badge variant="verified" size="sm">Verified</Badge>
-              ) : null}
+              <Badge variant="info" size="sm">
+                {service.category.name}
+              </Badge>
             </div>
           )}
           <div className="absolute top-2 right-2">
@@ -119,55 +110,40 @@ export default function ServiceCard({ service, wishlistServiceIds }: ServiceCard
           </div>
         </div>
       </Link>
-      <div className="p-3 flex flex-col flex-1">
+      <div className="p-2 space-y-1 flex-1 flex flex-col">
         <Link href={`/services/${service.slug}`} className="block">
-          <h3 className="text-sm font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight mb-1">
+          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
             {service.title}
           </h3>
         </Link>
-        <div className="flex items-center gap-1.5 mb-1.5 min-w-0">
-          <Link href={`/vendor/${service.store.slug ?? service.store.id}`} className="block">
-            <p className="text-[11px] text-slate-500 truncate hover:text-royal-blue transition-colors">
-              {truncateVendorName(service.store.name)}
-            </p>
-          </Link>
-          {badgeInfo ? (
-            <MdVerified className={`w-3 h-3 flex-shrink-0 ${badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}`} />
-          ) : service.store.isVerified ? (
-            <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0" />
-          ) : null}
-        </div>
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <div className="flex items-center gap-0.5">
-            <svg className="w-3 h-3 text-premium-gold" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            <span className="text-[11px] font-medium text-slate-600">
-              {service.store.averageRating.toFixed(1)}
-            </span>
+        <div className="mt-auto flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {service.store && (
+              <p className="text-[10px] text-slate-500 truncate min-w-0">
+                {truncateVendorName(service.store.name)}
+              </p>
+            )}
+            {badgeInfo ? (
+              <span className={badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}>
+                <MdVerified className="w-3 h-3 flex-shrink-0" />
+              </span>
+            ) : service.store?.isVerified ? (
+              <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0" />
+            ) : null}
           </div>
-          <span className="text-[11px] text-slate-400">
-            ({service.store.reviewCount})
-          </span>
-        </div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm font-bold text-royal-blue">
-            {formatPrice(Number(service.startingPrice))}
-          </span>
-          <Badge variant="default" size="sm" className="text-[9px]">
-            {pricingTypeLabels[service.pricingType] || service.pricingType}
-          </Badge>
-        </div>
-        <div className="flex items-center justify-between mt-auto pt-1">
-          <span className="text-[11px] text-slate-500 flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {service.estimatedDeliveryTime || 'N/A'}
-          </span>
-          <Link href={`/services/${service.slug}`} className="w-full">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-royal-blue">
+              {isCustomQuote ? 'Request Quote' : formatPrice(Number(service.startingPrice))}
+            </span>
+            <Link href={`/services/${service.slug}`} className="w-full">
+              <Button variant="primary" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+                View Service
+              </Button>
+            </Link>
+          </div>
+          <Link href={`/services/request?serviceId=${service.id}`} className="w-full">
             <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-              View Service
+              Book Service
             </Button>
           </Link>
         </div>
