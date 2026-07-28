@@ -30,6 +30,8 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'admin-users': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
   'admin-products': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
   'admin-orders': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
+  'admin-service-categories': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
+  'admin-services': { windowMs: 60 * 1000, maxRequests: 100 }, // 100 requests per minute
 }
 
 function getClientIP(request: NextRequest): string {
