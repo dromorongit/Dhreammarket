@@ -44,6 +44,11 @@ model User {
   paymentMethods           PaymentMethod[]
   vendorSettings           VendorSettings?
   adminSettings            AdminSettings?
+  serviceRequestsAsCustomer ServiceRequest[] @relation("ServiceRequestAsCustomer")
+  serviceRequestsAsVendor  ServiceRequest[] @relation("ServiceRequestAsVendor")
+  uploadedAttachments      ServiceRequestAttachment[]
+  statusHistoryEntries     ServiceRequestStatusHistory[]
+  sentQuotations           ServiceQuotation[]
 
   @@map("users")
 }
@@ -141,6 +146,7 @@ model Store {
   vendorPayouts            VendorPayout[]                  @relation("VendorPayoutStore")
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication[]
+  serviceRequests          ServiceRequest[]
 
   @@map("stores")
 }
@@ -263,6 +269,7 @@ model Service {
   category                ServiceCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   images                  ServiceImage[]
   wishlistItems          WishlistItem[]
+  serviceRequests         ServiceRequest[]
 
   @@map("services")
   @@index([vendorId])
@@ -1081,6 +1088,12 @@ enum NotificationType {
   RESTOCK_ORDER_OVERDUE
   RESTOCK_INVENTORY_RECEIVED
   ORDER_CANCELLED
+  SERVICE_REQUEST_CREATED
+  QUOTE_SENT
+  QUOTE_ACCEPTED
+  QUOTE_REJECTED
+  PROJECT_STARTED
+  PROJECT_COMPLETED
 }
 
 enum FeedbackType {
@@ -1251,4 +1264,101 @@ enum AvailabilityStatus {
 enum ServiceStatus {
   DRAFT
   PUBLISHED
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  UNDER_REVIEW
+  QUOTED
+  ACCEPTED
+  DECLINED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model ServiceRequest {
+  id                       String                          @id @default(cuid())
+  serviceId                String
+  customerId               String
+  vendorId                 String
+  storeId                  String?
+  title                    String
+  description              String?
+  preferredCompletionDate  DateTime?
+  status                   ServiceRequestStatus            @default(PENDING)
+  quotedPrice              Decimal?
+  estimatedDuration        String?
+  quotationNotes           String?
+  quotationValidUntil      DateTime?
+  acceptedAt               DateTime?
+  cancelledAt              DateTime?
+  completedAt              DateTime?
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+  service                  Service                         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  customer                 User                            @relation("ServiceRequestAsCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  vendor                   User                            @relation("ServiceRequestAsVendor", fields: [vendorId], references: [id], onDelete: Cascade)
+  store                    Store?                          @relation(fields: [storeId], references: [id])
+  attachments              ServiceRequestAttachment[]
+  statusHistory            ServiceRequestStatusHistory[]
+  quotations               ServiceQuotation[]
+
+  @@map("service_requests")
+  @@index([serviceId])
+  @@index([customerId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ServiceRequestAttachment {
+  id               String   @id @default(cuid())
+  serviceRequestId String
+  fileName         String
+  fileUrl          String
+  fileType         String
+  fileSize         Int
+  uploadedBy       String
+  createdAt        DateTime @default(now())
+  serviceRequest   ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  uploader         User   @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@map("service_request_attachments")
+  @@index([serviceRequestId])
+}
+
+model ServiceRequestStatusHistory {
+  id               String                @id @default(cuid())
+  serviceRequestId String
+  status           ServiceRequestStatus
+  changedBy        String
+  notes            String?
+  createdAt        DateTime              @default(now())
+  serviceRequest   ServiceRequest        @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  changer          User                  @relation(fields: [changedBy], references: [id], onDelete: Cascade)
+
+  @@map("service_request_status_history")
+  @@index([serviceRequestId])
+}
+
+model ServiceQuotation {
+  id                    String   @id @default(cuid())
+  serviceRequestId      String
+  vendorId              String
+  quotedPrice           Decimal
+  estimatedDuration     String?
+  notes                 String?
+  validUntil            DateTime
+  status                String   @default("PENDING")
+  acceptedAt            DateTime?
+  rejectedAt            DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  serviceRequest        ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  vendor                User   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("service_quotations")
+  @@index([serviceRequestId])
+  @@index([vendorId])
 }

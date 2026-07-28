@@ -67,6 +67,12 @@ function shouldNotifyCustomer(
     case 'SUPPORT_TICKET_STATUS_UPDATED':
     case 'REVIEW_SUBMITTED':
     case 'REVIEW_RECEIVED':
+    case 'SERVICE_REQUEST_CREATED':
+    case 'QUOTE_SENT':
+    case 'QUOTE_ACCEPTED':
+    case 'QUOTE_REJECTED':
+    case 'PROJECT_STARTED':
+    case 'PROJECT_COMPLETED':
       return prefs.systemNotifications
     default:
       return prefs.systemNotifications
@@ -87,7 +93,13 @@ function shouldNotifyVendor(
     case 'RESTOCK_ORDER_OVERDUE':
       return prefs.notifyLowStock
     case 'SUPPORT_TICKET_CREATED':
-      return prefs.notifyCustomerMessages
+    case 'SERVICE_REQUEST_CREATED':
+    case 'QUOTE_SENT':
+    case 'QUOTE_ACCEPTED':
+    case 'QUOTE_REJECTED':
+    case 'PROJECT_STARTED':
+    case 'PROJECT_COMPLETED':
+      return prefs.notifyNewOrders
     default:
       return prefs.notifyNewOrders
   }

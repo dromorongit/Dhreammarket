@@ -60,6 +60,42 @@ export const NOTIFICATION_TEMPLATES: Record<string, NotificationTemplate> = {
     messageTemplate: 'Your order for {productName} is experiencing delays. We apologize for the inconvenience.',
     channels: ['EMAIL', 'IN_APP'],
   },
+  SERVICE_REQUEST_CREATED: {
+    type: 'SERVICE_REQUEST_CREATED',
+    title: 'Service Request Created',
+    messageTemplate: 'A new service request "{requestTitle}" has been submitted.',
+    channels: ['EMAIL', 'IN_APP'],
+  },
+  QUOTE_SENT: {
+    type: 'QUOTE_SENT',
+    title: 'Quotation Sent',
+    messageTemplate: 'A quotation has been sent for service request "{requestTitle}".',
+    channels: ['EMAIL', 'IN_APP'],
+  },
+  QUOTE_ACCEPTED: {
+    type: 'QUOTE_ACCEPTED',
+    title: 'Quotation Accepted',
+    messageTemplate: 'Your quotation for service request "{requestTitle}" has been accepted.',
+    channels: ['EMAIL', 'IN_APP'],
+  },
+  QUOTE_REJECTED: {
+    type: 'QUOTE_REJECTED',
+    title: 'Quotation Rejected',
+    messageTemplate: 'Your quotation for service request "{requestTitle}" has been rejected.',
+    channels: ['EMAIL', 'IN_APP'],
+  },
+  PROJECT_STARTED: {
+    type: 'PROJECT_STARTED',
+    title: 'Project Started',
+    messageTemplate: 'The project for service request "{requestTitle}" has been started.',
+    channels: ['EMAIL', 'IN_APP'],
+  },
+  PROJECT_COMPLETED: {
+    type: 'PROJECT_COMPLETED',
+    title: 'Project Completed',
+    messageTemplate: 'The project for service request "{requestTitle}" has been completed.',
+    channels: ['EMAIL', 'IN_APP'],
+  },
 }
 
 export async function createNotification(
