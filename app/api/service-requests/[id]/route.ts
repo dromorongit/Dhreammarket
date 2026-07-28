@@ -154,13 +154,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const isCustomer = existing.customerId === payload.userId
-    const isVendor = existing.vendorId === payload.userId
     const isAdmin = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'
 
-    if (!isCustomer && !isVendor && !isAdmin) {
+    if (!isCustomer && !isAdmin) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (existing.status === 'QUOTED' || existing.status === 'ACCEPTED' || existing.status === 'IN_PROGRESS' || existing.status === 'COMPLETED') {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Cannot edit a request after a quotation has been submitted' }, { status: 400 })
     }
 
     const body = await request.json()

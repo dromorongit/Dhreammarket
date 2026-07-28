@@ -36,10 +36,16 @@ export default function ServiceRequestForm() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [preferredDate, setPreferredDate] = useState('')
+  const [preferredBudget, setPreferredBudget] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const serviceId = params.get('serviceId')
+    if (serviceId) {
+      setSelectedService(serviceId)
+    }
     fetchServices()
   }, [])
 
@@ -87,6 +93,7 @@ export default function ServiceRequestForm() {
           title: title.trim(),
           description: description.trim(),
           preferredCompletionDate: preferredDate || null,
+          preferredBudget: preferredBudget || null,
         }),
       })
 
@@ -217,6 +224,20 @@ export default function ServiceRequestForm() {
               type="date"
               value={preferredDate}
               onChange={(e) => setPreferredDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Preferred Budget (optional)
+            </label>
+            <Input
+              type="number"
+              value={preferredBudget}
+              onChange={(e) => setPreferredBudget(e.target.value)}
+              placeholder="e.g., 500"
+              min="0"
+              step="0.01"
             />
           </div>
         </CardContent>

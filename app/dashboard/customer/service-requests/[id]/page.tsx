@@ -136,6 +136,27 @@ export default function CustomerServiceRequestDetail({ params }: { params: { id:
     }
   }
 
+  const handleRejectQuote = async (quotationId: string) => {
+    if (!confirm('Are you sure you want to reject this quotation?')) return
+
+    try {
+      const res = await fetch(`/api/service-requests/${params.id}/reject-quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quotationId }),
+      })
+
+      if (res.ok) {
+        fetchRequest()
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to reject quotation')
+      }
+    } catch (err) {
+      setError('An error occurred')
+    }
+  }
+
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this request?')) return
 
@@ -301,14 +322,22 @@ export default function CustomerServiceRequestDetail({ params }: { params: { id:
                         Valid until {new Date(q.validUntil).toLocaleDateString()}
                       </p>
                       {request.status === 'QUOTED' && q.status === 'PENDING' && (
-                        <Button
-                          variant="success"
-                          size="sm"
-                          onClick={() => handleAcceptQuote(q.id)}
-                          className="mt-3"
-                        >
-                          Accept Quotation
-                        </Button>
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => handleAcceptQuote(q.id)}
+                          >
+                            Accept Quotation
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleRejectQuote(q.id)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ))}

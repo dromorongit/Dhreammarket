@@ -49,6 +49,7 @@ model User {
   uploadedAttachments      ServiceRequestAttachment[]
   statusHistoryEntries     ServiceRequestStatusHistory[]
   sentQuotations           ServiceQuotation[]
+  quotationAttachments     QuotationAttachment[]
 
   @@map("users")
 }
@@ -1285,6 +1286,7 @@ enum ServiceRequestStatus {
 
 model ServiceRequest {
   id                       String                          @id @default(cuid())
+  referenceNumber          String                          @unique @db.VarChar(50)
   serviceId                String
   customerId               String
   vendorId                 String
@@ -1292,6 +1294,7 @@ model ServiceRequest {
   title                    String
   description              String?
   preferredCompletionDate  DateTime?
+  preferredBudget          Decimal?
   status                   ServiceRequestStatus            @default(PENDING)
   quotedPrice              Decimal?
   estimatedDuration        String?
@@ -1363,8 +1366,25 @@ model ServiceQuotation {
   updatedAt             DateTime @updatedAt
   serviceRequest        ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
   vendor                User   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  attachments           QuotationAttachment[]
 
   @@map("service_quotations")
   @@index([serviceRequestId])
   @@index([vendorId])
+}
+
+model QuotationAttachment {
+  id               String   @id @default(cuid())
+  quotationId      String
+  fileName         String
+  fileUrl          String
+  fileType         String
+  fileSize         Int
+  uploadedBy       String
+  createdAt        DateTime @default(now())
+  quotation        ServiceQuotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  uploader         User   @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  @@map("quotation_attachments")
+  @@index([quotationId])
 }

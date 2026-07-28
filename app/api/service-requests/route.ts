@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { serviceId, title, description, preferredCompletionDate } = body
+    const { serviceId, title, description, preferredCompletionDate, preferredBudget } = body
 
     if (!serviceId) {
       perf.markPrismaEnd(prismaPerfStart)
@@ -251,8 +251,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Service is not available' }, { status: 400 })
     }
 
+    const referenceNumber = `SR-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+
     const serviceRequest = await getPrisma().serviceRequest.create({
       data: {
+        referenceNumber,
         serviceId,
         customerId: payload.userId,
         vendorId: service.store.userId,
@@ -260,6 +263,7 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         description: description?.trim() || null,
         preferredCompletionDate: preferredCompletionDate ? new Date(preferredCompletionDate) : null,
+        preferredBudget: preferredBudget !== undefined && preferredBudget !== '' ? parseFloat(preferredBudget) : null,
         status: 'PENDING',
       },
       include: {
