@@ -118,6 +118,8 @@ const store = await getPrisma().store.create({
            whatsappNumber: sanitizePhoneNumber(whatsappNumber),
            acceptsPreOrders: acceptsPreOrders || false,
            acceptsBackOrders: acceptsBackOrders || false,
+           canSellProducts: true,
+           canOfferServices: true,
            ...(logo !== undefined && { logo }),
            ...(banner !== undefined && { banner }),
          },

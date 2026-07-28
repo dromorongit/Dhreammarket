@@ -104,6 +104,8 @@ export async function POST(request: NextRequest) {
                 prismaClient: tx,
               }),
               isVerified: false,
+              canSellProducts: true,
+              canOfferServices: true,
             },
             select: { id: true, slug: true },
           })
