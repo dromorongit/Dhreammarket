@@ -31,20 +31,25 @@ function configureCloudinary() {
 
 /**
  * Upload an image file to Cloudinary
- * @param file - The file to upload (from FormData)
+ * @param file - The file to upload (File or Buffer)
  * @param folder - The Cloudinary folder to upload to
+ * @param mimeType - Optional mime type when uploading a Buffer
  * @returns Promise<{url: string, publicId: string, secureUrl: string}>
  */
 export async function uploadImage(
-  file: File,
-  folder: string = 'dhream-market'
+  file: File | Buffer,
+  folder: string = 'dhream-market',
+  mimeType?: string
 ): Promise<{ url: string; publicId: string; secureUrl: string }> {
   // Configure Cloudinary at runtime (not at module load time)
   configureCloudinary();
 
+  const fileName = file instanceof File ? file.name : 'upload';
+  const fileType = mimeType || (file instanceof File ? file.type : '');
+  const fileSize = file instanceof File ? file.size : Buffer.byteLength(file);
+
   // Convert File to Buffer (Node.js compatible)
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const buffer = file instanceof File ? Buffer.from(await file.arrayBuffer()) : file;
   
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -63,9 +68,9 @@ export async function uploadImage(
           console.error('[Cloudinary] Upload error:', {
             error,
             folder,
-            fileName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
+            fileName,
+            fileType,
+            fileSize,
           });
           reject(new Error(`Cloudinary upload failed: ${error.message || JSON.stringify(error)}`));
         } else if (result) {
