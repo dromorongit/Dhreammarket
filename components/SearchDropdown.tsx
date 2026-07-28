@@ -349,7 +349,6 @@ const performSearch = useCallback(async (searchQuery: string) => {
           aria-label="Search marketplace"
           aria-autocomplete="list"
           aria-controls="search-dropdown"
-          aria-expanded={isOpen}
         />
 
         {/* Clear / Loading */}
