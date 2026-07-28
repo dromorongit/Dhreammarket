@@ -917,30 +917,6 @@ function MarketplaceContent() {
 
           {viewMode === 'services' && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-700">Service Categories:</span>
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-                  <Button
-                    variant={selectedServiceCategory === '' ? 'primary' : 'ghost'}
-                    size="sm"
-                    className="rounded-2xl whitespace-nowrap min-h-[40px] px-4 py-2 font-semibold"
-                    onClick={() => setSelectedServiceCategory('')}
-                  >
-                    All
-                  </Button>
-                  {serviceCategories.map(cat => (
-                    <Button
-                      key={cat.id}
-                      variant={selectedServiceCategory === cat.id ? 'primary' : 'ghost'}
-                      size="sm"
-                      className="rounded-2xl whitespace-nowrap min-h-[40px] px-4 py-2 font-semibold"
-                      onClick={() => setSelectedServiceCategory(cat.id)}
-                    >
-                      {cat.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
               <div className="p-4 flex items-center gap-3 border-b border-slate-100">
                 <input
                   type="text"
@@ -956,61 +932,61 @@ function MarketplaceContent() {
                    <option value="alphabetical">Alphabetical</option>
                    <option value="featured">Featured</option>
                  </select>
-              </div>
-              
-              {servicesPending ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                  {[...Array(6)].map((_, i) => (
-                    <SkeletonCard key={i} />
-                  ))}
-                </div>
-              ) : services.length === 0 ? (
-                <div className="p-12">
-                  <EmptyState
-                    icon={
-                      <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    }
-                    title="No services found"
-                    description="Try adjusting your filters or search query."
-                    actionLabel="Clear Filters"
-                    onAction={() => { setSelectedServiceCategory(''); setServiceSearchQuery(''); setServiceMinPrice(''); setServiceMaxPrice(''); setServiceSortBy('newest'); }}
-                  />
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-                    {services.map((service) => (
-                      <ServiceCard key={service.id} service={service} wishlistServiceIds={wishlistedProductIds as Set<string>} />
-                    ))}
-                  </div>
+               </div>
+               
+               {servicesPending ? (
+                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+                   {[...Array(6)].map((_, i) => (
+                     <SkeletonCard key={i} />
+                   ))}
+                 </div>
+               ) : services.length === 0 ? (
+                 <div className="p-12">
+                   <EmptyState
+                     icon={
+                       <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                       </svg>
+                     }
+                     title="No services found"
+                     description="Try adjusting your filters or search query."
+                     actionLabel="Clear Filters"
+                     onAction={() => { setSelectedServiceCategory(''); setServiceSearchQuery(''); setServiceMinPrice(''); setServiceMaxPrice(''); setServiceSortBy('newest'); }}
+                   />
+                 </div>
+               ) : (
+                 <>
+                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+                     {services.map((service) => (
+                       <ServiceCard key={service.id} service={service} wishlistServiceIds={wishlistedProductIds as Set<string>} />
+                     ))}
+                   </div>
 
-                  {servicePagination.totalPages > 1 && (
-                    <div className="flex items-center justify-between border-t pt-6 px-6">
-                      <div className="text-sm text-slate-600">
-                        Page {servicePagination.page} of {servicePagination.totalPages}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setServicePagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                          disabled={servicePagination.page === 1}
-                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => setServicePagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                          disabled={servicePagination.page >= servicePagination.totalPages}
-                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+                   {servicePagination.totalPages > 1 && (
+                     <div className="flex items-center justify-between border-t pt-6 px-4">
+                       <div className="text-sm text-slate-600">
+                         Page {servicePagination.page} of {servicePagination.totalPages}
+                       </div>
+                       <div className="flex gap-2">
+                         <button
+                           onClick={() => setServicePagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                           disabled={servicePagination.page === 1}
+                           className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                         >
+                           Previous
+                         </button>
+                         <button
+                           onClick={() => setServicePagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                           disabled={servicePagination.page >= servicePagination.totalPages}
+                           className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50 min-h-[44px]"
+                         >
+                           Next
+                         </button>
+                       </div>
+                     </div>
+                   )}
+                 </>
+               )}
             </div>
           )}
 

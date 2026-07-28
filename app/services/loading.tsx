@@ -14,7 +14,7 @@ export default function ServicesLoading() {
               <Skeleton key={i} className="h-10 w-full" />
             ))}
           </div>
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[...Array(9)].map((_, i) => (
               <SkeletonCard key={i} />
             ))}

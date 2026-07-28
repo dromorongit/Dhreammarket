@@ -1356,6 +1356,24 @@ function FeaturedServicesSection() {
   const services = data?.services ?? []
   const loading = isLoading
 
+  const renderServiceRail = (serviceList: any[]) => (
+    <div className="flex gap-4 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {serviceList.map((service) => (
+        <ServiceCard key={service.id} service={service} className="flex-shrink-0 snap-start w-[280px] sm:w-[300px] lg:w-[320px]" />
+      ))}
+    </div>
+  )
+
+  const renderSkeletonRail = () => (
+    <div className="flex gap-4 overflow-hidden">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]">
+          <SkeletonCard />
+        </div>
+      ))}
+    </div>
+  )
+
   return (
     <section className="relative py-24 lg:py-32 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1369,10 +1387,9 @@ function FeaturedServicesSection() {
           </p>
         </div>
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6">
-            {[...Array(8)].map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
+          <div className="space-y-4">
+            {renderSkeletonRail()}
+            {renderSkeletonRail()}
           </div>
         ) : services.length === 0 ? (
           <EmptyState
@@ -1386,28 +1403,17 @@ function FeaturedServicesSection() {
           />
         ) : (
           <>
-            {/* Mobile: 2 columns, up to 8 services */}
-            <div className="grid grid-cols-2 gap-4 lg:gap-6 sm:hidden">
-              {services.slice(0, 8).map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))}
+            <div className="space-y-4">
+              {services.length > 4 ? (
+                <>
+                  {renderServiceRail(services.slice(0, 4))}
+                  {renderServiceRail(services.slice(4, 8))}
+                </>
+              ) : (
+                renderServiceRail(services)
+              )}
             </div>
 
-            {/* Tablet: 3 columns, up to 8 services */}
-            <div className="hidden sm:grid lg:hidden sm:grid-cols-3 gap-4 lg:gap-6">
-              {services.slice(0, 8).map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))}
-            </div>
-
-            {/* Desktop: 4 columns, up to 8 services */}
-            <div className="hidden lg:grid lg:grid-cols-4 gap-4 lg:gap-6">
-              {services.slice(0, 8).map((service) => (
-                <ServiceCard key={service.id} service={service} />
-              ))}
-            </div>
-
-            {/* See More button - always visible */}
             <div className="mt-8 text-center">
               <Link href="/services">
                 <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">

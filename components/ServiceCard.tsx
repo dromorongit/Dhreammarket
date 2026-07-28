@@ -52,6 +52,7 @@ interface Service {
 interface ServiceCardProps {
   service: Service
   wishlistServiceIds?: Set<string>
+  className?: string
 }
 
 function getPricingLabel(pricingType: string): string {
@@ -65,7 +66,7 @@ function getPricingLabel(pricingType: string): string {
   return labels[pricingType] || pricingType
 }
 
-export default function ServiceCard({ service, wishlistServiceIds }: ServiceCardProps) {
+export default function ServiceCard({ service, wishlistServiceIds, className }: ServiceCardProps) {
   const badgeInfo = service.store ? getVendorBadgeInfo(service.store.badgeTier) : null
   const hasImage = service.thumbnail || (service.images && service.images.length > 0)
   const imageUrl = service.thumbnail || service.images?.[0]?.imageUrl
@@ -74,7 +75,7 @@ export default function ServiceCard({ service, wishlistServiceIds }: ServiceCard
   return (
     <Card
       variant="elevated"
-      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+      className={`group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0 ${className || ''}`}
     >
       <Link href={`/services/${service.slug}`} className="block">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">

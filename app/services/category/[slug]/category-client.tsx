@@ -118,7 +118,7 @@ export default function CategoryPageClient({ params }: CategoryPageClientProps) 
             onAction={() => window.location.href = '/services'}
           />
         ) : loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[...Array(6)].map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -137,7 +137,7 @@ export default function CategoryPageClient({ params }: CategoryPageClientProps) 
           />
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
               {services.map((service) => (
                 <ServiceCard key={service.id} service={service as any} />
               ))}
