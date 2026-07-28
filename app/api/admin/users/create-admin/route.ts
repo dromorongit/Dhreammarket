@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role: 'ADMIN',
         position: position.trim(),
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
         profile: {
           create: {
             firstName: name.trim().split(' ')[0],
