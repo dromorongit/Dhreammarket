@@ -217,17 +217,18 @@ function MarketplaceContent() {
   })
 
   const { data: servicesData, isPending: servicesPending } = useQuery({
-    queryKey: ['services', 'marketplace', servicePagination.page, servicePagination.limit, selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice],
+    queryKey: ['services', 'marketplace', servicePagination.page, servicePagination.limit, selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice, serviceSearchQuery],
     queryFn: async () => {
       try {
         const params = new URLSearchParams()
         params.set('page', String(servicePagination.page))
         params.set('limit', String(servicePagination.limit))
-        params.set('sortBy', serviceSortBy === 'newest' ? 'createdAt' : serviceSortBy === 'price-low' ? 'startingPrice' : 'startingPrice')
-        params.set('sortOrder', serviceSortBy === 'price-high' ? 'asc' : 'desc')
+        params.set('sortBy', serviceSortBy === 'newest' ? 'createdAt' : serviceSortBy === 'price-low' ? 'startingPrice' : serviceSortBy === 'price-high' ? 'startingPrice' : serviceSortBy === 'alphabetical' ? 'alphabetical' : serviceSortBy === 'featured' ? 'featured' : 'createdAt')
+        params.set('sortOrder', serviceSortBy === 'price-high' || serviceSortBy === 'price-low' || serviceSortBy === 'alphabetical' ? 'asc' : 'desc')
         if (selectedServiceCategory) params.set('categoryId', selectedServiceCategory)
         if (serviceMinPrice) params.set('minPrice', serviceMinPrice)
         if (serviceMaxPrice) params.set('maxPrice', serviceMaxPrice)
+        if (serviceSearchQuery) params.set('search', serviceSearchQuery)
         const response = await fetch(`/api/services?${params.toString()}`)
         if (!response.ok) throw new Error('Failed to fetch services')
         return response.json()
@@ -239,13 +240,14 @@ function MarketplaceContent() {
   })
 
   const { data: servicesCountData } = useQuery({
-    queryKey: ['services', 'count'],
+    queryKey: ['services', 'count', selectedServiceCategory, serviceMinPrice, serviceMaxPrice, serviceSearchQuery],
     queryFn: async () => {
       try {
         const params = new URLSearchParams()
         if (selectedServiceCategory) params.set('categoryId', selectedServiceCategory)
         if (serviceMinPrice) params.set('minPrice', serviceMinPrice)
         if (serviceMaxPrice) params.set('maxPrice', serviceMaxPrice)
+        if (serviceSearchQuery) params.set('search', serviceSearchQuery)
         const countResponse = await fetch(`/api/services?${params.toString()}&limit=1`)
         if (countResponse.ok) {
           const countData = await countResponse.json()
@@ -332,6 +334,7 @@ function MarketplaceContent() {
 
   const totalProductCategoryCount = countAllCategories(categories)
   const totalVendorCategoryCount = vendorCategories.reduce((sum: number, cat: Category) => sum + (cat.productCount ?? 0), 0)
+  const totalServiceCategoryCount = serviceCategories.reduce((sum: number, cat: ServiceCategory) => sum + (cat.serviceCount ?? 0), 0)
   const wishlistedProductIds = new Set(wishlistData ?? [])
 
   useEffect(() => {
@@ -344,7 +347,7 @@ function MarketplaceContent() {
 
   useEffect(() => {
     setServicePagination({ page: 1, limit: 12, totalPages: servicePagination.totalPages })
-  }, [selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice])
+  }, [selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice, serviceSearchQuery])
 
   useEffect(() => {
     const categoryParam = searchParams?.get('category') ?? ''
@@ -474,6 +477,23 @@ function MarketplaceContent() {
         {vc.name}
         <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
           {vc.productCount ?? vendors.filter(v => v.category?.id === vc.id).length}
+        </span>
+      </Button>
+    ))
+  }
+
+  const renderServiceCategoryButtons = (cats: ServiceCategory[]): React.ReactNode[] => {
+    return cats.map((cat) => (
+      <Button
+        key={cat.id}
+        variant={selectedServiceCategory === cat.id ? 'primary' : 'ghost'}
+        size="sm"
+        className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedServiceCategory === cat.id ? '' : 'text-slate-700'}`}
+        onClick={() => setSelectedServiceCategory(cat.id)}
+      >
+        {cat.name}
+        <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+          {cat.serviceCount ?? 0}
         </span>
       </Button>
     ))
@@ -641,6 +661,23 @@ function MarketplaceContent() {
                 {renderVendorCategoryButtons(vendorCategories)}
               </div>
             )}
+
+            {viewMode === 'services' && (
+              <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                <Button
+                  variant={selectedServiceCategory === '' ? 'primary' : 'ghost'}
+                  size="sm"
+                  className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedServiceCategory === '' ? '' : 'text-slate-700'}`}
+                  onClick={() => setSelectedServiceCategory('')}
+                >
+                  All Categories
+                  <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                    {totalServiceCategoryCount}
+                  </span>
+                </Button>
+                {renderServiceCategoryButtons(serviceCategories)}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -744,9 +781,9 @@ function MarketplaceContent() {
                             <p className="text-[10px] text-slate-500 truncate">
                               {product.store.name}
                             </p>
-{(() => {
-                               const badgeInfo = getVendorBadgeInfo(product.store?.badgeTier ?? null)
-                               if (badgeInfo) {
+                            {(() => {
+                              const badgeInfo = getVendorBadgeInfo(product.store?.badgeTier ?? null)
+                              if (badgeInfo) {
                                 const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                                 return (
                                   <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
@@ -790,7 +827,7 @@ function MarketplaceContent() {
                 })}
               </div>
             )
-          ) : (
+          ) : viewMode === 'vendors' ? (
             filteredVendors.length === 0 ? (
               <EmptyState
                 icon={
@@ -840,9 +877,9 @@ function MarketplaceContent() {
                           <h3 className="text-lg font-semibold text-deep-navy mb-1 group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
                             {truncateVendorName(vendor.name)}
                           </h3>
-{(() => {
-                             const badgeInfo = getVendorBadgeInfo(vendor.badgeTier)
-                             if (badgeInfo) {
+                          {(() => {
+                            const badgeInfo = getVendorBadgeInfo(vendor.badgeTier)
+                            if (badgeInfo) {
                               const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                               return (
                                 <MdVerified className={`w-4 h-4 ${iconColor} flex-shrink-0`} />
@@ -876,7 +913,7 @@ function MarketplaceContent() {
                 ))}
               </div>
             )
-          )}
+          ) : null}
 
           {viewMode === 'services' && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -912,11 +949,13 @@ function MarketplaceContent() {
                   onChange={(e) => setServiceSearchQuery(e.target.value)}
                   className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
                 />
-                <select value={serviceSortBy} onChange={(e) => setServiceSortBy(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50">
-                  <option value="newest">Newest</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                </select>
+                 <select value={serviceSortBy} onChange={(e) => setServiceSortBy(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50">
+                   <option value="newest">Newest</option>
+                   <option value="price-low">Price: Low to High</option>
+                   <option value="price-high">Price: High to Low</option>
+                   <option value="alphabetical">Alphabetical</option>
+                   <option value="featured">Featured</option>
+                 </select>
               </div>
               
               {servicesPending ? (

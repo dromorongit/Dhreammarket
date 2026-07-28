@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    let orderBy: Record<string, string>
+    let orderBy: Record<string, string> | Array<Record<string, string>>
     switch (sortBy) {
       case 'price-low':
         orderBy = { startingPrice: sortOrder }
@@ -81,6 +81,12 @@ export async function GET(request: NextRequest) {
         break
       case 'oldest':
         orderBy = { createdAt: sortOrder === 'asc' ? 'desc' : 'asc' }
+        break
+      case 'alphabetical':
+        orderBy = { title: sortOrder }
+        break
+      case 'featured':
+        orderBy = [{ isFeatured: 'desc' }, { createdAt: 'desc' }]
         break
       case 'newest':
       default:

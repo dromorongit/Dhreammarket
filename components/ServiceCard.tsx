@@ -116,36 +116,32 @@ export default function ServiceCard({ service, wishlistServiceIds }: ServiceCard
             {service.title}
           </h3>
         </Link>
-        <div className="mt-auto flex flex-col gap-1.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            {service.store && (
-              <p className="text-[10px] text-slate-500 truncate min-w-0">
-                {truncateVendorName(service.store.name)}
-              </p>
-            )}
-            {badgeInfo ? (
-              <span className={badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}>
-                <MdVerified className="w-3 h-3 flex-shrink-0" />
-              </span>
-            ) : service.store?.isVerified ? (
-              <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0" />
-            ) : null}
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold text-royal-blue">
-              {isCustomQuote ? 'Request Quote' : formatPrice(Number(service.startingPrice))}
+        <span className="text-xs font-bold text-royal-blue">
+          {isCustomQuote ? 'Request Quote' : formatPrice(Number(service.startingPrice))}
+        </span>
+        <Link href={`/services/${service.slug}`} className="w-full">
+          <Button variant="primary" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+            View Service
+          </Button>
+        </Link>
+        <Link href={`/services/request?serviceId=${service.id}`} className="w-full">
+          <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+            Book Service
+          </Button>
+        </Link>
+        <div className="mt-auto flex items-center gap-1.5 min-w-0">
+          {service.store && (
+            <p className="text-[10px] text-slate-500 truncate min-w-0">
+              {truncateVendorName(service.store.name)}
+            </p>
+          )}
+          {badgeInfo ? (
+            <span className={badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}>
+              <MdVerified className="w-3 h-3 flex-shrink-0" />
             </span>
-            <Link href={`/services/${service.slug}`} className="w-full">
-              <Button variant="primary" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                View Service
-              </Button>
-            </Link>
-          </div>
-          <Link href={`/services/request?serviceId=${service.id}`} className="w-full">
-            <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-              Book Service
-            </Button>
-          </Link>
+          ) : service.store?.isVerified ? (
+            <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0" />
+          ) : null}
         </div>
       </div>
     </Card>
