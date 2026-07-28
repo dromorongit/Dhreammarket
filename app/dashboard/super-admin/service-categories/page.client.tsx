@@ -64,10 +64,15 @@ export default function SuperAdminServiceCategoriesPage() {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [reordering, setReordering] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [sortBy, setSortBy] = useState('displayOrder')
+  const [sortOrder, setSortOrder] = useState('asc')
+  const [iconUrls, setIconUrls] = useState<string[]>([])
+  const [bannerUrls, setBannerUrls] = useState<string[]>([])
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -76,6 +81,8 @@ export default function SuperAdminServiceCategoriesPage() {
       params.set('page', String(currentPage))
       params.set('limit', '20')
       params.set('includeInactive', 'true')
+      params.set('sortBy', sortBy)
+      params.set('sortOrder', sortOrder)
       if (searchQuery.trim()) params.set('search', searchQuery.trim())
 
       const response = await fetch(`/api/admin/service-categories?${params}`)
@@ -95,7 +102,7 @@ export default function SuperAdminServiceCategoriesPage() {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, searchQuery])
+  }, [currentPage, searchQuery, sortBy, sortOrder])
 
   useEffect(() => {
     fetchCategories()
@@ -114,6 +121,8 @@ export default function SuperAdminServiceCategoriesPage() {
       const payload = {
         ...formData,
         slug: formData.slug.toLowerCase().trim(),
+        icon: iconUrls[0] || null,
+        banner: bannerUrls[0] || null,
       }
 
       const response = await fetch(url, {
@@ -140,20 +149,22 @@ export default function SuperAdminServiceCategoriesPage() {
   }
 
   const handleEdit = (category: ServiceCategory) => {
-    setEditingCategory(category)
-    setFormData({
-      name: category.name,
-      slug: category.slug,
-      description: category.description || '',
-      icon: category.icon || '',
-      banner: category.banner || '',
-      displayOrder: category.displayOrder,
-      isActive: category.isActive,
-      isFeatured: category.isFeatured,
-      metaTitle: category.metaTitle || '',
-      metaDescription: category.metaDescription || '',
-    })
-    setShowModal(true)
+	setEditingCategory(category)
+	setFormData({
+	  name: category.name,
+	  slug: category.slug,
+	  description: category.description || '',
+	  icon: category.icon || '',
+	  banner: category.banner || '',
+	  displayOrder: category.displayOrder,
+	  isActive: category.isActive,
+	  isFeatured: category.isFeatured,
+	  metaTitle: category.metaTitle || '',
+	  metaDescription: category.metaDescription || '',
+	})
+	setIconUrls(category.icon ? [category.icon] : [])
+	setBannerUrls(category.banner ? [category.banner] : [])
+	setShowModal(true)
   }
 
   const handleDelete = async (id: string, name: string) => {
@@ -234,9 +245,47 @@ export default function SuperAdminServiceCategoriesPage() {
   }
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setEditingCategory(null)
-    setFormData(initialFormData)
+	setShowModal(false)
+	setEditingCategory(null)
+	setFormData(initialFormData)
+	setIconUrls([])
+	setBannerUrls([])
+  }
+
+  const handleReorder = async (categoryId: string, direction: 'up' | 'down') => {
+	setReordering(true)
+	try {
+	  const currentIndex = categories.findIndex(c => c.id === categoryId)
+	  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+	  if (targetIndex < 0 || targetIndex >= categories.length) return
+
+	  const currentCategory = categories[currentIndex]
+	  const targetCategory = categories[targetIndex]
+
+	  const payload = {
+		[currentCategory.id]: targetCategory.displayOrder,
+		[targetCategory.id]: currentCategory.displayOrder,
+	  }
+
+	  const response = await fetch('/api/admin/service-categories/reorder', {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(payload),
+	  })
+
+	  if (!response.ok) {
+		const data = await response.json()
+		alert(data.error || 'Failed to reorder categories')
+		return
+	  }
+
+	  await fetchCategories()
+	} catch (error) {
+	  console.error('Error reordering:', error)
+	  alert('Failed to reorder categories')
+	} finally {
+	  setReordering(false)
+	}
   }
 
   const generateSlug = (name: string) => {
@@ -323,6 +372,21 @@ export default function SuperAdminServiceCategoriesPage() {
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-royal-blue focus:border-transparent"
                 />
               </div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-royal-blue focus:border-transparent"
+              >
+                <option value="displayOrder">Sort: Display Order</option>
+                <option value="name">Sort: Name</option>
+              </select>
+              <button
+                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-50 focus:ring-2 focus:ring-royal-blue focus:border-transparent"
+                title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+              </button>
               <span className="text-sm text-slate-500">
                 {total} category{total !== 1 ? 's' : ''}
               </span>
@@ -379,6 +443,24 @@ export default function SuperAdminServiceCategoriesPage() {
                     </div>
 
                     <div className="flex items-center gap-2 pt-3 border-t border-slate-100 mt-3">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleReorder(category.id, 'up')}
+                        disabled={reordering || categories.indexOf(category) === 0}
+                        title="Move up"
+                      >
+                        ↑
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleReorder(category.id, 'down')}
+                        disabled={reordering || categories.indexOf(category) === categories.length - 1}
+                        title="Move down"
+                      >
+                        ↓
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(category)}>
                         Edit
                       </Button>
@@ -493,27 +575,27 @@ export default function SuperAdminServiceCategoriesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Icon URL
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.icon}
-                      onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-royal-blue focus:border-transparent"
-                      placeholder="https://example.com/icon.png"
+                    <ImageUpload
+                      value={iconUrls}
+                      onChange={setIconUrls}
+                      folder="services"
+                      maxFiles={1}
+                      maxSizeMB={5}
+                      label="Category Icon"
+                      hint="Upload an icon for this service category."
+                      uploadUrl="/api/super-admin/upload"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      Banner URL
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.banner}
-                      onChange={(e) => setFormData(prev => ({ ...prev, banner: e.target.value }))}
-                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-royal-blue focus:border-transparent"
-                      placeholder="https://example.com/banner.png"
+                    <ImageUpload
+                      value={bannerUrls}
+                      onChange={setBannerUrls}
+                      folder="services"
+                      maxFiles={1}
+                      maxSizeMB={5}
+                      label="Category Banner"
+                      hint="Upload a banner image for this service category."
+                      uploadUrl="/api/super-admin/upload"
                     />
                   </div>
                 </div>

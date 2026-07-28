@@ -37,6 +37,7 @@ export default function CategoryPageClient({ params }: CategoryPageClientProps) 
   const [services, setServices] = useState<CategoryService[]>([])
   const [loading, setLoading] = useState(true)
   const [categoryTitle, setCategoryTitle] = useState('')
+  const [categoryActive, setCategoryActive] = useState(true)
   const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 0 })
 
   useEffect(() => {
@@ -50,10 +51,18 @@ export default function CategoryPageClient({ params }: CategoryPageClientProps) 
       if (response.ok) {
         const data = await response.json()
         const cat = data.categories?.find((c: any) => c.slug === params.slug)
-        if (cat) setCategoryTitle(cat.name)
+        if (cat) {
+          setCategoryTitle(cat.name)
+          setCategoryActive(cat.isActive)
+        } else {
+          setCategoryActive(false)
+        }
+      } else {
+        setCategoryActive(false)
       }
     } catch (error) {
       console.error('Error fetching category:', error)
+      setCategoryActive(false)
     }
   }
 
@@ -96,7 +105,19 @@ export default function CategoryPageClient({ params }: CategoryPageClientProps) 
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {loading ? (
+        {!categoryActive ? (
+          <EmptyState
+            icon={
+              <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            }
+            title="Category unavailable"
+            description="This service category is currently unavailable. Please browse available categories."
+            actionLabel="Browse All Services"
+            onAction={() => window.location.href = '/services'}
+          />
+        ) : loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <SkeletonCard key={i} />

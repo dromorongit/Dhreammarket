@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
 
     if (categoryId) {
       where.categoryId = categoryId
+      where.category = { isActive: true }
     }
 
     if (vendorId) {

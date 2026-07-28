@@ -13,6 +13,7 @@ interface ImageUploadProps {
   maxSizeMB?: number;
   label?: string;
   hint?: string;
+  uploadUrl?: string;
 }
 
 export default function ImageUpload({
@@ -23,6 +24,7 @@ export default function ImageUpload({
   maxSizeMB = 5,
   label = 'Images',
   hint,
+  uploadUrl,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
@@ -68,7 +70,7 @@ export default function ImageUpload({
         });
         formData.append('folder', folder);
 
-        const response = await fetch('/api/upload', {
+        const response = await fetch(uploadUrl || '/api/upload', {
           method: 'POST',
           body: formData,
         });
