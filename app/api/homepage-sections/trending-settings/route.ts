@@ -81,6 +81,15 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { settings } = body as { settings: Partial<TrendingSettings> }
 
+    const existing = await prisma.homepageSection.findUnique({
+      where: { slug: 'trending-now' },
+    })
+
+    const mergedSettings = {
+      ...(existing?.settings as Record<string, any> || {}),
+      ...settings,
+    }
+
     const section = await prisma.homepageSection.upsert({
       where: { slug: 'trending-now' },
       create: {
@@ -90,10 +99,10 @@ export async function PUT(request: NextRequest) {
         subtitle: 'Discover what\'s currently trending across Dhream Market.',
         displayOrder: 2,
         isEnabled: true,
-        settings: { ...DEFAULT_SETTINGS, ...settings } as any,
+        settings: mergedSettings as any,
       },
       update: {
-        settings: settings as any,
+        settings: mergedSettings as any,
       },
     })
 

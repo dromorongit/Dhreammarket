@@ -71,6 +71,7 @@ export interface ManagedHomepageSection {
   products: EnterpriseProduct[]
   services: EnterpriseService[]
   vendors: unknown[]
+  brands: EnterpriseBrand[]
 }
 
 export interface ManagedHomepageData {

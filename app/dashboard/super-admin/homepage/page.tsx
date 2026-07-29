@@ -498,15 +498,11 @@ export default function SuperAdminHomepagePage() {
     setSaving(true);
     try {
       const response = await fetch(
-        `/api/homepage-sections/${managingSection.id}`,
+        `/api/homepage-sections/${managingSection.id}/services`,
         {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            settings: {
-              serviceIds: Array.from(selectedServices),
-            },
-          }),
+          body: JSON.stringify({ serviceIds: Array.from(selectedServices) }),
         },
       );
       if (response.ok) {
@@ -528,14 +524,12 @@ export default function SuperAdminHomepagePage() {
 
   const handleRemoveService = async (sectionId: string, serviceId: string) => {
     try {
-      const section = sections.find((s) => s.id === sectionId);
-      const currentServiceIds = (section?.settings as any)?.serviceIds || [];
-      const updatedServiceIds = currentServiceIds.filter((id: string) => id !== serviceId);
-      await fetch(`/api/homepage-sections/${sectionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings: { serviceIds: updatedServiceIds } }),
-      });
+      await fetch(
+        `/api/homepage-sections/${sectionId}/services?serviceId=${serviceId}`,
+        {
+          method: "DELETE",
+        },
+      );
       setAssignedServices((prev) => prev.filter((id: string) => id !== serviceId));
       await fetchSections();
     } catch (err) {
@@ -688,16 +682,14 @@ export default function SuperAdminHomepagePage() {
     if (!managingSection || serviceIds.length === 0) return;
     setSaving(true);
     try {
-      const section = sections.find((s) => s.id === managingSection.id);
-      const currentServiceIds = (section?.settings as any)?.serviceIds || [];
-      const updatedServiceIds = currentServiceIds.filter(
-        (id: string) => !serviceIds.includes(id),
+      await fetch(
+        `/api/homepage-sections/${managingSection.id}/services/bulk-delete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ serviceIds }),
+        },
       );
-      await fetch(`/api/homepage-sections/${managingSection.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings: { serviceIds: updatedServiceIds } }),
-      });
       setAssignedServices((prev) =>
         prev.filter((id: string) => !serviceIds.includes(id)),
       );

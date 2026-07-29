@@ -12,9 +12,16 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
 
   for (const section of DEFAULT_HOMEPAGE_SECTIONS) {
     try {
+      const existing = await prisma.homepageSection.findUnique({
+        where: { slug: section.slug },
+      })
+
+      const existingSettings = (existing?.settings || {}) as Record<string, any>
       const settings = {
+        ...existingSettings,
         contentSource: section.contentSource,
       }
+
       await prisma.homepageSection.upsert({
         where: { slug: section.slug },
         create: {

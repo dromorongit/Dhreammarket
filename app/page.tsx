@@ -217,6 +217,7 @@ export default function Home() {
             products: section.products,
             services: section.services,
             vendors: section.vendors,
+            brands: section.brands || [],
           }
           if (section.slug === 'sponsored')
             return <SponsoredSection key={section.id} section={sectionProps} />
@@ -237,7 +238,7 @@ export default function Home() {
               <BrandStoreSection
                 key={section.id}
                 section={sectionProps}
-                brands={managedData.brands}
+                brands={section.brands || []}
                 loading={loadingManaged}
               />
             )
@@ -290,7 +291,7 @@ export default function Home() {
 
       {/* ─── New Services Section (below New Arrivals) ─── */}
       {!loadingManaged && (
-        <NewServicesSection section={{ id: 'new-services', name: 'New Services', slug: 'new-services', type: 'NEW_SERVICES', subtitle: 'Fresh services just added to Dhream Market.', displayOrder: 0, contentSource: 'AUTOMATIC', products: [], services: [], vendors: [] }} />
+        <NewServicesSection section={{ id: 'new-services', name: 'New Services', slug: 'new-services', type: 'NEW_SERVICES', subtitle: 'Fresh services just added to Dhream Market.', displayOrder: 0, contentSource: 'AUTOMATIC', products: [], services: [], vendors: [], brands: [] }} />
       )}
 
       {/* ─── Automatic: Top Selling (real sales data) ─── */}

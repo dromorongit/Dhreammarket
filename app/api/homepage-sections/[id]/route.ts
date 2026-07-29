@@ -128,7 +128,7 @@ export async function PUT(
         subtitle: subtitle !== undefined ? subtitle : existing.subtitle,
         isEnabled: isEnabled ?? existing.isEnabled,
         displayOrder: displayOrder ?? existing.displayOrder,
-        settings: settings !== undefined ? settings : existing.settings,
+        settings: settings !== undefined ? { ...(existing.settings as Record<string, any> || {}), ...settings } : existing.settings,
       },
     });
 

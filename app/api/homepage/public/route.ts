@@ -36,11 +36,6 @@ interface AutoRankSettings {
   excludeHiddenProducts?: boolean
   excludeArchivedProducts?: boolean
   serviceIds?: string[]
-  productIds?: string[]
-  vendorIds?: string[]
-  pinnedServiceIds?: string[]
-  pinnedProductIds?: string[]
-  pinnedVendorIds?: string[]
 }
 
 const DEFAULT_AUTO_RANK_SETTINGS: AutoRankSettings = {
@@ -400,6 +395,18 @@ export async function GET(_request: NextRequest) {
             },
             take: 10,
           },
+          brands: {
+            orderBy: { brand: { displayOrder: 'asc' } },
+            include: {
+              brand: {
+                include: {
+                  _count: {
+                    select: { products: true },
+                  },
+                },
+              },
+            },
+          },
         },
       })
     } catch (e) {
@@ -445,6 +452,7 @@ export async function GET(_request: NextRequest) {
       let sortedProducts: any[] = []
       let sortedServices: any[] = []
       let sortedVendors: any[] = []
+      let sortedBrands: any[] = []
 
       const now = new Date()
 
@@ -452,6 +460,7 @@ export async function GET(_request: NextRequest) {
         sortedProducts = await resolveAutomaticProducts(prismaInstance, section, settings, maxProducts)
         sortedServices = await resolveAutomaticServices(prismaInstance, section, settings, maxServices)
         sortedVendors = await resolveAutomaticVendors(prismaInstance, section, maxVendors)
+        sortedBrands = await resolveAutomaticBrands(prismaInstance, section, settings)
       } else if (contentSource === 'MANUAL') {
         sortedProducts = (section.products || [])
           .map((sp: any) => sp.product)
@@ -466,10 +475,12 @@ export async function GET(_request: NextRequest) {
             productCount: sv.vendor.store?._count?.products ?? 0,
           }))
           .filter(Boolean)
+        sortedBrands = resolveManualBrands(section)
       } else {
         sortedProducts = await resolveHybridProducts(prismaInstance, section, settings, maxProducts)
         sortedServices = await resolveHybridServices(prismaInstance, section, settings, maxServices)
         sortedVendors = await resolveHybridVendors(prismaInstance, section, settings, maxVendors)
+        sortedBrands = resolveHybridBrands(section)
       }
 
       const expiredIds = new Set(
@@ -497,6 +508,7 @@ export async function GET(_request: NextRequest) {
         products: sortedProducts,
         services: sortedServices,
         vendors: sortedVendors,
+        brands: sortedBrands,
       }
     }))
 
@@ -531,30 +543,8 @@ async function resolveAutomaticProducts(prisma: ReturnType<typeof getPrisma> | n
       const autoSettings = { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts }
       return getAutoRankedProducts(prisma, autoSettings)
     }
-    case 'NEW_SERVICES':
-    case 'SERVICE_GRID': {
-      if (sectionType === 'NEW_SERVICES') {
-        return getNewArrivalServices(prisma, maxProducts)
-      }
-      return getAutoRankedServices(prisma, maxProducts)
-    }
     case 'NEW_ARRIVALS': {
       return getNewArrivalProducts(prisma, maxProducts)
-    }
-    case 'VERIFIED_VENDORS': {
-      return getAutoRankedVendors(prisma)
-    }
-    case 'FLASH_SALES':
-    case 'BIG_DEALS':
-    case 'LARGE_FEATURE_CARDS':
-    case 'BRAND_GRID':
-    case 'CLEARANCE_SALES':
-    case 'EXPRESS_OFFERS': {
-      const existingProducts = (section.products || [])
-        .map((sp: any) => sp.product)
-        .filter((p: any) => p && (!settings.excludeOutOfStock || p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
-      if (existingProducts.length > 0) return existingProducts
-      return getAutoRankedProducts(prisma, { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts })
     }
     default: {
       return getAutoRankedProducts(prisma, { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts })
@@ -568,7 +558,8 @@ async function resolveAutomaticServices(prisma: ReturnType<typeof getPrisma> | n
   switch (section.type) {
     case 'TRENDING_SERVICES':
       return getAutoRankedServices(prisma, maxServices)
-    case 'TOP_SERVICES': {
+    case 'TOP_SERVICES':
+    case 'SERVICE_GRID': {
       const services = await prisma.service.findMany({
         where: { status: 'PUBLISHED', isActive: true, availabilityStatus: 'AVAILABLE' },
         include: {
@@ -590,30 +581,6 @@ async function resolveAutomaticServices(prisma: ReturnType<typeof getPrisma> | n
         serviceRequestCount: s._count?.serviceRequests ?? 0,
       }))
     }
-    case 'TRENDING_NOW':
-    case 'NEW_SERVICES':
-      return getAutoRankedServices(prisma, maxServices)
-    case 'SPONSORED_PRODUCTS': {
-      const serviceIds = settings.serviceIds || []
-      if (serviceIds.length > 0) {
-        return prisma.service.findMany({
-          where: { id: { in: serviceIds }, status: 'PUBLISHED', isActive: true },
-          include: {
-            images: { take: 1 },
-            category: { select: { id: true, name: true, slug: true } },
-            store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
-          },
-        }).then((services) => services.map((s) => ({
-          id: s.id, slug: s.slug, title: s.title, shortDescription: s.shortDescription,
-          startingPrice: s.startingPrice, pricingType: s.pricingType, deliveryType: s.deliveryType,
-          availabilityStatus: s.availabilityStatus, status: s.status, thumbnail: s.thumbnail,
-          gallery: s.gallery, category: s.category, store: s.store, images: s.images,
-          tags: s.tags, estimatedDeliveryTime: s.estimatedDeliveryTime,
-          requirementsFromCustomer: s.requirementsFromCustomer,
-        })))
-      }
-      return []
-    }
     default:
       return []
   }
@@ -621,19 +588,7 @@ async function resolveAutomaticServices(prisma: ReturnType<typeof getPrisma> | n
 
 async function resolveAutomaticVendors(prisma: ReturnType<typeof getPrisma> | null, section: any, maxVendors: number): Promise<any[]> {
   if (!prisma) return []
-
-  if (section.type === 'VERIFIED_VENDORS') {
-    return getAutoRankedVendors(prisma)
-  }
-  return (section.vendors || [])
-    .map((sv: any) => ({
-      ...sv.vendor,
-      slug: sv.vendor.store?.slug ?? null,
-      badgeTier: sv.vendor.store?.badgeTier ?? null,
-      storeName: sv.vendor.store?.name ?? sv.vendor.name,
-      productCount: sv.vendor.store?._count?.products ?? 0,
-    }))
-    .filter(Boolean)
+  return getAutoRankedVendors(prisma)
 }
 
 async function resolveManualServices(settings: AutoRankSettings, maxServices: number): Promise<any[]> {
@@ -661,15 +616,18 @@ async function resolveManualServices(settings: AutoRankSettings, maxServices: nu
 }
 
 async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxProducts: number): Promise<any[]> {
-  const pinnedProductIds = settings.pinnedProductIds || []
+  const joinTableProducts = (section.products || [])
+    .map((sp: any) => sp.product)
+    .filter((p: any) => p && p.id)
+  const joinTableProductIds = joinTableProducts.map((p: any) => p.id)
   const autoProducts = await resolveAutomaticProducts(prisma, section, settings, maxProducts)
 
-  if (pinnedProductIds.length === 0) return autoProducts
+  if (joinTableProductIds.length === 0) return autoProducts
 
   if (!prisma) return autoProducts
 
   const pinnedProducts = await prisma.product.findMany({
-    where: { id: { in: pinnedProductIds }, stock: { gt: 0 } },
+    where: { id: { in: joinTableProductIds } },
     include: {
       images: { take: 1 },
       category: { select: { id: true, name: true, slug: true } },
@@ -678,21 +636,21 @@ async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null
   })
 
   const autoIds = new Set(autoProducts.map((p: any) => p.id))
-  const newAutoProducts = autoProducts.filter((p: any) => !pinnedProductIds.includes(p.id))
+  const newAutoProducts = autoProducts.filter((p: any) => !joinTableProductIds.includes(p.id))
 
   return [...pinnedProducts, ...newAutoProducts].slice(0, maxProducts)
 }
 
 async function resolveHybridServices(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxServices: number): Promise<any[]> {
-  const pinnedServiceIds = settings.pinnedServiceIds || []
+  const serviceIds = settings.serviceIds || []
   const autoServices = await resolveAutomaticServices(prisma, section, settings, maxServices)
 
-  if (pinnedServiceIds.length === 0) return autoServices
+  if (serviceIds.length === 0) return autoServices
 
   if (!prisma) return autoServices
 
   const pinnedServices = await prisma.service.findMany({
-    where: { id: { in: pinnedServiceIds }, status: 'PUBLISHED', isActive: true },
+    where: { id: { in: serviceIds }, status: 'PUBLISHED', isActive: true },
     include: {
       images: { take: 1 },
       category: { select: { id: true, name: true, slug: true } },
@@ -700,22 +658,24 @@ async function resolveHybridServices(prisma: ReturnType<typeof getPrisma> | null
     },
   })
 
-  const autoIds = new Set(autoServices.map((s: any) => s.id))
-  const newAutoServices = autoServices.filter((s: any) => !pinnedServiceIds.includes(s.id))
+  const newAutoServices = autoServices.filter((s: any) => !serviceIds.includes(s.id))
 
   return [...pinnedServices, ...newAutoServices].slice(0, maxServices)
 }
 
 async function resolveHybridVendors(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxVendors: number): Promise<any[]> {
-  const pinnedVendorIds = settings.pinnedVendorIds || []
+  const joinTableVendors = (section.vendors || [])
+    .map((sv: any) => sv.vendor)
+    .filter((v: any) => v && v.id)
+  const joinTableVendorIds = joinTableVendors.map((v: any) => v.id)
   const autoVendors = await resolveAutomaticVendors(prisma, section, maxVendors)
 
-  if (pinnedVendorIds.length === 0) return autoVendors
+  if (joinTableVendorIds.length === 0) return autoVendors
 
   if (!prisma) return autoVendors
 
   const pinnedVendors = await prisma.user.findMany({
-    where: { id: { in: pinnedVendorIds }, role: 'VENDOR' },
+    where: { id: { in: joinTableVendorIds }, role: 'VENDOR' },
     include: {
       store: {
         select: {
@@ -736,8 +696,72 @@ async function resolveHybridVendors(prisma: ReturnType<typeof getPrisma> | null,
       description: v.profile?.firstName || v.profile?.lastName || null,
     }))
 
-  const autoIds = new Set(autoVendors.map((v: any) => v.id))
-  const newAutoVendors = autoVendors.filter((v: any) => !pinnedVendorIds.includes(v.id))
+  const newAutoVendors = autoVendors.filter((v: any) => !joinTableVendorIds.includes(v.id))
 
   return [...formattedPinned, ...newAutoVendors].slice(0, maxVendors)
+}
+
+function resolveManualBrands(section: any): any[] {
+  return (section.brands || [])
+    .map((sb: any) => {
+      const brand = sb.brand
+      if (!brand) return null
+      return {
+        id: brand.id,
+        name: brand.name,
+        slug: brand.slug,
+        logo: brand.logo,
+        description: brand.description,
+        productCount: brand._count?.products ?? 0,
+      }
+    })
+    .filter((b: any) => b && b.isActive !== false)
+}
+
+function resolveHybridBrands(section: any): any[] {
+  return (section.brands || [])
+    .map((sb: any) => {
+      const brand = sb.brand
+      if (!brand) return null
+      return {
+        id: brand.id,
+        name: brand.name,
+        slug: brand.slug,
+        logo: brand.logo,
+        description: brand.description,
+        productCount: brand._count?.products ?? 0,
+      }
+    })
+    .filter((b: any) => b && b.isActive !== false)
+}
+
+async function resolveAutomaticBrands(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings): Promise<any[]> {
+  if (!prisma) return []
+  const allBrands = await prisma.brand.findMany({
+    where: { isActive: true },
+    orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+    include: {
+      _count: {
+        select: {
+          products: {
+            where: {
+              OR: [
+                { stock: { gt: 0 } },
+                { availabilityType: 'PREORDER' },
+                { availabilityType: 'BACKORDER' },
+              ],
+            },
+          },
+        },
+      },
+    },
+  })
+  return allBrands.map((brand) => ({
+    id: brand.id,
+    name: brand.name,
+    slug: brand.slug,
+    logo: brand.logo,
+    description: brand.description,
+    productCount: brand._count?.products ?? 0,
+  }))
 }
