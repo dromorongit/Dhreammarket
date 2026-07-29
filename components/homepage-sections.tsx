@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -19,6 +19,15 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { TrendingNowSection } from './TrendingNowSection'
 
 import WishlistButton from '@/components/WishlistButton'
+
+function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r ${gradientFrom} via-${gradientVia} ${gradientTo} ${textColor} text-[11px] font-semibold uppercase tracking-wider shadow-sm`}>
+      {icon}
+      {label}
+    </span>
+  )
+}
 
  export function HomepageSectionSkeleton() {
    return (
@@ -959,12 +968,16 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
   const half = Math.ceil(displayServices.length / 2)
   const topRowServices = displayServices.slice(0, half)
   const bottomRowServices = displayServices.slice(half)
+  const isTopServices = section.slug === 'top-services'
 
   if (displayServices.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-white">
+      <section className="relative py-16 lg:py-24 bg-violet-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <SectionPill label="HOT SERVICES" gradientFrom="from-violet-500" gradientVia="via-blue-500" gradientTo="to-violet-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/></svg>} />
+            </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
             {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
           </div>
@@ -975,9 +988,16 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-white">
+    <section className={`relative py-16 lg:py-24 ${isTopServices ? 'bg-emerald-50/[0.05]' : 'bg-violet-50/[0.05]'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            {isTopServices ? (
+              <SectionPill label="TOP SERVICES" gradientFrom="from-emerald-500" gradientVia="via-teal-500" gradientTo="to-emerald-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>} />
+            ) : (
+              <SectionPill label="HOT SERVICES" gradientFrom="from-violet-500" gradientVia="via-blue-500" gradientTo="to-violet-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/></svg>} />
+            )}
+          </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
         </div>
@@ -1024,9 +1044,12 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
 
   if (displayServices.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-slate-50">
+      <section className="relative py-16 lg:py-24 bg-sky-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <SectionPill label="NEW SERVICES" gradientFrom="from-blue-500" gradientVia="via-indigo-500" gradientTo="to-blue-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd"/></svg>} />
+            </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
             {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
           </div>
@@ -1037,9 +1060,12 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-slate-50">
+    <section className="relative py-16 lg:py-24 bg-sky-50/[0.05]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <SectionPill label="NEW SERVICES" gradientFrom="from-blue-500" gradientVia="via-indigo-500" gradientTo="to-blue-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd"/></svg>} />
+          </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
         </div>
@@ -1181,9 +1207,12 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
 
   if (displayItems.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-slate-50">
+      <section className="relative py-16 lg:py-24 bg-yellow-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <SectionPill label="SPONSORED" gradientFrom="from-amber-500" gradientVia="via-yellow-500" gradientTo="to-amber-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>} />
+            </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
             {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
           </div>
@@ -1194,9 +1223,12 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-slate-50">
+    <section className="relative py-16 lg:py-24 bg-yellow-50/[0.05]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <SectionPill label="SPONSORED" gradientFrom="from-amber-500" gradientVia="via-yellow-500" gradientTo="to-amber-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>} />
+          </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
         </div>
