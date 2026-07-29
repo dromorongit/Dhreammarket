@@ -83,7 +83,6 @@ const SECTION_TYPES = [
   { value: "NEW_SERVICES", label: "New Services" },
   { value: "FEATURED_VENDORS", label: "Verified Vendors" },
   { value: "FLASH_SALES", label: "Flash Sales" },
-  { value: "SPONSORED_PRODUCTS", label: "Sponsored" },
   { value: "LARGE_FEATURE_CARDS", label: "Gadget Display" },
   { value: "BIG_DEALS", label: "Big Top Deals" },
   { value: "BRAND_GRID", label: "Brand Store" },
