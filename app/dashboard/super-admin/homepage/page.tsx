@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/Card";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/Badge";
 import { EmptyState } from "@/components/EmptyState";
 import { Skeleton } from "@/components/Skeleton";
 import { isManagedSectionSlug } from "@/lib/homepage-constants";
+import { ContentSource } from "@/lib/homepage-constants";
 
 
 interface HomepageSectionProduct {
@@ -200,18 +201,34 @@ export default function SuperAdminHomepagePage() {
   const [assignedServices, setAssignedServices] = useState<string[]>(
     [],
   );
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const isSponsoredSection =
     managingSection?.type === "SPONSORED_PRODUCTS" ||
     managingSection?.type === "SPONSORED";
 
-  const supportsServices =
-    managingSection?.type === "SPONSORED_PRODUCTS" ||
-    managingSection?.type === "SPONSORED" ||
-    managingSection?.type === "TRENDING_SERVICES" ||
-    managingSection?.type === "TOP_SERVICES" ||
-    managingSection?.type === "SERVICE_GRID" ||
-    managingSection?.type === "NEW_SERVICES";
+  const sectionSupportsServices = useCallback((section: HomepageSection): boolean => {
+    const settings = (section.settings as any) || {};
+    const contentSource = settings.contentSource as ContentSource;
+    if (contentSource === "AUTOMATIC") return false;
+    const serviceCapableTypes = [
+      "SPONSORED_PRODUCTS",
+      "SPONSORED",
+      "TRENDING_NOW",
+      "SERVICE_GRID",
+      "FLASH_SALES",
+      "BIG_DEALS",
+      "EXPRESS_OFFERS",
+      "TOP_SELLING",
+      "CLEARANCE_SALES",
+    ];
+    if (!serviceCapableTypes.includes(section.type)) return false;
+    if (section.type === "TRENDING_NOW" && section.slug !== "trending-services") return false;
+    return true;
+  }, []);
 
   const { contentSource: sectionContentSource } = (managingSection?.settings as any) || {};
   const [contentSource, setContentSource] = useState<"AUTOMATIC" | "MANUAL" | "HYBRID">(sectionContentSource || "HYBRID");
@@ -301,11 +318,25 @@ export default function SuperAdminHomepagePage() {
     }
   }, []);
 
+  const [previewData, setPreviewData] = useState<any>(null);
+  const fetchPreviewData = useCallback(async () => {
+    try {
+      const response = await fetch("/api/homepage/public");
+      if (response.ok) {
+        const data = await response.json();
+        setPreviewData(data);
+      }
+    } catch (err) {
+      console.error("Error fetching preview data:", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSections();
     fetchVendors();
     fetchBrands();
-  }, [fetchSections, fetchVendors, fetchBrands]);
+    fetchPreviewData();
+  }, [fetchSections, fetchVendors, fetchBrands, fetchPreviewData]);
 
   useEffect(() => {
     if (managingSection) {
@@ -315,7 +346,7 @@ export default function SuperAdminHomepagePage() {
         .then((data) => {
           setAssignedProducts(data.section?.products || []);
           setAssignedBrands(data.section?.brands || []);
-          if (supportsServices) {
+          if (sectionSupportsServices(managingSection)) {
             const settings = data.section?.settings || {};
             setAssignedServices(settings.serviceIds || []);
             setContentSource(settings.contentSource || "HYBRID");
@@ -323,7 +354,7 @@ export default function SuperAdminHomepagePage() {
         })
         .catch(console.error);
     }
-  }, [managingSection, productPage, searchQuery, fetchProducts, supportsServices]);
+  }, [managingSection, productPage, searchQuery, fetchProducts, sectionSupportsServices]);
 
   const fetchServices = useCallback(async () => {
     try {
@@ -338,10 +369,10 @@ export default function SuperAdminHomepagePage() {
   }, []);
 
   useEffect(() => {
-    if (managingSection && supportsServices) {
+    if (managingSection && sectionSupportsServices(managingSection)) {
       fetchServices();
     }
-  }, [managingSection, supportsServices, fetchServices]);
+  }, [managingSection, sectionSupportsServices, fetchServices]);
 
   const handleToggle = async (section: HomepageSection) => {
     try {
@@ -356,9 +387,47 @@ export default function SuperAdminHomepagePage() {
             s.id === section.id ? { ...s, isEnabled: !s.isEnabled } : s,
           ),
         );
+        setHasUnsavedChanges(true);
       }
     } catch (err) {
       console.error("Error toggling section:", err);
+    }
+  };
+
+  const handlePublish = async () => {
+    setPublishing(true);
+    try {
+      const orders = sections.map((s, i) => ({ id: s.id, displayOrder: i }));
+      await fetch("/api/homepage-sections/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orders }),
+      });
+      setHasUnsavedChanges(false);
+      await fetchSections();
+      await fetchPreviewData();
+    } catch (err) {
+      console.error("Error publishing homepage:", err);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    setSaving(true);
+    try {
+      const orders = sections.map((s, i) => ({ id: s.id, displayOrder: i }));
+      await fetch("/api/homepage-sections/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orders }),
+      });
+      setHasUnsavedChanges(false);
+      await fetchSections();
+    } catch (err) {
+      console.error("Error saving draft:", err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -458,6 +527,7 @@ export default function SuperAdminHomepagePage() {
       });
       if (response.ok) {
         await fetchSections();
+        setHasUnsavedChanges(true);
       }
     } catch (err) {
       console.error("Error reordering sections:", err);
@@ -791,25 +861,65 @@ export default function SuperAdminHomepagePage() {
   return (
     <div className="min-h-screen bg-slate-50 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col gap-4 mb-6 sm:mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-deep-navy">
-              Homepage Sections
-            </h1>
-            <p className="text-slate-600 mt-1 text-sm sm:text-base">
-              Manage homepage sections with automatic, manual, or hybrid content sources. Configure products, services, and vendors for each section.
-            </p>
-          </div>
-<div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
-            <Button asChild variant="outline" className="w-full sm:w-auto min-h-[44px]">
-              <Link href="/dashboard/super-admin/brands">Manage Brands</Link>
-            </Button>
-            <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto min-h-[44px]">
-              + Add Section
-            </Button>
-          </div>
-        </div>
+{/* Header */}
+         <div className="flex flex-col gap-4 mb-6 sm:mb-8">
+           <div>
+             <h1 className="text-2xl sm:text-3xl font-bold text-deep-navy">
+               Homepage Builder
+             </h1>
+             <p className="text-slate-600 mt-1 text-sm sm:text-base">
+               Drag to reorder, toggle visibility, and manage content for each section.
+             </p>
+           </div>
+           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+             {hasUnsavedChanges && (
+               <Badge variant="warning" size="sm" className="self-start">
+                 Unsaved changes
+               </Badge>
+             )}
+             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+               <Button
+                 variant="outline"
+                 onClick={handleSaveDraft}
+                 loading={saving}
+                 className="w-full sm:w-auto min-h-[44px]"
+               >
+                 Save Draft
+               </Button>
+               <Button
+                 variant="outline"
+                 onClick={() => setShowPreview(!showPreview)}
+                 className="w-full sm:w-auto min-h-[44px]"
+               >
+                 {showPreview ? "Hide Preview" : "Preview"}
+               </Button>
+               <Button
+                 onClick={handlePublish}
+                 loading={publishing}
+                 className="w-full sm:w-auto min-h-[44px]"
+               >
+                 Publish
+               </Button>
+               <Button asChild variant="outline" className="w-full sm:w-auto min-h-[44px]">
+                 <Link href="/dashboard/super-admin/brands">Manage Brands</Link>
+               </Button>
+               <Button onClick={() => setShowCreateModal(true)} className="w-full sm:w-auto min-h-[44px]">
+                 + Add Section
+               </Button>
+             </div>
+           </div>
+         </div>
+
+         {/* Preview Panel */}
+         {showPreview && (
+           <div className="mb-6">
+             <PreviewPanel
+               data={previewData}
+               device={previewDevice}
+               onDeviceChange={setPreviewDevice}
+             />
+           </div>
+         )}
 
         {/* Sections List */}
         {sections.length === 0 ? (
@@ -1151,7 +1261,7 @@ onAssignProducts={async () => {
               contentSource={contentSource}
               setContentSource={setContentSource}
               managingSection={managingSection}
-              sectionSupportsServices={supportsServices}
+              sectionSupportsServicesFn={sectionSupportsServices}
             />
         )}
 
@@ -1362,7 +1472,7 @@ function ManageSectionModal({
    contentSource,
    setContentSource,
    managingSection,
-   sectionSupportsServices,
+sectionSupportsServicesFn,
    onSaveContentSource,
    saving,
  }: {
@@ -1403,7 +1513,7 @@ function ManageSectionModal({
    contentSource: string;
    setContentSource: (source: "AUTOMATIC" | "MANUAL" | "HYBRID") => void;
    managingSection: HomepageSection | null;
-   sectionSupportsServices: boolean;
+   sectionSupportsServicesFn: (section: HomepageSection) => boolean;
    onSaveContentSource: (source: string) => Promise<void>;
    saving: boolean;
  }) {
@@ -1585,7 +1695,7 @@ function ManageSectionModal({
                   </button>
                 ),
               )}
-              {sectionSupportsServices && (
+              {sectionSupportsServicesFn(section) && (
                 <button
                   key="services"
                   onClick={() => setActiveTab("services")}
@@ -2011,14 +2121,96 @@ function ManageSectionModal({
                 </Button>
               )}
               <Button variant="outline" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
-                Close
-              </Button>
+                 Close
+</Button>
             </div>
           </CardContent>
         </Card>
       </div>
     );
   }
+
+// Live Preview Panel
+function PreviewPanel({
+  data,
+  device,
+  onDeviceChange,
+}: {
+  data: { sections: any[]; brands: any[] } | null;
+  device: "desktop" | "tablet" | "mobile";
+  onDeviceChange: (device: "desktop" | "tablet" | "mobile") => void;
+}) {
+  const sections = data?.sections || [];
+  const deviceWidths = { desktop: "100%", tablet: "768px", mobile: "375px" };
+  const deviceLabels = { desktop: "Desktop", tablet: "Tablet", mobile: "Mobile" };
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1">
+            {(["desktop", "tablet", "mobile"] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => onDeviceChange(d)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors min-h-[44px] ${
+                  device === d ? "bg-royal-blue text-white" : "bg-white text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {deviceLabels[d]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-rose-500" />
+          <div className="w-2 h-2 rounded-full bg-amber-500" />
+          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+        </div>
+      </div>
+      <div className="p-4 sm:p-6">
+        {sections.length === 0 ? (
+          <EmptyState
+            icon={<svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+            title="No sections to preview"
+            description="Add sections to see a live preview of your homepage."
+          />
+        ) : (
+          <div style={{ maxWidth: deviceWidths[device], margin: "0 auto" }} className="transition-all duration-300">
+            {sections.sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)).map((section: any) => (
+              <div key={section.id} className={`mb-8 p-6 rounded-xl border-2 transition-all ${section.isEnabled ? "border-slate-200 bg-white" : "border-dashed border-slate-300 bg-slate-50 opacity-60"}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs font-mono text-slate-400">{section.type.replace(/_/g, " ")}</span>
+                  {!section.isEnabled && <Badge variant="default" size="sm">Hidden</Badge>}
+                  {(section.settings as any)?.contentSource && <Badge variant="info" size="sm">{(section.settings as any).contentSource}</Badge>}
+                </div>
+                <h3 className="text-lg font-bold text-deep-navy mb-2">{section.name}</h3>
+                {section.subtitle && <p className="text-sm text-slate-500 mb-3">{section.subtitle}</p>}
+                <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                  <span><strong className="text-slate-700">{section._count?.products || 0}</strong> products</span>
+                  <span><strong className="text-slate-700">{section._count?.vendors || 0}</strong> vendors</span>
+                  <span><strong className="text-slate-700">{section._count?.brands || 0}</strong> brands</span>
+                  {((section.settings as any)?.serviceIds?.length ?? 0) > 0 && <span><strong className="text-slate-700">{(section.settings as any).serviceIds.length}</strong> services</span>}
+                </div>
+                {section.isEnabled && (
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {(section.products || []).slice(0, 4).map((p: any) => (
+                      <div key={p.id} className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
+                        {p.images?.[0] ? <Image src={p.images[0].url} alt={p.name} className="w-full h-full object-cover" width={400} height={400} /> : <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No image</div>}
+                      </div>
+                    ))}
+                    {(section.services || []).slice(0, 4).map((s: any) => (
+                      <div key={s.id} className="aspect-square bg-blue-50 rounded-lg overflow-hidden flex items-center justify-center"><span className="text-xs text-blue-600 font-medium text-center px-2">{s.title}</span></div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // Trending Settings Modal
 function TrendingSettingsModal({
