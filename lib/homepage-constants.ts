@@ -26,7 +26,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'SPONSORED_PRODUCTS' as const,
     subtitle: 'Featured by vendors',
     displayOrder: 1,
-    contentSource: 'HYBRID' as const,
+    contentSource: 'MANUAL' as const,
   },
   {
     name: 'Trending Now',

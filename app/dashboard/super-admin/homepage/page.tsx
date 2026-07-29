@@ -685,6 +685,31 @@ export default function SuperAdminHomepagePage() {
     }
   };
 
+  const handleBulkRemoveServices = async (serviceIds: string[]) => {
+    if (!managingSection || serviceIds.length === 0) return;
+    setSaving(true);
+    try {
+      const section = sections.find((s) => s.id === managingSection.id);
+      const currentServiceIds = (section?.settings as any)?.serviceIds || [];
+      const updatedServiceIds = currentServiceIds.filter(
+        (id: string) => !serviceIds.includes(id),
+      );
+      await fetch(`/api/homepage-sections/${managingSection.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: { serviceIds: updatedServiceIds } }),
+      });
+      setAssignedServices((prev) =>
+        prev.filter((id: string) => !serviceIds.includes(id)),
+      );
+      await fetchSections();
+    } catch (err) {
+      console.error("Error bulk removing services:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleReorderProducts = async (
     orders: { productId: string; displayOrder: number }[],
   ) => {
@@ -1085,6 +1110,7 @@ onAssignProducts={async () => {
             }}
             onRemoveService={handleRemoveService}
             onBulkRemove={(ids) => handleBulkRemoveProducts(ids)}
+            onBulkRemoveServices={handleBulkRemoveServices}
             onReorderProducts={handleReorderProducts}
             services={services}
             selectedServices={selectedServices}
@@ -1097,7 +1123,7 @@ onAssignProducts={async () => {
                 return next;
               });
             }}
-onClose={async () => {
+            onClose={async () => {
                 setManagingSection(null);
                 setSelectedProducts(new Set());
                 setSelectedVendors(new Set());
@@ -1337,9 +1363,10 @@ function ManageSectionModal({
    onAssignServices,
    onRemoveProduct,
    onRemoveBrand,
-   onRemoveService,
-   onBulkRemove,
-   onReorderProducts,
+    onRemoveService,
+    onBulkRemove,
+    onBulkRemoveServices,
+    onReorderProducts,
    onClose,
    contentSource,
    setContentSource,
@@ -1375,9 +1402,10 @@ function ManageSectionModal({
    onAssignServices: () => void;
    onRemoveProduct: (sectionId: string, productId: string) => void;
    onRemoveBrand: (sectionId: string, brandId: string) => void;
-   onRemoveService: (sectionId: string, serviceId: string) => void;
-   onBulkRemove: (productIds: string[]) => void;
-   onReorderProducts: (
+    onRemoveService: (sectionId: string, serviceId: string) => void;
+    onBulkRemove: (productIds: string[]) => void;
+    onBulkRemoveServices: (serviceIds: string[]) => void;
+    onReorderProducts: (
      orders: { productId: string; displayOrder: number }[],
    ) => void;
    onClose: () => void;
@@ -1394,6 +1422,9 @@ function ManageSectionModal({
   const [selectedAssigned, setSelectedAssigned] = useState<Set<string>>(
     new Set(),
   );
+  const [selectedAssignedServices, setSelectedAssignedServices] = useState<
+    Set<string>
+  >(new Set());
   const [draggedProductIndex, setDraggedProductIndex] = useState<number | null>(
     null,
   );
@@ -1456,11 +1487,18 @@ function ManageSectionModal({
                         }
                       }
                     }}
+                    disabled={isSponsoredSection}
                     className="text-[10px] px-2 py-1 rounded border border-slate-200 bg-white outline-none"
                   >
-                    <option value="AUTOMATIC">AUTOMATIC</option>
-                    <option value="MANUAL">MANUAL</option>
-                    <option value="HYBRID">HYBRID</option>
+                    {isSponsoredSection ? (
+                      <option value="MANUAL">MANUAL</option>
+                    ) : (
+                      <>
+                        <option value="AUTOMATIC">AUTOMATIC</option>
+                        <option value="MANUAL">MANUAL</option>
+                        <option value="HYBRID">HYBRID</option>
+                      </>
+                    )}
                   </select>
                 </div>
               </div>
@@ -1489,19 +1527,31 @@ function ManageSectionModal({
                    {selectedVendors.size !== 1 ? "s" : ""}
                  </Button>
                )}
-               {activeTab === "brands" && (
-                 <Button
-                   onClick={onAssignBrands}
-                   loading={saving}
-                   disabled={selectedBrands.size === 0}
-                   size="sm"
-                   className="w-full sm:w-auto min-h-[44px]"
-                 >
-                   Assign {selectedBrands.size} Brand
-                   {selectedBrands.size !== 1 ? "s" : ""}
-                 </Button>
-               )}
-             </div>
+                {activeTab === "brands" && (
+                  <Button
+                    onClick={onAssignBrands}
+                    loading={saving}
+                    disabled={selectedBrands.size === 0}
+                    size="sm"
+                    className="w-full sm:w-auto min-h-[44px]"
+                  >
+                    Assign {selectedBrands.size} Brand
+                    {selectedBrands.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
+                {activeTab === "services" && (
+                  <Button
+                    onClick={onAssignServices}
+                    loading={saving}
+                    disabled={selectedServices.size === 0}
+                    size="sm"
+                    className="w-full sm:w-auto min-h-[44px]"
+                  >
+                    Assign {selectedServices.size} Service
+                    {selectedServices.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
+              </div>
              <button
                onClick={onClose}
                className="ml-0 sm:ml-4 text-slate-400 hover:text-slate-600 min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -1667,15 +1717,15 @@ function ManageSectionModal({
                             key={item.id}
                             className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white min-h-[60px]"
                           >
-{item.brand.logo ? (
-                               <Image
-                                 src={item.brand.logo}
-                                 alt={item.brand.name}
-                                 width={400}
-                                 height={400}
-                                 className="w-10 h-10 rounded-lg object-cover"
-                               />
-                             ) : (
+                            {item.brand.logo ? (
+                              <Image
+                                src={item.brand.logo}
+                                alt={item.brand.name}
+                                width={400}
+                                height={400}
+                                className="w-10 h-10 rounded-lg object-cover"
+                              />
+                            ) : (
                               <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
                                 <span className="text-xs font-medium">
                                   {item.brand.name?.charAt(0) || "B"}
@@ -1702,6 +1752,74 @@ function ManageSectionModal({
                             </Button>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                  {assignedServices.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-font-medium text-slate-600 mb-2">
+                        Assigned Services ({assignedServices.length})
+                      </p>
+                      <div className="space-y-3">
+                        {assignedServices.map((serviceId) => {
+                          const service = services.find(
+                            (s) => s.id === serviceId,
+                          );
+                          return (
+                            <div
+                              key={serviceId}
+                              className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-white min-h-[60px]"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedAssignedServices.has(serviceId)}
+                                onChange={() => {
+                                  setSelectedAssignedServices((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(serviceId))
+                                      next.delete(serviceId);
+                                    else next.add(serviceId);
+                                    return next;
+                                  });
+                                }}
+                                className="min-w-[20px] min-h-[20px]"
+                              />
+                              {service?.thumbnail ? (
+                                <Image
+                                  src={service.thumbnail}
+                                  alt={service.title}
+                                  width={400}
+                                  height={400}
+                                  className="w-10 h-10 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
+                                  <span className="text-xs font-medium">
+                                    S
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {service?.title || serviceId}
+                                </p>
+                                <p className="text-xs text-slate-500 truncate">
+                                  {service?.store?.name || "Unknown Vendor"}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="min-h-[44px]"
+                                onClick={() =>
+                                  onRemoveService(section.id, serviceId)
+                                }
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1886,6 +2004,19 @@ function ManageSectionModal({
                   className="w-full sm:w-auto min-h-[44px]"
                 >
                   Remove {selectedAssigned.size} selected
+                </Button>
+              )}
+              {activeTab === "assigned" && selectedAssignedServices.size > 0 && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    onBulkRemoveServices(Array.from(selectedAssignedServices));
+                    setSelectedAssignedServices(new Set());
+                  }}
+                  className="w-full sm:w-auto min-h-[44px]"
+                >
+                  Remove {selectedAssignedServices.size} selected
                 </Button>
               )}
               <Button variant="outline" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
