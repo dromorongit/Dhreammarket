@@ -244,13 +244,15 @@ export default function Home() {
             )
           if (section.slug === 'top-clearance-sales')
             return <TopClearanceSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'top-services')
-            return <TopServicesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+           if (section.slug === 'top-services')
+             return <TrendingServicesSection key={section.id} section={sectionProps} />
           if (section.slug === 'home-theatre')
             return <HomeTheatreSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'top-express-offers')
-            return <TopExpressOffersSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          return null
+           if (section.slug === 'top-express-offers')
+             return <TopExpressOffersSection key={section.id} section={sectionProps} loading={loadingManaged} />
+           if (section.slug === 'new-services')
+             return <NewServicesSection key={section.id} section={sectionProps} />
+           return null
         })}
 
       {/* ─── Featured Products (always shown) ─── */}
@@ -289,12 +291,7 @@ export default function Home() {
         <NewThisWeekSection excludeIds={excludeFromFeaturedIds} />
       )}
 
-      {/* ─── New Services Section (below New Arrivals) ─── */}
-      {!loadingManaged && (
-        <NewServicesSection section={{ id: 'new-services', name: 'New Services', slug: 'new-services', type: 'NEW_SERVICES', subtitle: 'Fresh services just added to Dhream Market.', displayOrder: 0, contentSource: 'AUTOMATIC', products: [], services: [], vendors: [], brands: [] }} />
-      )}
 
-      {/* ─── Automatic: Top Selling (real sales data) ─── */}
       <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
 
       {/* ─── Optional extra custom sections (non-core) ─── */}

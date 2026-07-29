@@ -179,7 +179,59 @@ async function getAutoRankedNewServices(prisma: ReturnType<typeof getPrisma>, ma
     take: maxServices || 20,
   })
 
-  return services.map((service) => ({
+  return services.map((s) => ({
+    id: s.id,
+    slug: s.slug,
+    title: s.title,
+    shortDescription: s.shortDescription,
+    startingPrice: s.startingPrice,
+    pricingType: s.pricingType,
+    deliveryType: s.deliveryType,
+    availabilityStatus: s.availabilityStatus,
+    status: s.status,
+    thumbnail: s.thumbnail,
+    gallery: s.gallery,
+    category: s.category,
+    store: s.store,
+    images: s.images,
+    tags: s.tags,
+    estimatedDeliveryTime: s.estimatedDeliveryTime,
+    requirementsFromCustomer: s.requirementsFromCustomer,
+    serviceRequestCount: s._count?.serviceRequests ?? 0,
+  }))
+}
+
+async function getRankedServicesByPerformance(prisma: ReturnType<typeof getPrisma>, maxServices: number): Promise<any[]> {
+  const now = new Date()
+  const services = await prisma.service.findMany({
+    where: {
+      status: 'PUBLISHED',
+      isActive: true,
+      availabilityStatus: 'AVAILABLE',
+    },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+      serviceRequests: {
+        select: { id: true, status: true },
+      },
+      _count: { select: { serviceRequests: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: maxServices || 50,
+  })
+
+  const servicesWithScores = services.map((s) => {
+    const completedBookings = s.serviceRequests.filter((r) => r.status === 'COMPLETED').length
+    const totalRequests = s._count?.serviceRequests ?? 0
+    const score = completedBookings * 100 + totalRequests
+    return { service: s, score, completedBookings, totalRequests }
+  })
+
+  servicesWithScores.sort((a, b) => b.score - a.score)
+
+  return servicesWithScores.slice(0, maxServices).map(({ service }) => ({
     id: service.id,
     slug: service.slug,
     title: service.title,
@@ -536,6 +588,7 @@ export async function GET(_request: NextRequest) {
 
 async function resolveAutomaticProducts(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxProducts: number): Promise<any[]> {
   const sectionType = section.type
+  const sectionSlug = section.slug
   if (!prisma) return []
 
   switch (sectionType) {
@@ -546,6 +599,11 @@ async function resolveAutomaticProducts(prisma: ReturnType<typeof getPrisma> | n
     case 'NEW_ARRIVALS': {
       return getNewArrivalProducts(prisma, maxProducts)
     }
+    case 'TRENDING_SERVICES':
+    case 'TOP_SERVICES':
+    case 'SERVICE_GRID':
+    case 'NEW_SERVICES':
+      return []
     default: {
       return getAutoRankedProducts(prisma, { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts })
     }
@@ -560,27 +618,14 @@ async function resolveAutomaticServices(prisma: ReturnType<typeof getPrisma> | n
       return getAutoRankedServices(prisma, maxServices)
     case 'TOP_SERVICES':
     case 'SERVICE_GRID': {
-      const services = await prisma.service.findMany({
-        where: { status: 'PUBLISHED', isActive: true, availabilityStatus: 'AVAILABLE' },
-        include: {
-          images: { take: 1 },
-          category: { select: { id: true, name: true, slug: true } },
-          store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
-          _count: { select: { serviceRequests: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: maxServices,
-      })
-      return services.map((s) => ({
-        id: s.id, slug: s.slug, title: s.title, shortDescription: s.shortDescription,
-        startingPrice: s.startingPrice, pricingType: s.pricingType, deliveryType: s.deliveryType,
-        availabilityStatus: s.availabilityStatus, status: s.status, thumbnail: s.thumbnail,
-        gallery: s.gallery, category: s.category, store: s.store, images: s.images,
-        tags: s.tags, estimatedDeliveryTime: s.estimatedDeliveryTime,
-        requirementsFromCustomer: s.requirementsFromCustomer,
-        serviceRequestCount: s._count?.serviceRequests ?? 0,
-      }))
+      const sectionSlug = section.slug
+      if (sectionSlug === 'new-services') {
+        return getAutoRankedNewServices(prisma, maxServices)
+      }
+      return getRankedServicesByPerformance(prisma, maxServices)
     }
+    case 'NEW_SERVICES':
+      return getAutoRankedNewServices(prisma, maxServices)
     default:
       return []
   }

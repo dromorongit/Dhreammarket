@@ -15,6 +15,7 @@ export const MANAGED_SECTION_SLUGS = [
   'top-services',
   'home-theatre',
   'top-express-offers',
+  'new-services',
 ] as const
 
 export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
@@ -90,7 +91,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'FLASH_SALES' as const,
     subtitle: 'Massive clearance offers',
     displayOrder: 9,
-    contentSource: 'AUTOMATIC' as const,
+    contentSource: 'MANUAL' as const,
   },
   {
     name: 'Top Services',
@@ -98,7 +99,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'SERVICE_GRID' as const,
     subtitle: 'Premium services marketplace',
     displayOrder: 10,
-    contentSource: 'HYBRID' as const,
+    contentSource: 'AUTOMATIC' as const,
   },
   {
     name: 'Home Theatre',
@@ -114,6 +115,14 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'BIG_DEALS' as const,
     subtitle: 'Express delivery exclusive deals',
     displayOrder: 12,
+    contentSource: 'MANUAL' as const,
+  },
+  {
+    name: 'New Services',
+    slug: 'new-services',
+    type: 'SERVICE_GRID' as const,
+    subtitle: 'Fresh services just added to Dhream Market',
+    displayOrder: 13,
     contentSource: 'AUTOMATIC' as const,
   },
 ]
