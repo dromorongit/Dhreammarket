@@ -1,3 +1,7 @@
+export const CONTENT_SOURCES = ['AUTOMATIC', 'MANUAL', 'HYBRID'] as const
+
+export type ContentSource = (typeof CONTENT_SOURCES)[number]
+
 export const MANAGED_SECTION_SLUGS = [
   'trending-now',
   'trending-services',
@@ -22,6 +26,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'SPONSORED_PRODUCTS' as const,
     subtitle: 'Featured by vendors',
     displayOrder: 1,
+    contentSource: 'HYBRID' as const,
   },
   {
     name: 'Trending Now',
@@ -29,6 +34,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'TRENDING_NOW' as const,
     subtitle: 'Discover what\'s currently trending across Dhream Market.',
     displayOrder: 2,
+    contentSource: 'HYBRID' as const,
   },
   {
     name: 'Trending Services',
@@ -36,6 +42,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'TRENDING_NOW' as const,
     subtitle: 'Discover what\'s currently trending in services.',
     displayOrder: 3,
+    contentSource: 'HYBRID' as const,
   },
   {
     name: 'Verified Vendors',
@@ -43,6 +50,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'FEATURED_VENDORS' as const,
     subtitle: 'Trusted and verified vendors you can rely on.',
     displayOrder: 4,
+    contentSource: 'AUTOMATIC' as const,
   },
   {
     name: 'Flash Sales',
@@ -50,6 +58,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'FLASH_SALES' as const,
     subtitle: 'Limited time offers',
     displayOrder: 5,
+    contentSource: 'MANUAL' as const,
   },
   {
     name: 'Gadget Display',
@@ -57,6 +66,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'LARGE_FEATURE_CARDS' as const,
     subtitle: 'Premium tech deals',
     displayOrder: 6,
+    contentSource: 'MANUAL' as const,
   },
   {
     name: 'Big Top Deals',
@@ -64,6 +74,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'BIG_DEALS' as const,
     subtitle: 'Biggest savings on premium products',
     displayOrder: 7,
+    contentSource: 'MANUAL' as const,
   },
   {
     name: 'Brand Store',
@@ -71,6 +82,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'BRAND_GRID' as const,
     subtitle: 'Explore products from your favorite brands',
     displayOrder: 8,
+    contentSource: 'AUTOMATIC' as const,
   },
   {
     name: 'Top Clearance Sales',
@@ -78,6 +90,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'FLASH_SALES' as const,
     subtitle: 'Massive clearance offers',
     displayOrder: 9,
+    contentSource: 'AUTOMATIC' as const,
   },
   {
     name: 'Top Services',
@@ -85,6 +98,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'SERVICE_GRID' as const,
     subtitle: 'Premium services marketplace',
     displayOrder: 10,
+    contentSource: 'HYBRID' as const,
   },
   {
     name: 'Home Theatre',
@@ -92,6 +106,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Home entertainment systems',
     displayOrder: 11,
+    contentSource: 'MANUAL' as const,
   },
   {
     name: 'Top Express Offers',
@@ -99,6 +114,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     type: 'BIG_DEALS' as const,
     subtitle: 'Express delivery exclusive deals',
     displayOrder: 12,
+    contentSource: 'AUTOMATIC' as const,
   },
 ]
 

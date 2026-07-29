@@ -6,7 +6,7 @@ import { HomepageSectionType } from '@prisma/client'
 export const dynamic = 'force-dynamic'
 
 interface TrendingSettings {
-  mode: 'MANUAL' | 'AUTOMATIC'
+  contentSource: 'AUTOMATIC' | 'MANUAL' | 'HYBRID'
   maxProducts: number
   weights?: {
     recentSales: number
@@ -23,7 +23,7 @@ interface TrendingSettings {
 }
 
 const DEFAULT_SETTINGS: TrendingSettings = {
-  mode: 'MANUAL',
+  contentSource: 'HYBRID',
   maxProducts: 20,
   weights: {
     recentSales: 40,

@@ -205,6 +205,17 @@ export default function SuperAdminHomepagePage() {
   const isSponsoredSection =
     managingSection?.type === "SPONSORED_PRODUCTS" ||
     managingSection?.type === "SPONSORED";
+
+  const supportsServices =
+    managingSection?.type === "SPONSORED_PRODUCTS" ||
+    managingSection?.type === "SPONSORED" ||
+    managingSection?.type === "TRENDING_SERVICES" ||
+    managingSection?.type === "TOP_SERVICES" ||
+    managingSection?.type === "SERVICE_GRID" ||
+    managingSection?.type === "NEW_SERVICES";
+
+  const { contentSource: sectionContentSource } = (managingSection?.settings as any) || {};
+  const [contentSource, setContentSource] = useState<"AUTOMATIC" | "MANUAL" | "HYBRID">(sectionContentSource || "HYBRID");
   const [assignedBrands, setAssignedBrands] = useState<HomepageSectionBrand[]>(
     [],
   );
@@ -217,7 +228,7 @@ export default function SuperAdminHomepagePage() {
   const [saving, setSaving] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [trendingSettings, setTrendingSettings] = useState({
-    mode: 'MANUAL' as 'MANUAL' | 'AUTOMATIC',
+    contentSource: 'HYBRID' as 'AUTOMATIC' | 'MANUAL' | 'HYBRID',
     maxProducts: 20,
     weights: {
       recentSales: 40,
@@ -305,14 +316,15 @@ export default function SuperAdminHomepagePage() {
         .then((data) => {
           setAssignedProducts(data.section?.products || []);
           setAssignedBrands(data.section?.brands || []);
-          if (isSponsoredSection) {
+          if (supportsServices) {
             const settings = data.section?.settings || {};
             setAssignedServices(settings.serviceIds || []);
+            setContentSource(settings.contentSource || "HYBRID");
           }
         })
         .catch(console.error);
     }
-  }, [managingSection, productPage, searchQuery, fetchProducts, isSponsoredSection]);
+  }, [managingSection, productPage, searchQuery, fetchProducts, supportsServices]);
 
   const fetchServices = useCallback(async () => {
     try {
@@ -327,10 +339,10 @@ export default function SuperAdminHomepagePage() {
   }, []);
 
   useEffect(() => {
-    if (managingSection && isSponsoredSection) {
+    if (managingSection && supportsServices) {
       fetchServices();
     }
-  }, [managingSection, isSponsoredSection, fetchServices]);
+  }, [managingSection, supportsServices, fetchServices]);
 
   const handleToggle = async (section: HomepageSection) => {
     try {
@@ -356,13 +368,17 @@ export default function SuperAdminHomepagePage() {
     slug: string;
     type: string;
     subtitle?: string;
+    contentSource?: string;
   }) => {
     setSaving(true);
     try {
       const response = await fetch("/api/homepage-sections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          settings: { contentSource: data.contentSource || "HYBRID" },
+        }),
       });
       if (response.ok) {
         await fetchSections();
@@ -380,16 +396,21 @@ export default function SuperAdminHomepagePage() {
     slug?: string;
     type?: string;
     subtitle?: string | null;
+    contentSource?: string;
   }) => {
     if (!editingSection) return;
     setSaving(true);
     try {
+      const existingSettings = editingSection.settings || {};
       const response = await fetch(
         `/api/homepage-sections/${editingSection.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            ...data,
+            settings: { ...existingSettings, contentSource: data.contentSource || "HYBRID" },
+          }),
         },
       );
       if (response.ok) {
@@ -461,7 +482,6 @@ export default function SuperAdminHomepagePage() {
       if (response.ok) {
         await fetchSections();
         setSelectedProducts(new Set());
-        // Refresh assigned products
         const data = await fetch(
           `/api/homepage-sections/${managingSection.id}`,
         ).then((r) => r.json());
@@ -493,12 +513,12 @@ export default function SuperAdminHomepagePage() {
       if (response.ok) {
         await fetchSections();
         setSelectedServices(new Set());
-        // Refresh assigned services
         const data = await fetch(
           `/api/homepage-sections/${managingSection.id}`,
         ).then((r) => r.json());
         const settings = data.section?.settings || {};
         setAssignedServices(settings.serviceIds || []);
+        setContentSource(settings.contentSource || "HYBRID");
       }
     } catch (err) {
       console.error("Error assigning services:", err);
@@ -762,9 +782,7 @@ export default function SuperAdminHomepagePage() {
               Homepage Sections
             </h1>
             <p className="text-slate-600 mt-1 text-sm sm:text-base">
-              Manage Flash Sales, Sponsored Products, Gadget Display, Big Top
-              Deals, and Brand Store. Top Selling Items is automatic from
-              completed sales.
+              Manage homepage sections with automatic, manual, or hybrid content sources. Configure products, services, and vendors for each section.
             </p>
           </div>
 <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 w-full sm:w-auto">
@@ -850,22 +868,37 @@ export default function SuperAdminHomepagePage() {
                       />
                     </button>
 
-                    {/* Section Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                        <h3 className="font-semibold text-deep-navy text-sm sm:text-base truncate">
-                          {section.name}
-                        </h3>
-                        <Badge variant="default" size="sm" className="text-[10px] sm:text-xs">
-                          {section.type.replace(/_/g, " ")}
-                        </Badge>
-                      </div>
-                      {section.subtitle && (
-                        <span className="text-xs text-slate-500 truncate block mt-1">
-                          — {section.subtitle}
-                        </span>
-                      )}
-                    </div>
+{/* Section Info */}
+                     <div className="flex-1 min-w-0">
+                       <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                         <h3 className="font-semibold text-deep-navy text-sm sm:text-base truncate">
+                           {section.name}
+                         </h3>
+                         <Badge variant="default" size="sm" className="text-[10px] sm:text-xs">
+                           {section.type.replace(/_/g, " ")}
+                         </Badge>
+                         {(section.settings as any)?.contentSource && (
+                           <Badge
+                             variant={
+                               (section.settings as any).contentSource === "HYBRID"
+                                 ? "premium"
+                                 : (section.settings as any).contentSource === "AUTOMATIC"
+                                   ? "default"
+                                   : "info"
+                             }
+                             size="sm"
+                             className="text-[10px] sm:text-xs"
+                           >
+                             {(section.settings as any).contentSource}
+                           </Badge>
+                         )}
+                       </div>
+                       {section.subtitle && (
+                         <span className="text-xs text-slate-500 truncate block mt-1">
+                           — {section.subtitle}
+                         </span>
+                       )}
+                     </div>
                   </div>
 
                   {/* Secondary Details - Mobile friendly */}
@@ -899,7 +932,7 @@ export default function SuperAdminHomepagePage() {
                           className="w-full min-h-[44px]"
                           onClick={() => {
                             setTrendingSettings({
-                              mode: ((section.settings as any)?.mode as 'MANUAL' | 'AUTOMATIC') || 'MANUAL',
+                              contentSource: ((section.settings as any)?.contentSource as 'AUTOMATIC' | 'MANUAL' | 'HYBRID') || 'HYBRID',
                               maxProducts: (section.settings as any)?.maxProducts || 20,
                               weights: (section.settings as any)?.weights || {
                                 recentSales: 40,
@@ -984,6 +1017,7 @@ export default function SuperAdminHomepagePage() {
               slug: editingSection.slug,
               type: editingSection.type,
               subtitle: editingSection.subtitle || "",
+              contentSource: editingSection.settings?.contentSource || "HYBRID",
             }}
             onSubmit={handleUpdate}
             onClose={() => setEditingSection(null)}
@@ -1063,7 +1097,7 @@ onAssignProducts={async () => {
                 return next;
               });
             }}
-onClose={() => {
+onClose={async () => {
                 setManagingSection(null);
                 setSelectedProducts(new Set());
                 setSelectedVendors(new Set());
@@ -1075,7 +1109,32 @@ onClose={() => {
                 setSearchQuery("");
                 setProductPage(1);
               }}
+              onSaveContentSource={async (source) => {
+                if (!managingSection) return;
+                try {
+                  const response = await fetch(
+                    `/api/homepage-sections/${managingSection.id}`,
+                    {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        settings: { contentSource: source },
+                      }),
+                    },
+                  );
+                  if (response.ok) {
+                    setContentSource(source as "AUTOMATIC" | "MANUAL" | "HYBRID");
+                    await fetchSections();
+                  }
+                } catch (err) {
+                  console.error("Error saving content source:", err);
+                }
+              }}
               saving={saving}
+              contentSource={contentSource}
+              setContentSource={setContentSource}
+              managingSection={managingSection}
+              sectionSupportsServices={supportsServices}
             />
         )}
 
@@ -1124,12 +1183,13 @@ function SectionModal({
   saving,
 }: {
   title: string;
-  initialData?: { name: string; slug: string; type: string; subtitle: string };
+  initialData?: { name: string; slug: string; type: string; subtitle: string; contentSource?: string };
   onSubmit: (data: {
     name: string;
     slug: string;
     type: string;
     subtitle?: string;
+    contentSource?: string;
   }) => void;
   onClose: () => void;
   saving: boolean;
@@ -1138,6 +1198,7 @@ function SectionModal({
   const [slug, setSlug] = useState(initialData?.slug || "");
   const [type, setType] = useState(initialData?.type || "PRODUCT_GRID");
   const [subtitle, setSubtitle] = useState(initialData?.subtitle || "");
+  const [contentSource, setContentSource] = useState(initialData?.contentSource || "HYBRID");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1147,6 +1208,7 @@ function SectionModal({
       slug: slug.trim().toLowerCase().replace(/\s+/g, "-"),
       type,
       subtitle: subtitle.trim() || undefined,
+      contentSource,
     });
   };
 
@@ -1203,6 +1265,20 @@ function SectionModal({
                     {t.label}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
+                Content Source
+              </label>
+              <select
+                value={contentSource}
+                onChange={(e) => setContentSource(e.target.value as "AUTOMATIC" | "MANUAL" | "HYBRID")}
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue focus:border-transparent outline-none min-h-[44px]"
+              >
+                <option value="AUTOMATIC">AUTOMATIC - System populates content</option>
+                <option value="MANUAL">MANUAL - Super Admin selects items</option>
+                <option value="HYBRID">HYBRID - Manual items first, then auto-fill</option>
               </select>
             </div>
             <div>
@@ -1265,6 +1341,11 @@ function ManageSectionModal({
    onBulkRemove,
    onReorderProducts,
    onClose,
+   contentSource,
+   setContentSource,
+   managingSection,
+   sectionSupportsServices,
+   onSaveContentSource,
    saving,
  }: {
    section: HomepageSection;
@@ -1300,6 +1381,11 @@ function ManageSectionModal({
      orders: { productId: string; displayOrder: number }[],
    ) => void;
    onClose: () => void;
+   contentSource: string;
+   setContentSource: (source: "AUTOMATIC" | "MANUAL" | "HYBRID") => void;
+   managingSection: HomepageSection | null;
+   sectionSupportsServices: boolean;
+   onSaveContentSource: (source: string) => Promise<void>;
    saving: boolean;
  }) {
   const [activeTab, setActiveTab] = useState<
@@ -1338,15 +1424,46 @@ function ManageSectionModal({
          className="w-full max-w-none sm:max-w-4xl h-[100dvh] sm:max-h-[90vh] sm:h-auto sm:rounded-2xl flex flex-col"
        >
          <CardContent className="p-4 sm:p-6 flex flex-col flex-1 min-h-0">
-           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4 sm:mb-6">
-             <div className="flex-1">
-               <h2 className="text-lg sm:text-xl font-bold text-deep-navy">
-                 Manage: {section.name}
-               </h2>
-               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                 Search products, bulk add/remove, and drag to reorder
-               </p>
-             </div>
+<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4 sm:mb-6">
+              <div className="flex-1">
+                <h2 className="text-lg sm:text-xl font-bold text-deep-navy">
+                  Manage: {section.name}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Search products, bulk add/remove, and drag to reorder
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] text-slate-400">Content Source:</span>
+                  <select
+                    value={contentSource}
+                    onChange={async (e) => {
+                      const newSource = e.target.value as "AUTOMATIC" | "MANUAL" | "HYBRID";
+                      setContentSource(newSource);
+                      if (managingSection) {
+                        try {
+                          await fetch(
+                            `/api/homepage-sections/${managingSection.id}`,
+                            {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                settings: { contentSource: newSource },
+                              }),
+                            },
+                          );
+                        } catch (err) {
+                          console.error("Error saving content source:", err);
+                        }
+                      }
+                    }}
+                    className="text-[10px] px-2 py-1 rounded border border-slate-200 bg-white outline-none"
+                  >
+                    <option value="AUTOMATIC">AUTOMATIC</option>
+                    <option value="MANUAL">MANUAL</option>
+                    <option value="HYBRID">HYBRID</option>
+                  </select>
+                </div>
+              </div>
              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                {activeTab === "products" && (
                  <Button
@@ -1427,7 +1544,7 @@ function ManageSectionModal({
                   </button>
                 ),
               )}
-              {isSponsoredSection && (
+              {sectionSupportsServices && (
                 <button
                   key="services"
                   onClick={() => setActiveTab("services")}
@@ -1792,7 +1909,7 @@ function TrendingSettingsModal({
 }: {
   section: HomepageSection;
   settings: {
-    mode: 'MANUAL' | 'AUTOMATIC';
+    contentSource: 'AUTOMATIC' | 'MANUAL' | 'HYBRID';
     maxProducts: number;
     weights: {
       recentSales: number;
@@ -1822,15 +1939,16 @@ function TrendingSettingsModal({
           <div className="space-y-4">
             <div>
               <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">
-                Mode
+                Content Source
               </label>
               <select
-                value={settings.mode}
-                onChange={(e) => onSettingsChange({ ...settings, mode: e.target.value as 'MANUAL' | 'AUTOMATIC' })}
+                value={settings.contentSource}
+                onChange={(e) => onSettingsChange({ ...settings, contentSource: e.target.value as 'AUTOMATIC' | 'MANUAL' | 'HYBRID' })}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
               >
-                <option value="MANUAL">Manual - Select products manually</option>
-                <option value="AUTOMATIC">Automatic - Algorithm selects products</option>
+                <option value="AUTOMATIC">AUTOMATIC - System populates content</option>
+                <option value="MANUAL">MANUAL - Super Admin selects items</option>
+                <option value="HYBRID">HYBRID - Manual items first, then auto-fill</option>
               </select>
             </div>
             <div>
@@ -1846,7 +1964,7 @@ function TrendingSettingsModal({
                 max="100"
               />
             </div>
-            {settings.mode === 'AUTOMATIC' && (
+            {settings.contentSource !== 'MANUAL' && (
               <>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">

@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 import { PerformanceLogger } from '@/lib/performance'
+import type { ContentSource } from '@/lib/homepage-constants'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,14 +25,44 @@ const DEFAULT_WEIGHTS: TrendingWeights = {
   averageRating: 5,
 }
 
-async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>, settings: TrendingWeights & { timeWindow: '24H' | '7D' | '30D' }, maxProducts: number): Promise<any[]> {
+interface AutoRankSettings {
+  mode: 'MANUAL' | 'AUTOMATIC' | 'HYBRID'
+  maxProducts?: number
+  maxServices?: number
+  maxVendors?: number
+  weights?: TrendingWeights
+  timeWindow?: '24H' | '7D' | '30D'
+  excludeOutOfStock?: boolean
+  excludeHiddenProducts?: boolean
+  excludeArchivedProducts?: boolean
+  serviceIds?: string[]
+  productIds?: string[]
+  vendorIds?: string[]
+  pinnedServiceIds?: string[]
+  pinnedProductIds?: string[]
+  pinnedVendorIds?: string[]
+}
+
+const DEFAULT_AUTO_RANK_SETTINGS: AutoRankSettings = {
+  mode: 'MANUAL',
+  maxProducts: 20,
+  maxServices: 20,
+  maxVendors: 10,
+  weights: { ...DEFAULT_WEIGHTS },
+  timeWindow: '7D',
+  excludeOutOfStock: true,
+  excludeHiddenProducts: true,
+  excludeArchivedProducts: true,
+}
+
+async function getAutoRankedProducts(prisma: ReturnType<typeof getPrisma>, settings: AutoRankSettings): Promise<any[]> {
   const now = new Date()
   const timeWindowMap: Record<string, number> = {
     '24H': 24 * 60 * 60 * 1000,
     '7D': 7 * 24 * 60 * 60 * 1000,
     '30D': 30 * 24 * 60 * 60 * 1000,
   }
-  const cutoffDate = new Date(now.getTime() - timeWindowMap[settings.timeWindow])
+  const cutoffDate = new Date(now.getTime() - (timeWindowMap[settings.timeWindow || '7D'] || timeWindowMap['7D']))
 
   const products = await prisma.product.findMany({
     where: {
@@ -75,9 +106,9 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
 
   return products
     .map((product) => {
-      const salesScore = (product._count?.orderItems ?? 0) * DEFAULT_WEIGHTS.recentSales
-      const reviewScore = (product.averageRating ?? 0) * DEFAULT_WEIGHTS.averageRating
-      const reviewCountScore = (product._count?.productReviews ?? 0) * DEFAULT_WEIGHTS.recentReviews * 0.1
+      const salesScore = (product._count?.orderItems ?? 0) * (settings.weights?.recentSales || DEFAULT_WEIGHTS.recentSales)
+      const reviewScore = (product.averageRating ?? 0) * (settings.weights?.averageRating || DEFAULT_WEIGHTS.averageRating)
+      const reviewCountScore = (product._count?.productReviews ?? 0) * (settings.weights?.recentReviews || DEFAULT_WEIGHTS.recentReviews) * 0.1
 
       if (expiredIds.has(product.id) && product.availabilityType === 'PREORDER') {
         return {
@@ -94,10 +125,10 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
       }
     })
     .sort((a, b) => (b.trendingScore ?? 0) - (a.trendingScore ?? 0))
-    .slice(0, maxProducts)
+    .slice(0, settings.maxProducts || 20)
 }
 
-async function getTrendingServices(prisma: ReturnType<typeof getPrisma>, maxProducts: number): Promise<any[]> {
+async function getAutoRankedServices(prisma: ReturnType<typeof getPrisma>, maxServices: number): Promise<any[]> {
   const services = await prisma.service.findMany({
     where: {
       status: 'PUBLISHED',
@@ -110,8 +141,8 @@ async function getTrendingServices(prisma: ReturnType<typeof getPrisma>, maxProd
       store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
       _count: { select: { serviceRequests: true } },
     },
-    orderBy: { createdAt: 'desc' },
-    take: 20,
+    orderBy: { serviceRequests: { _count: 'desc' }, createdAt: 'desc' },
+    take: maxServices || 20,
   })
 
   return services.map((service) => ({
@@ -136,7 +167,7 @@ async function getTrendingServices(prisma: ReturnType<typeof getPrisma>, maxProd
   }))
 }
 
-async function getNewServices(prisma: ReturnType<typeof getPrisma>, maxProducts: number): Promise<any[]> {
+async function getAutoRankedNewServices(prisma: ReturnType<typeof getPrisma>, maxServices: number): Promise<any[]> {
   const services = await prisma.service.findMany({
     where: {
       status: 'PUBLISHED',
@@ -150,7 +181,7 @@ async function getNewServices(prisma: ReturnType<typeof getPrisma>, maxProducts:
       _count: { select: { serviceRequests: true } },
     },
     orderBy: { createdAt: 'desc' },
-    take: 20,
+    take: maxServices || 20,
   })
 
   return services.map((service) => ({
@@ -175,7 +206,7 @@ async function getNewServices(prisma: ReturnType<typeof getPrisma>, maxProducts:
   }))
 }
 
-async function getVerifiedVendors(prisma: ReturnType<typeof getPrisma>): Promise<any[]> {
+async function getAutoRankedVendors(prisma: ReturnType<typeof getPrisma>): Promise<any[]> {
   const vendors = await prisma.user.findMany({
     where: {
       role: 'VENDOR',
@@ -198,8 +229,19 @@ async function getVerifiedVendors(prisma: ReturnType<typeof getPrisma>): Promise
     take: 50,
   })
 
+  const tierOrder: Record<string, number> = {
+    PLATINUM: 3,
+    PREMIUM: 2,
+    TRUSTED: 1,
+  }
+
   return vendors
-    .filter((vendor) => vendor.store?.isVerified)
+    .filter((vendor) => vendor.store?.isVerified && (vendor.store?.badgeTier === 'PLATINUM' || vendor.store?.badgeTier === 'PREMIUM' || vendor.store?.badgeTier === 'TRUSTED'))
+    .sort((a, b) => {
+      const tierDiff = (tierOrder[b.store?.badgeTier || 'TRUSTED'] || 0) - (tierOrder[a.store?.badgeTier || 'TRUSTED'] || 0)
+      if (tierDiff !== 0) return tierDiff
+      return (b.store?._count?.products || 0) - (a.store?._count?.products || 0)
+    })
     .map((vendor) => ({
       id: vendor.id,
       name: vendor.store?.name || vendor.profile?.firstName + ' ' + vendor.profile?.lastName || 'Unknown Vendor',
@@ -213,6 +255,66 @@ async function getVerifiedVendors(prisma: ReturnType<typeof getPrisma>): Promise
       category: null,
       description: vendor.profile?.firstName || vendor.profile?.lastName || null,
     }))
+}
+
+async function getNewArrivalProducts(prisma: ReturnType<typeof getPrisma>, maxProducts: number): Promise<any[]> {
+  const products = await prisma.product.findMany({
+    where: {
+      stock: { gt: 0 },
+      OR: [
+        { availabilityType: 'IN_STOCK' },
+        { availabilityType: 'PREORDER' },
+        { availabilityType: 'BACKORDER' },
+      ],
+    },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: maxProducts || 20,
+  })
+
+  return products.map((p) => p)
+}
+
+async function getNewArrivalServices(prisma: ReturnType<typeof getPrisma>, maxServices: number): Promise<any[]> {
+  const services = await prisma.service.findMany({
+    where: {
+      status: 'PUBLISHED',
+      isActive: true,
+      availabilityStatus: 'AVAILABLE',
+    },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: maxServices || 20,
+  })
+
+  return services.map((s) => ({
+    id: s.id,
+    slug: s.slug,
+    title: s.title,
+    shortDescription: s.shortDescription,
+    startingPrice: s.startingPrice,
+    pricingType: s.pricingType,
+    deliveryType: s.deliveryType,
+    availabilityStatus: s.availabilityStatus,
+    status: s.status,
+    thumbnail: s.thumbnail,
+    gallery: s.gallery,
+    category: s.category,
+    store: s.store,
+    images: s.images,
+    tags: s.tags,
+    estimatedDeliveryTime: s.estimatedDeliveryTime,
+    requirementsFromCustomer: s.requirementsFromCustomer,
+    serviceRequestCount: 0,
+  }))
 }
 
 const productSelect = {
@@ -242,6 +344,12 @@ const productSelect = {
   },
 } as const
 
+function resolveContentSource(settings: any): ContentSource {
+  const source = settings?.contentSource
+  if (source === 'AUTOMATIC' || source === 'MANUAL' || source === 'HYBRID') return source
+  return 'MANUAL'
+}
+
 export async function GET(_request: NextRequest) {
   const perf = new PerformanceLogger('GET', _request.url)
   try {
@@ -268,6 +376,7 @@ export async function GET(_request: NextRequest) {
               product: {
                 select: productSelect,
               },
+              displayOrder: true,
             },
           },
           vendors: {
@@ -327,26 +436,40 @@ export async function GET(_request: NextRequest) {
     prismaInstance = prisma
 
     const formatted = await Promise.all((sections || []).map(async (section) => {
+      const settings = (section.settings || {}) as AutoRankSettings
+      const contentSource = resolveContentSource(settings)
+      const maxProducts = settings.maxProducts || 20
+      const maxServices = settings.maxServices || 20
+      const maxVendors = settings.maxVendors || 10
+
       let sortedProducts: any[] = []
+      let sortedServices: any[] = []
+      let sortedVendors: any[] = []
+
       const now = new Date()
 
-      if (section.type === 'TRENDING_NOW' && prismaInstance) {
-        const settings = section.settings as any
-        if (settings?.mode === 'AUTOMATIC') {
-          const trendingSettings = {
-            ...DEFAULT_WEIGHTS,
-            timeWindow: settings?.timeWindow || '7D',
-          }
-          sortedProducts = await getAutomaticTrendingProducts(prismaInstance, trendingSettings, settings?.maxProducts || 20)
-        } else {
-          sortedProducts = (section.products || [])
-            .map((sp: any) => sp.product)
-            .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
-        }
-      } else {
+      if (contentSource === 'AUTOMATIC') {
+        sortedProducts = await resolveAutomaticProducts(prismaInstance, section, settings, maxProducts)
+        sortedServices = await resolveAutomaticServices(prismaInstance, section, settings, maxServices)
+        sortedVendors = await resolveAutomaticVendors(prismaInstance, section, maxVendors)
+      } else if (contentSource === 'MANUAL') {
         sortedProducts = (section.products || [])
           .map((sp: any) => sp.product)
-          .filter((p: any) => p && (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+          .filter((p: any) => p && (!settings.excludeOutOfStock || p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+        sortedServices = await resolveManualServices(settings, maxServices)
+        sortedVendors = (section.vendors || [])
+          .map((sv: any) => ({
+            ...sv.vendor,
+            slug: sv.vendor.store?.slug ?? null,
+            badgeTier: sv.vendor.store?.badgeTier ?? null,
+            storeName: sv.vendor.store?.name ?? sv.vendor.name,
+            productCount: sv.vendor.store?._count?.products ?? 0,
+          }))
+          .filter(Boolean)
+      } else {
+        sortedProducts = await resolveHybridProducts(prismaInstance, section, settings, maxProducts)
+        sortedServices = await resolveHybridServices(prismaInstance, section, settings, maxServices)
+        sortedVendors = await resolveHybridVendors(prismaInstance, section, settings, maxVendors)
       }
 
       const expiredIds = new Set(
@@ -370,55 +493,10 @@ export async function GET(_request: NextRequest) {
         type: section.type,
         subtitle: section.subtitle,
         displayOrder: section.displayOrder,
+        contentSource,
         products: sortedProducts,
-        services: (() => {
-          if (section.type === 'TRENDING_SERVICES') return getTrendingServices(prismaInstance, 20)
-          if (section.type === 'NEW_SERVICES') return getNewServices(prismaInstance, 20)
-          if (section.type === 'FEATURED_VENDORS') return getVerifiedVendors(prismaInstance)
-          if (section.type === 'SPONSORED_PRODUCTS' || section.type === 'SPONSORED') {
-            const settings = section.settings as any
-            const serviceIds = settings?.serviceIds || []
-            if (serviceIds.length > 0 && prismaInstance) {
-              return prisma.service.findMany({
-                where: { id: { in: serviceIds }, status: 'PUBLISHED', isActive: true },
-                include: {
-                  images: { take: 1 },
-                  category: { select: { id: true, name: true, slug: true } },
-                  store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
-                },
-              }).then((services) => services.map((s) => ({
-                id: s.id,
-                slug: s.slug,
-                title: s.title,
-                shortDescription: s.shortDescription,
-                startingPrice: s.startingPrice,
-                pricingType: s.pricingType,
-                deliveryType: s.deliveryType,
-                availabilityStatus: s.availabilityStatus,
-                status: s.status,
-                thumbnail: s.thumbnail,
-                gallery: s.gallery,
-                category: s.category,
-                store: s.store,
-                images: s.images,
-                tags: s.tags,
-                estimatedDeliveryTime: s.estimatedDeliveryTime,
-                requirementsFromCustomer: s.requirementsFromCustomer,
-              })))
-            }
-            return []
-          }
-          return []
-        })(),
-        vendors: (section.vendors || [])
-          .map((sv: any) => ({
-            ...sv.vendor,
-            slug: sv.vendor.store?.slug ?? null,
-            badgeTier: sv.vendor.store?.badgeTier ?? null,
-            storeName: sv.vendor.store?.name ?? sv.vendor.name,
-            productCount: sv.vendor.store?._count?.products ?? 0,
-          }))
-          .filter(Boolean),
+        services: sortedServices,
+        vendors: sortedVendors,
       }
     }))
 
@@ -442,4 +520,224 @@ export async function GET(_request: NextRequest) {
     console.error('Error fetching public homepage sections (outer):', error)
     return NextResponse.json({ sections: [], brands: [] }, { status: 200 })
   }
+}
+
+async function resolveAutomaticProducts(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxProducts: number): Promise<any[]> {
+  const sectionType = section.type
+  if (!prisma) return []
+
+  switch (sectionType) {
+    case 'TRENDING_NOW': {
+      const autoSettings = { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts }
+      return getAutoRankedProducts(prisma, autoSettings)
+    }
+    case 'NEW_SERVICES':
+    case 'SERVICE_GRID': {
+      if (sectionType === 'NEW_SERVICES') {
+        return getNewArrivalServices(prisma, maxProducts)
+      }
+      return getAutoRankedServices(prisma, maxProducts)
+    }
+    case 'NEW_ARRIVALS': {
+      return getNewArrivalProducts(prisma, maxProducts)
+    }
+    case 'VERIFIED_VENDORS': {
+      return getAutoRankedVendors(prisma)
+    }
+    case 'FLASH_SALES':
+    case 'BIG_DEALS':
+    case 'LARGE_FEATURE_CARDS':
+    case 'BRAND_GRID':
+    case 'CLEARANCE_SALES':
+    case 'EXPRESS_OFFERS': {
+      const existingProducts = (section.products || [])
+        .map((sp: any) => sp.product)
+        .filter((p: any) => p && (!settings.excludeOutOfStock || p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+      if (existingProducts.length > 0) return existingProducts
+      return getAutoRankedProducts(prisma, { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts })
+    }
+    default: {
+      return getAutoRankedProducts(prisma, { ...DEFAULT_AUTO_RANK_SETTINGS, ...settings, maxProducts })
+    }
+  }
+}
+
+async function resolveAutomaticServices(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxServices: number): Promise<any[]> {
+  if (!prisma) return []
+
+  switch (section.type) {
+    case 'TRENDING_SERVICES':
+      return getAutoRankedServices(prisma, maxServices)
+    case 'TOP_SERVICES': {
+      const services = await prisma.service.findMany({
+        where: { status: 'PUBLISHED', isActive: true, availabilityStatus: 'AVAILABLE' },
+        include: {
+          images: { take: 1 },
+          category: { select: { id: true, name: true, slug: true } },
+          store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+          _count: { select: { serviceRequests: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: maxServices,
+      })
+      return services.map((s) => ({
+        id: s.id, slug: s.slug, title: s.title, shortDescription: s.shortDescription,
+        startingPrice: s.startingPrice, pricingType: s.pricingType, deliveryType: s.deliveryType,
+        availabilityStatus: s.availabilityStatus, status: s.status, thumbnail: s.thumbnail,
+        gallery: s.gallery, category: s.category, store: s.store, images: s.images,
+        tags: s.tags, estimatedDeliveryTime: s.estimatedDeliveryTime,
+        requirementsFromCustomer: s.requirementsFromCustomer,
+        serviceRequestCount: s._count?.serviceRequests ?? 0,
+      }))
+    }
+    case 'TRENDING_NOW':
+    case 'NEW_SERVICES':
+      return getAutoRankedServices(prisma, maxServices)
+    case 'SPONSORED_PRODUCTS': {
+      const serviceIds = settings.serviceIds || []
+      if (serviceIds.length > 0) {
+        return prisma.service.findMany({
+          where: { id: { in: serviceIds }, status: 'PUBLISHED', isActive: true },
+          include: {
+            images: { take: 1 },
+            category: { select: { id: true, name: true, slug: true } },
+            store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+          },
+        }).then((services) => services.map((s) => ({
+          id: s.id, slug: s.slug, title: s.title, shortDescription: s.shortDescription,
+          startingPrice: s.startingPrice, pricingType: s.pricingType, deliveryType: s.deliveryType,
+          availabilityStatus: s.availabilityStatus, status: s.status, thumbnail: s.thumbnail,
+          gallery: s.gallery, category: s.category, store: s.store, images: s.images,
+          tags: s.tags, estimatedDeliveryTime: s.estimatedDeliveryTime,
+          requirementsFromCustomer: s.requirementsFromCustomer,
+        })))
+      }
+      return []
+    }
+    default:
+      return []
+  }
+}
+
+async function resolveAutomaticVendors(prisma: ReturnType<typeof getPrisma> | null, section: any, maxVendors: number): Promise<any[]> {
+  if (!prisma) return []
+
+  if (section.type === 'VERIFIED_VENDORS') {
+    return getAutoRankedVendors(prisma)
+  }
+  return (section.vendors || [])
+    .map((sv: any) => ({
+      ...sv.vendor,
+      slug: sv.vendor.store?.slug ?? null,
+      badgeTier: sv.vendor.store?.badgeTier ?? null,
+      storeName: sv.vendor.store?.name ?? sv.vendor.name,
+      productCount: sv.vendor.store?._count?.products ?? 0,
+    }))
+    .filter(Boolean)
+}
+
+async function resolveManualServices(settings: AutoRankSettings, maxServices: number): Promise<any[]> {
+  const serviceIds = settings.serviceIds || []
+  if (serviceIds.length === 0) return []
+
+  const prisma = getPrisma()
+  const services = await prisma.service.findMany({
+    where: { id: { in: serviceIds }, status: 'PUBLISHED', isActive: true },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+    },
+  })
+
+  return services.map((s) => ({
+    id: s.id, slug: s.slug, title: s.title, shortDescription: s.shortDescription,
+    startingPrice: s.startingPrice, pricingType: s.pricingType, deliveryType: s.deliveryType,
+    availabilityStatus: s.availabilityStatus, status: s.status, thumbnail: s.thumbnail,
+    gallery: s.gallery, category: s.category, store: s.store, images: s.images,
+    tags: s.tags, estimatedDeliveryTime: s.estimatedDeliveryTime,
+    requirementsFromCustomer: s.requirementsFromCustomer,
+  }))
+}
+
+async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxProducts: number): Promise<any[]> {
+  const pinnedProductIds = settings.pinnedProductIds || []
+  const autoProducts = await resolveAutomaticProducts(prisma, section, settings, maxProducts)
+
+  if (pinnedProductIds.length === 0) return autoProducts
+
+  if (!prisma) return autoProducts
+
+  const pinnedProducts = await prisma.product.findMany({
+    where: { id: { in: pinnedProductIds }, stock: { gt: 0 } },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
+    },
+  })
+
+  const autoIds = new Set(autoProducts.map((p: any) => p.id))
+  const newAutoProducts = autoProducts.filter((p: any) => !pinnedProductIds.includes(p.id))
+
+  return [...pinnedProducts, ...newAutoProducts].slice(0, maxProducts)
+}
+
+async function resolveHybridServices(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxServices: number): Promise<any[]> {
+  const pinnedServiceIds = settings.pinnedServiceIds || []
+  const autoServices = await resolveAutomaticServices(prisma, section, settings, maxServices)
+
+  if (pinnedServiceIds.length === 0) return autoServices
+
+  if (!prisma) return autoServices
+
+  const pinnedServices = await prisma.service.findMany({
+    where: { id: { in: pinnedServiceIds }, status: 'PUBLISHED', isActive: true },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+    },
+  })
+
+  const autoIds = new Set(autoServices.map((s: any) => s.id))
+  const newAutoServices = autoServices.filter((s: any) => !pinnedServiceIds.includes(s.id))
+
+  return [...pinnedServices, ...newAutoServices].slice(0, maxServices)
+}
+
+async function resolveHybridVendors(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxVendors: number): Promise<any[]> {
+  const pinnedVendorIds = settings.pinnedVendorIds || []
+  const autoVendors = await resolveAutomaticVendors(prisma, section, maxVendors)
+
+  if (pinnedVendorIds.length === 0) return autoVendors
+
+  if (!prisma) return autoVendors
+
+  const pinnedVendors = await prisma.user.findMany({
+    where: { id: { in: pinnedVendorIds }, role: 'VENDOR' },
+    include: {
+      store: {
+        select: {
+          id: true, name: true, slug: true, logo: true, isVerified: true, isFeatured: true, badgeTier: true, _count: { select: { products: true } },
+        },
+      },
+      profile: true,
+    },
+  })
+
+  const formattedPinned = pinnedVendors
+    .filter((v) => v.store?.isVerified)
+    .map((v) => ({
+      id: v.id, name: v.store?.name || v.profile?.firstName + ' ' + v.profile?.lastName || 'Unknown Vendor',
+      slug: v.store?.slug, logo: v.store?.logo, isVerified: v.store?.isVerified ?? true,
+      badgeTier: v.store?.badgeTier, isFeatured: v.store?.isFeatured,
+      productCount: v.store?._count?.products ?? 0, rating: 0, category: null,
+      description: v.profile?.firstName || v.profile?.lastName || null,
+    }))
+
+  const autoIds = new Set(autoVendors.map((v: any) => v.id))
+  const newAutoVendors = autoVendors.filter((v: any) => !pinnedVendorIds.includes(v.id))
+
+  return [...formattedPinned, ...newAutoVendors].slice(0, maxVendors)
 }

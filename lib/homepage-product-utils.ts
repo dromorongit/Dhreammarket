@@ -23,6 +23,27 @@ export interface EnterpriseProduct {
   category?: { id: string; name: string; slug?: string }
 }
 
+export interface EnterpriseService {
+  id: string
+  slug: string
+  title: string
+  shortDescription: string | null
+  startingPrice: number
+  pricingType: string
+  deliveryType: string
+  availabilityStatus: string
+  status: string
+  thumbnail: string | null
+  gallery: string[]
+  category: { id: string; name: string; slug: string }
+  store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier?: string | null; logo?: string | null; averageRating: number; reviewCount: number }
+  images: Array<{ id: string; imageUrl: string; displayOrder: number }>
+  tags: string[]
+  estimatedDeliveryTime: string | null
+  requirementsFromCustomer: string | null
+  serviceRequestCount?: number
+}
+
 export interface EnterpriseBrand {
   id?: string
   name: string
@@ -37,6 +58,8 @@ export interface EnterpriseHomepageData {
   topSelling: EnterpriseProduct[]
 }
 
+export type ContentSource = 'AUTOMATIC' | 'MANUAL' | 'HYBRID'
+
 export interface ManagedHomepageSection {
   id: string
   name: string
@@ -44,8 +67,9 @@ export interface ManagedHomepageSection {
   type: string
   subtitle: string | null
   displayOrder: number
+  contentSource: ContentSource
   products: EnterpriseProduct[]
-  services: any[]
+  services: EnterpriseService[]
   vendors: unknown[]
 }
 

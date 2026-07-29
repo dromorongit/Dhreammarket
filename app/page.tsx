@@ -94,7 +94,6 @@ export default function Home() {
     const homeTheatre = sectionsBySlug['home-theatre']?.products ?? []
     const topExpress = sectionsBySlug['top-express-offers']?.products ?? []
     collectProductIds(trending).forEach((id) => ids.add(id))
-    collectProductIds(trendingServices).forEach((id) => ids.add(id))
     collectProductIds(flash).forEach((id) => ids.add(id))
     collectProductIds(sponsored).forEach((id) => ids.add(id))
     collectProductIds(topClearance).forEach((id) => ids.add(id))
@@ -214,6 +213,7 @@ export default function Home() {
             type: section.type,
             subtitle: section.subtitle,
             displayOrder: section.displayOrder,
+            contentSource: section.contentSource,
             products: section.products,
             services: section.services,
             vendors: section.vendors,
@@ -290,7 +290,7 @@ export default function Home() {
 
       {/* ─── New Services Section (below New Arrivals) ─── */}
       {!loadingManaged && (
-        <NewServicesSection section={{ id: 'new-services', name: 'New Services', slug: 'new-services', type: 'NEW_SERVICES', subtitle: 'Fresh services just added to Dhream Market.', displayOrder: 0, products: [], services: [], vendors: [] }} />
+        <NewServicesSection section={{ id: 'new-services', name: 'New Services', slug: 'new-services', type: 'NEW_SERVICES', subtitle: 'Fresh services just added to Dhream Market.', displayOrder: 0, contentSource: 'AUTOMATIC', products: [], services: [], vendors: [] }} />
       )}
 
       {/* ─── Automatic: Top Selling (real sales data) ─── */}

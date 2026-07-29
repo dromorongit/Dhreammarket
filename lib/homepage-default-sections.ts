@@ -1,10 +1,9 @@
 import type { PrismaClient } from '@prisma/client'
-import { DEFAULT_HOMEPAGE_SECTIONS } from '@/lib/homepage-constants'
+import { DEFAULT_HOMEPAGE_SECTIONS, type ContentSource } from '@/lib/homepage-constants'
 import { HomepageSectionType } from '@prisma/client'
 
 export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
   try {
-    // Check if homepage_sections table exists by attempting a simple query
     await prisma.$queryRaw`SELECT 1 FROM homepage_sections LIMIT 1`
   } catch (e) {
     console.error('[ensureDefaultHomepageSections] Table homepage_sections does not exist:', e)
@@ -13,6 +12,9 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
 
   for (const section of DEFAULT_HOMEPAGE_SECTIONS) {
     try {
+      const settings = {
+        contentSource: section.contentSource,
+      }
       await prisma.homepageSection.upsert({
         where: { slug: section.slug },
         create: {
@@ -22,9 +24,11 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
           subtitle: section.subtitle,
           displayOrder: section.displayOrder,
           isEnabled: true,
+          settings: settings as any,
         },
         update: {
           displayOrder: section.displayOrder,
+          settings: settings as any,
         },
       })
     } catch (e) {
