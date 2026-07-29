@@ -45,6 +45,7 @@ export interface ManagedHomepageSection {
   subtitle: string | null
   displayOrder: number
   products: EnterpriseProduct[]
+  services: any[]
   vendors: unknown[]
 }
 

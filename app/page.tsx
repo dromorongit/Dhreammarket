@@ -21,11 +21,14 @@ import { handleAuthRedirect, dispatchCartUpdate, logCartRequest } from '@/lib/Ca
 import {
   HomepageSectionRenderer,
   HomepageSectionSkeleton,
+  TrendingServicesSection,
+  NewServicesSection,
+  VerifiedVendorsSection,
+  SponsoredSection,
 } from '@/components/homepage-sections'
 import {
   useEnterpriseHomepageData,
   FlashSalesSection,
-  SponsoredProductsSection,
   EnterpriseGadgetDisplaySection,
   TopSellingSection,
   BigTopDealsSection,
@@ -84,12 +87,14 @@ export default function Home() {
   const excludeFromFeaturedIds = useMemo(() => {
     const ids = new Set(enterpriseSections.excludeFromFeaturedIds)
     const trending = sectionsBySlug['trending-now']?.products ?? []
+    const trendingServices = sectionsBySlug['trending-services']?.services ?? []
     const flash = sectionsBySlug['flash-sales']?.products ?? []
-    const sponsored = sectionsBySlug['sponsored-products']?.products ?? []
+    const sponsored = sectionsBySlug['sponsored']?.products ?? []
     const topClearance = sectionsBySlug['top-clearance-sales']?.products ?? []
     const homeTheatre = sectionsBySlug['home-theatre']?.products ?? []
     const topExpress = sectionsBySlug['top-express-offers']?.products ?? []
     collectProductIds(trending).forEach((id) => ids.add(id))
+    collectProductIds(trendingServices).forEach((id) => ids.add(id))
     collectProductIds(flash).forEach((id) => ids.add(id))
     collectProductIds(sponsored).forEach((id) => ids.add(id))
     collectProductIds(topClearance).forEach((id) => ids.add(id))
@@ -203,16 +208,24 @@ export default function Home() {
         .sort((a, b) => a.displayOrder - b.displayOrder)
         .map((section) => {
           const sectionProps = {
+            id: section.id,
             name: section.name,
-            subtitle: section.subtitle,
+            slug: section.slug,
             type: section.type,
+            subtitle: section.subtitle,
+            displayOrder: section.displayOrder,
             products: section.products,
-            loading: loadingManaged,
+            services: section.services,
+            vendors: section.vendors,
           }
-          if (section.slug === 'sponsored-products')
-            return <SponsoredProductsSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'sponsored')
+            return <SponsoredSection key={section.id} section={sectionProps} />
           if (section.slug === 'trending-now')
             return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+          if (section.slug === 'trending-services')
+            return <TrendingServicesSection key={section.id} section={sectionProps} />
+          if (section.slug === 'verified-vendors')
+            return <VerifiedVendorsSection key={section.id} section={sectionProps} />
           if (section.slug === 'flash-sales')
             return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
           if (section.slug === 'gadget-display')
@@ -273,6 +286,11 @@ export default function Home() {
       {/* ─── New This Week Section (hardcoded) ─── */}
       {!loadingManaged && (
         <NewThisWeekSection excludeIds={excludeFromFeaturedIds} />
+      )}
+
+      {/* ─── New Services Section (below New Arrivals) ─── */}
+      {!loadingManaged && (
+        <NewServicesSection section={{ id: 'new-services', name: 'New Services', slug: 'new-services', type: 'NEW_SERVICES', subtitle: 'Fresh services just added to Dhream Market.', displayOrder: 0, products: [], services: [], vendors: [] }} />
       )}
 
       {/* ─── Automatic: Top Selling (real sales data) ─── */}

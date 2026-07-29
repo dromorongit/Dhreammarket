@@ -10,11 +10,13 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
+import ServiceCard from '@/components/ServiceCard'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { TrendingNowSection } from './TrendingNowSection'
 
 import WishlistButton from '@/components/WishlistButton'
 
@@ -52,8 +54,9 @@ import WishlistButton from '@/components/WishlistButton'
  }
 
 interface HomepageSectionProps {
-   section: ManagedHomepageSection
- }
+  section: ManagedHomepageSection
+  loading?: boolean
+}
 
  function CompactProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
@@ -889,6 +892,356 @@ export function PromoBannerSection({ section }: HomepageSectionProps) {
   )
 }
 
+function CompactServiceCard({ service, initialIsWishlisted }: { service: any; initialIsWishlisted?: boolean }) {
+  const badgeInfo = service.store ? getVendorBadgeInfo(service.store.badgeTier) : null
+  const hasImage = service.thumbnail || (service.images && service.images.length > 0)
+  const imageUrl = service.thumbnail || service.images?.[0]?.imageUrl
+
+  return (
+    <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
+      <div className="flex flex-col h-full">
+        <Link href={`/services/${service.slug}`} className="block">
+          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+            {hasImage ? (
+              <Image
+                src={imageUrl!}
+                alt={service.title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                loading="lazy"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+            )}
+            {service.category && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="info" size="sm">{service.category.name}</Badge>
+              </div>
+            )}
+          </div>
+        </Link>
+        <div className="p-2 space-y-1 flex-1 flex flex-col">
+          <Link href={`/services/${service.slug}`} className="block">
+            <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+              {service.title}
+            </h3>
+          </Link>
+          <span className="text-[11px] font-bold text-royal-blue">
+            {formatPrice(Number(service.startingPrice))}
+          </span>
+          <div className="flex items-center gap-1 min-w-0">
+            {service.store && (
+              <p className="text-[10px] text-slate-500 truncate min-w-0">
+                {truncateVendorName(service.store.name)}
+              </p>
+            )}
+            {badgeInfo ? (
+              <span className={badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}>
+                <MdVerified className="w-4 h-4 flex-shrink-0" />
+              </span>
+            ) : service.store?.isVerified ? (
+              <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+export function TrendingServicesSection({ section }: HomepageSectionProps) {
+  const services = section.services || []
+  const displayServices = services.slice(0, 20)
+  const half = Math.ceil(displayServices.length / 2)
+  const topRowServices = displayServices.slice(0, half)
+  const bottomRowServices = displayServices.slice(half)
+
+  if (displayServices.length === 0) {
+    return (
+      <section className="relative py-16 lg:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+            {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+          </div>
+          <EmptyState icon={<svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>} title="No services yet" description="Check back soon for new services in this section." />
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="relative py-16 lg:py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+          {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+        </div>
+        <div className="space-y-4">
+          {topRowServices.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {topRowServices.map((service: any) => (
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactServiceCard service={service} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {bottomRowServices.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {bottomRowServices.map((service: any) => (
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactServiceCard service={service} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-8 text-center">
+          <Link href="/services">
+            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function NewServicesSection({ section }: HomepageSectionProps) {
+  const services = section.services || []
+  const displayServices = services.slice(0, 20)
+  const half = Math.ceil(displayServices.length / 2)
+  const topRowServices = displayServices.slice(0, half)
+  const bottomRowServices = displayServices.slice(half)
+
+  if (displayServices.length === 0) {
+    return (
+      <section className="relative py-16 lg:py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+            {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+          </div>
+          <EmptyState icon={<svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>} title="No services yet" description="Check back soon for new services in this section." />
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="relative py-16 lg:py-24 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+          {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+        </div>
+        <div className="space-y-4">
+          {topRowServices.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {topRowServices.map((service: any) => (
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactServiceCard service={service} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {bottomRowServices.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {bottomRowServices.map((service: any) => (
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactServiceCard service={service} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-8 text-center">
+          <Link href="/services">
+            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
+  const displayVendors = (section.vendors || []).filter((v: any) => v.isVerified)
+
+  if (displayVendors.length === 0) {
+    return (
+      <section className="relative py-16 lg:py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+            {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+          </div>
+          <EmptyState icon={<svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>} title="No verified vendors" description="Check back soon for verified vendors." />
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="relative py-16 lg:py-24 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+          {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+        </div>
+        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+          <div className="flex gap-4">
+            {displayVendors.map((vendor: any) => (
+              <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+                  <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+                    {vendor.logo ? (
+                      <Image src={vendor.logo} alt={vendor.name} className="absolute inset-0 w-full h-full object-cover opacity-50" fill />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center"><span className="text-4xl font-bold text-white opacity-30">{vendor.name?.charAt(0) || 'V'}</span></div>
+                    )}
+                    {vendor.isVerified && (
+                      <div className="absolute top-3 left-3"><Badge variant="verified" size="sm">Verified</Badge></div>
+                    )}
+                    {vendor.badgeTier && (
+                      <div className="absolute top-3 right-3"><Badge variant="premium" size="sm">{vendor.badgeTier}</Badge></div>
+                    )}
+                  </div>
+                  <CardContent className="p-4 min-w-0">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                        {truncateVendorName(vendor.name)}
+                      </h3>
+                      <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                    </div>
+                    {vendor.store?.name && (
+                      <p className="text-sm text-slate-500 mb-2">{vendor.store.name}</p>
+                    )}
+                    {vendor.category && (
+                      <p className="text-sm text-slate-500 mb-2">{vendor.category.name}</p>
+                    )}
+                    <div className="flex items-center justify-between text-sm mb-3">
+                      <div className="flex items-center gap-1"><span className="text-yellow-400">★</span><span className="font-medium">{vendor.rating?.toFixed(1) || '0.0'}</span></div>
+                      <span className="text-slate-500">{vendor.productCount || 0} products</span>
+                    </div>
+                    <Link href={`/vendor/${vendor.slug ?? vendor.id}`} className="w-full">
+                      <Button variant="primary" size="sm" className="w-full">View Store</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function SponsoredSection({ section }: HomepageSectionProps) {
+  const products = section.products || []
+  const services = section.services || []
+  const allItems = [
+    ...products.map((p: any) => ({ ...p, _itemType: 'product' })),
+    ...services.map((s: any) => ({ ...s, _itemType: 'service' })),
+  ]
+  const displayItems = allItems.slice(0, 20)
+  const half = Math.ceil(displayItems.length / 2)
+  const topRowItems = displayItems.slice(0, half)
+  const bottomRowItems = displayItems.slice(half)
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!products.length && !services.length) return
+    try {
+      const productIds = products.map((p: any) => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products, services])
+
+  useEffect(() => { fetchWishlistStatus() }, [fetchWishlistStatus])
+
+  if (displayItems.length === 0) {
+    return (
+      <section className="relative py-16 lg:py-24 bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+            {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+          </div>
+          <EmptyState icon={<svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} title="No items yet" description="Check back soon for featured items in this section." />
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="relative py-16 lg:py-24 bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
+          {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
+        </div>
+        <div className="space-y-4">
+          {topRowItems.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {topRowItems.map((item: any) => (
+                  <div key={item.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    {item._itemType === 'product' ? (
+                      <CompactProductCard product={item} initialIsWishlisted={wishlistedProductIds.has(item.id)} />
+                    ) : (
+                      <CompactServiceCard service={item} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {bottomRowItems.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {bottomRowItems.map((item: any) => (
+                  <div key={item.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    {item._itemType === 'product' ? (
+                      <CompactProductCard product={item} initialIsWishlisted={wishlistedProductIds.has(item.id)} />
+                    ) : (
+                      <CompactServiceCard service={item} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-8 text-center">
+          <Link href="/marketplace">
+            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const sectionRenderers: Record<string, React.FC<HomepageSectionProps>> = {
   product_grid: ProductGridSection,
   featured_vendors: FeaturedVendorsSection,
@@ -897,6 +1250,10 @@ const sectionRenderers: Record<string, React.FC<HomepageSectionProps>> = {
   hero_banner: HeroBannerSection,
   category_showcase: CategoryShowcaseSection,
   promo_banner: PromoBannerSection,
+  trending_services: TrendingServicesSection,
+  new_services: NewServicesSection,
+  verified_vendors: VerifiedVendorsSection,
+  sponsored: SponsoredSection,
 }
 
 const SECTION_TYPE_ALIASES: Record<string, keyof typeof sectionRenderers> = {
@@ -906,11 +1263,16 @@ const SECTION_TYPE_ALIASES: Record<string, keyof typeof sectionRenderers> = {
   BRAND_GRID: 'product_grid',
   SERVICE_GRID: 'promo_banner',
   FLASH_SALES: 'product_grid',
-  SPONSORED_PRODUCTS: 'product_grid',
+  SPONSORED_PRODUCTS: 'sponsored',
+  SPONSORED: 'sponsored',
   TOP_SELLING: 'product_grid',
   BIG_DEALS: 'product_grid',
   CLEARANCE_SALES: 'product_grid',
   EXPRESS_OFFERS: 'product_grid',
+  TRENDING_NOW: 'product_grid',
+  TRENDING_SERVICES: 'trending_services',
+  NEW_SERVICES: 'new_services',
+  FEATURED_VENDORS: 'verified_vendors',
   product_grid: 'product_grid',
   featured_vendors: 'featured_vendors',
   quicklinks: 'quicklinks',
@@ -918,6 +1280,10 @@ const SECTION_TYPE_ALIASES: Record<string, keyof typeof sectionRenderers> = {
   hero_banner: 'hero_banner',
   category_showcase: 'category_showcase',
   promo_banner: 'promo_banner',
+  trending_services: 'trending_services',
+  new_services: 'new_services',
+  verified_vendors: 'verified_vendors',
+  sponsored: 'sponsored',
 }
 
 function resolveSectionRenderer(type: string): React.FC<HomepageSectionProps> | undefined {

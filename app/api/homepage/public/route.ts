@@ -97,6 +97,124 @@ async function getAutomaticTrendingProducts(prisma: ReturnType<typeof getPrisma>
     .slice(0, maxProducts)
 }
 
+async function getTrendingServices(prisma: ReturnType<typeof getPrisma>, maxProducts: number): Promise<any[]> {
+  const services = await prisma.service.findMany({
+    where: {
+      status: 'PUBLISHED',
+      isActive: true,
+      availabilityStatus: 'AVAILABLE',
+    },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+      _count: { select: { serviceRequests: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  })
+
+  return services.map((service) => ({
+    id: service.id,
+    slug: service.slug,
+    title: service.title,
+    shortDescription: service.shortDescription,
+    startingPrice: service.startingPrice,
+    pricingType: service.pricingType,
+    deliveryType: service.deliveryType,
+    availabilityStatus: service.availabilityStatus,
+    status: service.status,
+    thumbnail: service.thumbnail,
+    gallery: service.gallery,
+    category: service.category,
+    store: service.store,
+    images: service.images,
+    tags: service.tags,
+    estimatedDeliveryTime: service.estimatedDeliveryTime,
+    requirementsFromCustomer: service.requirementsFromCustomer,
+    serviceRequestCount: service._count?.serviceRequests ?? 0,
+  }))
+}
+
+async function getNewServices(prisma: ReturnType<typeof getPrisma>, maxProducts: number): Promise<any[]> {
+  const services = await prisma.service.findMany({
+    where: {
+      status: 'PUBLISHED',
+      isActive: true,
+      availabilityStatus: 'AVAILABLE',
+    },
+    include: {
+      images: { take: 1 },
+      category: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+      _count: { select: { serviceRequests: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  })
+
+  return services.map((service) => ({
+    id: service.id,
+    slug: service.slug,
+    title: service.title,
+    shortDescription: service.shortDescription,
+    startingPrice: service.startingPrice,
+    pricingType: service.pricingType,
+    deliveryType: service.deliveryType,
+    availabilityStatus: service.availabilityStatus,
+    status: service.status,
+    thumbnail: service.thumbnail,
+    gallery: service.gallery,
+    category: service.category,
+    store: service.store,
+    images: service.images,
+    tags: service.tags,
+    estimatedDeliveryTime: service.estimatedDeliveryTime,
+    requirementsFromCustomer: service.requirementsFromCustomer,
+    serviceRequestCount: service._count?.serviceRequests ?? 0,
+  }))
+}
+
+async function getVerifiedVendors(prisma: ReturnType<typeof getPrisma>): Promise<any[]> {
+  const vendors = await prisma.user.findMany({
+    where: {
+      role: 'VENDOR',
+    },
+    include: {
+      store: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logo: true,
+          isVerified: true,
+          isFeatured: true,
+          badgeTier: true,
+          _count: { select: { products: true } },
+        },
+      },
+      profile: true,
+    },
+    take: 50,
+  })
+
+  return vendors
+    .filter((vendor) => vendor.store?.isVerified)
+    .map((vendor) => ({
+      id: vendor.id,
+      name: vendor.store?.name || vendor.profile?.firstName + ' ' + vendor.profile?.lastName || 'Unknown Vendor',
+      slug: vendor.store?.slug,
+      logo: vendor.store?.logo,
+      isVerified: vendor.store?.isVerified ?? true,
+      badgeTier: vendor.store?.badgeTier,
+      isFeatured: vendor.store?.isFeatured,
+      productCount: vendor.store?._count?.products ?? 0,
+      rating: 0,
+      category: null,
+      description: vendor.profile?.firstName || vendor.profile?.lastName || null,
+    }))
+}
+
 const productSelect = {
   id: true,
   slug: true,
@@ -253,6 +371,45 @@ export async function GET(_request: NextRequest) {
         subtitle: section.subtitle,
         displayOrder: section.displayOrder,
         products: sortedProducts,
+        services: (() => {
+          if (section.type === 'TRENDING_SERVICES') return getTrendingServices(prismaInstance, 20)
+          if (section.type === 'NEW_SERVICES') return getNewServices(prismaInstance, 20)
+          if (section.type === 'FEATURED_VENDORS') return getVerifiedVendors(prismaInstance)
+          if (section.type === 'SPONSORED_PRODUCTS' || section.type === 'SPONSORED') {
+            const settings = section.settings as any
+            const serviceIds = settings?.serviceIds || []
+            if (serviceIds.length > 0 && prismaInstance) {
+              return prisma.service.findMany({
+                where: { id: { in: serviceIds }, status: 'PUBLISHED', isActive: true },
+                include: {
+                  images: { take: 1 },
+                  category: { select: { id: true, name: true, slug: true } },
+                  store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
+                },
+              }).then((services) => services.map((s) => ({
+                id: s.id,
+                slug: s.slug,
+                title: s.title,
+                shortDescription: s.shortDescription,
+                startingPrice: s.startingPrice,
+                pricingType: s.pricingType,
+                deliveryType: s.deliveryType,
+                availabilityStatus: s.availabilityStatus,
+                status: s.status,
+                thumbnail: s.thumbnail,
+                gallery: s.gallery,
+                category: s.category,
+                store: s.store,
+                images: s.images,
+                tags: s.tags,
+                estimatedDeliveryTime: s.estimatedDeliveryTime,
+                requirementsFromCustomer: s.requirementsFromCustomer,
+              })))
+            }
+            return []
+          }
+          return []
+        })(),
         vendors: (section.vendors || [])
           .map((sv: any) => ({
             ...sv.vendor,

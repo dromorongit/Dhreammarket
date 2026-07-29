@@ -79,8 +79,11 @@ interface Vendor {
 
 const SECTION_TYPES = [
   { value: "TRENDING_NOW", label: "Trending Now" },
+  { value: "TRENDING_SERVICES", label: "Trending Services" },
+  { value: "NEW_SERVICES", label: "New Services" },
+  { value: "FEATURED_VENDORS", label: "Verified Vendors" },
   { value: "FLASH_SALES", label: "Flash Sales" },
-  { value: "SPONSORED_PRODUCTS", label: "Sponsored Products" },
+  { value: "SPONSORED_PRODUCTS", label: "Sponsored" },
   { value: "LARGE_FEATURE_CARDS", label: "Gadget Display" },
   { value: "BIG_DEALS", label: "Big Top Deals" },
   { value: "BRAND_GRID", label: "Brand Store" },
@@ -94,22 +97,34 @@ const SECTION_TYPES = [
 
 const DEFAULT_SECTIONS = [
   {
+    name: "Sponsored",
+    slug: "sponsored",
+    type: "SPONSORED_PRODUCTS",
+    subtitle: "Featured by vendors",
+  },
+  {
     name: "Trending Now",
     slug: "trending-now",
     type: "TRENDING_NOW",
     subtitle: "Discover what's currently trending across Dhream Market.",
   },
   {
+    name: "Trending Services",
+    slug: "trending-services",
+    type: "TRENDING_SERVICES",
+    subtitle: "Discover what's currently trending in services.",
+  },
+  {
+    name: "Verified Vendors",
+    slug: "verified-vendors",
+    type: "FEATURED_VENDORS",
+    subtitle: "Trusted and verified vendors you can rely on.",
+  },
+  {
     name: "Flash Sales",
     slug: "flash-sales",
     type: "FLASH_SALES",
     subtitle: "Limited time offers",
-  },
-  {
-    name: "Sponsored Products",
-    slug: "sponsored-products",
-    type: "SPONSORED_PRODUCTS",
-    subtitle: "Featured by vendors",
   },
   {
     name: "Gadget Display",
@@ -176,7 +191,20 @@ export default function SuperAdminHomepagePage() {
     new Set(),
   );
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
+  const [selectedBrands, setSelectedBrands] = useState<Set<string>>(
+    new Set(),
+  );
+  const [services, setServices] = useState<any[]>([]);
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(
+    new Set(),
+  );
+  const [assignedServices, setAssignedServices] = useState<string[]>(
+    [],
+  );
+
+  const isSponsoredSection =
+    managingSection?.type === "SPONSORED_PRODUCTS" ||
+    managingSection?.type === "SPONSORED";
   const [assignedBrands, setAssignedBrands] = useState<HomepageSectionBrand[]>(
     [],
   );
@@ -277,10 +305,32 @@ export default function SuperAdminHomepagePage() {
         .then((data) => {
           setAssignedProducts(data.section?.products || []);
           setAssignedBrands(data.section?.brands || []);
+          if (isSponsoredSection) {
+            const settings = data.section?.settings || {};
+            setAssignedServices(settings.serviceIds || []);
+          }
         })
         .catch(console.error);
     }
-  }, [managingSection, productPage, searchQuery, fetchProducts]);
+  }, [managingSection, productPage, searchQuery, fetchProducts, isSponsoredSection]);
+
+  const fetchServices = useCallback(async () => {
+    try {
+      const response = await fetch('/api/services?limit=100&sortBy=createdAt&sortOrder=desc');
+      if (response.ok) {
+        const data = await response.json();
+        setServices(data.services || [])
+      }
+    } catch (err) {
+      console.error('Error fetching services:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (managingSection && isSponsoredSection) {
+      fetchServices();
+    }
+  }, [managingSection, isSponsoredSection, fetchServices]);
 
   const handleToggle = async (section: HomepageSection) => {
     try {
@@ -421,6 +471,56 @@ export default function SuperAdminHomepagePage() {
       console.error("Error assigning products:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAssignServices = async () => {
+    if (!managingSection) return;
+    setSaving(true);
+    try {
+      const response = await fetch(
+        `/api/homepage-sections/${managingSection.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            settings: {
+              serviceIds: Array.from(selectedServices),
+            },
+          }),
+        },
+      );
+      if (response.ok) {
+        await fetchSections();
+        setSelectedServices(new Set());
+        // Refresh assigned services
+        const data = await fetch(
+          `/api/homepage-sections/${managingSection.id}`,
+        ).then((r) => r.json());
+        const settings = data.section?.settings || {};
+        setAssignedServices(settings.serviceIds || []);
+      }
+    } catch (err) {
+      console.error("Error assigning services:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveService = async (sectionId: string, serviceId: string) => {
+    try {
+      const section = sections.find((s) => s.id === sectionId);
+      const currentServiceIds = (section?.settings as any)?.serviceIds || [];
+      const updatedServiceIds = currentServiceIds.filter((id: string) => id !== serviceId);
+      await fetch(`/api/homepage-sections/${sectionId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: { serviceIds: updatedServiceIds } }),
+      });
+      setAssignedServices((prev) => prev.filter((id: string) => id !== serviceId));
+      await fetchSections();
+    } catch (err) {
+      console.error("Error removing service:", err);
     }
   };
 
@@ -935,31 +1035,48 @@ export default function SuperAdminHomepagePage() {
                 return next;
               });
             }}
-            onAssignProducts={async () => {
+onAssignProducts={async () => {
               await handleAssignProducts();
             }}
             onAssignVendors={handleAssignVendors}
             onAssignBrands={handleAssignBrands}
+            onAssignServices={async () => {
+              await handleAssignServices();
+            }}
             onRemoveProduct={async (sectionId, productId) => {
               await handleRemoveProduct(sectionId, productId);
             }}
             onRemoveBrand={async (sectionId, brandId) => {
               await handleRemoveBrand(sectionId, brandId);
             }}
+            onRemoveService={handleRemoveService}
             onBulkRemove={(ids) => handleBulkRemoveProducts(ids)}
             onReorderProducts={handleReorderProducts}
+            services={services}
+            selectedServices={selectedServices}
+            assignedServices={assignedServices}
+            onServiceToggle={(id) => {
+              setSelectedServices((prev) => {
+                const next = new Set(prev);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                return next;
+              });
+            }}
 onClose={() => {
-               setManagingSection(null);
-               setSelectedProducts(new Set());
-               setSelectedVendors(new Set());
-               setSelectedBrands(new Set());
-               setAssignedProducts([]);
-               setAssignedBrands([]);
-               setSearchQuery("");
-               setProductPage(1);
-             }}
-             saving={saving}
-           />
+                setManagingSection(null);
+                setSelectedProducts(new Set());
+                setSelectedVendors(new Set());
+                setSelectedBrands(new Set());
+                setSelectedServices(new Set());
+                setAssignedProducts([]);
+                setAssignedBrands([]);
+                setAssignedServices([]);
+                setSearchQuery("");
+                setProductPage(1);
+              }}
+              saving={saving}
+            />
         )}
 
         {/* Trending Settings Modal */}
@@ -1117,64 +1234,76 @@ function SectionModal({
 
 // Manage Section Modal (assign products/vendors/brands)
 function ManageSectionModal({
-  section,
-  products,
-  vendors,
-  brands,
-  assignedProducts,
-  assignedBrands,
-  selectedProducts,
-  selectedVendors,
-  selectedBrands,
-  searchQuery,
-  productPage,
-  productTotalPages,
-  onSearchChange,
-  onPageChange,
-  onProductToggle,
-  onVendorToggle,
-  onBrandToggle,
-  onAssignProducts,
-  onAssignVendors,
-  onAssignBrands,
-  onRemoveProduct,
-  onRemoveBrand,
-  onBulkRemove,
-  onReorderProducts,
-  onClose,
-  saving,
-}: {
-  section: HomepageSection;
-  products: Product[];
-  vendors: Vendor[];
-  brands: Brand[];
-  assignedProducts: HomepageSectionProduct[];
-  assignedBrands: HomepageSectionBrand[];
-  selectedProducts: Set<string>;
-  selectedVendors: Set<string>;
-  selectedBrands: Set<string>;
-  searchQuery: string;
-  productPage: number;
-  productTotalPages: number;
-  onSearchChange: (q: string) => void;
-  onPageChange: (page: number) => void;
-  onProductToggle: (id: string) => void;
-  onVendorToggle: (id: string) => void;
-  onBrandToggle: (id: string) => void;
-  onAssignProducts: () => void;
-  onAssignVendors: () => void;
-  onAssignBrands: () => void;
-  onRemoveProduct: (sectionId: string, productId: string) => void;
-  onRemoveBrand: (sectionId: string, brandId: string) => void;
-  onBulkRemove: (productIds: string[]) => void;
-  onReorderProducts: (
-    orders: { productId: string; displayOrder: number }[],
-  ) => void;
-  onClose: () => void;
-  saving: boolean;
-}) {
+   section,
+   products,
+   vendors,
+   brands,
+   services,
+   assignedProducts,
+   assignedBrands,
+   assignedServices,
+   selectedProducts,
+   selectedVendors,
+   selectedBrands,
+   selectedServices,
+   searchQuery,
+   productPage,
+   productTotalPages,
+   onSearchChange,
+   onPageChange,
+   onProductToggle,
+   onVendorToggle,
+   onBrandToggle,
+   onServiceToggle,
+   onAssignProducts,
+   onAssignVendors,
+   onAssignBrands,
+   onAssignServices,
+   onRemoveProduct,
+   onRemoveBrand,
+   onRemoveService,
+   onBulkRemove,
+   onReorderProducts,
+   onClose,
+   saving,
+ }: {
+   section: HomepageSection;
+   products: Product[];
+   vendors: Vendor[];
+   brands: Brand[];
+   services: any[];
+   assignedProducts: HomepageSectionProduct[];
+   assignedBrands: HomepageSectionBrand[];
+   assignedServices: string[];
+   selectedProducts: Set<string>;
+   selectedVendors: Set<string>;
+   selectedBrands: Set<string>;
+   selectedServices: Set<string>;
+   searchQuery: string;
+   productPage: number;
+   productTotalPages: number;
+   onSearchChange: (q: string) => void;
+   onPageChange: (page: number) => void;
+   onProductToggle: (id: string) => void;
+   onVendorToggle: (id: string) => void;
+   onBrandToggle: (id: string) => void;
+   onServiceToggle: (id: string) => void;
+   onAssignProducts: () => void;
+   onAssignVendors: () => void;
+   onAssignBrands: () => void;
+   onAssignServices: () => void;
+   onRemoveProduct: (sectionId: string, productId: string) => void;
+   onRemoveBrand: (sectionId: string, brandId: string) => void;
+   onRemoveService: (sectionId: string, serviceId: string) => void;
+   onBulkRemove: (productIds: string[]) => void;
+   onReorderProducts: (
+     orders: { productId: string; displayOrder: number }[],
+   ) => void;
+   onClose: () => void;
+   saving: boolean;
+ }) {
   const [activeTab, setActiveTab] = useState<
-    "assigned" | "products" | "vendors" | "brands"
+    "assigned" | "products" | "vendors" | "brands" | "services"
   >("assigned");
   const [selectedAssigned, setSelectedAssigned] = useState<Set<string>>(
     new Set(),
@@ -1182,6 +1311,8 @@ function ManageSectionModal({
   const [draggedProductIndex, setDraggedProductIndex] = useState<number | null>(
     null,
   );
+  const isSponsoredSection =
+    section.type === "SPONSORED_PRODUCTS" || section.type === "SPONSORED";
 
   const sortedAssignedProducts = [...assignedProducts].sort(
     (a, b) => a.displayOrder - b.displayOrder,
@@ -1275,45 +1406,70 @@ function ManageSectionModal({
              </button>
            </div>
 
-           <div className="flex gap-2 mb-4 border-b border-slate-200 pb-3 overflow-x-auto flex-nowrap">
-             {(["assigned", "products", "vendors", "brands"] as const).map(
-               (tab) => (
-                 <button
-                   key={tab}
-                   onClick={() => setActiveTab(tab)}
-                   className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap min-h-[44px] ${
-                     activeTab === tab
-                       ? "bg-royal-blue text-white"
-                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                   }`}
-                 >
-                   {tab === "assigned" &&
-                     `Assigned (${sortedAssignedProducts.length})`}
-                   {tab === "products" &&
-                     `Add Products (${selectedProducts.size})`}
-                   {tab === "vendors" && `Vendors (${selectedVendors.size})`}
-                   {tab === "brands" && `Brands (${selectedBrands.size})`}
-                 </button>
-               ),
-             )}
-           </div>
+<div className="flex gap-2 mb-4 border-b border-slate-200 pb-3 overflow-x-auto flex-nowrap">
+              {(["assigned", "products", "vendors", "brands"] as const).map(
+                (tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap min-h-[44px] ${
+                      activeTab === tab
+                        ? "bg-royal-blue text-white"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    {tab === "assigned" &&
+                      `Assigned (${sortedAssignedProducts.length})`}
+                    {tab === "products" &&
+                      `Add Products (${selectedProducts.size})`}
+                    {tab === "vendors" && `Vendors (${selectedVendors.size})`}
+                    {tab === "brands" && `Brands (${selectedBrands.size})`}
+                  </button>
+                ),
+              )}
+              {isSponsoredSection && (
+                <button
+                  key="services"
+                  onClick={() => setActiveTab("services")}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap min-h-[44px] ${
+                    activeTab === "services"
+                      ? "bg-royal-blue text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Add Services ({selectedServices.size})
+                </button>
+              )}
+            </div>
 
 {(activeTab === "products" ||
-                activeTab === "vendors" ||
-                activeTab === "brands") && (
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    placeholder={`Search ${activeTab}...`}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
-                  />
-                </div>
-              )}
+                 activeTab === "vendors" ||
+                 activeTab === "brands") && (
+                 <div className="mb-4">
+                   <input
+                     type="text"
+                     value={searchQuery}
+                     onChange={(e) => onSearchChange(e.target.value)}
+                     placeholder={`Search ${activeTab}...`}
+                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+                   />
+                 </div>
+               )}
 
-            <div className="flex-1 overflow-y-auto min-h-0">
-              {activeTab === "assigned" && (
+{activeTab === "services" && (
+                 <div className="mb-4">
+                   <input
+                     type="text"
+                     value={searchQuery}
+                     onChange={(e) => onSearchChange(e.target.value)}
+                     placeholder="Search services..."
+                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+                   />
+                 </div>
+               )}
+
+             <div className="flex-1 overflow-y-auto min-h-0">
+               {activeTab === "assigned" && (
                 <>
                   {sortedAssignedProducts.length === 0 ? (
                     <p className="text-sm text-slate-500 text-center py-8">
@@ -1496,49 +1652,88 @@ function ManageSectionModal({
                     ))}
                 </div>
               )}
-            {activeTab === "brands" && (
-              <div className="space-y-3">
-                {brands.map((brand) => (
-                  <div
-                    key={brand.id}
-                    onClick={() => onBrandToggle(brand.id)}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer min-h-[60px] ${
-                      selectedBrands.has(brand.id)
-                        ? "border-royal-blue bg-royal-blue/5"
-                        : "border-slate-200"
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {brand.name}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {brand._count?.products || 0} products
-                      </p>
-                    </div>
+{activeTab === "brands" && (
+               <div className="space-y-3">
+                 {brands.map((brand) => (
+                   <div
+                     key={brand.id}
+                     onClick={() => onBrandToggle(brand.id)}
+                     className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer min-h-[60px] ${
+                       selectedBrands.has(brand.id)
+                         ? "border-royal-blue bg-royal-blue/5"
+                         : "border-slate-200"
+                     }`}
+                   >
+                     <div className="flex-1 min-w-0">
+                       <p className="text-sm font-medium truncate">
+                         {brand.name}
+                       </p>
+                       <p className="text-xs text-slate-500">
+                         {brand._count?.products || 0} products
+                       </p>
+                     </div>
 {brand.logo ? (
+                        <Image
+                          src={brand.logo}
+                          alt={brand.name}
+                          width={400}
+                          height={400}
+                          className="w-10 h-10 rounded-lg object-cover"
+                        />
+                      ) : (
+                       <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
+                         <span className="text-xs font-medium">
+                           {brand.name?.charAt(0) || "B"}
+                         </span>
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             )}
+             {activeTab === "services" && (
+<div className="space-y-3">
+                  {services.map((service) => (
+                    <div
+                      key={service.id}
+                      onClick={() => {
+                        onServiceToggle(service.id);
+                      }}
+                      className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer min-h-[60px] ${
+                        selectedServices.has(service.id)
+                          ? "border-royal-blue bg-royal-blue/5"
+                          : "border-slate-200"
+                      }`}
+                    >
+                     <div className="flex-1 min-w-0">
+                       <p className="text-sm font-medium truncate">
+                         {service.title}
+                       </p>
+                       <p className="text-xs text-slate-500">
+                         {service.store?.name || 'Unknown Vendor'}
+                       </p>
+                     </div>
+                     {service.thumbnail ? (
                        <Image
-                         src={brand.logo}
-                         alt={brand.name}
+                         src={service.thumbnail}
+                         alt={service.title}
                          width={400}
                          height={400}
                          className="w-10 h-10 rounded-lg object-cover"
                        />
                      ) : (
-                      <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
-                        <span className="text-xs font-medium">
-                          {brand.name?.charAt(0) || "B"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            </div>
+                       <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
+                         <span className="text-xs font-medium">S</span>
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             )}
+             </div>
 
-            <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 z-10 pb-safe">
-              {activeTab === "products" && (
+             <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 z-10 pb-safe">
+               {activeTab === "products" && (
                 <div className="flex gap-2 items-center justify-center sm:justify-start">
                   <Button
                     variant="outline"

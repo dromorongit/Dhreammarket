@@ -117,7 +117,7 @@ export default function ServiceCard({ service, wishlistServiceIds, className }: 
             {service.title}
           </h3>
         </Link>
-        <span className="text-xs font-bold text-royal-blue">
+        <span className="text-[11px] font-bold text-royal-blue">
           {isCustomQuote ? 'Request Quote' : formatPrice(Number(service.startingPrice))}
         </span>
         <Link href={`/services/${service.slug}`} className="w-full">
@@ -130,7 +130,7 @@ export default function ServiceCard({ service, wishlistServiceIds, className }: 
             Book Service
           </Button>
         </Link>
-        <div className="mt-auto flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
           {service.store && (
             <p className="text-[10px] text-slate-500 truncate min-w-0">
               {truncateVendorName(service.store.name)}
