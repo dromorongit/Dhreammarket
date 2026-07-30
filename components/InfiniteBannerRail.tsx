@@ -17,7 +17,7 @@ export default function InfiniteBannerRail() {
     <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Promotional banners">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-premium-xl rail-container">
-          <div className="rail-track">
+          <div className="rail-track banner-rail-track">
             {duplicatedBanners.map((banner, index) => (
               <div
                 key={`${banner.id}-${index}`}

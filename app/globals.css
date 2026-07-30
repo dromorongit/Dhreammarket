@@ -220,4 +220,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  .banner-rail-track {
+    animation-name: marquee !important;
+    animation-duration: 22s !important;
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
+  }
 }
