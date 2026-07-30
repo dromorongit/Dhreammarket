@@ -182,10 +182,11 @@
 .rail-track {
   display: flex;
   gap: 10px;
-  animation: marquee 10s linear infinite running;
+  animation: marquee 16s linear infinite running;
   width: max-content;
   will-change: transform;
   --marquee-translate: -1310px;
+  background: #ffffff;
 }
 
 .rail-track .banner-item {
@@ -194,17 +195,17 @@
 
 @media (min-width: 640px) {
   .rail-track {
-    gap: 14px;
+    gap: 10px;
     animation-duration: 13s;
-    --marquee-translate: -1722px;
+    --marquee-translate: -1710px;
   }
 }
 
 @media (min-width: 1024px) {
   .rail-track {
-    gap: 18px;
+    gap: 10px;
     animation-duration: 13s;
-    --marquee-translate: -2134px;
+    --marquee-translate: -2110px;
   }
 }
 
@@ -225,7 +226,7 @@
   }
   .banner-rail-track {
     animation-name: marquee !important;
-    animation-duration: 10s !important;
+    animation-duration: 16s !important;
     animation-iteration-count: infinite !important;
     animation-play-state: running !important;
     --marquee-translate: -1310px !important;
@@ -233,13 +234,13 @@
   @media (min-width: 640px) {
     .banner-rail-track {
       animation-duration: 13s !important;
-      --marquee-translate: -1722px !important;
+      --marquee-translate: -1710px !important;
     }
   }
   @media (min-width: 1024px) {
     .banner-rail-track {
       animation-duration: 13s !important;
-      --marquee-translate: -2134px !important;
+      --marquee-translate: -2110px !important;
     }
   }
 }
