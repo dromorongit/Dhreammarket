@@ -328,7 +328,8 @@ export async function POST(request: NextRequest) {
       }
 
 // Check if vendor
-     if (!isOnboarded) {
+      const isOnboarded = await isVendorOnboarded(payload.userId)
+      if (!isOnboarded) {
        perf.markPrismaEnd(prismaPerfStart)
        perf.log()
        return NextResponse.json({ error: 'Complete store setup before adding products' }, { status: 403 });
