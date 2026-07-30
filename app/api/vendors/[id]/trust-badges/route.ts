@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    if (payload.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const vendorId = params.id
     const { badgeType } = await request.json()
 
     if (!badgeType) {
@@ -31,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const existing = await getPrisma().vendorTrustBadge.findFirst({
-      where: { vendorId: payload.userId, badgeType: badgeType as any },
+      where: { vendorId, badgeType },
     })
 
     if (existing) {
@@ -40,8 +45,8 @@ export async function POST(request: NextRequest) {
 
     const badge = await getPrisma().vendorTrustBadge.create({
       data: {
-        vendorId: payload.userId,
-        badgeType: badgeType as any,
+        vendorId,
+        badgeType,
       },
     })
 

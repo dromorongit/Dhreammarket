@@ -6,6 +6,7 @@ import { createAuditLog } from '@/lib/audit-log'
 import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 import { PerformanceLogger } from '@/lib/performance'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
@@ -24,12 +25,21 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const url = new URL(request.url)
-    const sortBy = url.searchParams.get('sortBy') || 'createdAt'
-    const sortOrder = url.searchParams.get('sortOrder') || 'desc'
-    const page = parseInt(url.searchParams.get('page') || '1', 10)
-    const limit = parseInt(url.searchParams.get('limit') || '24', 10)
+    const ALLOWED_SORT_FIELDS = new Set([
+      'createdAt', 'price', 'name', 'stock', 'updatedAt', 'salesCount', 'reviewCount', 'averageRating'
+    ])
+    const rawSortBy = url.searchParams.get('sortBy') || 'createdAt'
+    const sortBy = ALLOWED_SORT_FIELDS.has(rawSortBy) ? rawSortBy : 'createdAt'
+    const rawSortOrder = url.searchParams.get('sortOrder') || 'desc'
+    const sortOrder = rawSortOrder === 'asc' ? 'asc' : 'desc'
+    const page = Math.max(parseInt(url.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '24', 10), 1), 100)
     const skip = (page - 1) * limit
     const createdAtMin = url.searchParams.get('createdAtMin')
+
+    if (createdAtMin && isNaN(new Date(createdAtMin).getTime())) {
+      return NextResponse.json({ error: 'Invalid createdAtMin date format' }, { status: 400 })
+    }
 
     // For authenticated vendors, get only their products
     if (payload && payload.role === 'VENDOR') {
@@ -196,10 +206,8 @@ export async function GET(request: NextRequest) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error fetching products:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
@@ -244,6 +252,11 @@ export async function POST(request: NextRequest) {
       perf.log()
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
+    if (name.trim().length > 255) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Product name must be under 255 characters' }, { status: 400 })
+    }
     if (finalCategoryIds.length === 0) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
@@ -275,16 +288,18 @@ export async function POST(request: NextRequest) {
       perf.log()
       return NextResponse.json({ error: 'One or more invalid category IDs provided' }, { status: 400 })
     }
-     if (price === undefined || price < 0) {
-       perf.markPrismaEnd(prismaPerfStart)
-       perf.log()
-       return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
-     }
-     if (stock === undefined || stock < 0) {
-       perf.markPrismaEnd(prismaPerfStart)
-       perf.log()
-       return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
-     }
+      const priceNum = parseFloat(price)
+      if (isNaN(priceNum) || priceNum < 0) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
+      }
+      const stockNum = parseInt(stock, 10)
+      if (isNaN(stockNum) || stockNum < 0) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
+      }
      
      // Validate salesPrice and dealsPrice if provided
      if (salesPrice !== undefined && salesPrice !== null) {
@@ -302,10 +317,17 @@ export async function POST(request: NextRequest) {
          perf.log()
          return NextResponse.json({ error: 'Invalid deals price' }, { status: 400 })
        }
-     }
+      }
+      if (estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null && estimatedFulfillmentDays !== '') {
+        const daysNum = parseInt(estimatedFulfillmentDays, 10)
+        if (isNaN(daysNum) || daysNum < 0) {
+          perf.markPrismaEnd(prismaPerfStart)
+          perf.log()
+          return NextResponse.json({ error: 'Estimated fulfillment days must be a valid non-negative integer' }, { status: 400 })
+        }
+      }
 
-// Check if vendor has completed onboarding (store and vendor category)
-     const isOnboarded = await isVendorOnboarded(payload.userId);
+// Check if vendor
      if (!isOnboarded) {
        perf.markPrismaEnd(prismaPerfStart)
        perf.log()
@@ -429,73 +451,51 @@ export async function POST(request: NextRequest) {
        })
      }
 
-     // Add images if provided
-     if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
-       await getPrisma().productImage.createMany({
-         data: imageUrls.map((url: string) => ({
-           productId: product.id,
-           url: url.trim(),
-           alt: product.name,
-         })),
-       })
+      // Add images if provided
+      let responseProduct = product
+      if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
+        await getPrisma().productImage.createMany({
+          data: imageUrls.map((url: string) => ({
+            productId: product.id,
+            url: url.trim(),
+            alt: product.name,
+          })),
+        })
 
-       // Refetch product with images
-       const productWithImages = await getPrisma().product.findUnique({
-         where: { id: product.id },
-         include: {
-           category: true,
-           images: true,
-         },
-       })
+        const productWithImages = await getPrisma().product.findUnique({
+          where: { id: product.id },
+          include: {
+            category: true,
+            images: true,
+          },
+        })
+        responseProduct = productWithImages
+      }
 
-       // Create audit log for product creation
-       await createAuditLog({
-         userId: payload.userId,
-         userRole: payload.role,
-         action: 'PRODUCT_CREATED',
-         entityType: 'PRODUCT',
-         entityId: product.id,
-         afterData: {
-           name: productWithImages?.name,
-           price: productWithImages?.price,
-           stock: productWithImages?.stock,
-           categoryId: productWithImages?.categoryId,
-           storeId: productWithImages?.storeId,
-         },
-         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-       })
+      await createAuditLog({
+        userId: payload.userId,
+        userRole: payload.role,
+        action: 'PRODUCT_CREATED',
+        entityType: 'PRODUCT',
+        entityId: product.id,
+        afterData: {
+          name: responseProduct?.name ?? product.name,
+          price: responseProduct?.price ?? product.price,
+          stock: responseProduct?.stock ?? product.stock,
+          categoryId: responseProduct?.categoryId ?? product.categoryId,
+          storeId: responseProduct?.storeId ?? product.storeId,
+        },
+        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+      })
 
-       perf.log()
-       return NextResponse.json({ product: productWithImages }, { status: 201 })
-     }
-
-     // Create audit log for product creation
-     await createAuditLog({
-       userId: payload.userId,
-       userRole: payload.role,
-       action: 'PRODUCT_CREATED',
-       entityType: 'PRODUCT',
-       entityId: product.id,
-       afterData: {
-         name: product.name,
-         price: product.price,
-         stock: product.stock,
-         categoryId: product.categoryId,
-         storeId: product.storeId,
-       },
-       ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-     })
-
-     perf.log()
-     return NextResponse.json({ product }, { status: 201 })
-   } catch (error) {
-     perf.markPrismaEnd(prismaPerfStart)
-     perf.log()
-     console.error('Error creating product:', error)
-     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-     return NextResponse.json({ 
-       error: 'Internal server error', 
-       details: errorMessage 
-     }, { status: 500 })
-   }
- }
+      perf.log()
+      return NextResponse.json({ product: responseProduct }, { status: 201 })
+    } catch (error) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      console.error('Error creating product:', error)
+      return NextResponse.json({ 
+        error: 'Internal server error' 
+      }, { status: 500 })
+    }
+  }

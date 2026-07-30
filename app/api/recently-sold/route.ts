@@ -51,6 +51,12 @@ export async function GET(request: NextRequest) {
         select: { id: true, name: true, price: true, images: { take: 1, select: { url: true } } },
       })
       products.forEach((p) => entityMap.set(p.id, { ...p, type: 'PRODUCT' }))
+
+      const services = await getPrisma().service.findMany({
+        where: { id: { in: entityIds } },
+        select: { id: true, title: true, startingPrice: true, thumbnail: true },
+      })
+      services.forEach((s) => entityMap.set(s.id, { ...s, type: 'SERVICE' }))
     }
 
     const results = recentlySold

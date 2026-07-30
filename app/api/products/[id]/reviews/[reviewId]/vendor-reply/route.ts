@@ -88,7 +88,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
-      replies,
+      replies: maskedReplies,
       pagination: { page, limit, total, totalPages },
     })
   } catch (error) {

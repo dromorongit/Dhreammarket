@@ -5,8 +5,8 @@ import { verifyToken } from '@/lib/auth-middleware'
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const serviceId = params.id
-    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '10')
+    const page = Math.max(parseInt(request.nextUrl.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '10', 10), 1), 50)
     const sortBy = request.nextUrl.searchParams.get('sortBy') || 'newest'
 
     if (!serviceId) {
@@ -150,6 +150,100 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ review }, { status: 201 })
   } catch (error) {
     console.error('Error creating service review:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload || payload.role !== 'CUSTOMER') {
+      return NextResponse.json({ error: 'Only customers can edit reviews' }, { status: 403 })
+    }
+
+    const serviceId = params.id
+    const { reviewId, rating, comment } = await request.json()
+
+    if (!reviewId) {
+      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 })
+    }
+
+    const existingReview = await getPrisma().serviceReview.findUnique({
+      where: { id: reviewId },
+    })
+
+    if (!existingReview) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
+    if (existingReview.userId !== payload.userId) {
+      return NextResponse.json({ error: 'You can only edit your own reviews' }, { status: 403 })
+    }
+
+    if (rating !== undefined && rating !== null) {
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return NextResponse.json({ error: 'Rating must be an integer between 1 and 5' }, { status: 400 })
+      }
+    }
+
+    const review = await getPrisma().serviceReview.update({
+      where: { id: reviewId },
+      data: {
+        rating: rating ?? existingReview.rating,
+        comment: comment?.trim() ?? existingReview.comment,
+      },
+    })
+
+    return NextResponse.json({ review })
+  } catch (error) {
+    console.error('Error updating service review:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload || payload.role !== 'CUSTOMER') {
+      return NextResponse.json({ error: 'Only customers can delete reviews' }, { status: 403 })
+    }
+
+    const serviceId = params.id
+    const { reviewId } = await request.json()
+
+    if (!reviewId) {
+      return NextResponse.json({ error: 'Review ID is required' }, { status: 400 })
+    }
+
+    const existingReview = await getPrisma().serviceReview.findUnique({
+      where: { id: reviewId },
+    })
+
+    if (!existingReview) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
+    if (existingReview.userId !== payload.userId) {
+      return NextResponse.json({ error: 'You can only delete your own reviews' }, { status: 403 })
+    }
+
+    await getPrisma().serviceReview.delete({
+      where: { id: reviewId },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting service review:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

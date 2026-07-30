@@ -3,25 +3,6 @@
 import { Card } from './Card'
 import { Badge } from './Badge'
 
-interface RecentlySoldProps {
-  entityType: string
-  entityId: string
-  name: string
-  quantity: number
-  period: string
-}
-
-export function RecentlySoldBadge({ entityType, entityId, name, quantity, period }: RecentlySoldProps) {
-  const label = entityType === 'PRODUCT' ? 'sold' : 'booked'
-  const periodLabel = period === 'today' ? 'today' : period === 'week' ? 'this week' : 'this month'
-
-  return (
-    <Badge variant="info" className="bg-green-100 text-green-800">
-      {quantity} {label} {periodLabel}
-    </Badge>
-  )
-}
-
 interface TrustBadgeProps {
   badgeType: string
 }

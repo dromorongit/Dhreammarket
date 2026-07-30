@@ -106,10 +106,8 @@ if (!product) {
     return NextResponse.json({ product: productWithRating })
   } catch (error) {
     console.error('Error fetching product:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
@@ -119,16 +117,43 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload || payload.role !== 'VENDOR') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const isOnboarded = await isVendorOnboarded(payload.userId)
+    if (!isOnboarded) {
+      return NextResponse.json({ error: 'Complete store setup before managing products' }, { status: 403 })
+    }
+
+    const store = await getPrisma().store.findUnique({
+      where: { userId: payload.userId },
+    })
+
+    if (!store) {
+      return NextResponse.json({ error: 'Store not found' }, { status: 400 })
+    }
+
+    const product = await getPrisma().product.findUnique({
+      where: { id: params.id },
+      select: { availabilityType: true, storeId: true },
+    })
+
+    if (!product || product.storeId !== store.id) {
+      return NextResponse.json({ count: 0 })
+    }
+
     const { type } = await request.json()
 
     if (type === 'waiting-customers') {
       const prisma = getPrisma()
-      const product = await prisma.product.findUnique({
-        where: { id: params.id },
-        select: { availabilityType: true },
-      })
-
-      if (!product || !product.availabilityType) {
+      if (!product.availabilityType) {
         return NextResponse.json({ count: 0 })
       }
 
@@ -193,6 +218,9 @@ export async function PUT(
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Product name is required' }, { status: 400 })
     }
+    if (name.trim().length > 255) {
+      return NextResponse.json({ error: 'Product name must be under 255 characters' }, { status: 400 })
+    }
     if (finalCategoryIds.length === 0) {
       return NextResponse.json({ error: 'At least one product category is required' }, { status: 400 })
     }
@@ -217,10 +245,12 @@ export async function PUT(
       return NextResponse.json({ error: 'One or more invalid category IDs provided' }, { status: 400 })
     }
     
-    if (price === undefined || price < 0) {
+    const priceNum = parseFloat(price)
+    if (isNaN(priceNum) || priceNum < 0) {
       return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
     }
-    if (stock === undefined || stock < 0) {
+    const stockNum = parseInt(stock, 10)
+    if (isNaN(stockNum) || stockNum < 0) {
       return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
     }
     
@@ -474,10 +504,8 @@ if (finalAvailabilityType === 'PREORDER') {
     return NextResponse.json({ product: productWithUpdates })
   } catch (error) {
     console.error('Error updating product:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }
@@ -581,8 +609,7 @@ export async function DELETE(
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error'
     }, { status: 500 })
   }
 }

@@ -13,26 +13,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const prismaPerfStart = perf.markPrismaStart()
   try {
     const { id } = await params
-    let service = await getPrisma().service.findUnique({
-      where: { id },
-      include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            isVerified: true,
-            logo: true,
-            badgeTier: true,
-            location: true,
-            email: true,
-            mainPhoneNumber: true,
-            alternativePhoneNumber: true,
-            whatsappNumber: true,
-            averageRating: true,
-            reviewCount: true,
+      let service = await getPrisma().service.findUnique({
+        where: { id },
+        include: {
+          store: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              isVerified: true,
+              logo: true,
+              badgeTier: true,
+              averageRating: true,
+              reviewCount: true,
+            },
           },
-        },
         category: {
           select: {
             id: true,
@@ -66,11 +61,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               isVerified: true,
               logo: true,
               badgeTier: true,
-              location: true,
-              email: true,
-              mainPhoneNumber: true,
-              alternativePhoneNumber: true,
-              whatsappNumber: true,
               averageRating: true,
               reviewCount: true,
             },
@@ -117,6 +107,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     perf.log()
     console.error('Error fetching service:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error', ...(process.env.NODE_ENV === 'development' ? { details: errorMessage } : {}) },
+      { status: 500 }
+    )
   }
 }

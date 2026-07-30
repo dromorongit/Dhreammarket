@@ -23,6 +23,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { servi
       })
     } catch (e) {
       console.error('[wishlist/service/DELETE] wishlist.findUnique FAILED:', e)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     if (!wishlist) {
@@ -71,6 +72,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { servi
       })
     } catch (e) {
       console.error('[wishlist/service/DELETE] updated wishlist.findUnique FAILED:', e)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json({

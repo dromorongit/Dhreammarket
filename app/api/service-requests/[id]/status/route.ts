@@ -83,7 +83,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         serviceRequestId: id,
         status: status as any,
         changedBy: payload.userId,
-        notes: notes || null,
+        notes: notes?.trim() || null,
       },
     })
 
@@ -121,7 +121,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error updating status:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

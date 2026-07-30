@@ -62,20 +62,34 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Quoted price is required' }, { status: 400 })
     }
 
+    const parsedPrice = parseFloat(quotedPrice)
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Quoted price must be a positive number' }, { status: 400 })
+    }
+
     if (!validityDate) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Validity date is required' }, { status: 400 })
     }
 
+    const validUntil = new Date(validityDate)
+    if (isNaN(validUntil.getTime()) || validUntil <= new Date()) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Validity date must be a future date' }, { status: 400 })
+    }
+
     const quotation = await getPrisma().serviceQuotation.create({
       data: {
         serviceRequestId: id,
         vendorId: payload.userId,
-        quotedPrice: parseFloat(quotedPrice),
+        quotedPrice: parsedPrice,
         estimatedDuration: estimatedDuration?.trim() || null,
         notes: notes?.trim() || null,
-        validUntil: new Date(validityDate),
+        validUntil: validUntil,
         status: 'PENDING',
       },
       include: {
@@ -88,10 +102,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         status: 'QUOTED',
-        quotedPrice: parseFloat(quotedPrice),
+        quotedPrice: parsedPrice,
         estimatedDuration: estimatedDuration?.trim() || null,
         quotationNotes: notes?.trim() || null,
-        quotationValidUntil: new Date(validityDate),
+        quotationValidUntil: validUntil,
       },
     })
 
@@ -132,7 +146,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error sending quotation:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

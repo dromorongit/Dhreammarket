@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const searchTerm = `%${query.toLowerCase()}%`
     const results: Record<string, any[]> = {
       products: [],
       vendors: [],
@@ -70,7 +69,11 @@ export async function GET(request: NextRequest) {
 
       // Fire-and-forget DB update for expired pre-orders
       if (expiredIds.size > 0) {
-        void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+        try {
+          void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+        } catch (e) {
+          console.error('[Search] Failed to update expired pre-orders:', e)
+        }
       }
 
       results.products = products.map((p) => {

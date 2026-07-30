@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncProductRating } from '@/lib/rating-sync'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
   try {
@@ -16,6 +17,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const { rating, comment } = await request.json()
+    const sanitizedComment = comment !== undefined && comment !== null ? sanitizeUserContent(comment, { maxLength: 2000 }) : undefined
 
     // Validate rating is an integer if provided
     if (rating !== undefined && rating !== null) {
@@ -45,7 +47,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       where: { id: params.reviewId },
       data: {
         rating: rating ?? existingReview.rating,
-        comment: comment?.trim() ?? existingReview.comment,
+        comment: sanitizedComment ?? existingReview.comment,
       },
     })
 
@@ -55,10 +57,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ review })
   } catch (error) {
     console.error('Error updating review:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

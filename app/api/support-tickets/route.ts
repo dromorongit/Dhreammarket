@@ -3,7 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { SupportTicketType, SupportTicketStatus, SupportTicketPriority } from '@prisma/client'
 import { rateLimit } from '@/lib/rate-limit'
-import { sanitizeUserContent } from '@/lib/sanitize'
+import { sanitizeUserContent, escapeHtml } from '@/lib/sanitize'
 import { createAuditLog } from '@/lib/audit-log'
 import { sendEmail, getEmailTemplate } from '@/lib/email'
 
@@ -29,6 +29,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, phone, subject, category, message } = await request.json()
+
+    if (name !== undefined && typeof name !== 'string') {
+      return NextResponse.json({ error: 'Invalid name' }, { status: 400 })
+    }
+    if (email !== undefined && (typeof email !== 'string' || !email.includes('@'))) {
+      return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
+    }
 
     // Validate required fields
     if (!subject || !message) {
@@ -93,7 +100,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-// Send email notification to support
+    // Send email notification to support
     try {
       let fromName = name || email || 'Unknown'
       let userEmail = email || 'Unknown'
@@ -105,6 +112,9 @@ export async function POST(request: NextRequest) {
         const userRecord = await getPrisma().user.findUnique({ where: { id: userId } })
         userEmail = userRecord?.email || 'Unknown'
       }
+
+      const escapedFromName = escapeHtml(fromName)
+      const escapedUserEmail = escapeHtml(userEmail)
       
       const escapedMessage = sanitizedMessage
         .replace(/&/g, '&amp;')
@@ -113,7 +123,7 @@ export async function POST(request: NextRequest) {
         .replace(/\n/g, '<br>')
       
       const submissionTimestamp = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC'
-      const feedbackType = category || 'General'
+      const feedbackType = ticketTypeMap[category] || 'General'
       
       const emailContent = `
         <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">New Support Submission</h2>
@@ -125,11 +135,11 @@ export async function POST(request: NextRequest) {
           </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Name</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${fromName}</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${escapedFromName}</td>
           </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Email</td>
-            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${userEmail}</td>
+            <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${escapedUserEmail}</td>
           </tr>
           <tr>
             <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Feedback Type</td>

@@ -14,65 +14,74 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let wishlist: { id: string; items: any[] } | null = null
-    try {
-      wishlist = await getPrisma().wishlist.findUnique({
-        where: { userId: payload.userId },
-        include: {
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  price: true,
-                  stock: true,
-                  salesPrice: true,
-                  dealsPrice: true,
-                  availabilityType: true,
-                  images: true,
-                  store: {
-                    select: { name: true },
-                  },
-                },
-              },
-              service: {
-                select: {
-                  id: true,
-                  title: true,
-                  slug: true,
-                  startingPrice: true,
-                  pricingType: true,
-                  availabilityStatus: true,
-                  thumbnail: true,
-                  gallery: true,
-                  store: {
-                    select: { name: true },
-                  },
-                },
-              },
-            },
-          },
-        },
-      })
-    } catch (e) {
-      console.error('[wishlist/GET] wishlist.findUnique FAILED:', e)
-    }
+    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('limit') || '20') || 20))
+    const skip = (page - 1) * limit
+
+    const wishlist = await getPrisma().wishlist.findUnique({
+      where: { userId: payload.userId },
+    })
 
     if (!wishlist) {
       return NextResponse.json({
         wishlist: {
           id: null,
           items: [],
+          pagination: { page, limit, total: 0, totalPages: 0 },
         },
       })
     }
 
+    const totalItems = await getPrisma().wishlistItem.count({
+      where: { wishlistId: wishlist.id },
+    })
+
+    const items = await getPrisma().wishlistItem.findMany({
+      where: { wishlistId: wishlist.id },
+      skip,
+      take: limit,
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            stock: true,
+            salesPrice: true,
+            dealsPrice: true,
+            availabilityType: true,
+            images: true,
+            store: {
+              select: { name: true },
+            },
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            startingPrice: true,
+            pricingType: true,
+            availabilityStatus: true,
+            thumbnail: true,
+            gallery: true,
+            store: {
+              select: { name: true },
+            },
+          },
+        },
+      },
+    })
+
+    const totalPages = Math.ceil(totalItems / limit)
+
     return NextResponse.json({
       wishlist: {
         id: wishlist.id,
-        items: wishlist.items || [],
+        items: items || [],
+        pagination: { page, limit, total: totalItems, totalPages },
       },
     })
   } catch (error) {
@@ -94,6 +103,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { productId, serviceId } = await request.json()
+
+    if (productId !== undefined && typeof productId !== 'string') {
+      return NextResponse.json({ error: 'Product ID must be a string' }, { status: 400 })
+    }
+    if (serviceId !== undefined && typeof serviceId !== 'string') {
+      return NextResponse.json({ error: 'Service ID must be a string' }, { status: 400 })
+    }
 
     if (!productId && !serviceId) {
       return NextResponse.json({ error: 'Product ID or Service ID is required' }, { status: 400 })
@@ -121,6 +137,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (e) {
       console.error('[wishlist/POST] wishlist.findUnique FAILED:', e)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     if (!wishlist) {
@@ -189,6 +206,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (e) {
       console.error('[wishlist/POST] updated wishlist.findUnique FAILED:', e)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json({

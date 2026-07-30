@@ -123,3 +123,43 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { collectionId } = await request.json()
+
+    if (!collectionId) {
+      return NextResponse.json({ error: 'Collection ID is required' }, { status: 400 })
+    }
+
+    const collection = await getPrisma().collection.findUnique({
+      where: { id: collectionId },
+      select: { userId: true },
+    })
+
+    if (!collection) {
+      return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
+    }
+
+    if (collection.userId !== payload.userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    await getPrisma().collection.delete({ where: { id: collectionId } })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting collection:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

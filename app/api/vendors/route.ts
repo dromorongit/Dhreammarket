@@ -12,9 +12,11 @@ export async function GET(request: NextRequest) {
     const vendorCategoryId = searchParams.get('vendorCategoryId')
     const verified = searchParams.get('verified')
     const search = searchParams.get('search')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const sortBy = searchParams.get('sortBy') || 'newest' // 'newest', 'rating', 'popular'
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const sortBy = ['newest', 'rating', 'popular'].includes(searchParams.get('sortBy') || 'newest')
+      ? searchParams.get('sortBy')!
+      : 'newest'
 
     const skip = (page - 1) * limit
 
@@ -59,9 +61,6 @@ export async function GET(request: NextRequest) {
           user: {
             select: {
               id: true,
-              email: true,
-              role: true,
-              createdAt: true,
             },
           },
           vendor_categories: {
@@ -105,10 +104,10 @@ export async function GET(request: NextRequest) {
          ).length
 
          // Check if featured status is still valid
-         const now = new Date()
-         const isCurrentlyFeatured = (store as any).isFeatured &&
-           (store as any).featuredUntil &&
-           new Date((store as any).featuredUntil) > now
+          const now = new Date()
+          const isCurrentlyFeatured = store.isFeatured &&
+            store.featuredUntil &&
+            new Date(store.featuredUntil) > now
 
          return {
            ...store,

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const [recentlyViewed, followedVendors, savedSearches, coupons, recommendations, recentOrders, recentBookings] = await Promise.all([
+    const [recentlyViewed, followedVendors, savedSearches, coupons, recommendations, recentOrders, recentServiceRequests] = await Promise.all([
       getPrisma().recentlyViewed.findMany({
         where: { userId: payload.userId },
         select: { entityType: true, entityId: true, viewedAt: true },
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       coupons,
       recommendations,
       recentOrders,
-      recentBookings,
+      recentServiceRequests,
     })
   } catch (error) {
     console.error('Error fetching customer dashboard:', error)

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { sanitizeUserContent } from '@/lib/sanitize'
+import { sanitizePhoneNumber } from '@/lib/phone'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
@@ -62,6 +64,60 @@ export async function PUT(request: NextRequest) {
       systemNotifications,
     } = body
 
+    if (typeof firstName !== 'undefined' && typeof firstName !== 'string') {
+      return NextResponse.json({ error: 'Invalid first name' }, { status: 400 })
+    }
+    if (typeof lastName !== 'undefined' && typeof lastName !== 'string') {
+      return NextResponse.json({ error: 'Invalid last name' }, { status: 400 })
+    }
+    if (typeof phone !== 'undefined' && typeof phone !== 'string') {
+      return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
+    }
+    if (typeof address !== 'undefined' && typeof address !== 'string') {
+      return NextResponse.json({ error: 'Invalid address' }, { status: 400 })
+    }
+    if (typeof avatar !== 'undefined' && typeof avatar !== 'string') {
+      return NextResponse.json({ error: 'Invalid avatar' }, { status: 400 })
+    }
+    if (typeof language !== 'undefined' && typeof language !== 'string') {
+      return NextResponse.json({ error: 'Invalid language' }, { status: 400 })
+    }
+    if (typeof currency !== 'undefined' && typeof currency !== 'string') {
+      return NextResponse.json({ error: 'Invalid currency' }, { status: 400 })
+    }
+    if (typeof timezone !== 'undefined' && typeof timezone !== 'string') {
+      return NextResponse.json({ error: 'Invalid timezone' }, { status: 400 })
+    }
+    if (typeof darkMode !== 'undefined' && typeof darkMode !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid darkMode value' }, { status: 400 })
+    }
+    if (typeof emailNotifications !== 'undefined' && typeof emailNotifications !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid emailNotifications value' }, { status: 400 })
+    }
+    if (typeof orderNotifications !== 'undefined' && typeof orderNotifications !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid orderNotifications value' }, { status: 400 })
+    }
+    if (typeof promotionalNotifications !== 'undefined' && typeof promotionalNotifications !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid promotionalNotifications value' }, { status: 400 })
+    }
+    if (typeof systemNotifications !== 'undefined' && typeof systemNotifications !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid systemNotifications value' }, { status: 400 })
+    }
+
+    const cleanFirstName = typeof firstName !== 'undefined' ? (typeof firstName === 'string' ? sanitizeUserContent(firstName, { maxLength: 50 }) || null : null) : undefined
+    const cleanLastName = typeof lastName !== 'undefined' ? (typeof lastName === 'string' ? sanitizeUserContent(lastName, { maxLength: 50 }) || null : null) : undefined
+    const cleanPhone = typeof phone !== 'undefined' ? (typeof phone === 'string' ? sanitizePhoneNumber(phone) || sanitizeUserContent(phone, { maxLength: 20 }) || null : null) : undefined
+    const cleanAddress = typeof address !== 'undefined' ? (typeof address === 'string' ? sanitizeUserContent(address, { maxLength: 500 }) || null : null) : undefined
+    const cleanAvatar = typeof avatar !== 'undefined' ? (typeof avatar === 'string' ? sanitizeUserContent(avatar, { maxLength: 500 }) || null : null) : undefined
+    const cleanLanguage = typeof language !== 'undefined' ? (typeof language === 'string' ? sanitizeUserContent(language, { maxLength: 10 }) || null : null) : undefined
+    const cleanCurrency = typeof currency !== 'undefined' ? (typeof currency === 'string' ? sanitizeUserContent(currency, { maxLength: 5 }) || null : null) : undefined
+    const cleanTimezone = typeof timezone !== 'undefined' ? (typeof timezone === 'string' ? sanitizeUserContent(timezone, { maxLength: 50 }) || null : null) : undefined
+    const cleanDarkMode = typeof darkMode !== 'undefined' ? (typeof darkMode === 'boolean' ? darkMode : null) : undefined
+    const cleanEmailNotifications = typeof emailNotifications !== 'undefined' ? (typeof emailNotifications === 'boolean' ? emailNotifications : null) : undefined
+    const cleanOrderNotifications = typeof orderNotifications !== 'undefined' ? (typeof orderNotifications === 'boolean' ? orderNotifications : null) : undefined
+    const cleanPromotionalNotifications = typeof promotionalNotifications !== 'undefined' ? (typeof promotionalNotifications === 'boolean' ? promotionalNotifications : null) : undefined
+    const cleanSystemNotifications = typeof systemNotifications !== 'undefined' ? (typeof systemNotifications === 'boolean' ? systemNotifications : null) : undefined
+
     const currentProfile = await getPrisma().profile.findUnique({
       where: { userId: payload.userId },
     })
@@ -69,36 +125,36 @@ export async function PUT(request: NextRequest) {
     const profile = await getPrisma().profile.upsert({
       where: { userId: payload.userId },
       update: {
-        ...(firstName !== undefined ? { firstName: firstName || null } : {}),
-        ...(lastName !== undefined ? { lastName: lastName || null } : {}),
-        ...(phone !== undefined ? { phone: phone || null } : {}),
-        ...(address !== undefined ? { address: address } : {}),
-        ...(avatar !== undefined ? { avatar: avatar || null } : {}),
-        ...(darkMode !== undefined ? { darkMode } : {}),
-        ...(language !== undefined ? { language: language || null } : {}),
-        ...(currency !== undefined ? { currency: currency || null } : {}),
-        ...(timezone !== undefined ? { timezone: timezone || null } : {}),
-        ...(emailNotifications !== undefined ? { emailNotifications } : {}),
-        ...(orderNotifications !== undefined ? { orderNotifications } : {}),
-        ...(promotionalNotifications !== undefined ? { promotionalNotifications } : {}),
-        ...(systemNotifications !== undefined ? { systemNotifications } : {}),
-      },
+        ...(cleanFirstName !== undefined ? { firstName: cleanFirstName || null } : {}),
+        ...(cleanLastName !== undefined ? { lastName: cleanLastName || null } : {}),
+        ...(cleanPhone !== undefined ? { phone: cleanPhone || null } : {}),
+        ...(cleanAddress !== undefined ? { address: cleanAddress } : {}),
+        ...(cleanAvatar !== undefined ? { avatar: cleanAvatar || null } : {}),
+        ...(cleanDarkMode !== undefined ? { darkMode: cleanDarkMode } : {}),
+        ...(cleanLanguage !== undefined ? { language: cleanLanguage || null } : {}),
+        ...(cleanCurrency !== undefined ? { currency: cleanCurrency || null } : {}),
+        ...(cleanTimezone !== undefined ? { timezone: cleanTimezone || null } : {}),
+        ...(cleanEmailNotifications !== undefined ? { emailNotifications: cleanEmailNotifications } : {}),
+        ...(cleanOrderNotifications !== undefined ? { orderNotifications: cleanOrderNotifications } : {}),
+        ...(cleanPromotionalNotifications !== undefined ? { promotionalNotifications: cleanPromotionalNotifications } : {}),
+        ...(cleanSystemNotifications !== undefined ? { systemNotifications: cleanSystemNotifications } : {}),
+      } as any,
       create: {
         userId: payload.userId,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        phone: phone || null,
-        address: address || null,
-        avatar: avatar || null,
-        darkMode: darkMode ?? false,
-        language: language ?? 'en',
-        currency: currency ?? 'GHS',
-        timezone: timezone ?? 'Africa/Accra',
-        emailNotifications: emailNotifications ?? true,
-        orderNotifications: orderNotifications ?? true,
-        promotionalNotifications: promotionalNotifications ?? false,
-        systemNotifications: systemNotifications ?? true,
-      },
+        firstName: cleanFirstName || null,
+        lastName: cleanLastName || null,
+        phone: cleanPhone || null,
+        address: cleanAddress || null,
+        avatar: cleanAvatar || null,
+        darkMode: cleanDarkMode ?? false,
+        language: cleanLanguage ?? 'en',
+        currency: cleanCurrency ?? 'GHS',
+        timezone: cleanTimezone ?? 'Africa/Accra',
+        emailNotifications: cleanEmailNotifications ?? true,
+        orderNotifications: cleanOrderNotifications ?? true,
+        promotionalNotifications: cleanPromotionalNotifications ?? false,
+        systemNotifications: cleanSystemNotifications ?? true,
+      } as any,
     })
 
     const { beforeData, afterData } = captureBeforeAfter(

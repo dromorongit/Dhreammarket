@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { FiHeart } from 'react-icons/fi'
-import { handleAuthRedirect } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 
 interface WishlistButtonProps {
@@ -54,7 +53,7 @@ export default function WishlistButton({
         ?.split('=')[1]
 
       if (!token) {
-        handleAuthRedirect()
+        window.location.href = '/login'
         return
       }
 
@@ -68,7 +67,7 @@ export default function WishlistButton({
 
         if (response.status === 401) {
           setIsWishlisted(previousState)
-          handleAuthRedirect()
+          window.location.href = '/login'
           return
         }
       } else {
@@ -82,7 +81,7 @@ export default function WishlistButton({
 
         if (response.status === 401) {
           setIsWishlisted(previousState)
-          handleAuthRedirect()
+          window.location.href = '/login'
           return
         }
         if (!response.ok) {

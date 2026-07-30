@@ -5,12 +5,13 @@ import { Button } from './Button'
 import { Badge } from './Badge'
 
 interface ReviewLikeButtonProps {
+  productId: string
   reviewId: string
   initialLikes?: number
   userId?: string
 }
 
-export function ReviewLikeButton({ reviewId, initialLikes = 0, userId }: ReviewLikeButtonProps) {
+export function ReviewLikeButton({ productId, reviewId, initialLikes = 0, userId }: ReviewLikeButtonProps) {
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(initialLikes)
 
@@ -18,7 +19,7 @@ export function ReviewLikeButton({ reviewId, initialLikes = 0, userId }: ReviewL
     if (!userId) return
 
     try {
-      const response = await fetch(`/api/products/${reviewId}/reviews/${reviewId}/like`, {
+      const response = await fetch(`/api/products/${productId}/reviews/${reviewId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })

@@ -7,14 +7,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     let store = await getPrisma().store.findUnique({
       where: { slug: params.id },
       include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            createdAt: true,
+          user: {
+            select: {
+              id: true,
+              profile: { select: { firstName: true, lastName: true, avatar: true } },
+            },
           },
-        },
         vendor_categories: {
           select: {
             id: true,
@@ -74,9 +72,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           user: {
             select: {
               id: true,
-              email: true,
-              role: true,
-              createdAt: true,
+              profile: { select: { firstName: true, lastName: true, avatar: true } },
             },
           },
           vendor_categories: {
@@ -163,15 +159,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       store.featuredUntil && 
       new Date(store.featuredUntil) > new Date()
 
-const vendorData = {
+ const vendorData = {
       slug: store.slug,
       id: store.id,
       name: store.name,
       description: store.description,
-      mainPhoneNumber: store.mainPhoneNumber,
-      alternativePhoneNumber: store.alternativePhoneNumber,
-      whatsappNumber: store.whatsappNumber,
-      location: store.location,
       isVerified: store.isVerified,
       isFeatured: isCurrentlyFeatured,
       badgeTier: store.badgeTier,
@@ -215,7 +207,7 @@ const vendorData = {
            category: s.category,
          })),
        productCount: store._count.products,
-    }
+     }
 
 // Check if this was found by id lookup (meaning old CUID URL) and redirect to slug
     const isIdLookup = !await getPrisma().store.findUnique({

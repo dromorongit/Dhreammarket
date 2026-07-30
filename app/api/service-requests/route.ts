@@ -14,6 +14,19 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const page = parseInt(url.searchParams.get('page') || '1', 10)
     const limit = parseInt(url.searchParams.get('limit') || '20', 10)
+
+    if (isNaN(page) || page < 1) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Invalid page number' }, { status: 400 })
+    }
+
+    if (isNaN(limit) || limit < 1 || limit > 100) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Invalid limit. Must be between 1 and 100' }, { status: 400 })
+    }
+
     const skip = (page - 1) * limit
     const status = url.searchParams.get('status')
     const serviceId = url.searchParams.get('serviceId')
@@ -22,9 +35,17 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get('search')
 
     const token = request.cookies.get('token')?.value
-    let payload = null
-    if (token) {
-      payload = await verifyToken(token)
+    if (!token) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const where: Record<string, unknown> = {}
@@ -196,8 +217,7 @@ export async function GET(request: NextRequest) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error fetching service requests:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -232,6 +252,24 @@ export async function POST(request: NextRequest) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
+
+    if (preferredCompletionDate) {
+      const completionDate = new Date(preferredCompletionDate)
+      if (isNaN(completionDate.getTime())) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: 'Invalid preferred completion date' }, { status: 400 })
+      }
+    }
+
+    if (preferredBudget !== undefined && preferredBudget !== '') {
+      const budget = parseFloat(preferredBudget)
+      if (isNaN(budget) || budget < 0) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: 'Preferred budget must be a valid number' }, { status: 400 })
+      }
     }
 
     const service = await getPrisma().service.findUnique({
@@ -312,7 +350,6 @@ export async function POST(request: NextRequest) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error creating service request:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

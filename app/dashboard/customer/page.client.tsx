@@ -10,7 +10,6 @@ import { RecentlyViewed } from '@/components/RecentlyViewed'
 import { RecommendationCard } from '@/components/RecommendationCard'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
-import { RecentlySoldBadge } from '@/components/TrustBadges'
 import { StarRating } from '@/components/StarRating'
 
 export default function CustomerDashboardPage() {

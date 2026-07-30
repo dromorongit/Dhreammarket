@@ -44,6 +44,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You have already used this coupon' }, { status: 400 })
     }
 
+    if (coupon.perUserLimit && coupon.perUserLimit > 1) {
+      const userUsageCount = await getPrisma().couponUsage.count({
+        where: { couponId: coupon.id, userId: payload.userId },
+      })
+      if (userUsageCount >= coupon.perUserLimit) {
+        return NextResponse.json({ error: 'Per-user usage limit reached' }, { status: 400 })
+      }
+    }
+
     const order = await getPrisma().order.findUnique({
       where: { id: orderId },
       select: { total: true, userId: true },

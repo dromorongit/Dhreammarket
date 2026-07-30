@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20')
+    const page = Math.max(parseInt(request.nextUrl.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '20', 10), 1), 100)
     const unreadOnly = request.nextUrl.searchParams.get('unreadOnly') === 'true'
 
     const skip = (page - 1) * limit

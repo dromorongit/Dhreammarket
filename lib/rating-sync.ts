@@ -59,3 +59,33 @@ export async function syncStoreRating(storeId: string): Promise<void> {
     },
   })
 }
+
+/**
+ * Recalculate and update the cached average rating and review count for a service
+ * Called after service review creation, update, or deletion
+ */
+export async function syncServiceRating(serviceId: string): Promise<void> {
+  const reviews = await getPrisma().serviceReview.findMany({
+    where: {
+      serviceId,
+      isApproved: true,
+      isHidden: false,
+    },
+    select: {
+      rating: true,
+    },
+  })
+
+  const reviewCount = reviews.length
+  const averageRating = reviewCount > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+    : 0
+
+  await getPrisma().service.update({
+    where: { id: serviceId },
+    data: {
+      averageRating: parseFloat(averageRating.toFixed(1)),
+      reviewCount,
+    },
+  })
+}

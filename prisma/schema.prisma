@@ -277,6 +277,8 @@ model Service {
   requirementsFromCustomer String?
   estimatedDeliveryTime   String?
   tags                    String[]           @default([])
+  averageRating           Float              @default(0)
+  reviewCount             Int                @default(0)
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
   store                   Store              @relation(fields: [vendorId], references: [id], onDelete: Cascade)

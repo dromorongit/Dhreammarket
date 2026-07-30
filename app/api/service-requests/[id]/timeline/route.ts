@@ -15,9 +15,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const token = request.cookies.get('token')?.value
-    let payload = null
-    if (token) {
-      payload = await verifyToken(token)
+    if (!token) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const requestData = await getPrisma().serviceRequest.findUnique({
@@ -25,25 +33,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       select: { customerId: true, vendorId: true },
     })
 
-    if (!requestData) {
-      perf.markPrismaEnd(prismaPerfStart)
-      perf.log()
-      return NextResponse.json({ error: 'Service request not found' }, { status: 404 })
-    }
+     if (!requestData) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
+       return NextResponse.json({ error: 'Service request not found' }, { status: 404 })
+     }
 
-    if (payload) {
-      const isCustomer = requestData.customerId === payload.userId
-      const isVendor = requestData.vendorId === payload.userId
-      const isAdmin = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'
+     const isCustomer = requestData.customerId === payload.userId
+     const isVendor = requestData.vendorId === payload.userId
+     const isAdmin = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'
 
-      if (!isCustomer && !isVendor && !isAdmin) {
-        perf.markPrismaEnd(prismaPerfStart)
-        perf.log()
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-    }
+     if (!isCustomer && !isVendor && !isAdmin) {
+       perf.markPrismaEnd(prismaPerfStart)
+       perf.log()
+       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+     }
 
-    const history = await getPrisma().serviceRequestStatusHistory.findMany({
+     const history = await getPrisma().serviceRequestStatusHistory.findMany({
       where: { serviceRequestId: id },
       orderBy: { createdAt: 'asc' },
       include: {
@@ -66,7 +72,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error fetching timeline:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

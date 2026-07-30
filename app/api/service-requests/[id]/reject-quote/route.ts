@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    if (!payload || (payload.role !== 'CUSTOMER' && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN')) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -41,7 +41,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Service request not found' }, { status: 404 })
     }
 
-    if (existing.customerId !== payload.userId) {
+    const isAdmin = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'
+    if (!isAdmin && existing.customerId !== payload.userId) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -102,7 +103,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     perf.markPrismaEnd(prismaPerfStart)
     perf.log()
     console.error('Error rejecting quotation:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

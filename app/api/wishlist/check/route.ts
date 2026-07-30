@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ productIds: [], serviceIds: [] })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const payload = await verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ productIds: [], serviceIds: [] })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const productIdsParam = request.nextUrl.searchParams.get('productIds')
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       })
     } catch (e) {
       console.error('[wishlist/check] wishlist.findUnique FAILED:', e)
-      return NextResponse.json({ productIds: [], serviceIds: [] })
+      return NextResponse.json({ productIds: [], serviceIds: [] }, { status: 500 })
     }
 
     if (!wishlist) {
@@ -60,6 +60,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error checking wishlist status:', error)
-    return NextResponse.json({ productIds: [], serviceIds: [] })
+    return NextResponse.json({ productIds: [], serviceIds: [] }, { status: 500 })
   }
 }

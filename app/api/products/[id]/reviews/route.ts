@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncProductRating } from '@/lib/rating-sync'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 // Valid order statuses for review eligibility
 const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
@@ -10,8 +11,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const productId = params.id
     const checkEligibility = request.nextUrl.searchParams.get('checkEligibility') === 'true'
-    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '10')
+    const page = Math.max(parseInt(request.nextUrl.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '10', 10), 1), 100)
     const sortBy = request.nextUrl.searchParams.get('sortBy') || 'newest'
 
     if (!productId) {
@@ -166,10 +167,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
   } catch (error) {
     console.error('Error fetching reviews:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }
@@ -188,6 +187,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const productId = params.id
     const { rating, comment } = await request.json()
+    const sanitizedComment = comment ? sanitizeUserContent(comment, { maxLength: 2000 }) : null
 
     // Validate rating is an integer
     if (rating === undefined || rating === null) {
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         productId,
         userId: payload.userId,
         rating,
-        comment: comment?.trim() || null,
+        comment: sanitizedComment,
       },
     })
 
@@ -273,10 +273,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ review }, { status: 201 })
   } catch (error) {
     console.error('Error creating review:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

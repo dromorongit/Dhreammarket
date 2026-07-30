@@ -60,14 +60,6 @@ interface SearchService {
   type: string
 }
 
-interface SearchServiceCategory {
-  id: string
-  name: string
-  slug: string
-  serviceCount: number
-  type: string
-}
-
 interface SearchResults {
   query: string
   results: {
@@ -76,7 +68,6 @@ interface SearchResults {
     categories: SearchCategory[]
     brands: SearchBrand[]
     services: SearchService[]
-    serviceCategories: SearchServiceCategory[]
   }
   total: number
 }
@@ -87,7 +78,6 @@ type FlatSearchItem =
   | (SearchCategory & { _group: 'Categories' })
   | (SearchBrand & { _group: 'Brands' })
   | (SearchService & { _group: 'Services' })
-  | (SearchServiceCategory & { _group: 'Service Categories' })
 
 interface SearchDropdownProps {
   onNavigate?: () => void
@@ -113,7 +103,6 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
         ...results.results.vendors.map((v) => ({ ...v, _group: 'Vendors' as const })),
         ...results.results.categories.map((c) => ({ ...c, _group: 'Categories' as const })),
         ...results.results.brands.map((b) => ({ ...b, _group: 'Brands' as const })),
-        ...results.results.serviceCategories.map((sc) => ({ ...sc, _group: 'Service Categories' as const })),
       ]
     : []
 
@@ -134,7 +123,7 @@ const performSearch = useCallback(async (searchQuery: string) => {
 
     setLoading(true)
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, {
+      const res = await fetch(`/api/search-upgraded?q=${encodeURIComponent(searchQuery)}`, {
         signal: controller.signal,
       })
       if (res.ok) {

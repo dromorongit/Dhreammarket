@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { getUserFromToken } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth-middleware'
+import { SupportTicketStatus, SupportTicketType } from '@prisma/client'
 import { createNotification } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 import { sanitizeUserContent } from '@/lib/sanitize'
@@ -8,36 +9,64 @@ import { sanitizeUserContent } from '@/lib/sanitize'
 // GET /api/support - Fetch user's support tickets
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromToken()
-    if (!user) {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const user = { userId: payload.userId, role: payload.role }
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const type = searchParams.get('type')
 
+    const validStatuses = Object.values(SupportTicketStatus)
+    const validTypes = Object.values(SupportTicketType)
+
+    if (status && !validStatuses.includes(status as SupportTicketStatus)) {
+      return NextResponse.json({ error: 'Invalid ticket status' }, { status: 400 })
+    }
+    if (type && !validTypes.includes(type as SupportTicketType)) {
+      return NextResponse.json({ error: 'Invalid ticket type' }, { status: 400 })
+    }
+
     const whereClause: any = { userId: user.userId }
     if (status) whereClause.status = status
     if (type) whereClause.type = type
 
-    const tickets = await getPrisma().supportTicket.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        subject: true,
-        message: true,
-        type: true,
-        status: true,
-        priority: true,
-        adminReply: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const skip = (page - 1) * limit
 
-    return NextResponse.json({ tickets })
+    const [tickets, total] = await Promise.all([
+      getPrisma().supportTicket.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          subject: true,
+          message: true,
+          type: true,
+          status: true,
+          priority: true,
+          adminReply: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      getPrisma().supportTicket.count({ where: whereClause }),
+    ])
+
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json({ tickets, pagination: { page, limit, total, totalPages } })
   } catch (error) {
     console.error('Error fetching support tickets:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -53,10 +82,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const user = getUserFromToken()
-    if (!user) {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const user = { userId: payload.userId, role: payload.role }
 
     const { subject, message, type, priority } = await request.json()
 

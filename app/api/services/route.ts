@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
   const prismaPerfStart = perf.markPrismaStart()
   try {
     const url = new URL(request.url)
-    const page = parseInt(url.searchParams.get('page') || '1', 10)
-    const limit = parseInt(url.searchParams.get('limit') || '24', 10)
+    const page = Math.max(parseInt(url.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '24', 10), 1), 100)
     const skip = (page - 1) * limit
     const categoryId = url.searchParams.get('categoryId')
     const vendorId = url.searchParams.get('vendorId')
@@ -55,11 +55,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (minPrice !== null) {
-      where.startingPrice = { ...(where.startingPrice as Record<string, unknown> ?? {}), gte: parseFloat(minPrice) }
+      const minPriceNum = parseFloat(minPrice)
+      if (isNaN(minPriceNum) || minPriceNum < 0) {
+        return NextResponse.json({ error: 'Invalid minPrice' }, { status: 400 })
+      }
+      where.startingPrice = { ...(where.startingPrice as Record<string, unknown> ?? {}), gte: minPriceNum }
     }
 
     if (maxPrice !== null) {
-      where.startingPrice = { ...(where.startingPrice as Record<string, unknown> ?? {}), lte: parseFloat(maxPrice) }
+      const maxPriceNum = parseFloat(maxPrice)
+      if (isNaN(maxPriceNum) || maxPriceNum < 0) {
+        return NextResponse.json({ error: 'Invalid maxPrice' }, { status: 400 })
+      }
+      where.startingPrice = { ...(where.startingPrice as Record<string, unknown> ?? {}), lte: maxPriceNum }
     }
 
     if (search) {
@@ -163,6 +171,9 @@ export async function GET(request: NextRequest) {
     perf.log()
     console.error('Error fetching services:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Internal server error', details: errorMessage }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error', ...(process.env.NODE_ENV === 'development' ? { details: errorMessage } : {}) },
+      { status: 500 }
+    )
   }
 }

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         userId: vendorId,
         type: 'FOLLOW_VENDOR',
         title: 'New Follower',
-        message: `${payload.userId} started following your store`,
+        message: 'A user started following your store',
       },
     })
 
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const vendorId = params.id
-    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20')
+    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('limit') || '20') || 20))
 
     const skip = (page - 1) * limit
     const [follows, total] = await Promise.all([

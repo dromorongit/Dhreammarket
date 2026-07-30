@@ -6,11 +6,12 @@ import { Input } from './Input'
 import { Textarea } from './Textarea'
 
 interface ReviewReportFormProps {
+  productId: string
   reviewId: string
   onReported?: () => void
 }
 
-export function ReviewReportForm({ reviewId, onReported }: ReviewReportFormProps) {
+export function ReviewReportForm({ productId, reviewId, onReported }: ReviewReportFormProps) {
   const [showForm, setShowForm] = useState(false)
   const [reason, setReason] = useState('')
   const [comment, setComment] = useState('')
@@ -21,7 +22,7 @@ export function ReviewReportForm({ reviewId, onReported }: ReviewReportFormProps
     setSubmitting(true)
 
     try {
-      const response = await fetch(`/api/products/${reviewId}/reviews/${reviewId}/report`, {
+      const response = await fetch(`/api/products/${productId}/reviews/${reviewId}/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason, comment }),

@@ -11,18 +11,19 @@ interface ReviewImage {
 }
 
 interface ReviewImagesProps {
+  productId: string
   images: ReviewImage[]
   canEdit?: boolean
   onDelete?: (imageId: string) => void
 }
 
-export function ReviewImages({ images, canEdit, onDelete }: ReviewImagesProps) {
+export function ReviewImages({ productId, images, canEdit, onDelete }: ReviewImagesProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const handleDelete = async (imageId: string) => {
     setDeletingId(imageId)
     try {
-      await fetch(`/api/products/reviews/images/${imageId}`, { method: 'DELETE' })
+      await fetch(`/api/products/${productId}/reviews/images/${imageId}`, { method: 'DELETE' })
       onDelete?.(imageId)
     } catch (error) {
       console.error('Error deleting review image:', error)

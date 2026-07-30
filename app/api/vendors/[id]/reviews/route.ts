@@ -10,9 +10,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const storeId = params.id
     const checkEligibility = request.nextUrl.searchParams.get('checkEligibility') === 'true'
-    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '10')
-    const sortBy = request.nextUrl.searchParams.get('sortBy') || 'newest'
+    const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1') || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('limit') || '10') || 10))
+    const sortBy = ['newest', 'oldest', 'highest_rating', 'lowest_rating'].includes(request.nextUrl.searchParams.get('sortBy') || 'newest')
+      ? request.nextUrl.searchParams.get('sortBy')!
+      : 'newest'
 
     if (!storeId) {
       return NextResponse.json({ error: 'Store ID is required' }, { status: 400 })
@@ -41,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         include: {
           user: {
             select: {
-              email: true,
+              profile: { select: { firstName: true } },
             },
           },
           order: {
@@ -54,10 +56,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       })
 
       if (existingReview) {
-        const user = await getPrisma().user.findUnique({
-          where: { id: payload.userId },
-          select: { email: true },
-        })
         return NextResponse.json({
           canReview: false,
           reason: 'already_reviewed',
@@ -67,7 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             comment: existingReview.comment,
             createdAt: existingReview.createdAt,
             isVerifiedPurchase: existingReview.order !== null,
-            reviewer: user?.email?.split('@')[0] + '***' || 'Anonymous',
+            reviewer: existingReview.user.profile?.firstName || 'Anonymous',
           }
         }, { status: 200 })
       }
@@ -127,7 +125,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           user: {
             select: {
               id: true,
-              email: true,
               profile: {
                 select: {
                   firstName: true,
@@ -176,8 +173,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       comment: review.comment,
       createdAt: review.createdAt,
       isVerifiedPurchase: review.order !== null,
-      reviewer: review.user.profile?.firstName ||
-                review.user.email.split('@')[0] + '***',
+      reviewer: review.user.profile?.firstName || 'Anonymous',
     }))
 
     const totalPages = Math.ceil(totalReviews / limit)
@@ -196,11 +192,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
   } catch (error) {
     console.error('Error fetching vendor reviews:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -303,10 +295,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ review }, { status: 201 })
   } catch (error) {
     console.error('Error creating vendor review:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

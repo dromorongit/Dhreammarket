@@ -6,10 +6,11 @@ import { Badge } from './Badge'
 import { StarRating } from './StarRating'
 
 interface VendorReplyListProps {
+  productId: string
   reviewId: string
 }
 
-export function VendorReplyList({ reviewId }: VendorReplyListProps) {
+export function VendorReplyList({ productId, reviewId }: VendorReplyListProps) {
   const [replies, setReplies] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -18,7 +19,7 @@ export function VendorReplyList({ reviewId }: VendorReplyListProps) {
 
   const fetchReplies = async () => {
     try {
-      const response = await fetch(`/api/products/${reviewId}/reviews/${reviewId}/vendor-reply`)
+      const response = await fetch(`/api/products/${productId}/reviews/${reviewId}/vendor-reply`)
       if (response.ok) {
         const data = await response.json()
         setReplies(data.replies || [])
@@ -33,7 +34,7 @@ export function VendorReplyList({ reviewId }: VendorReplyListProps) {
     setSubmitting(true)
 
     try {
-      const response = await fetch(`/api/products/${reviewId}/reviews/${reviewId}/vendor-reply`, {
+      const response = await fetch(`/api/products/${productId}/reviews/${reviewId}/vendor-reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
