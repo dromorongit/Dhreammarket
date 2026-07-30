@@ -182,10 +182,9 @@
 .rail-track {
   display: flex;
   gap: 10px;
-  animation: marquee 18s linear infinite;
+  animation: marquee 18s linear infinite running;
   width: max-content;
   will-change: transform;
-  transform: translate3d(0, 0, 0);
 }
 
 .rail-track .banner-item {
