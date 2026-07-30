@@ -470,7 +470,7 @@ export async function POST(request: NextRequest) {
             images: true,
           },
         })
-        responseProduct = productWithImages
+responseProduct = productWithImages ?? product
       }
 
       await createAuditLog({
