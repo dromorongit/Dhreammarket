@@ -43,7 +43,6 @@ import {
   NewThisWeekSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
-import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
@@ -201,9 +200,6 @@ export default function Home() {
           </svg>
         </div>
       </section>
-
-      {/* ─── Infinite Banner Rail ─── */}
-      <InfiniteBannerRail />
 
       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
       {managedData.sections
