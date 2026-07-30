@@ -181,18 +181,25 @@
 
 .rail-track {
   display: flex;
-  gap: 16px;
-  animation: marquee 18s linear infinite;
+  gap: 20px;
+  animation: marquee 22s linear infinite;
   width: max-content;
+  will-change: transform;
+}
+
+.rail-track .banner-item {
+  transition: transform 0.3s ease-out;
 }
 
 @media (hover: hover) {
   .rail-container:hover .rail-track {
     animation-play-state: paused;
   }
+  .rail-container:hover .banner-item {
+    transform: scale(1.03);
+  }
 }
 
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

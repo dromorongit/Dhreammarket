@@ -14,20 +14,23 @@ export default function InfiniteBannerRail() {
   const duplicatedBanners = [...BANNERS, ...BANNERS]
 
   return (
-    <section className="relative py-4 lg:py-6 bg-slate-50 overflow-hidden" aria-label="Promotional banners">
+    <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Promotional banners">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-2xl overflow-hidden bg-slate-200 rail-container">
+        <div className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-premium-xl rail-container">
           <div className="rail-track">
             {duplicatedBanners.map((banner, index) => (
-              <div key={`${banner.id}-${index}`} className="flex-[0_0_calc(25%_-_12px)] min-w-0 relative">
-                <Link href={banner.href} className="block relative aspect-video" aria-label={banner.alt}>
+              <div
+                key={`${banner.id}-${index}`}
+                className="banner-item flex-[0_0_320px] h-[140px] sm:flex-[0_0_420px] sm:h-[180px] lg:flex-[0_0_520px] lg:h-[220px] relative overflow-hidden"
+              >
+                <Link href={banner.href} className="block w-full h-full" aria-label={banner.alt}>
                   <Image
                     src={banner.src}
                     alt={banner.alt}
                     className="object-cover w-full h-full"
                     fill
                     loading="eager"
-                    sizes="100vw"
+                    sizes="(max-width: 640px) 320px, (max-width: 1024px) 420px, 520px"
                   />
                 </Link>
               </div>
