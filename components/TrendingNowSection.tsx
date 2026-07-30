@@ -12,6 +12,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import { type EnterpriseProduct, getEffectivePrice } from '@/lib/homepage-product-utils';
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import WishlistButton from '@/components/WishlistButton';
+import { EmptyState } from '@/components/EmptyState';
 
 
 function TrendingProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
