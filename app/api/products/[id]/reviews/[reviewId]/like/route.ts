@@ -15,6 +15,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const { reviewId } = params
+
+    const review = await getPrisma().productReview.findUnique({
+      where: { id: reviewId },
+    })
+
+    if (!review) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
     const existing = await getPrisma().reviewLike.findUnique({
       where: { reviewId_userId: { reviewId, userId: payload.userId } },
     })

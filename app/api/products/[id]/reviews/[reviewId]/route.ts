@@ -99,10 +99,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting review:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ 
-      error: 'Internal server error', 
-      details: errorMessage 
+      error: 'Internal server error' 
     }, { status: 500 })
   }
 }

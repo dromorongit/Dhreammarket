@@ -45,6 +45,7 @@ import {
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
+import { RegistrationCTA } from '@/components/RegistrationCTA'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
@@ -204,6 +205,9 @@ export default function Home() {
 
       {/* ─── Continuous Infinite Banner Rail ─── */}
       <InfiniteBannerRail />
+
+      {/* ─── Registration Call-to-Action ─── */}
+      <RegistrationCTA />
 
       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
       {managedData.sections

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -16,8 +17,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     const productId = params.id
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const reviewId = formData.get('reviewId') as string
+    const fileEntry = formData.get('file')
+    const file = fileEntry instanceof File ? fileEntry : null
+    const reviewIdEntry = formData.get('reviewId')
+    const reviewId = typeof reviewIdEntry === 'string' ? reviewIdEntry : null
 
     if (!file) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 })
@@ -25,6 +28,30 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (!reviewId) {
       return NextResponse.json({ error: 'Review ID is required' }, { status: 400 })
+    }
+
+    const MAX_FILE_SIZE = 5 * 1024 * 1024
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+
+    if (!ALLOWED_TYPES.includes(file.type) || !file.type.startsWith('image/')) {
+      return NextResponse.json({ error: 'Only image files (JPEG, PNG, WebP) are allowed' }, { status: 400 })
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'File size must be under 5MB' }, { status: 400 })
+    }
+
+    const review = await getPrisma().productReview.findUnique({
+      where: { id: reviewId },
+      select: { userId: true },
+    })
+
+    if (!review) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
+    if (review.userId !== payload.userId && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -49,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data: {
         reviewId,
         url: uploadData.secure_url,
-        alt: file.name,
+        alt: sanitizeUserContent(file.name, { maxLength: 255 }),
       },
     })
 

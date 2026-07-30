@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
   try {
@@ -21,6 +22,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Reason is required' }, { status: 400 })
     }
 
+    const review = await getPrisma().productReview.findUnique({
+      where: { id: reviewId },
+    })
+
+    if (!review) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
+    const sanitizedComment = comment ? sanitizeUserContent(comment, { maxLength: 1000 }) : null
+
     const existing = await getPrisma().reviewReport.findFirst({
       where: { reviewId, userId: payload.userId },
     })
@@ -34,7 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         reviewId,
         userId: payload.userId,
         reason,
-        comment: comment?.trim() || null,
+        comment: sanitizedComment,
       },
     })
 

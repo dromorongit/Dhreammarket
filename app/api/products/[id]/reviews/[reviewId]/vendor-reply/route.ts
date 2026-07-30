@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { sanitizeUserContent } from '@/lib/sanitize'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
   try {
@@ -20,6 +21,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!message || !message.trim()) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
+
+    if (message.trim().length > 2000) {
+      return NextResponse.json({ error: 'Message must be under 2000 characters' }, { status: 400 })
+    }
+
+    const sanitizedMessage = sanitizeUserContent(message.trim(), { maxLength: 2000 })
 
     const review = await getPrisma().productReview.findUnique({
       where: { id: reviewId },
@@ -44,7 +51,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data: {
         reviewId,
         vendorId: payload.userId,
-        message: message.trim(),
+        message: sanitizedMessage,
       },
     })
 
@@ -58,8 +65,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 export async function GET(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
   try {
     const { reviewId } = params
-    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '10')
+    const page = Math.max(parseInt(request.nextUrl.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '10', 10), 1), 100)
 
     const skip = (page - 1) * limit
     const [replies, total] = await Promise.all([
