@@ -43,6 +43,7 @@ import {
   NewThisWeekSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
+import BannerSlider from '@/components/BannerSlider'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
@@ -200,6 +201,9 @@ export default function Home() {
           </svg>
         </div>
       </section>
+
+      {/* ─── Premium Promotional Banner Slider ─── */}
+      <BannerSlider />
 
       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
       {managedData.sections
