@@ -173,6 +173,25 @@
   }
 }
 
+/* Infinite banner rail marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.rail-track {
+  display: flex;
+  gap: 16px;
+  animation: marquee 18s linear infinite;
+  width: max-content;
+}
+
+@media (hover: hover) {
+  .rail-container:hover .rail-track {
+    animation-play-state: paused;
+  }
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
