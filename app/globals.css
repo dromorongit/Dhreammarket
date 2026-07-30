@@ -182,7 +182,7 @@
 .rail-track {
   display: flex;
   gap: 10px;
-  animation: marquee 6s linear infinite running;
+  animation: marquee 10s linear infinite running;
   width: max-content;
   will-change: transform;
 }
@@ -201,7 +201,7 @@
 @media (min-width: 1024px) {
   .rail-track {
     gap: 18px;
-    animation-duration: 5s;
+    animation-duration: 6s;
   }
 }
 
@@ -222,7 +222,7 @@
   }
   .banner-rail-track {
     animation-name: marquee !important;
-    animation-duration: 6s !important;
+    animation-duration: 10s !important;
     animation-iteration-count: infinite !important;
     animation-play-state: running !important;
   }
@@ -233,7 +233,7 @@
   }
   @media (min-width: 1024px) {
     .banner-rail-track {
-      animation-duration: 5s !important;
+      animation-duration: 6s !important;
     }
   }
 }
