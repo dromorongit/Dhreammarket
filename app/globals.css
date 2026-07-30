@@ -176,7 +176,7 @@
 /* Infinite banner rail marquee */
 @keyframes marquee {
   0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(var(--marquee-translate, -50%), 0, 0); }
 }
 
 .rail-track {
@@ -185,6 +185,7 @@
   animation: marquee 10s linear infinite running;
   width: max-content;
   will-change: transform;
+  --marquee-translate: -1310px;
 }
 
 .rail-track .banner-item {
@@ -194,14 +195,16 @@
 @media (min-width: 640px) {
   .rail-track {
     gap: 14px;
-    animation-duration: 5s;
+    animation-duration: 13s;
+    --marquee-translate: -1722px;
   }
 }
 
 @media (min-width: 1024px) {
   .rail-track {
     gap: 18px;
-    animation-duration: 6s;
+    animation-duration: 13s;
+    --marquee-translate: -2134px;
   }
 }
 
@@ -225,15 +228,18 @@
     animation-duration: 10s !important;
     animation-iteration-count: infinite !important;
     animation-play-state: running !important;
+    --marquee-translate: -1310px !important;
   }
   @media (min-width: 640px) {
     .banner-rail-track {
-      animation-duration: 5s !important;
+      animation-duration: 13s !important;
+      --marquee-translate: -1722px !important;
     }
   }
   @media (min-width: 1024px) {
     .banner-rail-track {
-      animation-duration: 6s !important;
+      animation-duration: 13s !important;
+      --marquee-translate: -2134px !important;
     }
   }
 }
