@@ -60,6 +60,14 @@ interface SearchService {
   type: string
 }
 
+interface SearchServiceCategory {
+  id: string
+  name: string
+  slug: string
+  serviceCount: number
+  type: string
+}
+
 interface SearchResults {
   query: string
   results: {
@@ -68,6 +76,7 @@ interface SearchResults {
     categories: SearchCategory[]
     brands: SearchBrand[]
     services: SearchService[]
+    serviceCategories: SearchServiceCategory[]
   }
   total: number
 }
@@ -78,6 +87,7 @@ type FlatSearchItem =
   | (SearchCategory & { _group: 'Categories' })
   | (SearchBrand & { _group: 'Brands' })
   | (SearchService & { _group: 'Services' })
+  | (SearchServiceCategory & { _group: 'Service Categories' })
 
 interface SearchDropdownProps {
   onNavigate?: () => void
