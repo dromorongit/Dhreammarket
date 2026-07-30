@@ -175,20 +175,35 @@
 
 /* Infinite banner rail marquee */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .rail-track {
   display: flex;
-  gap: 20px;
-  animation: marquee 22s linear infinite;
+  gap: 10px;
+  animation: marquee 18s linear infinite;
   width: max-content;
   will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
 
 .rail-track .banner-item {
   transition: transform 0.3s ease-out;
+}
+
+@media (min-width: 640px) {
+  .rail-track {
+    gap: 14px;
+    animation-duration: 20s;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rail-track {
+    gap: 18px;
+    animation-duration: 22s;
+  }
 }
 
 @media (hover: hover) {
