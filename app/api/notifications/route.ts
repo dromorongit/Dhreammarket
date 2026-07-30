@@ -14,28 +14,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
+    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20')
+    const unreadOnly = request.nextUrl.searchParams.get('unreadOnly') === 'true'
 
     const skip = (page - 1) * limit
 
-    const [notifications, total, unreadCount] = await Promise.all([
+    const where: Record<string, unknown> = { userId: payload.userId }
+    if (unreadOnly) {
+      where.isRead = false
+    }
+
+    const [notifications, total] = await Promise.all([
       getPrisma().notification.findMany({
-        where: { userId: payload.userId },
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      getPrisma().notification.count({ where: { userId: payload.userId } }),
-      getPrisma().notification.count({ where: { userId: payload.userId, isRead: false } }),
+      getPrisma().notification.count({ where }),
     ])
+
+    const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
       notifications,
-      unreadCount,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
+      unreadCount: unreadOnly ? total : undefined,
+      pagination: { page, limit, total, totalPages },
     })
   } catch (error) {
     console.error('Error fetching notifications:', error)
@@ -58,32 +63,22 @@ export async function PATCH(request: NextRequest) {
     const { notificationId, markAllRead } = await request.json()
 
     if (markAllRead) {
-      // Mark all notifications as read
       await getPrisma().notification.updateMany({
         where: { userId: payload.userId, isRead: false },
         data: { isRead: true },
       })
-      return NextResponse.json({ message: 'All notifications marked as read' })
+      return NextResponse.json({ success: true, updated: 'all' })
     }
 
     if (notificationId) {
-      // Mark specific notification as read
-      const notification = await getPrisma().notification.findFirst({
+      await getPrisma().notification.updateMany({
         where: { id: notificationId, userId: payload.userId },
-      })
-
-      if (!notification) {
-        return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
-      }
-
-      await getPrisma().notification.update({
-        where: { id: notificationId },
         data: { isRead: true },
       })
-      return NextResponse.json({ message: 'Notification marked as read' })
+      return NextResponse.json({ success: true, updated: notificationId })
     }
 
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    return NextResponse.json({ error: 'notificationId or markAllRead required' }, { status: 400 })
   } catch (error) {
     console.error('Error updating notifications:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

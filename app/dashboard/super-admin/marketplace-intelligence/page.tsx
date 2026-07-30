@@ -1,21 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 
-export default function VendorDashboardPage() {
-  const [activeTab, setActiveTab] = useState('overview')
+export default function SuperAdminMarketplaceIntelligence() {
+  const [activeTab, setActiveTab] = useState('kpis')
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-deep-navy mb-8">Vendor Dashboard</h1>
+        <h1 className="text-3xl font-bold text-deep-navy mb-8">Marketplace Intelligence</h1>
 
         <div className="flex gap-2 mb-8 border-b border-gray-200">
-          {['overview', 'analytics', 'products', 'services', 'coupons', 'followers'].map((tab) => (
+          {['kpis', 'vendors', 'products', 'services', 'categories', 'searches', 'coupons'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -30,15 +29,15 @@ export default function VendorDashboardPage() {
           ))}
         </div>
 
-        {activeTab === 'overview' && (
+        {activeTab === 'kpis' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <Card.Header>
-                <h3 className="font-semibold text-deep-navy">Revenue</h3>
+                <h3 className="font-semibold text-deep-navy">GMV</h3>
               </Card.Header>
               <Card.Content>
                 <p className="text-2xl font-bold text-royal-blue">$0.00</p>
-                <p className="text-sm text-gray-500">This month</p>
+                <p className="text-sm text-gray-500">Gross Merchandise Value</p>
               </Card.Content>
             </Card>
 
@@ -54,11 +53,11 @@ export default function VendorDashboardPage() {
 
             <Card>
               <Card.Header>
-                <h3 className="font-semibold text-deep-navy">Followers</h3>
+                <h3 className="font-semibold text-deep-navy">Bookings</h3>
               </Card.Header>
               <Card.Content>
                 <p className="text-2xl font-bold text-deep-navy">0</p>
-                <p className="text-sm text-gray-500">Total followers</p>
+                <p className="text-sm text-gray-500">This month</p>
               </Card.Content>
             </Card>
 
@@ -74,42 +73,45 @@ export default function VendorDashboardPage() {
           </div>
         )}
 
-        {activeTab === 'analytics' && (
+        {activeTab === 'vendors' && (
           <div>
-            <h2 className="text-xl font-bold text-deep-navy mb-6">Analytics</h2>
-            <p className="text-gray-500">Detailed analytics will appear here</p>
+            <h2 className="text-xl font-bold text-deep-navy mb-6">Top Vendors</h2>
+            <p className="text-gray-500">Vendor performance data will appear here</p>
           </div>
         )}
 
         {activeTab === 'products' && (
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Top Products</h2>
-            <Link href="/dashboard/vendor/products" className="text-royal-blue hover:underline">
-              Manage Products
-            </Link>
+            <p className="text-gray-500">Product performance data will appear here</p>
           </div>
         )}
 
         {activeTab === 'services' && (
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Top Services</h2>
-            <Link href="/dashboard/vendor/services" className="text-royal-blue hover:underline">
-              Manage Services
-            </Link>
+            <p className="text-gray-500">Service performance data will appear here</p>
+          </div>
+        )}
+
+        {activeTab === 'categories' && (
+          <div>
+            <h2 className="text-xl font-bold text-deep-navy mb-6">Top Categories</h2>
+            <p className="text-gray-500">Category performance data will appear here</p>
+          </div>
+        )}
+
+        {activeTab === 'searches' && (
+          <div>
+            <h2 className="text-xl font-bold text-deep-navy mb-6">Top Searches</h2>
+            <p className="text-gray-500">Search analytics will appear here</p>
           </div>
         )}
 
         {activeTab === 'coupons' && (
           <div>
-            <h2 className="text-xl font-bold text-deep-navy mb-6">Coupon Performance</h2>
-            <p className="text-gray-500">Coupon analytics will appear here</p>
-          </div>
-        )}
-
-        {activeTab === 'followers' && (
-          <div>
-            <h2 className="text-xl font-bold text-deep-navy mb-6">Followers</h2>
-            <p className="text-gray-500">Your follower list will appear here</p>
+            <h2 className="text-xl font-bold text-deep-navy mb-6">Coupon Analytics</h2>
+            <p className="text-gray-500">Coupon performance data will appear here</p>
           </div>
         )}
       </div>

@@ -16,7 +16,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import WishlistButton from '@/components/WishlistButton'
 import ServiceCard from '@/components/ServiceCard'
 
-type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands' | 'services' | 'serviceCategories'
+type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands' | 'services'
 
 interface SearchProduct {
   id: string
@@ -76,14 +76,6 @@ interface SearchService {
   type: string
 }
 
-interface SearchServiceCategory {
-  id: string
-  name: string
-  slug: string
-  serviceCount: number
-  type: string
-}
-
 interface SearchResults {
   query: string
   results: {
@@ -92,7 +84,6 @@ interface SearchResults {
     categories: SearchCategory[]
     brands: SearchBrand[]
     services: SearchService[]
-    serviceCategories: SearchServiceCategory[]
   }
   total: number
 }
@@ -103,7 +94,6 @@ const TABS: { key: SearchTab; label: string }[] = [
   { key: 'services', label: 'Services' },
   { key: 'vendors', label: 'Vendors' },
   { key: 'categories', label: 'Categories' },
-  { key: 'serviceCategories', label: 'Service Categories' },
   { key: 'brands', label: 'Brands' },
 ]
 
@@ -119,31 +109,41 @@ function SearchPageContent() {
    const [hasSearched, setHasSearched] = useState(!!initialQuery)
    const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
 
-   const performSearch = useCallback(async (searchQuery: string) => {
-     if (!searchQuery.trim()) {
-       setResults(null)
-       setHasSearched(false)
-       return
-     }
+    const performSearch = useCallback(async (searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        setResults(null)
+        setHasSearched(false)
+        return
+      }
 
-     setLoading(true)
-     setHasSearched(true)
-     try {
-       const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
-       if (res.ok) {
-         const data = await res.json()
-         setResults(data)
-         const productIds = data.results.products.map((p: SearchProduct) => p.id).join(',')
-         if (productIds) {
-           fetchWishlistStatus(productIds)
-         }
-       }
-     } catch (error) {
-       console.error('Search error:', error)
-     } finally {
-       setLoading(false)
-     }
-   }, [])
+      setLoading(true)
+      setHasSearched(true)
+      try {
+        const res = await fetch(`/api/search-upgraded?q=${encodeURIComponent(searchQuery)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setResults({
+            query: data.query,
+            results: {
+              products: data.results.products || [],
+              vendors: data.results.vendors || [],
+              categories: data.results.categories || [],
+              brands: data.results.brands || [],
+              services: data.results.services || [],
+            },
+            total: data.total || 0,
+          })
+          const productIds = (data.results.products || []).map((p: SearchProduct) => p.id).join(',')
+          if (productIds) {
+            fetchWishlistStatus(productIds)
+          }
+        }
+      } catch (error) {
+        console.error('Search error:', error)
+      } finally {
+        setLoading(false)
+      }
+    }, [])
 
    const fetchWishlistStatus = useCallback(async (productIds: string) => {
      try {
@@ -179,7 +179,7 @@ function SearchPageContent() {
   }
 
   const getFilteredResults = () => {
-    if (!results) return { products: [], vendors: [], categories: [], brands: [], services: [], serviceCategories: [], total: 0 }
+    if (!results) return { products: [], vendors: [], categories: [], brands: [], services: [], total: 0 }
     if (activeTab === 'all') {
       return {
         products: results.results.products,
@@ -187,7 +187,6 @@ function SearchPageContent() {
         categories: results.results.categories,
         brands: results.results.brands,
         services: results.results.services,
-        serviceCategories: results.results.serviceCategories,
         total: results.total,
       }
     }
@@ -197,14 +196,12 @@ function SearchPageContent() {
       categories: activeTab === 'categories' ? results.results.categories : [],
       brands: activeTab === 'brands' ? results.results.brands : [],
       services: activeTab === 'services' ? results.results.services : [],
-      serviceCategories: activeTab === 'serviceCategories' ? results.results.serviceCategories : [],
       total:
         (activeTab === 'products' ? results.results.products.length : 0) +
         (activeTab === 'vendors' ? results.results.vendors.length : 0) +
         (activeTab === 'categories' ? results.results.categories.length : 0) +
         (activeTab === 'brands' ? results.results.brands.length : 0) +
-        (activeTab === 'services' ? results.results.services.length : 0) +
-        (activeTab === 'serviceCategories' ? results.results.serviceCategories.length : 0),
+        (activeTab === 'services' ? results.results.services.length : 0),
     }
   }
 
@@ -280,16 +277,14 @@ function SearchPageContent() {
                 tab.key === 'all'
                   ? results.total
                   : tab.key === 'products'
-                  ? results.results.products.length
-                  : tab.key === 'services'
-                  ? results.results.services.length
-                  : tab.key === 'vendors'
-                  ? results.results.vendors.length
-                  : tab.key === 'categories'
-                  ? results.results.categories.length
-                  : tab.key === 'serviceCategories'
-                  ? results.results.serviceCategories.length
-                  : results.results.brands.length
+                   ? results.results.products.length
+                   : tab.key === 'services'
+                   ? results.results.services.length
+                   : tab.key === 'vendors'
+                   ? results.results.vendors.length
+                   : tab.key === 'categories'
+                   ? results.results.categories.length
+                   : results.results.brands.length
 
               return (
                 <button
@@ -496,41 +491,6 @@ function SearchPageContent() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {filtered.services.map((service) => (
                       <ServiceCard key={service.id} service={service as any} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            {/* Service Categories */}
-            {(activeTab === 'all' || activeTab === 'serviceCategories') &&
-              filtered.serviceCategories.length > 0 && (
-                <div>
-                  {activeTab === 'all' && (
-                    <h2 className="text-xl font-bold text-deep-navy mb-4">
-                      Service Categories ({results.results.serviceCategories.length})
-                    </h2>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {filtered.serviceCategories.map((serviceCategory) => (
-                      <Link
-                        key={serviceCategory.id}
-                        href={`/services/category/${serviceCategory.slug}`}
-                        className="block"
-                      >
-                        <Card variant="elevated" className="group p-4 text-center hover:shadow-xl transition-all duration-300">
-                          <div className="w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                          </div>
-                          <h3 className="text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors line-clamp-1">
-                            {serviceCategory.name}
-                          </h3>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {serviceCategory.serviceCount} services
-                          </p>
-                        </Card>
-                      </Link>
                     ))}
                   </div>
                 </div>

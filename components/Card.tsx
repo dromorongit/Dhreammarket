@@ -38,6 +38,10 @@ export function Card({ className, children, variant = 'default', padding = 'lg',
   )
 }
 
+Card.Header = CardHeader
+Card.Content = CardContent
+Card.Footer = CardFooter
+
 export function CardHeader({ className, children, ...props }: CardProps) {
   return (
     <div className={cn('mb-6', className)} {...props}>

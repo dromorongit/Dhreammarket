@@ -2,7 +2,7 @@ import { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium' | 'verified' | 'preorder' | 'backorder' | 'trusted-vendor' | 'premium-vendor' | 'platinum-vendor'
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'premium' | 'verified' | 'preorder' | 'backorder' | 'trusted-vendor' | 'premium-vendor' | 'platinum-vendor' | 'outline' | 'secondary'
   size?: 'sm' | 'md' | 'lg'
   rounded?: boolean
 }
@@ -28,6 +28,8 @@ export function Badge({
     'trusted-vendor': 'bg-blue-100 text-sky-500 border border-blue-200',
     'premium-vendor': 'bg-gradient-to-r from-premium-gold/20 to-yellow-100 text-premium-gold border border-premium-gold/30',
     'platinum-vendor': 'bg-gradient-to-r from-slate-300/30 to-gray-200 text-slate-700 border border-slate-300',
+    outline: 'bg-transparent border border-slate-300 text-slate-600',
+    secondary: 'bg-slate-100 text-slate-600 border border-slate-200',
   }
 
   const sizeClasses = {

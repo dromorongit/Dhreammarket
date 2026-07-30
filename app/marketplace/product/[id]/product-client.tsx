@@ -175,6 +175,16 @@ export default function ProductClient() {
     }
   }, [product])
 
+  useEffect(() => {
+    if (productId) {
+      fetch('/api/recently-viewed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entityType: 'PRODUCT', entityId: productId }),
+      }).catch(() => {})
+    }
+  }, [productId])
+
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist', 'status', productId],
     queryFn: async () => {

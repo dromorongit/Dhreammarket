@@ -44,12 +44,21 @@ model User {
   paymentMethods           PaymentMethod[]
   vendorSettings           VendorSettings?
   adminSettings            AdminSettings?
+  couponUsages             CouponUsage[]
   serviceRequestsAsCustomer ServiceRequest[] @relation("ServiceRequestAsCustomer")
   serviceRequestsAsVendor  ServiceRequest[] @relation("ServiceRequestAsVendor")
   uploadedAttachments      ServiceRequestAttachment[]
   statusHistoryEntries     ServiceRequestStatusHistory[]
   sentQuotations           ServiceQuotation[]
   quotationAttachments     QuotationAttachment[]
+  following                VendorFollow[]
+  flashDeals               FlashDeal[]
+  reviewLikes              ReviewLike[]
+  reviewReports            ReviewReport[]
+  vendorReplies            VendorReply[]
+  vendorReviewReplies      VendorReviewReply[]
+  serviceReviews           ServiceReview[]
+  collections              Collection[]
 
   @@map("users")
 }
@@ -148,6 +157,8 @@ model Store {
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication[]
   serviceRequests          ServiceRequest[]
+  trustBadges              VendorTrustBadge[]
+  followers                VendorFollow[]
 
   @@map("stores")
 }
@@ -238,6 +249,8 @@ model Product {
   store                    Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   purchaseOrderItems       PurchaseOrderItem[]
   restockOrders            RestockOrder[]
+  collectionItems          CollectionItem[]
+  flashDealProducts        FlashDealProduct[]
 
   @@map("products")
   @@index([storeId])
@@ -271,6 +284,9 @@ model Service {
   images                  ServiceImage[]
   wishlistItems          WishlistItem[]
   serviceRequests         ServiceRequest[]
+  reviews                 ServiceReview[]
+  collectionItems         CollectionItem[]
+  flashDealProducts       FlashDealProduct[]
 
   @@map("services")
   @@index([vendorId])
@@ -517,6 +533,11 @@ model ProductReview {
   order      Order?   @relation(fields: [orderId], references: [id])
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images     ReviewImage[]
+  videos     ReviewVideo[]
+  likes      ReviewLike[]
+  reports    ReviewReport[]
+  reply      VendorReply?
 
   @@unique([userId, productId])
   @@map("product_reviews")
@@ -536,6 +557,7 @@ model VendorReview {
   order      Order?   @relation(fields: [orderId], references: [id])
   store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies    VendorReviewReply[]
 
   @@unique([userId, storeId])
   @@map("vendor_reviews")
@@ -1088,6 +1110,9 @@ enum NotificationType {
   ORDER_STATUS_UPDATED
   REVIEW_SUBMITTED
   REVIEW_RECEIVED
+  REVIEW_LIKED
+  REVIEW_REPORTED
+  VENDOR_REPLIED
   SUPPORT_TICKET_CREATED
   SUPPORT_TICKET_REPLIED
   SUPPORT_TICKET_STATUS_UPDATED
@@ -1101,6 +1126,14 @@ enum NotificationType {
   QUOTE_REJECTED
   PROJECT_STARTED
   PROJECT_COMPLETED
+  FOLLOW_VENDOR
+  VENDOR_UPDATED
+  COUPON_AVAILABLE
+  COUPON_EXPIRING
+  FLASH_DEAL_STARTING
+  FLASH_DEAL_ENDING
+  ADMIN_ANNOUNCEMENT
+  SYSTEM_ALERT
 }
 
 enum FeedbackType {
@@ -1387,4 +1420,528 @@ model QuotationAttachment {
 
   @@map("quotation_attachments")
   @@index([quotationId])
+}
+
+// ===== MODULE 1: Review Extensions =====
+
+model ReviewImage {
+  id        String   @id @default(cuid())
+  reviewId  String
+  url       String
+  alt       String?
+  createdAt DateTime @default(now())
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@map("review_images")
+  @@index([reviewId])
+}
+
+model ReviewVideo {
+  id        String   @id @default(cuid())
+  reviewId  String
+  url       String
+  thumbnail String?
+  createdAt DateTime @default(now())
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@map("review_videos")
+  @@index([reviewId])
+}
+
+model ReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@map("review_likes")
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model ReviewReport {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  reason    String
+  comment   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("review_reports")
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model VendorReply {
+  id        String   @id @default(cuid())
+  reviewId  String   @unique
+  vendorId  String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  vendor    User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_replies")
+  @@index([reviewId])
+  @@index([vendorId])
+}
+
+model ServiceReview {
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  userId     String
+  serviceId  String
+  requestId  String?
+  isApproved Boolean  @default(true)
+  isHidden   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes      ServiceReviewLike[]
+
+  @@unique([userId, serviceId])
+  @@map("service_reviews")
+  @@index([serviceId])
+  @@index([userId])
+  @@index([requestId])
+}
+
+model ServiceReviewLike {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  createdAt DateTime @default(now())
+  review    ServiceReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@map("service_review_likes")
+  @@index([reviewId])
+  @@index([userId])
+}
+
+model VendorReviewReply {
+  id        String   @id @default(cuid())
+  reviewId  String
+  vendorId  String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  review    VendorReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  vendor    User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_review_replies")
+  @@index([reviewId])
+  @@index([vendorId])
+}
+
+// ===== MODULE 2: Collections =====
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  slug        String   @unique
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       CollectionItem[]
+
+  @@map("collections")
+  @@index([userId])
+  @@index([slug])
+}
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  productId    String?
+  serviceId    String?
+  createdAt    DateTime @default(now())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  product      Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  service      Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, productId])
+  @@unique([collectionId, serviceId])
+  @@map("collection_items")
+  @@index([collectionId])
+  @@index([productId])
+  @@index([serviceId])
+}
+
+// ===== MODULE 3: Recently Viewed =====
+
+model RecentlyViewed {
+  id        String   @id @default(cuid())
+  userId    String
+  entityType String  // "PRODUCT" | "SERVICE" | "VENDOR"
+  entityId  String
+  viewedAt  DateTime @default(now())
+
+  @@map("recently_viewed")
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([viewedAt])
+}
+
+model SearchHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  query      String
+  searchedAt DateTime @default(now())
+
+  @@map("search_history")
+  @@index([userId])
+  @@index([searchedAt])
+}
+
+// ===== MODULE 4: Recommendations =====
+
+model Recommendation {
+  id         String   @id @default(cuid())
+  userId     String
+  entityType String   // "PRODUCT" | "SERVICE" | "VENDOR"
+  entityId   String
+  reason     String   // "VIEWED" | "PURCHASED" | "LIKED" | "TRENDING"
+  score      Float    @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("recommendations")
+  @@index([userId])
+  @@index([entityType, entityId])
+}
+
+// ===== MODULE 5: Compare Products =====
+
+model ProductCompare {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  addedAt   DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("product_compares")
+  @@index([userId])
+}
+
+// ===== MODULE 6: Vendor Follow =====
+
+model VendorFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  vendorId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store     Store    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vendorId])
+  @@map("vendor_follows")
+  @@index([userId])
+  @@index([vendorId])
+}
+
+// ===== MODULE 8: Coupons & Promotions =====
+
+model Coupon {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  type            CouponType
+  value           Float
+  currency        String   @default("GHS")
+  minSpend        Float?
+  maxDiscount     Float?
+  usageLimit      Int?
+  usedCount       Int      @default(0)
+  perUserLimit    Int      @default(1)
+  startDate       DateTime?
+  expiryDate      DateTime
+  isActive        Boolean  @default(true)
+  description     String?
+  createdBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  usages          CouponUsage[]
+
+  @@map("coupons")
+  @@index([code])
+  @@index([expiryDate])
+  @@index([isActive])
+}
+
+model CouponUsage {
+  id                String   @id @default(cuid())
+  couponId          String
+  userId            String
+  orderId           String?
+  serviceRequestId  String?
+  usedAt            DateTime @default(now())
+  coupon            Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coupon_usages")
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_DELIVERY
+}
+
+// ===== MODULE 9: Flash Deals =====
+
+model FlashDeal {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  discountType    DiscountType @default(PERCENTAGE)
+  discountValue   Float
+  maxDiscount     Float?
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean  @default(true)
+  vendorId        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  vendor          User?    @relation(fields: [vendorId], references: [id])
+  products        FlashDealProduct[]
+
+  @@map("flash_deals")
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isActive])
+  @@index([vendorId])
+}
+
+model FlashDealProduct {
+  id         String   @id @default(cuid())
+  flashDealId String
+  productId  String?
+  serviceId  String?
+  dealPrice  Float
+  createdAt  DateTime @default(now())
+  flashDeal  FlashDeal @relation(fields: [flashDealId], references: [id], onDelete: Cascade)
+  product    Product?  @relation(fields: [productId], references: [id])
+  service    Service?  @relation(fields: [serviceId], references: [id])
+
+  @@map("flash_deal_products")
+  @@index([flashDealId])
+  @@index([productId])
+  @@index([serviceId])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// ===== MODULE 10: Recently Sold =====
+
+model RecentlySold {
+  id         String   @id @default(cuid())
+  entityType String   // "PRODUCT" | "SERVICE"
+  entityId   String
+  quantity   Int      @default(1)
+  period     String   // "today" | "week" | "month"
+  recordedAt DateTime @default(now())
+
+  @@map("recently_sold")
+  @@index([entityType, entityId])
+  @@index([period])
+  @@index([recordedAt])
+}
+
+// ===== MODULE 11: Saved Searches =====
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  filters   Json?
+  createdAt DateTime @default(now())
+
+  @@map("saved_searches")
+  @@index([userId])
+}
+
+// ===== MODULE 12: Vendor Analytics =====
+
+model VendorAnalytics {
+  id                String   @id @default(cuid())
+  vendorId          String
+  date              DateTime
+  revenue           Float    @default(0)
+  bookings          Int      @default(0)
+  orders            Int      @default(0)
+  conversionRate    Float    @default(0)
+  followers         Int      @default(0)
+  pageViews         Int      @default(0)
+  searchImpressions Int      @default(0)
+  ctr               Float    @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("vendor_analytics")
+  @@unique([vendorId, date])
+  @@index([vendorId])
+  @@index([date])
+}
+
+// ===== MODULE 13: Marketplace KPIs =====
+
+model MarketplaceKPI {
+  id                String   @id @default(cuid())
+  date              DateTime
+  gmv               Float    @default(0)
+  orders            Int      @default(0)
+  bookings          Int      @default(0)
+  revenue           Float    @default(0)
+  newVendors        Int      @default(0)
+  newCustomers      Int      @default(0)
+  newProducts       Int      @default(0)
+  newServices       Int      @default(0)
+  conversionRate    Float    @default(0)
+  activeCoupons     Int      @default(0)
+  couponUsage       Int      @default(0)
+  topVendorId       String?
+  topProductId      String?
+  topServiceId      String?
+  topCategoryId     String?
+  topSearch         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("marketplace_kpis")
+  @@unique([date])
+  @@index([date])
+}
+
+// ===== MODULE 14: Search Suggestions =====
+
+model SearchSuggestion {
+  id         String   @id @default(cuid())
+  query      String   @unique
+  type       String   // "product" | "service" | "vendor" | "category"
+  popularity Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("search_suggestions")
+  @@index([popularity])
+}
+
+// ===== MODULE 15: SEO Metadata =====
+
+model SeoMetadata {
+  id                String   @id @default(cuid())
+  entityType        String   // "PRODUCT" | "SERVICE" | "VENDOR" | "CATEGORY" | "PAGE"
+  entityId          String
+  metaTitle         String?
+  metaDescription   String?
+  canonicalUrl      String?
+  ogTitle           String?
+  ogDescription     String?
+  ogImage           String?
+  twitterTitle      String?
+  twitterDescription String?
+  twitterImage      String?
+  jsonLd            Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("seo_metadata")
+  @@unique([entityType, entityId])
+  @@index([entityType])
+  @@index([canonicalUrl])
+}
+
+// ===== MODULE 16: Trust Badges =====
+
+model VendorTrustBadge {
+  id          String         @id @default(cuid())
+  vendorId    String
+  badgeType   TrustBadgeType
+  awardedAt   DateTime @default(now())
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  store       Store    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_trust_badges")
+  @@unique([vendorId, badgeType])
+  @@index([vendorId])
+  @@index([badgeType])
+}
+
+enum TrustBadgeType {
+  TOP_SELLER
+  TOP_SERVICE_PROVIDER
+  FAST_RESPONDER
+  TRUSTED_VENDOR
+  PREMIUM_VENDOR
+  PLATINUM_VENDOR
+  HIGHLY_RATED
+  VERIFIED_BUSINESS
+}
+
+// ===== MODULE 17: Notification Extensions =====
+
+model NotificationPreference {
+  id                    String   @id @default(cuid())
+  userId                String
+  category              String   // "ORDER" | "BOOKING" | "COUPON" | "FOLLOW" | "REVIEW" | "ADMIN"
+  email                 Boolean  @default(true)
+  browser               Boolean  @default(true)
+  inApp                 Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("notification_preferences")
+  @@unique([userId, category])
+  @@index([userId])
+}
+
+// ===== MODULE 18: Conversion Tracking =====
+
+model ExitIntent {
+  id          String   @id @default(cuid())
+  userId      String?
+  sessionId   String?
+  pageUrl     String
+  referrer    String?
+  triggeredAt DateTime @default(now())
+  converted   Boolean  @default(false)
+
+  @@map("exit_intents")
+  @@index([userId])
+  @@index([sessionId])
+  @@index([triggeredAt])
+}
+
+model StickyButton {
+  id              String   @id @default(cuid())
+  pageUrl         String
+  buttonType      String   // "CART" | "WISHLIST" | "COMPARE" | "BOOKMARK"
+  impressionCount Int      @default(0)
+  clickCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("sticky_buttons")
+  @@index([pageUrl])
+  @@unique([pageUrl, buttonType])
 }

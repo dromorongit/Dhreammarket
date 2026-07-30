@@ -15,6 +15,8 @@ import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { VendorFollowButton } from '@/components/VendorFollowButton'
+import { TrustBadge } from '@/components/TrustBadges'
 
 interface VendorProduct {
   id: string
@@ -146,6 +148,16 @@ export default function VendorProfilePage() {
 
     fetchVendor()
   }, [vendorId])
+
+  useEffect(() => {
+    if (vendorId && vendor) {
+      fetch('/api/recently-viewed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entityType: 'VENDOR', entityId: vendorId }),
+      }).catch(() => {})
+    }
+  }, [vendorId, vendor])
 
   useEffect(() => {
     if (vendorId) {
@@ -517,6 +529,7 @@ export default function VendorProfilePage() {
                     Chat on WhatsApp{getWhatsAppLinks(vendor.whatsappNumber).length > 1 ? ` ${index + 1}` : ''}
                   </a>
                 ))}
+                <VendorFollowButton vendorId={vendor.id} />
                 <Link href={`/marketplace?vendorCategory=${vendor.category?.id || ''}`}>
                   <Button variant="outline" size="lg">
                     View All Products
