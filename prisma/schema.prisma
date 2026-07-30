@@ -1190,6 +1190,9 @@ enum HomepageSectionType {
   CLEARANCE_SALES
   EXPRESS_OFFERS
   TRENDING_NOW
+  TRENDING_SERVICES
+  NEW_SERVICES
+  TOP_SERVICES
 }
 
 enum VerificationStatus {

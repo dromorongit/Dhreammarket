@@ -37,11 +37,11 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     displayOrder: 2,
     contentSource: 'HYBRID' as const,
   },
-  {
+{
     name: 'Trending Services',
     slug: 'trending-services',
-    type: 'TRENDING_NOW' as const,
-    subtitle: 'Discover what\'s currently trending in services.',
+    type: 'TRENDING_SERVICES' as const,
+    subtitle: "Discover what's currently trending in services.",
     displayOrder: 3,
     contentSource: 'HYBRID' as const,
   },

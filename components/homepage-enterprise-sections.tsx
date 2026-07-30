@@ -8,6 +8,7 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge'
 import { SkeletonCard } from '@/components/Skeleton';
+import { EmptyState } from '@/components/EmptyState';
 import { formatPrice } from '@/lib/currency';
 import { MdVerified } from 'react-icons/md';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
@@ -1420,7 +1421,19 @@ export function BrandStoreSection({
 }) {
   if (loading) return <EnterpriseSectionSkeleton />;
   const displayBrands = brands ?? [];
-  if (!displayBrands.length) return null;
+  if (!displayBrands.length) {
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-10'>
+            <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>Featured Brands</h2>
+            <p className='text-gray-500 mt-2'>Browse products from your favourite brands</p>
+          </div>
+          <EmptyState icon={<svg className='w-12 h-12 text-slate-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' /></svg>} title='No brands yet' description='Check back soon for featured brands.' />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className='relative py-16 lg:py-24 bg-white'>

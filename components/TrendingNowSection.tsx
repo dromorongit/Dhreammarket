@@ -138,7 +138,25 @@ export function TrendingNowSection({
   }
   
   const products = section?.products ?? [];
-  if (!products.length) return null;
+  if (!products.length) {
+    return (
+      <section className='relative py-16 lg:py-24 bg-rose-50/[0.05] overflow-hidden'>
+        <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-10'>
+            <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
+              {section.name}
+            </h2>
+            {section.subtitle && (
+              <p className='mt-2 text-slate-600'>
+                {section.subtitle}
+              </p>
+            )}
+          </div>
+          <EmptyState icon={<svg className='w-12 h-12 text-slate-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 10V3L4 14h7v7l9-11h-7z' /></svg>} title='No products yet' description='Check back soon for trending products.' />
+        </div>
+      </section>
+    );
+  }
 
   const displayProducts = products.slice(0, 20);
   const half = Math.ceil(displayProducts.length / 2);
