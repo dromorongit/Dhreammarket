@@ -1678,3 +1678,69 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
     </section>
   );
 }
+
+const ELECTRONICS_CATEGORIES = [
+  {
+    title: 'Laptops & Desktops',
+    image: '/images/laptop.jpg',
+    link: '/marketplace?category=Electronics%20and%20Technology',
+  },
+  {
+    title: 'Speakers',
+    image: '/images/speaker.jpg',
+    link: '/marketplace?category=Electronics%20and%20Technology',
+  },
+  {
+    title: 'Headphones & Earbuds',
+    image: '/images/headset.jpg',
+    link: '/marketplace?category=Electronics%20and%20Technology',
+  },
+  {
+    title: 'Smartphones',
+    image: '/images/phone.jpg',
+    link: '/marketplace?category=Electronics%20and%20Technology',
+  },
+] as const
+
+export function ElectronicsShowcaseSection() {
+  return (
+    <section className='relative py-16 lg:py-24 bg-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+        <div className='text-center mb-12'>
+          <Badge variant='premium' className='mb-4'>Technology</Badge>
+          <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6'>
+            Plug in with our Electronics
+          </h2>
+          <p className='text-lg text-slate-600 max-w-2xl mx-auto'>
+            Explore the latest technology, gadgets and accessories from trusted vendors.
+          </p>
+        </div>
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+          {ELECTRONICS_CATEGORIES.map((category) => (
+            <Link key={category.title} href={category.link}>
+              <Card
+                variant='elevated'
+                className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+              >
+                <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                  <Image
+                    src={category.image}
+                    alt={category.title}
+                    className='object-cover group-hover:scale-105 transition-transform duration-500'
+                    fill
+                    loading='lazy'
+                  />
+                </div>
+                <div className='p-4 text-center'>
+                  <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                    {category.title}
+                  </h3>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -444,7 +444,7 @@ if (finalAvailabilityType === 'PREORDER') {
 
       // Process updates and creates
       for (const variant of incomingVariants) {
-        const variantStock = variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock) : 0
+        const variantStock = variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock, 10) : 0
 
         if (variant.id) {
           // Update existing variant

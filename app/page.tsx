@@ -41,6 +41,7 @@ import {
   QuickLinksSection,
   NewArrivalsSection,
   NewThisWeekSection,
+  ElectronicsShowcaseSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
@@ -301,6 +302,9 @@ export default function Home() {
 
 
       <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
+
+      {/* ─── Electronics Showcase ─── */}
+      <ElectronicsShowcaseSection />
 
       {/* ─── Optional extra custom sections (non-core) ─── */}
       {loadingManaged ? (
