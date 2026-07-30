@@ -121,7 +121,7 @@ export default function Home() {
           className="absolute inset-0 w-full h-full object-cover"
           preload="metadata"
         >
-          <source src="/assets/videos/Homepage.MOV" type="video/mp4" />
+          <source src="/assets/videos/Homepage.MP4" type="video/mp4" />
         </video>
         {/* Overlay gradient for text readability */}
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy/80 via-royal-blue/70 to-purple-900/60"></div>
