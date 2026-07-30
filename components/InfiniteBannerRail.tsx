@@ -19,7 +19,7 @@ export default function InfiniteBannerRail() {
         <div className="relative rounded-2xl overflow-hidden bg-slate-200 rail-container">
           <div className="rail-track">
             {duplicatedBanners.map((banner, index) => (
-              <div key={`${banner.id}-${index}`} className="flex-[0_0_auto] min-w-0 relative">
+              <div key={`${banner.id}-${index}`} className="flex-[0_0_calc(25%_-_12px)] min-w-0 relative">
                 <Link href={banner.href} className="block relative aspect-video" aria-label={banner.alt}>
                   <Image
                     src={banner.src}
