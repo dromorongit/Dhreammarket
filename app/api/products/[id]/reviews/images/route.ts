@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    if (!payload || (payload.role !== 'CUSTOMER' && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Only customers can upload review images' }, { status: 403 })
     }
 
