@@ -10,7 +10,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import ServiceCard from '@/components/ServiceCard'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
@@ -232,8 +232,14 @@ export default function Home() {
             return <SponsoredSection key={section.id} section={sectionProps} />
           if (section.slug === 'trending-now')
             return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'trending-services')
-            return <TrendingServicesSection key={section.id} section={sectionProps} />
+          if (section.slug === 'trending-services') {
+            return (
+              <Fragment key={section.id}>
+                <TrendingServicesSection section={sectionProps} />
+                <ElectronicsShowcaseSection />
+              </Fragment>
+            )
+          }
           if (section.slug === 'verified-vendors')
             return <VerifiedVendorsSection key={section.id} section={sectionProps} />
           if (section.slug === 'flash-sales')
@@ -302,9 +308,6 @@ export default function Home() {
 
 
       <TopSellingSection products={enterpriseSections.topSelling} loading={loadingEnterprise} />
-
-      {/* ─── Electronics Showcase ─── */}
-      <ElectronicsShowcaseSection />
 
       {/* ─── Optional extra custom sections (non-core) ─── */}
       {loadingManaged ? (

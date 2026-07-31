@@ -1193,6 +1193,7 @@ enum HomepageSectionType {
   TRENDING_SERVICES
   NEW_SERVICES
   TOP_SERVICES
+  FEATURED_VENDORS
 }
 
 enum VerificationStatus {

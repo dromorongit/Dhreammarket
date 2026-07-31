@@ -34,6 +34,9 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
           settings: settings as any,
         },
         update: {
+          name: section.name,
+          type: section.type as HomepageSectionType,
+          subtitle: section.subtitle,
           displayOrder: section.displayOrder,
           settings: settings as any,
         },
