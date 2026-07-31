@@ -1365,7 +1365,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
       {/* See More button - always visible */}
       <div className="mt-8 text-center">
         <Link href="/marketplace">
-          <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
+          <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
             See More
           </Button>
         </Link>
@@ -1446,7 +1446,7 @@ function FeaturedServicesSection() {
 
             <div className="mt-8 text-center">
               <Link href="/services">
-                <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
+                <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
                   See More
                 </Button>
               </Link>

@@ -601,8 +601,8 @@ export function FlashSalesSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -675,8 +675,8 @@ export function SponsoredProductsSection({
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -837,8 +837,8 @@ export function EnterpriseGadgetDisplaySection({
           <Link href='/marketplace?category=electronics'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold border-white/30 text-white hover:bg-white/10'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold border-white/30 text-white hover:bg-white/10'
             >
               See More
             </Button>
@@ -903,8 +903,8 @@ export function TopSellingSection({
           <Link href='/marketplace?sort=popular'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -969,8 +969,8 @@ export function BigTopDealsSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1035,8 +1035,8 @@ export function TopClearanceSalesSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1101,8 +1101,8 @@ export function TopServicesSection({
           <Link href='/marketplace?category=Services'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1301,8 +1301,8 @@ export function HomeTheatreSection({
           <Link href='/marketplace?category=Electronics'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold border-white/30 text-white hover:bg-white/10'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold border-white/30 text-white hover:bg-white/10'
             >
               See More
             </Button>
@@ -1367,8 +1367,8 @@ export function TopExpressOffersSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1470,8 +1470,8 @@ export function BrandStoreSection({
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               Browse All Brands
             </Button>
@@ -1619,8 +1619,8 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1691,8 +1691,8 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='md'
-              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='sm'
+              className='rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>

@@ -243,7 +243,7 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
 
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-<Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
+<Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
                See More
              </Button>
           </Link>
@@ -861,7 +861,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-<Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
+<Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
                See More
              </Button>
           </Link>
@@ -1028,7 +1028,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/services">
-            <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
@@ -1096,7 +1096,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/services">
-            <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
@@ -1134,10 +1134,9 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
         </div>
-        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-          <div className="flex gap-6">
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
             {displayVendors.map((vendor: any) => (
-              <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+              <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
                 <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
                   <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                     {vendor.logo ? (
@@ -1179,7 +1178,6 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
                 </Card>
               </Link>
             ))}
-          </div>
         </div>
       </div>
     </section>
@@ -1276,7 +1274,7 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-            <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>

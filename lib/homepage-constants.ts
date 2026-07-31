@@ -16,6 +16,7 @@ export const MANAGED_SECTION_SLUGS = [
   'home-theatre',
   'top-express-offers',
   'new-services',
+  'food-showcase',
 ] as const
 
 export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
@@ -54,11 +55,19 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     contentSource: 'AUTOMATIC' as const,
   },
   {
+    name: 'Food & Grocery Showcase',
+    slug: 'food-showcase',
+    type: 'PRODUCT_GRID' as const,
+    subtitle: 'Discover the best food and grocery vendors near you.',
+    displayOrder: 5,
+    contentSource: 'AUTOMATIC' as const,
+  },
+  {
     name: 'Flash Sales',
     slug: 'flash-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Limited time offers',
-    displayOrder: 5,
+    displayOrder: 6,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -66,7 +75,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'gadget-display',
     type: 'LARGE_FEATURE_CARDS' as const,
     subtitle: 'Premium tech deals',
-    displayOrder: 6,
+    displayOrder: 7,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -74,7 +83,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'big-top-deals',
     type: 'BIG_DEALS' as const,
     subtitle: 'Biggest savings on premium products',
-    displayOrder: 7,
+    displayOrder: 8,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -82,7 +91,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'brand-store',
     type: 'BRAND_GRID' as const,
     subtitle: 'Explore products from your favorite brands',
-    displayOrder: 8,
+    displayOrder: 9,
     contentSource: 'AUTOMATIC' as const,
   },
   {
@@ -90,7 +99,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'top-clearance-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Massive clearance offers',
-    displayOrder: 9,
+    displayOrder: 10,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -98,7 +107,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'top-services',
     type: 'SERVICE_GRID' as const,
     subtitle: 'Premium services marketplace',
-    displayOrder: 10,
+    displayOrder: 11,
     contentSource: 'AUTOMATIC' as const,
   },
   {
@@ -106,7 +115,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'home-theatre',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Home entertainment systems',
-    displayOrder: 11,
+    displayOrder: 12,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -114,7 +123,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'top-express-offers',
     type: 'BIG_DEALS' as const,
     subtitle: 'Express delivery exclusive deals',
-    displayOrder: 12,
+    displayOrder: 13,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -122,7 +131,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'new-services',
     type: 'SERVICE_GRID' as const,
     subtitle: 'Fresh services just added to Dhream Market',
-    displayOrder: 13,
+    displayOrder: 14,
     contentSource: 'AUTOMATIC' as const,
   },
 ]
