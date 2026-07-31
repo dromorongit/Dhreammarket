@@ -237,6 +237,21 @@ export default function Home() {
             return (
               <Fragment key={section.id}>
                 <TrendingServicesSection section={sectionProps} />
+                <section className="relative py-16 lg:py-24">
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls={false}
+                    preload="auto"
+                    className="w-full h-auto object-cover"
+                    width="1600"
+                    height="900"
+                  >
+                    <source src="/videos/newvideo.mp4" type="video/mp4" />
+                  </video>
+                </section>
                 <ElectronicsShowcaseSection />
               </Fragment>
             )
