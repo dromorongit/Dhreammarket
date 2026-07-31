@@ -173,7 +173,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       totalReviews,
       createdAt: store.createdAt,
       category: store.vendor_categories,
-       products: store.products.map((p: any) => ({
+      mainPhoneNumber: store.mainPhoneNumber,
+      alternativePhoneNumber: store.alternativePhoneNumber,
+      whatsappNumber: store.whatsappNumber,
+      location: store.location,
+      products: store.products.map((p: any) => ({
          id: p.id,
          slug: p.slug,
          name: p.name,
