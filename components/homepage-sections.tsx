@@ -1129,7 +1129,7 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <SectionPill label="VERIFIED" icon={<MdShieldCheck />} gradientFrom="from-sky-500" gradientVia="via-cyan-500" gradientTo="to-cyan-500" />
+            <SectionPill label="VERIFIED" icon={<HiShieldCheck />} gradientFrom="from-sky-500" gradientVia="via-cyan-500" gradientTo="to-cyan-500" />
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}

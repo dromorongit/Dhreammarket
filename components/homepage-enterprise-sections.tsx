@@ -1429,7 +1429,7 @@ export function BrandStoreSection({
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='mb-10'>
             <div className='flex items-center gap-3 mb-4'>
-              <SectionPill label='FEATURED BRANDS' icon={<MdSparkles />} gradientFrom='from-fuchsia-500' gradientVia='via-pink-500' gradientTo='to-pink-500' />
+              <SectionPill label='FEATURED BRANDS' icon={<TbSparkles />} gradientFrom='from-fuchsia-500' gradientVia='via-pink-500' gradientTo='to-pink-500' />
             </div>
             <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>Featured Brands</h2>
             <p className='text-gray-500 mt-2'>Browse products from your favourite brands</p>
