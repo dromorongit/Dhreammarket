@@ -602,7 +602,7 @@ export function FlashSalesSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -676,7 +676,7 @@ export function SponsoredProductsSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -838,7 +838,7 @@ export function EnterpriseGadgetDisplaySection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
+              className='rounded-full px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
             >
               See More
             </Button>
@@ -904,7 +904,7 @@ export function TopSellingSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -970,7 +970,7 @@ export function BigTopDealsSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1036,7 +1036,7 @@ export function TopClearanceSalesSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1102,7 +1102,7 @@ export function TopServicesSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1302,7 +1302,7 @@ export function HomeTheatreSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
+              className='rounded-full px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
             >
               See More
             </Button>
@@ -1368,7 +1368,7 @@ export function TopExpressOffersSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1471,7 +1471,7 @@ export function BrandStoreSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               Browse All Brands
             </Button>
@@ -1620,7 +1620,7 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1692,7 +1692,7 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>

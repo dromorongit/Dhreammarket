@@ -218,7 +218,7 @@ export function TrendingNowSection({
             <Button
               variant='outline'
               size='lg'
-              className='rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More Trending
             </Button>

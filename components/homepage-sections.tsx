@@ -243,9 +243,9 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
 
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
-              See More
-            </Button>
+<Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+               See More
+             </Button>
           </Link>
         </div>
       </div>
@@ -861,9 +861,9 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
-              See More
-            </Button>
+<Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+               See More
+             </Button>
           </Link>
         </div>
       </div>
@@ -1028,7 +1028,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/services">
-            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
@@ -1096,7 +1096,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/services">
-            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
@@ -1138,41 +1138,44 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
           <div className="flex gap-4">
             {displayVendors.map((vendor: any) => (
               <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-                  <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+                <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
+                  <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                     {vendor.logo ? (
-                      <Image src={vendor.logo} alt={vendor.name} className="absolute inset-0 w-full h-full object-cover opacity-50" fill />
+                      <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center"><span className="text-4xl font-bold text-white opacity-30">{vendor.name?.charAt(0) || 'V'}</span></div>
-                    )}
-                    {vendor.isVerified && (
-                      <div className="absolute top-3 left-3"><Badge variant="verified" size="sm">Verified</Badge></div>
-                    )}
-                    {vendor.badgeTier && (
-                      <div className="absolute top-3 right-3"><Badge variant="premium" size="sm">{vendor.badgeTier}</Badge></div>
+                      <span className="text-2xl font-bold text-white">
+                        {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
+                      </span>
                     )}
                   </div>
-                  <CardContent className="p-4 min-w-0">
-                    <div className="flex items-center gap-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
-                        {truncateVendorName(vendor.name)}
-                      </h3>
-                      <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
-                    </div>
-                    {vendor.store?.name && (
-                      <p className="text-sm text-slate-500 mb-2">{vendor.store.name}</p>
-                    )}
-                    {vendor.category && (
-                      <p className="text-sm text-slate-500 mb-2">{vendor.category.name}</p>
-                    )}
-                    <div className="flex items-center justify-between text-sm mb-3">
-                      <div className="flex items-center gap-1"><span className="text-yellow-400">★</span><span className="font-medium">{vendor.rating?.toFixed(1) || '0.0'}</span></div>
-                      <span className="text-slate-500">{vendor.productCount || 0} products</span>
-                    </div>
-                    <Link href={`/vendor/${vendor.slug ?? vendor.id}`} className="w-full">
-                      <Button variant="primary" size="sm" className="w-full">View Store</Button>
-                    </Link>
-                  </CardContent>
+                  <div className="flex items-center gap-1 min-w-0 mb-2">
+                    <h3 className="text-lg font-semibold text-deep-navy group-hover:text-royal-blue transition-colors min-w-0 overflow-hidden text-ellipsis line-clamp-1">
+                      {truncateVendorName(vendor.name)}
+                    </h3>
+                    {(() => {
+                      const badgeInfo = getVendorBadgeInfo((vendor as any).badgeTier)
+                      if (badgeInfo) {
+                        const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                        return (
+                          <MdVerified className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                        )
+                      }
+                      if (vendor.isVerified) {
+                        return (
+                          <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                        )
+                      }
+                      return null
+                    })()}
+                  </div>
+                  {vendor.vendor_categories && (
+                    <Badge variant="default" size="sm" className="mb-3">
+                      {vendor.vendor_categories.name}
+                    </Badge>
+                  )}
+                  <p className="text-sm text-slate-600">
+                    {vendor.productCount || 0} products
+                  </p>
                 </Card>
               </Link>
             ))}
@@ -1273,7 +1276,7 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-            <Button variant="outline" size="lg" className="rounded-2xl px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
