@@ -43,6 +43,7 @@ import {
   NewThisWeekSection,
   ElectronicsShowcaseSection,
   FoodShowcaseSection,
+  FeaturedCollectionsSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
@@ -206,6 +207,9 @@ export default function Home() {
 
       {/* ─── Registration Call-to-Action ─── */}
       <RegistrationCTA />
+
+      {/* ─── Featured Collections ─── */}
+      <FeaturedCollectionsSection />
 
       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
       {managedData.sections

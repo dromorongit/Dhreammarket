@@ -1789,41 +1789,99 @@ export function ElectronicsShowcaseSection() {
    },
  ] as const
 
- export function FoodShowcaseSection() {
-   return (
-     <section className='relative py-16 lg:py-24 bg-white'>
-       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-         <div className='mb-12'>
-           <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
-             Taste the Best Around You
-           </h2>
-         </div>
-         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
-           {FOOD_CATEGORIES.map((category) => (
-             <Link key={category.title} href={category.link}>
-               <Card
-                 variant='elevated'
-                 className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
-               >
-                 <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-                   <Image
-                     src={category.image}
-                     alt={category.title}
-                     className='object-cover group-hover:scale-105 transition-transform duration-500'
-                     fill
-                     loading='lazy'
-                   />
-                 </div>
-                 <div className='p-4 text-center'>
-                   <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
-                     {category.title}
-                   </h3>
-                 </div>
-               </Card>
-             </Link>
-           ))}
-         </div>
-       </div>
-     </section>
-   );
- }
+  export function FoodShowcaseSection() {
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-12'>
+            <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+              Taste the Best Around You
+            </h2>
+          </div>
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+            {FOOD_CATEGORIES.map((category) => (
+              <Link key={category.title} href={category.link}>
+                <Card
+                  variant='elevated'
+                  className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+                >
+                  <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                    <Image
+                      src={category.image}
+                      alt={category.title}
+                      className='object-cover group-hover:scale-105 transition-transform duration-500'
+                      fill
+                      loading='lazy'
+                    />
+                  </div>
+                  <div className='p-4 text-center'>
+                    <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                      {category.title}
+                    </h3>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const FEATURED_COLLECTIONS = [
+    {
+      title: 'Kitchen Essentials',
+      image: '/images/kitchenmust.jpg',
+      href: '/marketplace',
+    },
+    {
+      title: 'Back to School',
+      image: '/images/backtoschool.jpg',
+      href: '/marketplace',
+    },
+    {
+      title: 'Beauty & Makeup',
+      image: '/images/nailmakeup.jpg',
+      href: '/marketplace',
+    },
+  ] as const
+
+  export function FeaturedCollectionsSection() {
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-10'>
+            <Badge variant='premium' className='mb-4'>Featured</Badge>
+            <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+              Featured Collections
+            </h2>
+          </div>
+          <div className='flex gap-4 sm:gap-5 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+            {FEATURED_COLLECTIONS.map((item) => (
+              <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px]'>
+                <Card
+                  variant='elevated'
+                  className='group flex flex-col overflow-hidden rounded-3xl hover:shadow-xl hover:scale-[1.03] transition-all duration-300 cursor-pointer h-full p-0'
+                >
+                  <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      className='object-cover group-hover:scale-105 transition-transform duration-500'
+                      fill
+                      loading='lazy'
+                    />
+                  </div>
+                  <div className='p-4 text-center'>
+                    <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                      {item.title}
+                    </h3>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
