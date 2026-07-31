@@ -1380,32 +1380,34 @@ export function TopExpressOffersSection({
 }
 
 function BrandCard({ brand }: { brand: EnterpriseBrand }) {
-  const normalized = normalizeBrand(brand);
-  const logo = normalized.logo;
+   const normalized = normalizeBrand(brand);
+   const logo = normalized.logo;
 
-  return (
-    <Link href={`/marketplace?brand=${normalized.id || normalized.slug}`}>
-      <div className="flex-shrink-0 w-36 md:w-44 flex flex-col items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 cursor-pointer">
-        <div className="w-24 h-16 flex items-center justify-center">
-          {logo ? (
-            <Image
-              src={logo}
-              alt={normalized.name}
-              width={96}
-              height={64}
-              className="object-contain max-h-16"
-            />
-          ) : (
-            <span className="text-2xl font-bold text-royal-blue">
-              {normalized.name.charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
-        <p className="text-xs font-semibold text-gray-700 text-center truncate w-full">{normalized.name}</p>
-      </div>
-    </Link>
-  );
-}
+   return (
+     <Link href={`/marketplace?brand=${normalized.id || normalized.slug}`}>
+       <div className="group flex-shrink-0 w-44 md:w-52 lg:w-56 flex flex-col items-center gap-4 bg-gradient-to-br from-white via-white/95 to-slate-50/50 rounded-3xl border border-slate-100/80 shadow-premium hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-500 p-6 cursor-pointer">
+         <div className="w-28 h-28 flex items-center justify-center rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 overflow-hidden transition-transform duration-500 group-hover:scale-110">
+           {logo ? (
+             <Image
+               src={logo}
+               alt={normalized.name}
+               width={112}
+               height={112}
+               className="object-contain max-h-full w-full"
+             />
+           ) : (
+             <span className="text-3xl font-bold text-royal-blue">
+               {normalized.name.charAt(0).toUpperCase()}
+             </span>
+           )}
+         </div>
+         <p className="text-sm font-semibold text-deep-navy text-center truncate w-full group-hover:text-royal-blue transition-colors duration-300">
+           {normalized.name}
+         </p>
+       </div>
+     </Link>
+   );
+ }
 
 export function BrandStoreSection({
   section,
@@ -1508,58 +1510,58 @@ const QUICK_LINKS: Array<{ name: string; href: string; icon: string; color: stri
 ]
 
 export function QuickLinksSection() {
-  return (
-    <section className='relative py-16 lg:py-24 bg-indigo-50/[0.05]'>
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='mb-10'>
-          <div className='flex items-center gap-3 mb-4'>
-            <SectionPill label='EXPLORE' icon={<TbCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
-          </div>
-          <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
-            Quick Links
-          </h2>
-          <p className='text-slate-600 mt-2'>Fast access to popular categories</p>
-        </div>
-        <div className='overflow-x-auto overflow-y-hidden scrollbar-hide snap-x snap-mandatory scroll-smooth'>
-          <div className='flex gap-4 lg:gap-6 px-4 -mx-4 sm:-mx-6 lg:-mx-8 pb-4 touch-pan-x'>
-            {QUICK_LINKS.map((link) => {
-              const isInternalScroll = link.href.startsWith('/#');
-              return (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-xl snap-start flex-shrink-0 cursor-pointer'
-                  tabIndex={0}
-                  onClick={(e) => {
-                    if (isInternalScroll) {
-                      e.preventDefault();
-                      const targetId = link.href.substring(2);
-                      const targetElement = document.getElementById(targetId);
-                      if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                >
-                  <Card variant='elevated' className='p-4 text-center hover:shadow-xl transition-all duration-300 group-hover:-translate-y-0.5 h-full min-h-[100px] min-w-[140px] max-w-[180px] w-[160px]'>
-                    <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                      <svg className='w-6 h-6 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d={link.icon} />
-                      </svg>
-                    </div>
-                    <h3 className='text-xs sm:text-sm font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
-                      {link.name}
-                    </h3>
-                  </Card>
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+   return (
+     <section className='relative py-16 lg:py-24 bg-gradient-to-b from-slate-50/50 to-white'>
+       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+         <div className='mb-10'>
+           <div className='flex items-center gap-3 mb-4'>
+             <SectionPill label='EXPLORE' icon={<TbCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
+           </div>
+           <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
+             Quick Links
+           </h2>
+           <p className='text-slate-600 mt-2'>Fast access to popular categories</p>
+         </div>
+         <div className='overflow-x-auto overflow-y-hidden scrollbar-hide snap-x snap-mandatory scroll-smooth'>
+           <div className='flex gap-5 lg:gap-6 px-4 -mx-4 sm:-mx-6 lg:-mx-8 pb-4 touch-pan-x'>
+             {QUICK_LINKS.map((link) => {
+               const isInternalScroll = link.href.startsWith('/#');
+               return (
+                 <a
+                   key={link.name}
+                   href={link.href}
+                   className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-3xl snap-start flex-shrink-0 cursor-pointer'
+                   tabIndex={0}
+                   onClick={(e) => {
+                     if (isInternalScroll) {
+                       e.preventDefault();
+                       const targetId = link.href.substring(2);
+                       const targetElement = document.getElementById(targetId);
+                       if (targetElement) {
+                         targetElement.scrollIntoView({ behavior: 'smooth' });
+                       }
+                     }
+                   }}
+                 >
+                   <Card variant='elevated' className='p-6 text-center hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-300 h-full min-h-[120px] min-w-[160px] max-w-[200px] w-[180px] bg-gradient-to-br from-white via-white/95 to-slate-50/50 border-slate-100/80'>
+                     <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md group-hover:shadow-lg`}>
+                       <svg className='w-7 h-7 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                         <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d={link.icon} />
+                       </svg>
+                     </div>
+                     <h3 className='text-sm sm:text-base font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
+                       {link.name}
+                     </h3>
+                   </Card>
+                 </a>
+               );
+             })}
+           </div>
+         </div>
+       </div>
+     </section>
+   );
+ }
 
 export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> }) {
   const excludeKey = useMemo(() => excludeIds ? Array.from(excludeIds).sort().join(',') : '', [excludeIds])
