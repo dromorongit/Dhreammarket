@@ -397,6 +397,20 @@ function resolveContentSource(settings: any): ContentSource {
   return 'MANUAL'
 }
 
+async function safeResolve<T>(
+  resolver: () => Promise<T>,
+  fallback: T,
+  sectionSlug: string,
+  resolverName: string
+): Promise<T> {
+  try {
+    return await resolver()
+  } catch (e) {
+    console.error(`[homepage/public] Section "${sectionSlug}" resolver "${resolverName}" failed:`, e)
+    return fallback
+  }
+}
+
 export async function GET(_request: NextRequest) {
   const perf = new PerformanceLogger('GET', _request.url)
   try {
@@ -494,12 +508,13 @@ export async function GET(_request: NextRequest) {
     perf.markPrismaEnd(prismaStartTime)
     prismaInstance = prisma
 
-    const formatted = await Promise.all((sections || []).map(async (section) => {
+    const formatted = (await Promise.allSettled((sections || []).map(async (section) => {
       const settings = (section.settings || {}) as AutoRankSettings
       const contentSource = resolveContentSource(settings)
       const maxProducts = settings.maxProducts || 20
       const maxServices = settings.maxServices || 20
       const maxVendors = settings.maxVendors || 10
+      const sectionSlug = section.slug || 'unknown'
 
       let sortedProducts: any[] = []
       let sortedServices: any[] = []
@@ -509,15 +524,40 @@ export async function GET(_request: NextRequest) {
       const now = new Date()
 
       if (contentSource === 'AUTOMATIC') {
-        sortedProducts = await resolveAutomaticProducts(prismaInstance, section, settings, maxProducts)
-        sortedServices = await resolveAutomaticServices(prismaInstance, section, settings, maxServices)
-        sortedVendors = await resolveAutomaticVendors(prismaInstance, section, maxVendors)
-        sortedBrands = await resolveAutomaticBrands(prismaInstance, section, settings)
+        sortedProducts = await safeResolve(
+          () => resolveAutomaticProducts(prismaInstance, section, settings, maxProducts),
+          [],
+          sectionSlug,
+          'resolveAutomaticProducts'
+        )
+        sortedServices = await safeResolve(
+          () => resolveAutomaticServices(prismaInstance, section, settings, maxServices),
+          [],
+          sectionSlug,
+          'resolveAutomaticServices'
+        )
+        sortedVendors = await safeResolve(
+          () => resolveAutomaticVendors(prismaInstance, section, maxVendors),
+          [],
+          sectionSlug,
+          'resolveAutomaticVendors'
+        )
+        sortedBrands = await safeResolve(
+          () => resolveAutomaticBrands(prismaInstance, section, settings),
+          [],
+          sectionSlug,
+          'resolveAutomaticBrands'
+        )
       } else if (contentSource === 'MANUAL') {
         sortedProducts = (section.products || [])
           .map((sp: any) => sp.product)
           .filter((p: any) => p && (!settings.excludeOutOfStock || p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
-        sortedServices = await resolveManualServices(settings, maxServices)
+        sortedServices = await safeResolve(
+          () => resolveManualServices(settings, maxServices),
+          [],
+          sectionSlug,
+          'resolveManualServices'
+        )
         sortedVendors = (section.vendors || [])
           .map((sv: any) => ({
             ...sv.vendor,
@@ -529,9 +569,24 @@ export async function GET(_request: NextRequest) {
           .filter(Boolean)
         sortedBrands = resolveManualBrands(section)
       } else {
-        sortedProducts = await resolveHybridProducts(prismaInstance, section, settings, maxProducts)
-        sortedServices = await resolveHybridServices(prismaInstance, section, settings, maxServices)
-        sortedVendors = await resolveHybridVendors(prismaInstance, section, settings, maxVendors)
+        sortedProducts = await safeResolve(
+          () => resolveHybridProducts(prismaInstance, section, settings, maxProducts),
+          [],
+          sectionSlug,
+          'resolveHybridProducts'
+        )
+        sortedServices = await safeResolve(
+          () => resolveHybridServices(prismaInstance, section, settings, maxServices),
+          [],
+          sectionSlug,
+          'resolveHybridServices'
+        )
+        sortedVendors = await safeResolve(
+          () => resolveHybridVendors(prismaInstance, section, settings, maxVendors),
+          [],
+          sectionSlug,
+          'resolveHybridVendors'
+        )
         sortedBrands = resolveHybridBrands(section)
       }
 
@@ -562,7 +617,27 @@ export async function GET(_request: NextRequest) {
         vendors: sortedVendors,
         brands: sortedBrands,
       }
-    }))
+    }))).map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value
+      }
+      const failedSection = (sections || [])[index]
+      const failedSlug = failedSection?.slug || 'unknown'
+      console.error(`[homepage/public] Section "${failedSlug}" failed:`, result.reason)
+      return {
+        id: failedSection?.id,
+        name: failedSection?.name,
+        slug: failedSlug,
+        type: failedSection?.type,
+        subtitle: failedSection?.subtitle,
+        displayOrder: failedSection?.displayOrder,
+        contentSource: resolveContentSource(failedSection?.settings || {}),
+        products: [],
+        services: [],
+        vendors: [],
+        brands: [],
+      }
+    })
 
     const formattedBrands = (brands || []).map((brand) => ({
       id: brand.id,
