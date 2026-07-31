@@ -10,12 +10,13 @@ import { Badge } from '@/components/Badge'
 import { SkeletonCard } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { formatPrice } from '@/lib/currency';
-import { MdVerified } from 'react-icons/md';
+import { MdVerified, MdSparkles, MdCompass } from 'react-icons/md';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import WishlistButton from '@/components/WishlistButton';
 import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageData, getDiscountPercent, getEffectivePrice, getDiscountedPrice, dedupeProducts, collectProductIds, normalizeBrand, EMPTY_ENTERPRISE_DATA } from '@/lib/homepage-product-utils'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import { TrendingNowSection } from './TrendingNowSection';
+import { SectionPill } from './homepage-sections';
 
 export function useEnterpriseHomepageData() {
   const { data, isLoading } = useQuery<{ topSelling: EnterpriseProduct[] }>({
@@ -1423,9 +1424,12 @@ export function BrandStoreSection({
   const displayBrands = brands ?? [];
   if (!displayBrands.length) {
     return (
-      <section className='relative py-16 lg:py-24 bg-white'>
+      <section className='relative py-16 lg:py-24 bg-fuchsia-50/[0.05]'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='mb-10'>
+            <div className='flex items-center gap-3 mb-4'>
+              <SectionPill label='FEATURED BRANDS' icon={<MdSparkles />} gradientFrom='from-fuchsia-500' gradientVia='via-pink-500' gradientTo='to-pink-500' />
+            </div>
             <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>Featured Brands</h2>
             <p className='text-gray-500 mt-2'>Browse products from your favourite brands</p>
           </div>
@@ -1436,9 +1440,12 @@ export function BrandStoreSection({
   }
 
   return (
-    <section className='relative py-16 lg:py-24 bg-white'>
+    <section className='relative py-16 lg:py-24 bg-fuchsia-50/[0.05]'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <SectionPill label="FEATURED BRANDS" icon={<MdSparkles />} gradientFrom="from-fuchsia-500" gradientVia="via-pink-500" gradientTo="to-pink-500" />
+          </div>
           <h2 className="text-2xl md:text-3xl font-bold text-deep-navy mb-2">Featured Brands</h2>
           <p className="text-gray-500 mb-6">Shop by your favourite brands</p>
         </div>
@@ -1501,9 +1508,12 @@ const QUICK_LINKS: Array<{ name: string; href: string; icon: string; color: stri
 
 export function QuickLinksSection() {
   return (
-    <section className='relative py-16 lg:py-24 bg-white'>
+    <section className='relative py-16 lg:py-24 bg-indigo-50/[0.05]'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-10'>
+        <div className='mb-10'>
+          <div className='flex items-center gap-3 mb-4'>
+            <SectionPill label='EXPLORE' icon={<MdCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
+          </div>
           <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
             Quick Links
           </h2>
