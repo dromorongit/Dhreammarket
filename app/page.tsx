@@ -138,10 +138,10 @@ export default function Home() {
         {/* Nav spacer */}
         <div className="h-16 sm:h-20"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
           <div className="text-center max-w-4xl mx-auto">
             {/* Trust badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-8 animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6 animate-fade-in-up">
               <Badge variant="verified" size="sm">
                 Trusted by 10,000+ Businesses
               </Badge>
@@ -155,11 +155,7 @@ export default function Home() {
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl lg:text-2xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              The premier commerce ecosystem connecting businesses and people worldwide. Trade smarter, faster, and more securely with our all-in-one platform.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <Link href="/register">
                 <Button size="lg" className="px-10 py-4 shadow-lg shadow-royal-blue/30">
                   Get Started Free

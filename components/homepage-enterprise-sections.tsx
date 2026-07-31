@@ -1730,14 +1730,11 @@ export function ElectronicsShowcaseSection() {
   return (
     <section className='relative py-16 lg:py-24 bg-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-12'>
+        <div className='mb-12'>
           <Badge variant='premium' className='mb-4'>Technology</Badge>
-          <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6'>
+          <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
             Plug in with our Electronics
           </h2>
-          <p className='text-lg text-slate-600 max-w-2xl mx-auto'>
-            Explore the latest technology, gadgets and accessories from trusted vendors.
-          </p>
         </div>
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
           {ELECTRONICS_CATEGORIES.map((category) => (
