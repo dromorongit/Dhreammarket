@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "services" ADD COLUMN "averageRating" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ALTER TABLE "services" ADD COLUMN "reviewCount" INTEGER NOT NULL DEFAULT 0;

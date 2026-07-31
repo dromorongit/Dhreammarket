@@ -136,7 +136,7 @@ async function getAutoRankedServices(prisma: ReturnType<typeof getPrisma>, maxSe
       store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
       _count: { select: { serviceRequests: true } },
     },
-    orderBy: { serviceRequests: { _count: 'desc' }, createdAt: 'desc' },
+    orderBy: [{ serviceRequests: { _count: 'desc' } }, { createdAt: 'desc' }],
     take: maxServices || 20,
   })
 
