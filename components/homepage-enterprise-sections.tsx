@@ -10,7 +10,8 @@ import { Badge } from '@/components/Badge'
 import { SkeletonCard } from '@/components/Skeleton';
 import { EmptyState } from '@/components/EmptyState';
 import { formatPrice } from '@/lib/currency';
-import { MdVerified, MdSparkles, MdCompass } from 'react-icons/md';
+import { MdVerified } from 'react-icons/md';
+import { TbSparkles, TbCompass } from 'react-icons/tb';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import WishlistButton from '@/components/WishlistButton';
 import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageData, getDiscountPercent, getEffectivePrice, getDiscountedPrice, dedupeProducts, collectProductIds, normalizeBrand, EMPTY_ENTERPRISE_DATA } from '@/lib/homepage-product-utils'
@@ -1444,7 +1445,7 @@ export function BrandStoreSection({
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">
-            <SectionPill label="FEATURED BRANDS" icon={<MdSparkles />} gradientFrom="from-fuchsia-500" gradientVia="via-pink-500" gradientTo="to-pink-500" />
+            <SectionPill label="FEATURED BRANDS" icon={<TbSparkles />} gradientFrom="from-fuchsia-500" gradientVia="via-pink-500" gradientTo="to-pink-500" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-deep-navy mb-2">Featured Brands</h2>
           <p className="text-gray-500 mb-6">Shop by your favourite brands</p>
@@ -1512,7 +1513,7 @@ export function QuickLinksSection() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='mb-10'>
           <div className='flex items-center gap-3 mb-4'>
-            <SectionPill label='EXPLORE' icon={<MdCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
+            <SectionPill label='EXPLORE' icon={<TbCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
           </div>
           <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
             Quick Links
