@@ -41,7 +41,7 @@ interface SearchCategory {
 
 interface SearchBrand {
   name: string
-  productCount: number
+  productCount?: number
   type: string
 }
 
@@ -60,11 +60,8 @@ interface SearchService {
   type: string
 }
 
-interface SearchServiceCategory {
-  id: string
-  name: string
-  slug: string
-  serviceCount: number
+interface SearchSuggestion {
+  query: string
   type: string
 }
 
@@ -76,7 +73,7 @@ interface SearchResults {
     categories: SearchCategory[]
     brands: SearchBrand[]
     services: SearchService[]
-    serviceCategories: SearchServiceCategory[]
+    suggestions: SearchSuggestion[]
   }
   total: number
 }
@@ -87,7 +84,7 @@ type FlatSearchItem =
   | (SearchCategory & { _group: 'Categories' })
   | (SearchBrand & { _group: 'Brands' })
   | (SearchService & { _group: 'Services' })
-  | (SearchServiceCategory & { _group: 'Service Categories' })
+  | (SearchSuggestion & { _group: 'Suggestions' })
 
 interface SearchDropdownProps {
   onNavigate?: () => void
@@ -113,6 +110,7 @@ export function SearchDropdown({ onNavigate }: SearchDropdownProps) {
         ...results.results.vendors.map((v) => ({ ...v, _group: 'Vendors' as const })),
         ...results.results.categories.map((c) => ({ ...c, _group: 'Categories' as const })),
         ...results.results.brands.map((b) => ({ ...b, _group: 'Brands' as const })),
+        ...results.results.suggestions.map((s) => ({ ...s, _group: 'Suggestions' as const })),
       ]
     : []
 
@@ -138,10 +136,21 @@ const performSearch = useCallback(async (searchQuery: string) => {
       })
       if (res.ok) {
         const data = await res.json()
-        setResults(data)
+        setResults({
+          query: data.query,
+          results: {
+            products: data.results.products || [],
+            vendors: data.results.vendors || [],
+            categories: data.results.categories || [],
+            brands: data.results.brands || [],
+            services: data.results.services || [],
+            suggestions: data.results.suggestions || [],
+          },
+          total: data.total || 0,
+        })
         setIsOpen(true)
         setActiveIndex(-1)
-        const productIds = data.results.products.map((p: SearchProduct) => p.id).join(',')
+        const productIds = (data.results.products || []).map((p: SearchProduct) => p.id).join(',')
         if (productIds) {
           fetchWishlistStatus(productIds)
         }
@@ -239,8 +248,8 @@ const performSearch = useCallback(async (searchQuery: string) => {
   const isServiceItem = (item: FlatSearchItem): item is SearchService & { _group: 'Services' } =>
     item.type === 'service'
 
-  const isServiceCategoryItem = (item: FlatSearchItem): item is SearchServiceCategory & { _group: 'Service Categories' } =>
-    item.type === 'service-category'
+  const isSuggestionItem = (item: FlatSearchItem): item is SearchSuggestion & { _group: 'Suggestions' } =>
+    item.type === 'suggestion'
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -273,10 +282,10 @@ const performSearch = useCallback(async (searchQuery: string) => {
              router.push(`/vendor/${item.slug ?? item.id}`)
           } else if (isCategoryItem(item)) {
              router.push(`/marketplace?category=${encodeURIComponent(item.id)}`)
-          } else if (isServiceCategoryItem(item)) {
-             router.push(`/services/category/${item.slug}`)
           } else if (isBrandItem(item)) {
              router.push(`/marketplace?brand=${encodeURIComponent(item.name)}`)
+          } else if (isSuggestionItem(item)) {
+             router.push(`/search?q=${encodeURIComponent(item.query)}`)
           }
           onNavigate?.()
         } else {
@@ -631,41 +640,40 @@ const performSearch = useCallback(async (searchQuery: string) => {
               </div>
             )}
 
-            {/* Service Categories */}
-            {results.results.serviceCategories.length > 0 && (
+            {/* Suggestions */}
+            {results.results.suggestions.length > 0 && (
               <div className="p-2 border-t border-slate-100">
                 <p className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                  Service Categories
+                  Suggestions
                 </p>
-                {results.results.serviceCategories.slice(0, 3).map((serviceCategory) => {
+                {results.results.suggestions.map((suggestion) => {
                   const flatIdx = flatResults.findIndex(
-                    (r) => r.type === 'service-category' && (r as SearchServiceCategory).id === serviceCategory.id
+                    (r) => r.type === 'suggestion' && (r as SearchSuggestion).query === suggestion.query
                   )
                   return (
-                    <Link
-                      key={serviceCategory.id}
-                      href={`/services/category/${serviceCategory.slug}`}
-                      onClick={handleResultClick}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
+                    <button
+                      key={suggestion.query}
+                      onClick={() => {
+                        setQuery(suggestion.query)
+                        performSearch(suggestion.query)
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
                         flatIdx === activeIndex ? 'bg-royal-blue/8' : 'hover:bg-slate-50'
                       }`}
                       role="option"
                       aria-selected={flatIdx === activeIndex}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800 truncate">
-                          {highlightMatch(serviceCategory.name, query)}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {serviceCategory.serviceCount} services
+                          {highlightMatch(suggestion.query, query)}
                         </p>
                       </div>
-                    </Link>
+                    </button>
                   )
                 })}
               </div>
@@ -702,7 +710,7 @@ const performSearch = useCallback(async (searchQuery: string) => {
                           {highlightMatch(brand.name, query)}
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5">
-                          {brand.productCount} products
+                          {brand.productCount ?? 0} products
                         </p>
                       </div>
                     </Link>
