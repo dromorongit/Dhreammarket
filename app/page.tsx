@@ -42,6 +42,7 @@ import {
   NewArrivalsSection,
   NewThisWeekSection,
   ElectronicsShowcaseSection,
+  FoodShowcaseSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
@@ -238,6 +239,8 @@ export default function Home() {
           }
           if (section.slug === 'verified-vendors')
             return <VerifiedVendorsSection key={section.id} section={sectionProps} />
+          if (section.slug === 'food-showcase')
+            return <FoodShowcaseSection key={section.id} />
           if (section.slug === 'flash-sales')
             return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
           if (section.slug === 'gadget-display')
@@ -1362,7 +1365,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
       {/* See More button - always visible */}
       <div className="mt-8 text-center">
         <Link href="/marketplace">
-          <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+          <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
             See More
           </Button>
         </Link>
@@ -1443,7 +1446,7 @@ function FeaturedServicesSection() {
 
             <div className="mt-8 text-center">
               <Link href="/services">
-                <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+                <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
                   See More
                 </Button>
               </Link>

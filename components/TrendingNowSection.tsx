@@ -217,8 +217,8 @@ export function TrendingNowSection({
           <Link href='/marketplace?sort=trending'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More Trending
             </Button>

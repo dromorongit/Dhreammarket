@@ -601,8 +601,8 @@ export function FlashSalesSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -675,8 +675,8 @@ export function SponsoredProductsSection({
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -837,8 +837,8 @@ export function EnterpriseGadgetDisplaySection({
           <Link href='/marketplace?category=electronics'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold border-white/30 text-white hover:bg-white/10'
             >
               See More
             </Button>
@@ -903,8 +903,8 @@ export function TopSellingSection({
           <Link href='/marketplace?sort=popular'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -969,8 +969,8 @@ export function BigTopDealsSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1035,8 +1035,8 @@ export function TopClearanceSalesSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1101,8 +1101,8 @@ export function TopServicesSection({
           <Link href='/marketplace?category=Services'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1301,8 +1301,8 @@ export function HomeTheatreSection({
           <Link href='/marketplace?category=Electronics'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold border-white/30 text-white hover:bg-white/10'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold border-white/30 text-white hover:bg-white/10'
             >
               See More
             </Button>
@@ -1367,8 +1367,8 @@ export function TopExpressOffersSection({
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1470,8 +1470,8 @@ export function BrandStoreSection({
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               Browse All Brands
             </Button>
@@ -1619,8 +1619,8 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1691,8 +1691,8 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
           <Link href='/marketplace'>
             <Button
               variant='outline'
-              size='lg'
-              className='rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all'
+              size='md'
+              className='rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all'
             >
               See More
             </Button>
@@ -1727,41 +1727,103 @@ const ELECTRONICS_CATEGORIES = [
 ] as const
 
 export function ElectronicsShowcaseSection() {
-  return (
-    <section className='relative py-16 lg:py-24 bg-white'>
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='mb-12'>
-          <Badge variant='premium' className='mb-4'>Technology</Badge>
-          <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
-            Plug in with our Electronics
-          </h2>
-        </div>
-        <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
-          {ELECTRONICS_CATEGORIES.map((category) => (
-            <Link key={category.title} href={category.link}>
-              <Card
-                variant='elevated'
-                className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
-              >
-                <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-                  <Image
-                    src={category.image}
-                    alt={category.title}
-                    className='object-cover group-hover:scale-105 transition-transform duration-500'
-                    fill
-                    loading='lazy'
-                  />
-                </div>
-                <div className='p-4 text-center'>
-                  <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
-                    {category.title}
-                  </h3>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+   return (
+     <section className='relative py-16 lg:py-24 bg-white'>
+       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+         <div className='mb-12'>
+           <Badge variant='premium' className='mb-4'>Technology</Badge>
+           <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+             Plug in with our Electronics
+           </h2>
+         </div>
+         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+           {ELECTRONICS_CATEGORIES.map((category) => (
+             <Link key={category.title} href={category.link}>
+               <Card
+                 variant='elevated'
+                 className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+               >
+                 <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                   <Image
+                     src={category.image}
+                     alt={category.title}
+                     className='object-cover group-hover:scale-105 transition-transform duration-500'
+                     fill
+                     loading='lazy'
+                   />
+                 </div>
+                 <div className='p-4 text-center'>
+                   <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                     {category.title}
+                   </h3>
+                 </div>
+               </Card>
+             </Link>
+           ))}
+         </div>
+       </div>
+     </section>
+   );
+ }
+
+ const FOOD_CATEGORIES = [
+   {
+     title: 'Groceries',
+     image: '/images/grocery.jpg',
+     link: '/marketplace?tab=products&category=Food%20and%20Beverages',
+   },
+   {
+     title: 'Beverages',
+     image: '/images/beverage.jpg',
+     link: '/marketplace?tab=products&category=Food%20and%20Beverages',
+   },
+   {
+     title: 'Local Dishes',
+     image: '/images/dish.jpg',
+     link: '/marketplace?tab=products&category=Food%20and%20Beverages',
+   },
+   {
+     title: 'Fast Foods',
+     image: '/images/food.jpg',
+     link: '/marketplace?tab=products&category=Food%20and%20Beverages',
+   },
+ ] as const
+
+ export function FoodShowcaseSection() {
+   return (
+     <section className='relative py-16 lg:py-24 bg-white'>
+       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+         <div className='mb-12'>
+           <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+             Taste the Best Around You
+           </h2>
+         </div>
+         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+           {FOOD_CATEGORIES.map((category) => (
+             <Link key={category.title} href={category.link}>
+               <Card
+                 variant='elevated'
+                 className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+               >
+                 <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                   <Image
+                     src={category.image}
+                     alt={category.title}
+                     className='object-cover group-hover:scale-105 transition-transform duration-500'
+                     fill
+                     loading='lazy'
+                   />
+                 </div>
+                 <div className='p-4 text-center'>
+                   <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                     {category.title}
+                   </h3>
+                 </div>
+               </Card>
+             </Link>
+           ))}
+         </div>
+       </div>
+     </section>
+   );
+ }

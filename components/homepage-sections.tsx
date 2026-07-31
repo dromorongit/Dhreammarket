@@ -243,7 +243,7 @@ export function ProductGridSection({ section }: HomepageSectionProps) {
 
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-<Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+<Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
                See More
              </Button>
           </Link>
@@ -861,7 +861,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-<Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">
+<Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">
                See More
              </Button>
           </Link>
@@ -1028,7 +1028,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/services">
-            <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
@@ -1096,7 +1096,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/services">
-            <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
@@ -1135,7 +1135,7 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
         </div>
         <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-          <div className="flex gap-4">
+          <div className="flex gap-6">
             {displayVendors.map((vendor: any) => (
               <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
                 <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
@@ -1276,7 +1276,7 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
         </div>
         <div className="mt-8 text-center">
           <Link href="/marketplace">
-            <Button variant="outline" size="lg" className="rounded-full px-8 py-3 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
+            <Button variant="outline" size="md" className="rounded-full px-6 py-2 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
       </div>
