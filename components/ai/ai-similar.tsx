@@ -64,7 +64,7 @@ function AISimilarCard({ item }: { item: AISimilarItem }) {
           <p className="text-xs text-slate-500 mb-2">{item.store.name}</p>
         )}
         <div className="mt-auto">
-          <span className="text-lg font-bold text-royal-blue">${price.toFixed(2)}</span>
+          <span className="text-lg font-bold text-royal-blue">{formatPrice(price)}</span>
           <p className="text-xs text-gray-400 mt-1">{item.reason}</p>
         </div>
       </div>
