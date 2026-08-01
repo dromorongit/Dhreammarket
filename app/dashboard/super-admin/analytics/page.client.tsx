@@ -185,7 +185,7 @@ export default function SuperAdminAnalytics() {
   const kpis = data?.kpis
   const charts = data?.charts
   const rankings = data?.rankings
-  const breakdowns = data?.breakings
+  const breakdowns = data?.breakdowns
 
   return (
     <div className="min-h-screen bg-slate-50">
