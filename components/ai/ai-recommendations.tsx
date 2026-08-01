@@ -41,35 +41,54 @@ interface AIRecommendationsProps {
 function AIRecommendationCard({ item }: { item: AIRecommendationItem }) {
   const isProduct = item.type === 'PRODUCT'
   const name = item.name || item.title || 'Unknown'
-  const price = item.dealsPrice || item.salesPrice || item.price || item.startingPrice || 0
+  const effectivePrice = item.dealsPrice ?? item.salesPrice ?? item.price ?? item.startingPrice ?? 0
+  const hasDiscount = (item.dealsPrice ?? item.salesPrice ?? item.startingPrice) != null && (item.price ?? 0) > effectivePrice
+  const discountPercentage = hasDiscount ? Math.round(((item.price ?? 0) - effectivePrice) / (item.price ?? 1) * 100) : 0
 
   return (
-    <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300">
-      <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`}>
-        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+    <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
+      <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`} className="block">
+        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
           {item.image ? (
             <Image src={item.image} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
           ) : item.thumbnail ? (
             <Image src={item.thumbnail} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-slate-100">
-              <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
           )}
         </div>
       </Link>
-      <div className="p-4 flex-1 flex flex-col">
-        <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`}>
-          <h3 className="text-sm font-semibold text-deep-navy line-clamp-2 mb-2">{name}</h3>
-        </Link>
+      <div className="p-2 space-y-1 flex-1 flex flex-col">
+        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+          {name}
+        </h3>
         {item.store && (
-          <p className="text-xs text-slate-500 mb-2">{item.store.name}</p>
+          <div className="flex items-center gap-1 min-w-0">
+            <p className="text-[10px] text-slate-500 truncate">
+              {item.store.name}
+            </p>
+          </div>
         )}
-        <div className="mt-auto">
-          <span className="text-lg font-bold text-royal-blue">{formatPrice(price)}</span>
-          <p className="text-xs text-gray-400 mt-1">{item.reason}</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] font-bold text-royal-blue">
+            {formatPrice(effectivePrice)}
+          </span>
+          {discountPercentage > 0 && (
+            <span className="text-[10px] text-slate-400 line-through">
+              {formatPrice(item.price ?? 0)}
+            </span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1 pt-0.5">
+          <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`} className="w-full">
+            <Button size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+              View Details
+            </Button>
+          </Link>
         </div>
       </div>
     </Card>
