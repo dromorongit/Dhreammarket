@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import SettingsShell from '@/components/settings/SettingsShell'
 import ProfileSection from '@/components/settings/ProfileSection'
 import PreferencesSection from '@/components/settings/PreferencesSection'
@@ -7,6 +8,7 @@ import NotificationSection from '@/components/settings/NotificationSection'
 import SecuritySection from '@/components/settings/SecuritySection'
 import DangerZoneSection from '@/components/settings/DangerZoneSection'
 import SuperAdminSections from '@/components/settings/SuperAdminSections'
+import { Card, CardHeader, CardContent } from '@/components/Card'
 import { useSettingsUser } from '@/components/settings/SettingsContext'
 
 export default function SuperAdminSettingsPage() {
@@ -67,6 +69,17 @@ function SuperAdminSettingsContent() {
       <SuperAdminSections />
 
       <DangerZoneSection />
+
+      <Card>
+        <CardHeader>
+          <h3 className="font-semibold text-deep-navy">Loyalty & Rewards</h3>
+        </CardHeader>
+        <CardContent>
+          <Link href="/dashboard/super-admin/loyalty" className="text-royal-blue hover:underline text-sm">
+            Configure loyalty tiers, rewards, achievements, and campaigns
+          </Link>
+        </CardContent>
+      </Card>
     </>
   )
 }

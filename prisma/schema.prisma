@@ -59,6 +59,16 @@ model User {
   vendorReviewReplies      VendorReviewReply[]
   serviceReviews           ServiceReview[]
   collections              Collection[]
+  rewardPoints             RewardPoints?
+  cashbackBalances         CashbackBalance?
+  rewardTransactions       RewardTransaction[]
+  cashbackTransactions     CashbackTransaction[]
+  customerLoyalty          CustomerLoyalty?
+  customerAchievements     CustomerAchievement[]
+  referralRecordsAsReferrer ReferralRecord[] @relation("ReferralReferrer")
+  referralRecordsAsReferee ReferralRecord[] @relation("ReferralReferee")
+  rewardRedemptions        RewardRedemption[]
+  vendorRewardCampaigns    VendorRewardCampaign[]
 
   @@map("users")
 }
@@ -1136,6 +1146,18 @@ enum NotificationType {
   FLASH_DEAL_ENDING
   ADMIN_ANNOUNCEMENT
   SYSTEM_ALERT
+  POINTS_EARNED
+  POINTS_REDEEMED
+  CASHBACK_EARNED
+  CASHBACK_REDEEMED
+  TIER_UPGRADED
+  TIER_DOWNGRADED
+  BADGE_UNLOCKED
+  REWARD_REDEEMED
+  REFERRAL_COMPLETED
+  REFERRAL_REWARD_CLAIMED
+  VENDOR_REWARD_CAMPAIGN
+  LOYALTY_OFFER
 }
 
 enum FeedbackType {
@@ -1950,4 +1972,313 @@ model StickyButton {
   @@map("sticky_buttons")
   @@index([pageUrl])
   @@unique([pageUrl, buttonType])
+}
+
+// ===== MODULE 19: Customer Loyalty & Rewards System =====
+
+model RewardPoints {
+  id        String   @id @default(cuid())
+  userId    String
+  balance   Float    @default(0)
+  totalEarned Float  @default(0)
+  totalRedeemed Float @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reward_points")
+  @@unique([userId])
+  @@index([userId])
+}
+
+model CashbackBalance {
+  id        String   @id @default(cuid())
+  userId    String
+  balance   Float    @default(0)
+  totalEarned Float  @default(0)
+  totalRedeemed Float @default(0)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cashback_balances")
+  @@unique([userId])
+  @@index([userId])
+}
+
+model RewardTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      TransactionType
+  category  RewardCategory
+  amount    Float
+  balanceAfter Float
+  description String?
+  referenceId String?
+  referenceType String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reward_transactions")
+  @@index([userId])
+  @@index([createdAt])
+  @@index([referenceId])
+}
+
+model CashbackTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Float
+  source    CashbackSource
+  description String?
+  referenceId String?
+  referenceType String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cashback_transactions")
+  @@index([userId])
+  @@index([createdAt])
+  @@index([referenceId])
+}
+
+model LoyaltyTier {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  color     String
+  minPoints Float    @default(0)
+  maxPoints Float?
+  multiplier Float   @default(1.0)
+  pointEarningRate Float @default(1.0)
+  cashbackRate Float @default(0.0)
+  description String?
+  isActive  Boolean  @default(true)
+  displayOrder Int  @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  customerLoyalties CustomerLoyalty[]
+
+  @@map("loyalty_tiers")
+  @@index([displayOrder])
+}
+
+model CustomerLoyalty {
+  id        String   @id @default(cuid())
+  userId    String
+  tierId    String
+  points    Float    @default(0)
+  totalPointsEarned Float @default(0)
+  totalPointsRedeemed Float @default(0)
+  totalCashbackEarned Float @default(0)
+  totalCashbackRedeemed Float @default(0)
+  lifetimeOrders Int @default(0)
+  lifetimeBookings Int @default(0)
+  lifetimeReviews Int @default(0)
+  lifetimeReferrals Int @default(0)
+  successfulReferrals Int @default(0)
+  streakDays Int @default(0)
+  lastActivityAt DateTime?
+  tierUpdatedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier      LoyaltyTier @relation(fields: [tierId], references: [id])
+
+  @@map("customer_loyalty")
+  @@unique([userId])
+  @@index([tierId])
+  @@index([points])
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  description String?
+  badge     String?
+  color     String?
+  icon      String?
+  criteria  Json
+  points    Float    @default(0)
+  cashbackReward Float @default(0)
+  isActive  Boolean  @default(true)
+  displayOrder Int  @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  customerAchievements CustomerAchievement[]
+
+  @@map("achievements")
+  @@index([displayOrder])
+}
+
+model CustomerAchievement {
+  id        String   @id @default(cuid())
+  userId    String
+  achievementId String
+  unlockedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@map("customer_achievements")
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+}
+
+model ReferralRecord {
+  id        String   @id @default(cuid())
+  referrerId String
+  refereeId String?
+  code      String   @unique
+  source    String?
+  status    ReferralStatus @default(PENDING)
+  rewardPoints Float @default(0)
+  rewardCashback Float @default(0)
+  referredAt DateTime?
+  completedAt DateTime?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  referrer  User     @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee   User?    @relation("ReferralReferee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@map("referral_records")
+  @@index([referrerId])
+  @@index([refereeId])
+  @@index([code])
+  @@index([status])
+}
+
+model RewardRedemption {
+  id        String   @id @default(cuid())
+  userId    String
+  type      RedemptionType
+  pointsUsed Float?
+  cashbackUsed Float?
+  couponId  String?
+  orderId   String?
+  serviceRequestId String?
+  amount    Float
+  description String?
+  status    RedemptionStatus @default(COMPLETED)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reward_redemptions")
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model VendorRewardCampaign {
+  id        String   @id @default(cuid())
+  vendorId  String
+  name      String
+  description String?
+  type      CampaignType
+  rewardType RewardType
+  value     Float
+  minPurchase Float?
+  maxReward Float?
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean  @default(true)
+  appliesToProducts Json?
+  appliesToServices Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vendor    User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("vendor_reward_campaigns")
+  @@index([vendorId])
+  @@index([isActive])
+}
+
+model LoyaltyConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  description String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("loyalty_config")
+}
+
+enum TransactionType {
+  EARN
+  REDEEM
+  ADJUST
+  EXPIRE
+  BONUS
+}
+
+enum RewardCategory {
+  PURCHASE
+  SERVICE_BOOKING
+  REVIEW
+  REVIEW_IMAGE
+  REVIEW_VIDEO
+  DAILY_LOGIN
+  PROFILE_COMPLETE
+  FOLLOW_VENDOR
+  REFERRAL
+  SUCCESSFUL_REFERRAL
+  WISHLIST_ACTIVITY
+  COLLECTION_CREATE
+  REPEAT_PURCHASE
+  REPEAT_BOOKING
+  COUPON_REDEEM
+  CASHBACK_REDEEM
+  SPECIAL_OFFER
+}
+
+enum CashbackSource {
+  PRODUCT_PURCHASE
+  SERVICE_BOOKING
+  VENDOR_CAMPAIGN
+  PROMOTIONAL_CAMPAIGN
+  REFERRAL_BONUS
+  REWARD_REDEMPTION
+  ADJUSTMENT
+}
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+  REWARD_CLAIMED
+  EXPIRED
+  CANCELLED
+}
+
+enum RedemptionType {
+  POINTS
+  CASHBACK
+  COUPON
+  MIXED
+}
+
+enum RedemptionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum CampaignType {
+  POINTS_MULTIPLIER
+  CASHBACK_BONUS
+  DISCOUNT
+  FIXED_REWARD
+  BUNDLE_OFFER
+}
+
+enum RewardType {
+  POINTS
+  CASHBACK
+  COUPON
+  DISCOUNT
 }

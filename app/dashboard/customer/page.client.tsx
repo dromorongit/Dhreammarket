@@ -70,6 +70,7 @@ export default function CustomerDashboardPage() {
         <div className="flex gap-2 mb-8 border-b border-gray-200 overflow-x-auto">
           {[
             { key: 'overview', label: 'Overview' },
+            { key: 'loyalty', label: 'Loyalty & Rewards' },
             { key: 'collections', label: 'Collections' },
             { key: 'recently-viewed', label: 'Recently Viewed' },
             { key: 'followed-vendors', label: 'Followed Vendors' },
@@ -128,6 +129,15 @@ export default function CustomerDashboardPage() {
                 </Link>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {activeTab === 'loyalty' && (
+          <div>
+            <h2 className="text-xl font-bold text-deep-navy mb-6">Loyalty & Rewards</h2>
+            <Link href="/dashboard/customer/loyalty">
+              <Button>View Loyalty Dashboard</Button>
+            </Link>
           </div>
         )}
 
