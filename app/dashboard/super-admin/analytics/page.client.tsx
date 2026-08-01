@@ -307,7 +307,7 @@ export default function SuperAdminAnalytics() {
                     <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
               </PieChart>
             </ResponsiveContainer>
           </ChartCard>
