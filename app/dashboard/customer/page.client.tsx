@@ -11,6 +11,8 @@ import { RecommendationCard } from '@/components/RecommendationCard'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
 import { StarRating } from '@/components/StarRating'
+import { AICustomerInsights } from '@/components/ai'
+import { AIRecommendations } from '@/components/ai'
 
 export default function CustomerDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -226,28 +228,34 @@ export default function CustomerDashboardPage() {
         )}
 
         {activeTab === 'recommendations' && (
-          <div>
-            <h2 className="text-xl font-bold text-deep-navy mb-6">Recommended For You</h2>
-            {loading ? (
-              <div className="animate-pulse grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl h-64"></div>
-                ))}
-              </div>
-            ) : recommendations.length === 0 ? (
-              <Card className="text-center py-12">
-                <p className="text-gray-500">Browse products to get personalized recommendations</p>
-                <Link href="/marketplace">
-                  <Button className="mt-4">Browse Products</Button>
-                </Link>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {recommendations.map((item) => (
-                  <RecommendationCard key={`${item.entityType}-${item.entityId}`} item={item} />
-                ))}
-              </div>
-            )}
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-deep-navy mb-6">Recommended For You</h2>
+              {loading ? (
+                <div className="animate-pulse grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-xl h-64"></div>
+                  ))}
+                </div>
+              ) : recommendations.length === 0 ? (
+                <Card className="text-center py-12">
+                  <p className="text-gray-500">Browse products to get personalized recommendations</p>
+                  <Link href="/marketplace">
+                    <Button className="mt-4">Browse Products</Button>
+                  </Link>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {recommendations.map((item) => (
+                    <RecommendationCard key={`${item.entityType}-${item.entityId}`} item={item} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8">
+              <AICustomerInsights userId="" />
+            </div>
           </div>
         )}
       </div>

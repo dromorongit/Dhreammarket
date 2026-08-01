@@ -6,6 +6,8 @@ import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatCurrency } from '@/lib/currency'
+import { AIVendorInsights } from '@/components/ai'
+import { AIRecommendations } from '@/components/ai'
 
 interface VendorProduct {
   id: string
@@ -176,7 +178,8 @@ export default function VendorDashboardPage() {
         </div>
 
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <Card.Header>
                 <h3 className="font-semibold text-deep-navy">Revenue</h3>
@@ -218,6 +221,9 @@ export default function VendorDashboardPage() {
                 <p className="text-sm text-gray-500">Views to purchases</p>
               </Card.Content>
             </Card>
+          </div>
+
+            <AIVendorInsights vendorId="" userId="" />
           </div>
         )}
 

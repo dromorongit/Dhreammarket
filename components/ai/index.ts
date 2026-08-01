@@ -1,0 +1,6 @@
+export { AIRecommendations } from './ai-recommendations'
+export { AITrending } from './ai-trending'
+export { AISimilar } from './ai-similar'
+export { AICrossSelling } from './ai-cross-selling'
+export { AICustomerInsights } from './ai-customer-insights'
+export { AIVendorInsights } from './ai-vendor-insights'

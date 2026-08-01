@@ -18,6 +18,8 @@ import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/Ca
 import { MdVerified } from 'react-icons/md'
 import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus } from 'react-icons/fi'
 import { event } from '@/lib/gtag'
+import { AISimilar } from '@/components/ai'
+import { AICrossSelling } from '@/components/ai'
 
 interface ProductImage {
   id: string

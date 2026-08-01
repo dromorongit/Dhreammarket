@@ -19,6 +19,8 @@ import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import ServiceCard from '@/components/ServiceCard'
 import WishlistButton from '@/components/WishlistButton'
+import { AIRecommendations } from '@/components/ai'
+import { AITrending } from '@/components/ai'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 interface Product {
@@ -717,6 +719,23 @@ function MarketplaceContent() {
           </div>
         </div>
       </section>
+
+      <AIRecommendations
+        title="Recommended for You"
+        subtitle="Personalized picks based on your browsing and purchase history"
+        recommendationType="RECOMMENDED_FOR_YOU"
+        limit={8}
+        layout="grid"
+      />
+
+      <AITrending
+        title="Trending Now"
+        subtitle="What&apos;s hot right now across the marketplace"
+        timeWindow="24H"
+        entityType="PRODUCT"
+        limit={8}
+        layout="grid"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-8">

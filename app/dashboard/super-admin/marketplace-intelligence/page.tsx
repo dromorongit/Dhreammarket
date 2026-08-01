@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
+import { AICustomerInsights } from '@/components/ai'
+import { AIVendorInsights } from '@/components/ai'
+import { AIRecommendations } from '@/components/ai'
+import { AITrending } from '@/components/ai'
 
 export default function SuperAdminMarketplaceIntelligence() {
   const [activeTab, setActiveTab] = useState('kpis')
@@ -13,12 +17,12 @@ export default function SuperAdminMarketplaceIntelligence() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-deep-navy mb-8">Marketplace Intelligence</h1>
 
-        <div className="flex gap-2 mb-8 border-b border-gray-200">
-          {['kpis', 'vendors', 'products', 'services', 'categories', 'searches', 'coupons'].map((tab) => (
+        <div className="flex gap-2 mb-8 border-b border-gray-200 overflow-x-auto">
+          {['kpis', 'vendors', 'products', 'services', 'categories', 'searches', 'coupons', 'ai-insights'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab
                   ? 'border-royal-blue text-royal-blue'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -28,6 +32,41 @@ export default function SuperAdminMarketplaceIntelligence() {
             </button>
           ))}
         </div>
+
+        {activeTab === 'ai-insights' && (
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-deep-navy mb-4">AI-Powered Recommendations</h2>
+              <AIRecommendations
+                title="Recommended for You"
+                recommendationType="RECOMMENDED_FOR_YOU"
+                limit={8}
+                layout="grid"
+              />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold text-deep-navy mb-4">Trending Now</h2>
+              <AITrending
+                title="Trending Today"
+                timeWindow="24H"
+                entityType="PRODUCT"
+                limit={8}
+                layout="grid"
+              />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold text-deep-navy mb-4">Customer Insights</h2>
+              <AICustomerInsights userId="" />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-bold text-deep-navy mb-4">Vendor Intelligence</h2>
+              <AIVendorInsights vendorId="" userId="" />
+            </div>
+          </div>
+        )}
 
         {activeTab === 'kpis' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
