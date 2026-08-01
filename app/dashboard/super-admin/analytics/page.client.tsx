@@ -302,7 +302,7 @@ export default function SuperAdminAnalytics() {
           <ChartCard title="Category Revenue" icon="🥧">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={breakdowns?.revenueByCategory ?? []} cx="50%" cy="50%" outerRadius={100} dataKey="revenue" nameKey="name" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                <Pie data={breakdowns?.revenueByCategory ?? []} cx="50%" cy="50%" outerRadius={100} dataKey="revenue" nameKey="name" label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}>
                   {(breakdowns?.revenueByCategory ?? []).map((entry, index) => (
                     <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                   ))}
