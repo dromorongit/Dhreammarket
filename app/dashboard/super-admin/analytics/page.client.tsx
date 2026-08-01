@@ -318,7 +318,7 @@ export default function SuperAdminAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `GH₵${v}`} />
                 <YAxis type="category" dataKey="email" tick={{ fontSize: 12 }} width={120} />
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
                 <Bar dataKey="revenue" fill="#2563EB" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
