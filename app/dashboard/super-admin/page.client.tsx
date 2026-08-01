@@ -2,11 +2,16 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { Card, CardContent } from '@/components/Card'
+import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  ComposedChart, ReferenceLine
+} from 'recharts'
 
 interface PlatformStats {
   totalUsers: number
@@ -54,23 +59,73 @@ interface Vendor {
  }
 
 interface SupportTicket {
-  id: string
-  subject: string
-  status: string
-  createdAt: string
-  user: {
-    email: string
-  }
-}
+   id: string
+   subject: string
+   status: string
+   createdAt: string
+   user: {
+     email: string
+   }
+ }
 
-export default function SuperAdminDashboard() {
-  try {
-  const [stats, setStats] = useState<PlatformStats | null>(null)
-  const [admins, setAdmins] = useState<AdminUser[]>([])
-  const [vendors, setVendors] = useState<Vendor[]>([])
-  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+ interface AnalyticsData {
+   kpis: {
+     totalRevenue: number
+     todayRevenue: number
+     weeklyRevenue: number
+     monthlyRevenue: number
+     yearlyRevenue: number
+     totalOrders: number
+     completedOrders: number
+     pendingOrders: number
+     cancelledOrders: number
+     totalBookings: number
+     completedBookings: number
+     pendingBookings: number
+     vendorGrowth: number
+     customerGrowth: number
+     activeUsers: number
+     dailyActiveUsers: number
+     monthlyActiveUsers: number
+     conversionRate: number
+     averageOrderValue: number
+     repeatCustomerPercentage: number
+     productsSold: number
+     servicesBooked: number
+   }
+   rankings: {
+     topCategories: Array<{ name: string; revenue: number }>
+     topProducts: Array<{ name: string; salesCount: number }>
+     topServices: Array<{ title: string; count: number }>
+     topVendors: Array<{ name: string; orderCount: number }>
+     topBrands: Array<{ name: string; revenue: number }>
+     mostViewedProducts: Array<{ name: string; views: number }>
+     mostViewedServices: Array<{ title: string; count: number }>
+   }
+   breakdowns: {
+     revenueByCategory: Array<{ name: string; revenue: number }>
+     revenueByVendor: Array<{ email: string; revenue: number }>
+     revenueByBrand: Array<{ name: string; revenue: number }>
+   }
+   charts: {
+     ordersOverTime: Array<{ date: string; revenue: number }>
+     bookingsOverTime: Array<{ date: string; count: number }>
+     customerGrowthOverTime: Array<{ date: string; count: number }>
+     marketplaceActivity: Array<{ date: string; orders: number; bookings: number; revenue: number }>
+     monthlyComparison: Array<{ month: string; revenue: number; orders: number; bookings: number }>
+   }
+ }
+
+ export default function SuperAdminDashboard() {
+   try {
+   const [stats, setStats] = useState<PlatformStats | null>(null)
+   const [admins, setAdmins] = useState<AdminUser[]>([])
+   const [vendors, setVendors] = useState<Vendor[]>([])
+   const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
+   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+   const [loading, setLoading] = useState(true)
+   const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     try {
@@ -106,6 +161,25 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setAnalyticsLoading(true)
+      const res = await fetch('/api/analytics/super-admin?range=thismonth')
+      if (res.ok) {
+        const data = await res.json()
+        setAnalytics(data.analytics || null)
+      }
+    } catch (err) {
+      console.error('Error fetching analytics:', err)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GH', {
@@ -350,11 +424,124 @@ export default function SuperAdminDashboard() {
                  <p className="text-sm text-slate-500 mt-1">Awaiting review</p>
                </CardContent>
              </Card>
-          </Link>
-        </div>
+</Link>
+         </div>
 
-{/* Employee/Admin Management & Vendor Governance - Mobile Responsive */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+         {/* Marketplace Analytics */}
+         <div className="mb-8">
+           <h2 className="text-2xl font-bold text-deep-navy mb-6">Marketplace Analytics</h2>
+           {analyticsLoading ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+               {[...Array(8)].map((_, i) => (
+                 <SkeletonCard key={i} />
+               ))}
+             </div>
+           ) : analytics ? (
+             <>
+               {/* Analytics KPI Cards */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                 <MetricCard label="Revenue Today" value={formatCurrency(analytics.kpis.todayRevenue)} trend="up" />
+                 <MetricCard label="Revenue This Week" value={formatCurrency(analytics.kpis.weeklyRevenue)} trend="up" />
+                 <MetricCard label="Revenue This Month" value={formatCurrency(analytics.kpis.monthlyRevenue)} trend="up" />
+                 <MetricCard label="Revenue This Year" value={formatCurrency(analytics.kpis.yearlyRevenue)} trend="up" />
+                 <MetricCard label="Orders" value={formatNumber(analytics.kpis.totalOrders)} trend="neutral" />
+                 <MetricCard label="Completed Orders" value={formatNumber(analytics.kpis.completedOrders)} trend="up" />
+                 <MetricCard label="Pending Orders" value={formatNumber(analytics.kpis.pendingOrders)} trend="neutral" />
+                 <MetricCard label="Service Bookings" value={formatNumber(analytics.kpis.totalBookings)} trend="neutral" />
+                 <MetricCard label="Customer Growth" value={`+${analytics.kpis.customerGrowth}`} trend="up" />
+                 <MetricCard label="Vendor Growth" value={`+${analytics.kpis.vendorGrowth}`} trend="up" />
+               </div>
+
+               {/* Charts */}
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                 <ChartCard title="Revenue Line Chart" icon="📈">
+                   <ResponsiveContainer width="100%" height={300}>
+                     <AreaChart data={analytics.charts.ordersOverTime ?? []}>
+                       <defs>
+                         <linearGradient id="superAdminRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                           <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3} />
+                           <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+                         </linearGradient>
+                       </defs>
+                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                       <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(d) => new Date(d).toLocaleDateString()} />
+                       <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `GH₵${v}`} />
+                       <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
+                       <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#superAdminRevenueGradient)" name="Revenue" />
+                     </AreaChart>
+                   </ResponsiveContainer>
+                 </ChartCard>
+
+                 <ChartCard title="Orders Chart" icon="📊">
+                   <ResponsiveContainer width="100%" height={300}>
+                     <BarChart data={analytics.charts.monthlyComparison ?? []}>
+                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                       <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                       <YAxis tick={{ fontSize: 12 }} />
+                       <Tooltip />
+                       <Legend />
+                       <Bar dataKey="orders" fill="#2563EB" name="Orders" radius={[4, 4, 0, 0]} />
+                       <Bar dataKey="revenue" fill="#10B981" name="Revenue" radius={[4, 4, 0, 0]} />
+                     </BarChart>
+                   </ResponsiveContainer>
+                 </ChartCard>
+
+                 <ChartCard title="Bookings Chart" icon="📋">
+                   <ResponsiveContainer width="100%" height={300}>
+                     <AreaChart data={analytics.charts.bookingsOverTime ?? []}>
+                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                       <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(d) => new Date(d).toLocaleDateString()} />
+                       <YAxis tick={{ fontSize: 12 }} />
+                       <Tooltip />
+                       <Area type="monotone" dataKey="count" stroke="#C89B2B" strokeWidth={2} fill="#C89B2B" fillOpacity={0.1} name="Bookings" />
+                     </AreaChart>
+                   </ResponsiveContainer>
+                 </ChartCard>
+
+                 <ChartCard title="Category Distribution" icon="🥧">
+                   <ResponsiveContainer width="100%" height={300}>
+                     <PieChart>
+                       <Pie data={analytics.breakdowns.revenueByCategory ?? []} cx="50%" cy="50%" outerRadius={100} dataKey="revenue" nameKey="name" label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}>
+                         {(analytics.breakdowns.revenueByCategory ?? []).map((entry, index) => (
+                           <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                         ))}
+                       </Pie>
+                       <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
+                     </PieChart>
+                   </ResponsiveContainer>
+                 </ChartCard>
+
+                 <ChartCard title="Vendor Performance" icon="🏪">
+                   <ResponsiveContainer width="100%" height={300}>
+                     <BarChart data={(analytics.breakdowns.revenueByVendor ?? []).slice(0, 10)} layout="horizontal">
+                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                       <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `GH₵${v}`} />
+                       <YAxis type="category" dataKey="email" tick={{ fontSize: 12 }} width={120} />
+                       <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
+                       <Bar dataKey="revenue" fill="#2563EB" radius={[0, 4, 4, 0]} />
+                     </BarChart>
+                   </ResponsiveContainer>
+                 </ChartCard>
+               </div>
+
+               {/* Rankings */}
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                 <RankingCard title="Top Vendors" data={analytics.rankings.topVendors ?? []} />
+                 <RankingCard title="Top Products" data={analytics.rankings.topProducts ?? []} />
+                 <RankingCard title="Top Services" data={analytics.rankings.topServices ?? []} />
+               </div>
+             </>
+           ) : (
+             <Card>
+               <CardContent className="text-center py-8">
+                 <p className="text-gray-500">Analytics data is not available at this time.</p>
+               </CardContent>
+             </Card>
+           )}
+         </div>
+
+         {/* Employee/Admin Management & Vendor Governance - Mobile Responsive */}
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card variant="elevated">
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
@@ -808,10 +995,89 @@ export default function SuperAdminDashboard() {
             </div>
           </CardContent>
         </Card>
-       </div>
-    </div>
-  )
-    } catch (error) {
-      throw error
+</div>
+     </div>
+   )
+} catch (error) {
+        throw error
+      }
     }
+
+ const COLORS = [
+   '#0B1F3A', '#2563EB', '#C89B2B', '#10B981', '#F59E0B',
+   '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1',
+ ]
+
+ function formatNumber(num: number) {
+   return num.toLocaleString()
+ }
+
+ function formatCurrency(amount: number) {
+   return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount)
+ }
+
+ function MetricCard({ label, value, trend }: { label: string; value: string | number; trend: 'up' | 'down' | 'neutral' }) {
+   const trendColors = { up: 'text-emerald-600', down: 'text-rose-600', neutral: 'text-slate-500' }
+   const trendIcons = { up: '↑', down: '↓', neutral: '→' }
+   return (
+     <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+       <CardContent className="p-4 sm:p-6">
+         <p className="text-xs sm:text-sm text-slate-500 mb-1">{label}</p>
+         <div className="flex items-baseline gap-2">
+           <p className="text-xl sm:text-2xl font-bold text-deep-navy">{value}</p>
+           <span className={`text-sm font-medium ${trendColors[trend]}`}>{trendIcons[trend]}</span>
+         </div>
+       </CardContent>
+     </Card>
+   )
+ }
+
+ function ChartCard({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+   return (
+     <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+       <CardHeader>
+         <div className="flex items-center gap-2">
+           <span className="text-xl">{icon}</span>
+           <h3 className="text-lg font-semibold text-deep-navy">{title}</h3>
+         </div>
+       </CardHeader>
+       <CardContent>{children}</CardContent>
+     </Card>
+   )
+ }
+
+ function RankingCard({ title, data }: { title: string; data: Array<{ name?: string; email?: string; revenue?: number; count?: number; orderCount?: number; views?: number }> }) {
+   return (
+     <Card variant="elevated" className="hover:shadow-xl transition-all duration-300">
+       <CardHeader>
+         <h3 className="text-lg font-semibold text-deep-navy">{title}</h3>
+       </CardHeader>
+       <CardContent>
+         {data.length === 0 ? (
+           <p className="text-slate-400 text-sm text-center py-4">No data available</p>
+         ) : (
+           <div className="space-y-3">
+             {data.slice(0, 10).map((item, index) => (
+               <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
+                 <div className="flex items-center gap-3">
+                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index < 3 ? 'bg-royal-blue text-white' : 'bg-slate-200 text-slate-600'}`}>
+                     {index + 1}
+                   </span>
+                   <span className="text-sm font-medium text-deep-navy truncate max-w-[120px]">
+                     {item.name || item.email || 'N/A'}
+                   </span>
+                 </div>
+                 <span className="text-sm font-semibold text-royal-blue">
+                   {item.revenue !== undefined ? formatCurrency(item.revenue) :
+                     item.count !== undefined ? formatNumber(item.count) :
+                     item.orderCount !== undefined ? formatNumber(item.orderCount) :
+                     item.views !== undefined ? formatNumber(item.views) : 'N/A'}
+                 </span>
+               </div>
+             ))}
+           </div>
+         )}
+       </CardContent>
+     </Card>
+)
   }
