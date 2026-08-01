@@ -277,7 +277,7 @@ export default function SuperAdminAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(d) => new Date(d).toLocaleDateString()} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `GH₵${v}`} />
-                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Revenue']} />
+                <Tooltip formatter={(value) => [formatCurrency(value as number), 'Revenue']} />
                 <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} fill="url(#revenueGradient)" name="Revenue" />
               </AreaChart>
             </ResponsiveContainer>
