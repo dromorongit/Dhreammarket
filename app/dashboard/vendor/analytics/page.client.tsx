@@ -104,12 +104,12 @@ export default function VendorAnalytics() {
 
   const handleExport = async (type: string) => {
     try {
-      let url = `/api/analytics/vendor?range=${range}&export=${type}`
+      let apiUrl = `/api/analytics/vendor?range=${range}&export=${type}`
       if (range === 'custom') {
-        if (customFrom) url += `&from=${customFrom}`
-        if (customTo) url += `&to=${customTo}`
+        if (customFrom) apiUrl += `&from=${customFrom}`
+        if (customTo) apiUrl += `&to=${customTo}`
       }
-      const res = await fetch(url)
+      const res = await fetch(apiUrl)
       const json = await res.json()
       const csvData = json.data
       if (!csvData || csvData.length === 0) return
