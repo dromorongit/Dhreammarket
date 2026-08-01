@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { Card } from './Card'
 import { Button } from './Button'
 import { Badge } from './Badge'
+import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 
 interface RecommendationCardProps {
   item: {
@@ -33,7 +34,7 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
       <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`}>
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
           {item.image ? (
-            <Image src={item.image} alt={name} className="object-cover" fill loading="lazy" />
+            <Image src={item.image} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-100">
               <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

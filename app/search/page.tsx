@@ -15,6 +15,7 @@ import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import WishlistButton from '@/components/WishlistButton'
 import ServiceCard from '@/components/ServiceCard'
+import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands' | 'services'
 
@@ -363,6 +364,9 @@ function SearchPageContent() {
                                   alt={vendor.name}
                                   className="object-cover"
                                   fill
+                                  sizes={VENDOR_LOGO_SIZES}
+                                  placeholder="blur"
+                                  blurDataURL={getBlurDataURL()}
                                 />
                               ) : (
                                 <span className="text-lg font-bold text-white">
@@ -599,13 +603,16 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
              className="absolute top-2 right-2 z-10"
            />
            {product.image ? (
-             <Image
-               src={product.image}
-               alt={product.name}
-               className="object-cover"
-               fill
-               loading="lazy"
-             />
+              <Image
+                src={product.image}
+                alt={product.name}
+                className="object-cover"
+                fill
+                loading="lazy"
+                sizes={CARD_IMAGE_SIZES}
+                placeholder="blur"
+                blurDataURL={getBlurDataURL()}
+              />
            ) : (
              <div className="w-full h-full flex items-center justify-center bg-slate-100">
                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

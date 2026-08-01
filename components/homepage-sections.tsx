@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, type ReactNode, memo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -18,7 +18,7 @@ import { HiShieldCheck } from 'react-icons/hi'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import { TrendingNowSection } from './TrendingNowSection'
-
+import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WishlistButton from '@/components/WishlistButton'
 
 export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
@@ -68,7 +68,7 @@ interface HomepageSectionProps {
   loading?: boolean
 }
 
- function CompactProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
+ const CompactProductCard = memo(function CompactProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
   const badgeData = calculateProductBadges({
     price: product.price,
@@ -92,15 +92,18 @@ return (
                 size="sm"
                 className="absolute top-2 right-2 z-10"
               />
-             {product.images?.[0] ? (
-               <Image
-                 src={product.images?.[0]?.url}
-                 alt={product.images?.[0]?.alt || product.name}
-                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                 fill
-                 loading="lazy"
-               />
-             ) : (
+              {product.images?.[0] ? (
+                <Image
+                  src={product.images?.[0]?.url}
+                  alt={product.images?.[0]?.alt || product.name}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes={CARD_IMAGE_SIZES_2COL}
+                  placeholder="blur"
+                  blurDataURL={getBlurDataURL()}
+                  loading="lazy"
+                />
+              ) : (
                <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -148,11 +151,11 @@ return (
            )}
         </div>
       </div>
-    </Card>
-  )
-}
+     </Card>
+   )
+ })
 
-export function ProductGridSection({ section }: HomepageSectionProps) {
+ export function ProductGridSection({ section }: HomepageSectionProps) {
   const products = section.products || []
   const displayProducts = products.slice(0, 20)
   const half = Math.ceil(displayProducts.length / 2)
@@ -299,14 +302,17 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
             <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
               <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
                 <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
-                  {vendor.logo ? (
-                    <Image
-                      src={vendor.logo}
-                      alt={vendor.name}
-                      className="absolute inset-0 w-full h-full object-cover opacity-50"
-                      fill
-                    />
-                  ) : (
+                 {vendor.logo ? (
+                     <Image
+                       src={vendor.logo}
+                       alt={vendor.name}
+                       className="absolute inset-0 w-full h-full object-cover opacity-50"
+                       fill
+                       sizes={CARD_IMAGE_SIZES_4COL}
+                       placeholder="blur"
+                       blurDataURL={getBlurDataURL()}
+                     />
+                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-4xl font-bold text-white opacity-30">
                         {vendor.name?.charAt(0) || 'V'}
@@ -501,31 +507,34 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-<div className="hidden lg:grid grid-cols-2 gap-6">
-           {products.slice(0, 4).map((product) => {
-             const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-             const badgeData = calculateProductBadges({
-               price: product.price,
-               flashSalePrice: product.flashSalePrice,
-               salesPrice: product.salesPrice,
-               dealsPrice: product.dealsPrice,
-               stock: product.stock,
-               availabilityType: product.availabilityType,
-               expectedArrivalDate: product.expectedArrivalDate,
-               expectedRestockDate: product.expectedRestockDate,
-             })
-             return (
-<Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
-                    <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
-<div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                      {product.images?.[0] ? (
-                        <Image
-                          src={product.images[0].url}
-                          alt={product.images[0].alt || product.name}
-                          className="object-cover"
-                          fill
-                        />
-                      ) : (
+ <div className="hidden lg:grid grid-cols-2 gap-6">
+            {products.slice(0, 4).map((product) => {
+              const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+              const badgeData = calculateProductBadges({
+                price: product.price,
+                flashSalePrice: product.flashSalePrice,
+                salesPrice: product.salesPrice,
+                dealsPrice: product.dealsPrice,
+                stock: product.stock,
+                availabilityType: product.availabilityType,
+                expectedArrivalDate: product.expectedArrivalDate,
+                expectedRestockDate: product.expectedRestockDate,
+              })
+              return (
+ <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
+                     <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
+ <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
+                       {product.images?.[0] ? (
+                         <Image
+                           src={product.images[0].url}
+                           alt={product.images[0].alt || product.name}
+                           className="object-cover"
+                           fill
+                           sizes={CARD_IMAGE_SIZES_4COL}
+                           placeholder="blur"
+                           blurDataURL={getBlurDataURL()}
+                         />
+                       ) : (
                        <div className="w-full h-full flex items-center justify-center">
                          <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
@@ -572,14 +581,17 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                  <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className="w-64 flex-shrink-0">
                    <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
 <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                        {product.images?.[0] ? (
-                          <Image
-                            src={product.images[0].url}
-                            alt={product.images[0].alt || product.name}
-                            className="object-cover"
-                            fill
-                          />
-                        ) : (
+                         {product.images?.[0] ? (
+                           <Image
+                             src={product.images[0].url}
+                             alt={product.images[0].alt || product.name}
+                             className="object-cover"
+                             fill
+                             sizes={CARD_IMAGE_SIZES_2COL}
+                             placeholder="blur"
+                             blurDataURL={getBlurDataURL()}
+                           />
+                         ) : (
                          <div className="w-full h-full flex items-center justify-center">
                            <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
@@ -679,6 +691,9 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
                   alt={heroProduct.images[0].alt || heroProduct.name}
                   className="object-cover"
                   fill
+                  sizes={CARD_IMAGE_SIZES_2COL}
+                  placeholder="blur"
+                  blurDataURL={getBlurDataURL()}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -762,114 +777,120 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                        <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
                          <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
                            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-{product.images?.[0] ? (
-                                <Image
-                                  src={product.images[0].url}
-                                  alt={product.images[0].alt || product.name}
-                                  className="object-cover"
-                                  fill
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                </div>
-                              )}
-                            <ProductBadges product={badgeData} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            <div className="absolute bottom-0 left-0 right-0 p-3">
-                              <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                             <div className="flex items-baseline gap-1">
-                               {hasDiscount && (
-                                 <span className="text-xs text-white/60 line-through">
-                                   {formatPrice(product.price)}
-                                 </span>
+ {product.images?.[0] ? (
+                                 <Image
+                                   src={product.images[0].url}
+                                   alt={product.images[0].alt || product.name}
+                                   className="object-cover"
+                                   fill
+                                   sizes={CARD_IMAGE_SIZES_2COL}
+                                   placeholder="blur"
+                                   blurDataURL={getBlurDataURL()}
+                                   loading="lazy"
+                                 />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                   <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                   </svg>
+                                 </div>
                                )}
-                               <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                             </div>
-                           </div>
-                           </div>
-                         </Card>
-                       </Link>
-                     </div>
-                   )
-                 })}
-               </div>
-             </div>
-           )}
-           {bottomRowProducts.length > 0 && (
-             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-               <div className="flex gap-4">
-                 {bottomRowProducts.map((product) => {
-                   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                   const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-                   const badgeData = calculateProductBadges({
-                     price: product.price,
-                     flashSalePrice: product.flashSalePrice,
-                     salesPrice: product.salesPrice,
-                     dealsPrice: product.dealsPrice,
-                     stock: product.stock,
-                     availabilityType: product.availabilityType,
-                     expectedArrivalDate: product.expectedArrivalDate,
-                     expectedRestockDate: product.expectedRestockDate,
-                   })
-                   return (
-                     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                       <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
-                         <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-                           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-{product.images?.[0] ? (
-                                <Image
-                                  src={product.images[0].url}
-                                  alt={product.images[0].alt || product.name}
-                                  className="object-cover"
-                                  fill
-                                  loading="lazy"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                </div>
-                              )}
-                            <ProductBadges product={badgeData} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                            <div className="absolute bottom-0 left-0 right-0 p-3">
-                              <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                             <div className="flex items-baseline gap-1">
-                               {hasDiscount && (
-                                 <span className="text-xs text-white/60 line-through">
-                                   {formatPrice(product.price)}
-                                 </span>
+                             <ProductBadges product={badgeData} />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                             <div className="absolute bottom-0 left-0 right-0 p-3">
+                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                              <div className="flex items-baseline gap-1">
+                                {hasDiscount && (
+                                  <span className="text-xs text-white/60 line-through">
+                                    {formatPrice(product.price)}
+                                  </span>
+                                )}
+                                <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                              </div>
+                            </div>
+                            </div>
+                          </Card>
+                        </Link>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {bottomRowProducts.length > 0 && (
+              <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+                <div className="flex gap-4">
+                  {bottomRowProducts.map((product) => {
+                    const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+                    const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
+                    const badgeData = calculateProductBadges({
+                      price: product.price,
+                      flashSalePrice: product.flashSalePrice,
+                      salesPrice: product.salesPrice,
+                      dealsPrice: product.dealsPrice,
+                      stock: product.stock,
+                      availabilityType: product.availabilityType,
+                      expectedArrivalDate: product.expectedArrivalDate,
+                      expectedRestockDate: product.expectedRestockDate,
+                    })
+                    return (
+                      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                        <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
+                          <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
+                            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+ {product.images?.[0] ? (
+                                 <Image
+                                   src={product.images[0].url}
+                                   alt={product.images[0].alt || product.name}
+                                   className="object-cover"
+                                   fill
+                                   sizes={CARD_IMAGE_SIZES_2COL}
+                                   placeholder="blur"
+                                   blurDataURL={getBlurDataURL()}
+                                   loading="lazy"
+                                 />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                   <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                   </svg>
+                                 </div>
                                )}
-                               <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                             </div>
-                           </div>
-                           </div>
-                         </Card>
-                       </Link>
-                     </div>
-                   )
-                 })}
-               </div>
-             </div>
-           )}
-        </div>
+                             <ProductBadges product={badgeData} />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                             <div className="absolute bottom-0 left-0 right-0 p-3">
+                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                              <div className="flex items-baseline gap-1">
+                                {hasDiscount && (
+                                  <span className="text-xs text-white/60 line-through">
+                                    {formatPrice(product.price)}
+                                  </span>
+                                )}
+                                <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                              </div>
+                            </div>
+                            </div>
+                          </Card>
+                        </Link>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+         </div>
 
-        <div className="mt-8 text-center">
-          <Link href="/marketplace">
-<Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
-               See More
-             </Button>
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
+         <div className="mt-8 text-center">
+           <Link href="/marketplace">
+ <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
+                See More
+              </Button>
+           </Link>
+         </div>
+       </div>
+     </section>
+   )
+ }
 
 export function PromoBannerSection({ section }: HomepageSectionProps) {
   return (
@@ -902,7 +923,7 @@ export function PromoBannerSection({ section }: HomepageSectionProps) {
   )
 }
 
-function CompactServiceCard({ service, initialIsWishlisted }: { service: any; initialIsWishlisted?: boolean }) {
+ const CompactServiceCard = memo(function CompactServiceCard({ service, initialIsWishlisted }: { service: any; initialIsWishlisted?: boolean }) {
   const badgeInfo = service.store ? getVendorBadgeInfo(service.store.badgeTier) : null
   const hasImage = service.thumbnail || (service.images && service.images.length > 0)
   const imageUrl = service.thumbnail || service.images?.[0]?.imageUrl
@@ -912,15 +933,18 @@ function CompactServiceCard({ service, initialIsWishlisted }: { service: any; in
       <div className="flex flex-col h-full">
         <Link href={`/services/${service.slug}`} className="block">
           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-            {hasImage ? (
-              <Image
-                src={imageUrl!}
-                alt={service.title}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                fill
-                loading="lazy"
-              />
-            ) : (
+             {hasImage ? (
+               <Image
+                 src={imageUrl!}
+                 alt={service.title}
+                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                 fill
+                 sizes={CARD_IMAGE_SIZES_2COL}
+                 placeholder="blur"
+                 blurDataURL={getBlurDataURL()}
+                 loading="lazy"
+               />
+             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                 <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -961,7 +985,7 @@ function CompactServiceCard({ service, initialIsWishlisted }: { service: any; in
       </div>
     </Card>
   )
-}
+})
 
 export function TrendingServicesSection({ section }: HomepageSectionProps) {
   const services = section.services || []
@@ -1140,7 +1164,7 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
                 <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
                   <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                     {vendor.logo ? (
-                      <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill />
+                      <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
                     ) : (
                       <span className="text-2xl font-bold text-white">
                         {truncateVendorName(vendor.name).charAt(0).toUpperCase()}

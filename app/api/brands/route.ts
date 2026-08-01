@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ brands })
+    const response = NextResponse.json({ brands })
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400, max-age=300')
+    return response
   } catch (error) {
     console.error('Brands API error:', error)
     return NextResponse.json({ error: 'Failed to fetch brands' }, { status: 500 })

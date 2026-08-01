@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { getBlurDataURL, HERO_IMAGE_SIZES } from '@/lib/image-utils'
 
 const BANNERS = [
   { id: 1, src: '/images/banner1.jpg', alt: 'Promotional Banner 1', href: '/marketplace' },
@@ -29,7 +30,9 @@ export default function InfiniteBannerRail() {
                   className="object-cover w-full h-full"
                   fill
                   loading="eager"
-                  sizes="(max-width: 640px) 320px, (max-width: 1024px) 420px, 520px"
+                  sizes={HERO_IMAGE_SIZES}
+                  placeholder="blur"
+                  blurDataURL={getBlurDataURL()}
                 />
               </Link>
             </div>

@@ -5,7 +5,7 @@ import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 import { PerformanceLogger } from '@/lib/performance'
 import type { ContentSource } from '@/lib/homepage-constants'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 60
 
 interface TrendingWeights {
   recentSales: number
@@ -652,6 +652,7 @@ export async function GET(_request: NextRequest) {
       sections: formatted,
       brands: formattedBrands,
     })
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300, max-age=30')
     perf.log()
     return response
   } catch (error) {

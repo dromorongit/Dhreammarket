@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, memo, useMemo, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
@@ -19,6 +19,7 @@ import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import ServiceCard from '@/components/ServiceCard'
 import WishlistButton from '@/components/WishlistButton'
+import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 interface Product {
   id: string
@@ -131,6 +132,128 @@ interface ServiceCategory {
   isFeatured: boolean
   serviceCount?: number
 }
+
+const MarketplaceProductCard = memo(function MarketplaceProductCard({
+  product,
+  isWishlisted,
+  isAdding,
+  onAddToCart,
+}: {
+  product: Product
+  isWishlisted: boolean
+  isAdding: boolean
+  onAddToCart: (id: string, name?: string, price?: number) => void
+}) {
+  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+  const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
+  const discountPercentage = hasDiscount ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
+
+  return (
+    <Card
+      variant="elevated"
+      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+    >
+      <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+          <WishlistButton
+            productId={product.id}
+            initialIsWishlisted={isWishlisted}
+            size="sm"
+            className="absolute top-2 right-2 z-10"
+          />
+          {(product.images?.length ?? 0) > 0 ? (
+            <Image
+              src={product.images![0].url}
+              alt={product.images![0].alt || product.name}
+              className="object-cover"
+              fill
+              loading="lazy"
+              sizes={CARD_IMAGE_SIZES}
+              placeholder="blur"
+              blurDataURL={getBlurDataURL()}
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          )}
+          <ProductBadges product={calculateProductBadges({
+            price: product.price,
+            flashSalePrice: product.flashSalePrice,
+            salesPrice: product.salesPrice,
+            dealsPrice: product.dealsPrice,
+            stock: product.stock,
+            availabilityType: product.availabilityType,
+            expectedArrivalDate: product.expectedArrivalDate,
+            expectedRestockDate: product.expectedRestockDate,
+          })} />
+        </div>
+      </Link>
+      <div className="p-2 space-y-1 flex-1 flex flex-col">
+        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+          {product.name}
+        </h3>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] font-bold text-royal-blue">
+            {formatPrice(effectivePrice)}
+          </span>
+          {discountPercentage > 0 && (
+            <span className="text-[10px] text-slate-400 line-through">
+              {formatPrice(product.price)}
+            </span>
+          )}
+        </div>
+        {product.store && (
+          <div className="flex items-center gap-1 min-w-0">
+            <p className="text-[10px] text-slate-500 truncate">
+              {product.store.name}
+            </p>
+            {(() => {
+              const badgeInfo = getVendorBadgeInfo(product.store?.badgeTier ?? null)
+              if (badgeInfo) {
+                const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
+                return (
+                  <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                )
+              }
+              if (product.store.isVerified) {
+                return (
+                  <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                )
+              }
+              return null
+            })()}
+          </div>
+        )}
+        <div className="flex flex-col gap-1 pt-0.5">
+          <Button
+            size="sm"
+            className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
+            disabled={product.stock === 0 && product.availabilityType === 'IN_STOCK' || isAdding}
+            onClick={() => onAddToCart(product.id, product.name, product.price)}
+          >
+            {isAdding
+              ? '...'
+              : product.availabilityType === 'PREORDER'
+                ? 'Pre-order'
+                : product.availabilityType === 'BACKORDER'
+                  ? 'Backorder'
+                  : product.stock > 0
+                    ? 'Add to Cart'
+                    : 'Out of Stock'}
+          </Button>
+          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
+            <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
+              View Details
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </Card>
+  )
+})
 
 function MarketplaceContent() {
   const searchParams = useSearchParams()
@@ -358,7 +481,7 @@ function MarketplaceContent() {
     setSelectedVendorCategory(vendorCategoryParam)
   }, [searchParams])
 
-  const addToCart = async (productId: string, productName?: string, productPrice?: number) => {
+  const addToCart = useCallback(async (productId: string, productName?: string, productPrice?: number) => {
     setAddingToCart(prev => new Set(prev).add(productId))
     try {
       logCartRequest('POST /api/cart (marketplace-client addToCart)')
@@ -398,7 +521,7 @@ function MarketplaceContent() {
         return newSet
       })
     }
-  }
+  }, [])
 
   const getAllDescendantIds = (cats: Category[], parentId: string | null = null): string[] => {
     const result: string[] = []
@@ -499,7 +622,7 @@ function MarketplaceContent() {
     ))
   }
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = useMemo(() => products.filter(product => {
     if (selectedBrand) {
       const filter = decodeURIComponent(selectedBrand).toLowerCase()
       const brandSlug = product.brandRelation?.slug?.toLowerCase()
@@ -515,7 +638,7 @@ function MarketplaceContent() {
       }
     }
     return true
-  })
+  }), [products, selectedBrand, selectedCategory, getCategoryFilterIds])
 
   const filteredVendors = vendors
 
@@ -717,114 +840,15 @@ function MarketplaceContent() {
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {filteredProducts.map((product) => {
-                  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-                  const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-                  const discountPercentage = hasDiscount ? Math.round(((product.price - effectivePrice) / product.price) * 100) : 0
-                  return (
-                    <Card
-                      key={product.id}
-                      variant="elevated"
-                      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
-                    >
-                      <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-                        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-                          <WishlistButton
-                            productId={product.id}
-                            initialIsWishlisted={wishlistedProductIds.has(product.id)}
-                            size="sm"
-                            className="absolute top-2 right-2 z-10"
-                          />
-                          {(product.images?.length ?? 0) > 0 ? (
-                            <Image
-                              src={product.images![0].url}
-                              alt={product.images![0].alt || product.name}
-                              className="object-cover"
-                              fill
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
-                              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          )}
-                          <ProductBadges product={calculateProductBadges({
-                            price: product.price,
-                            flashSalePrice: product.flashSalePrice,
-                            salesPrice: product.salesPrice,
-                            dealsPrice: product.dealsPrice,
-                            stock: product.stock,
-                            availabilityType: product.availabilityType,
-                            expectedArrivalDate: product.expectedArrivalDate,
-                            expectedRestockDate: product.expectedRestockDate,
-                          })} />
-                        </div>
-                      </Link>
-                      <div className="p-2 space-y-1 flex-1 flex flex-col">
-                        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                          {product.name}
-                        </h3>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] font-bold text-royal-blue">
-                            {formatPrice(effectivePrice)}
-                          </span>
-                          {discountPercentage > 0 && (
-                            <span className="text-[10px] text-slate-400 line-through">
-                              {formatPrice(product.price)}
-                            </span>
-                          )}
-                        </div>
-                        {product.store && (
-                          <div className="flex items-center gap-1 min-w-0">
-                            <p className="text-[10px] text-slate-500 truncate">
-                              {product.store.name}
-                            </p>
-                            {(() => {
-                              const badgeInfo = getVendorBadgeInfo(product.store?.badgeTier ?? null)
-                              if (badgeInfo) {
-                                const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                                return (
-                                  <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
-                                )
-                              }
-                              if (product.store.isVerified) {
-                                return (
-                                  <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
-                                )
-                              }
-                              return null
-                            })()}
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-1 pt-0.5">
-                          <Button
-                            size="sm"
-                            className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-                            disabled={product.stock === 0 && product.availabilityType === 'IN_STOCK' || addingToCart.has(product.id)}
-                            onClick={() => addToCart(product.id, product.name, product.price)}
-                          >
-                            {addingToCart.has(product.id)
-                              ? '...'
-                              : product.availabilityType === 'PREORDER'
-                                ? 'Pre-order'
-                                : product.availabilityType === 'BACKORDER'
-                                  ? 'Backorder'
-                                  : product.stock > 0
-                                    ? 'Add to Cart'
-                                    : 'Out of Stock'}
-                          </Button>
-                          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
-                            <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-                              View Details
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </Card>
-                  )
-                })}
+                {filteredProducts.map((product) => (
+                  <MarketplaceProductCard
+                    key={product.id}
+                    product={product}
+                    isWishlisted={wishlistedProductIds.has(product.id)}
+                    isAdding={addingToCart.has(product.id)}
+                    onAddToCart={addToCart}
+                  />
+                ))}
               </div>
             )
           ) : viewMode === 'vendors' ? (
@@ -856,6 +880,9 @@ function MarketplaceContent() {
                             alt={`${vendor.name} logo`}
                             className="absolute inset-0 w-full h-full object-cover opacity-50"
                             fill
+                            sizes={VENDOR_LOGO_SIZES}
+                            placeholder="blur"
+                            blurDataURL={getBlurDataURL()}
                           />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center">

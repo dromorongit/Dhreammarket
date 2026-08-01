@@ -11,6 +11,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import WishlistButton from '@/components/WishlistButton'
 import { PricingType } from '@prisma/client'
+import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 
 interface Service {
   id: string
@@ -66,7 +67,9 @@ function getPricingLabel(pricingType: string): string {
   return labels[pricingType] || pricingType
 }
 
-export default function ServiceCard({ service, wishlistServiceIds, className }: ServiceCardProps) {
+import { memo } from 'react'
+
+export default memo(function ServiceCard({ service, wishlistServiceIds, className }: ServiceCardProps) {
   const badgeInfo = service.store ? getVendorBadgeInfo(service.store.badgeTier) : null
   const hasImage = service.thumbnail || (service.images && service.images.length > 0)
   const imageUrl = service.thumbnail || service.images?.[0]?.imageUrl
@@ -86,6 +89,9 @@ export default function ServiceCard({ service, wishlistServiceIds, className }: 
               className="object-cover w-full h-full"
               fill
               loading="lazy"
+              sizes={CARD_IMAGE_SIZES}
+              placeholder="blur"
+              blurDataURL={getBlurDataURL()}
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
@@ -145,8 +151,8 @@ export default function ServiceCard({ service, wishlistServiceIds, className }: 
           ) : null}
         </div>
       </div>
-    </Card>
-  )
-}
+     </Card>
+   )
+ })
 
 export { type ServiceCardProps, type Service }

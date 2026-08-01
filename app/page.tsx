@@ -52,6 +52,7 @@ import { RegistrationCTA } from '@/components/RegistrationCTA'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
+import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_3COL, CARD_IMAGE_SIZES_2COL, VENDOR_LOGO_SIZES, HERO_IMAGE_SIZES } from '@/lib/image-utils'
 
 interface Category {
   id: string
@@ -692,6 +693,9 @@ function VendorCategorySection() {
                         alt={vendor.name}
                         className="object-cover w-full h-full"
                         fill
+                        sizes={VENDOR_LOGO_SIZES}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
                       />
                     ) : (
                      <span className="text-2xl font-bold text-white">
@@ -771,7 +775,7 @@ function TopVendorsSection() {
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                  {vendor.logo ? (
-                   <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill />
+                    <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
                  ) : (
                    <span className="text-2xl font-bold text-white">
                      {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
@@ -854,7 +858,7 @@ function NewVendorsSection() {
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                  {vendor.logo ? (
-                   <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill />
+                    <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
                  ) : (
                    <span className="text-2xl font-bold text-white">
                      {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
@@ -1100,6 +1104,9 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                         className="object-cover"
                         fill
                         loading="lazy"
+                        sizes={CARD_IMAGE_SIZES_2COL}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
@@ -1200,6 +1207,9 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                         className="object-cover"
                         fill
                         loading="lazy"
+                        sizes={CARD_IMAGE_SIZES_3COL}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
@@ -1300,6 +1310,9 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                         className="object-cover"
                         fill
                         loading="lazy"
+                        sizes={CARD_IMAGE_SIZES_5COL}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">

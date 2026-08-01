@@ -15,6 +15,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
 import WishlistButton from '@/components/WishlistButton'
 import { PricingType, AvailabilityStatus } from '@prisma/client'
+import { getBlurDataURL, HERO_IMAGE_SIZES, VENDOR_LOGO_SIZES, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 
 interface RelatedService {
   id: string
@@ -275,14 +276,16 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
               {allImages.length > 0 ? (
                 <>
                   <div className="relative aspect-square">
-                    <Image
-                      src={allImages[activeGalleryIndex]?.imageUrl || allImages[activeGalleryIndex] || '/assets/images/dhreammarket.png'}
-                      alt={service.title}
-                      className="object-contain"
-                      fill
-                      priority
-                      sizes="(max-width: 768px) 100vw, 55vw"
-                    />
+                     <Image
+                       src={allImages[activeGalleryIndex]?.imageUrl || allImages[activeGalleryIndex] || '/assets/images/dhreammarket.png'}
+                       alt={service.title}
+                       className="object-contain"
+                       fill
+                       priority
+                       sizes={HERO_IMAGE_SIZES}
+                       placeholder="blur"
+                       blurDataURL={getBlurDataURL()}
+                     />
                   </div>
                   {totalImages > 1 && (
                     <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
@@ -315,6 +318,9 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
                       className="object-cover"
                       width={80}
                       height={80}
+                      sizes={VENDOR_LOGO_SIZES}
+                      placeholder="blur"
+                      blurDataURL={getBlurDataURL()}
                     />
                   </button>
                 ))}
@@ -343,7 +349,7 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
                 <Link href={`/vendor/${service.store?.slug ?? service.store?.id}`} className="hover:text-[#1E40AF] transition-colors flex items-center gap-1.5">
                   {service.store?.logo && (
                     <span className="w-6 h-6 rounded-full bg-slate-200 overflow-hidden inline-block">
-                      <Image src={service.store.logo} alt={service.store.name} className="object-cover w-full h-full" width={24} height={24} />
+                      <Image src={service.store.logo} alt={service.store.name} className="object-cover w-full h-full" width={24} height={24} sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
                     </span>
                   )}
                   <span className="text-sm text-slate-600">{service.store?.name}</span>
@@ -414,6 +420,9 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
                         className="object-cover w-full h-full"
                         width={48}
                         height={48}
+                        sizes={VENDOR_LOGO_SIZES}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
                       />
                     </div>
                   ) : (
@@ -522,7 +531,7 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
                     <Link href={`/services/${related.slug}`} className="block">
                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
                         {related.thumbnail ? (
-                          <Image src={related.thumbnail} alt={related.title} className="object-cover" fill loading="lazy" />
+                          <Image src={related.thumbnail} alt={related.title} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-slate-100">
                             <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

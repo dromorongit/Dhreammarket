@@ -184,7 +184,9 @@ export async function GET(request: NextRequest) {
 
     const total = results.products.length + results.services.length + results.vendors.length + results.categories.length + results.brands.length + results.suggestions.length
 
-    return NextResponse.json({ query, results, total })
+    const response = NextResponse.json({ query, results, total })
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120, max-age=30')
+    return response
   } catch (error) {
     console.error('Search error:', error)
     return NextResponse.json({ error: 'Search failed' }, { status: 500 })

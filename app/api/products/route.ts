@@ -18,12 +18,10 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get('token')?.value
     let payload = null
 
-    // Check if user is authenticated
     if (token) {
       payload = await verifyToken(token)
     }
 
-    // Parse query parameters
     const url = new URL(request.url)
     const ALLOWED_SORT_FIELDS = new Set([
       'createdAt', 'price', 'name', 'stock', 'updatedAt', 'salesCount', 'reviewCount', 'averageRating'
@@ -41,8 +39,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid createdAtMin date format' }, { status: 400 })
     }
 
-    // For authenticated vendors, get only their products
-    if (payload && payload.role === 'VENDOR') {
+    const isVendorView = payload && payload.role === 'VENDOR'
+
+    if (isVendorView) {
+      if (!payload) {
+        return NextResponse.json({ products: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } })
+      }
       const store = await getPrisma().store.findUnique({
         where: { userId: payload.userId },
       })
@@ -197,9 +199,7 @@ export async function GET(request: NextRequest) {
       products: finalProducts,
       pagination: { page, limit, total, totalPages }
     })
-    // Prevent caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120, max-age=30')
     perf.log()
     return response
   } catch (error) {

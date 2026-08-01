@@ -10,6 +10,7 @@ import { Badge } from './Badge'
 import { SearchDropdown } from './SearchDropdown'
 import { useCart } from '@/lib/CartContext'
 import { FiHeart } from 'react-icons/fi'
+import { getBlurDataURL, NAV_LOGO_SIZES } from '@/lib/image-utils'
 
 interface User {
   userId: string
@@ -264,6 +265,9 @@ export function Navbar() {
                   fill
                   className="object-contain"
                   priority
+                  sizes={NAV_LOGO_SIZES}
+                  placeholder="blur"
+                  blurDataURL={getBlurDataURL()}
                 />
               </div>
               <div className="flex flex-col items-start">

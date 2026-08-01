@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, type ReactNode, useCallback, useMemo } from 'react';
+import { useState, useEffect, type ReactNode, useCallback, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link';
 import { Card } from '@/components/Card';
@@ -18,6 +18,7 @@ import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageDa
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
+import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
 
 export function useEnterpriseHomepageData() {
   const { data, isLoading } = useQuery<{ topSelling: EnterpriseProduct[] }>({
@@ -68,9 +69,11 @@ function CountdownTimer({ endTime }: { endTime: string }) {
 function ProductImage({
   product,
   className,
+  sizes = CARD_IMAGE_SIZES_5COL,
 }: {
   product: EnterpriseProduct;
   className?: string;
+  sizes?: string;
 }) {
   const image = product?.images?.[0];
   if (image) {
@@ -81,6 +84,9 @@ function ProductImage({
         className={className}
         fill
         loading='lazy'
+        sizes={sizes}
+        placeholder="blur"
+        blurDataURL={getBlurDataURL()}
       />
     );
   }
@@ -609,11 +615,11 @@ export function FlashSalesSection({
           </Link>
         </div>
       </div>
-    </section>
-  );
-}
+      </section>
+    );
+  }
 
-export function SponsoredProductsSection({
+  export function SponsoredProductsSection({
   section,
   loading,
 }: {
@@ -737,6 +743,7 @@ export function EnterpriseGadgetDisplaySection({
                   <ProductImage
                     product={product}
                     className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
+                    sizes={CARD_IMAGE_SIZES_2COL}
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
                   <div className='absolute bottom-0 left-0 right-0 p-6'>
@@ -845,11 +852,11 @@ export function EnterpriseGadgetDisplaySection({
           </Link>
         </div>
       </div>
-    </section>
-  );
-}
+      </section>
+    );
+  }
 
-export function TopSellingSection({
+  export function TopSellingSection({
   products,
   loading,
 }: {
@@ -911,11 +918,11 @@ export function TopSellingSection({
           </Link>
         </div>
       </div>
-    </section>
-  );
-}
+     </section>
+   );
+ }
 
-export function BigTopDealsSection({
+ export function BigTopDealsSection({
   section,
   loading,
 }: {
@@ -1043,11 +1050,11 @@ export function TopClearanceSalesSection({
           </Link>
         </div>
       </div>
-    </section>
-  );
-}
+     </section>
+   );
+ }
 
-export function TopServicesSection({
+ export function TopServicesSection({
   section,
   loading,
 }: {
@@ -1109,11 +1116,11 @@ export function TopServicesSection({
           </Link>
         </div>
       </div>
-    </section>
-  );
-}
+     </section>
+   );
+ }
 
-export function HomeTheatreSection({
+ export function HomeTheatreSection({
   section,
   loading,
 }: {
@@ -1189,6 +1196,7 @@ export function HomeTheatreSection({
                   <ProductImage
                     product={product}
                     className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
+                    sizes={CARD_IMAGE_SIZES_2COL}
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
                   <div className='absolute bottom-0 left-0 right-0 p-6'>
@@ -1309,11 +1317,11 @@ export function HomeTheatreSection({
           </Link>
         </div>
       </div>
-    </section>
-  );
-}
+      </section>
+    );
+  }
 
-export function TopExpressOffersSection({
+  export function TopExpressOffersSection({
   section,
   loading,
 }: {
@@ -1388,13 +1396,16 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
        <div className="group flex-shrink-0 w-44 md:w-52 lg:w-56 flex flex-col items-center gap-4 bg-gradient-to-br from-white via-white/95 to-slate-50/50 rounded-3xl border border-slate-100/80 shadow-premium hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-500 p-6 cursor-pointer">
          <div className="w-28 h-28 flex items-center justify-center rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/80 overflow-hidden transition-transform duration-500 group-hover:scale-110">
            {logo ? (
-             <Image
-               src={logo}
-               alt={normalized.name}
-               width={112}
-               height={112}
-               className="object-contain max-h-full w-full"
-             />
+              <Image
+                src={logo}
+                alt={normalized.name}
+                width={112}
+                height={112}
+                className="object-contain max-h-full w-full"
+                sizes={VENDOR_LOGO_SIZES}
+                placeholder="blur"
+                blurDataURL={getBlurDataURL()}
+              />
            ) : (
              <span className="text-3xl font-bold text-royal-blue">
                {normalized.name.charAt(0).toUpperCase()}
@@ -1405,11 +1416,11 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
            {normalized.name}
          </p>
        </div>
-     </Link>
-   );
- }
+      </Link>
+     );
+   }
 
-export function BrandStoreSection({
+  export function BrandStoreSection({
   section,
   brands,
   loading,
@@ -1814,6 +1825,9 @@ export function ElectronicsShowcaseSection() {
                       className='object-cover group-hover:scale-105 transition-transform duration-500'
                       fill
                       loading='lazy'
+                      sizes={CARD_IMAGE_SIZES_4COL}
+                      placeholder="blur"
+                      blurDataURL={getBlurDataURL()}
                     />
                   </div>
                   <div className='p-4 text-center'>
@@ -1860,13 +1874,16 @@ export function ElectronicsShowcaseSection() {
                   className='group flex flex-col overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 cursor-pointer h-full p-0'
                 >
                   <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      className='object-contain group-hover:scale-[1.03] transition-transform duration-500'
-                      fill
-                      loading='lazy'
-                    />
+                     <Image
+                       src={item.image}
+                       alt={item.title}
+                       className='object-contain group-hover:scale-[1.03] transition-transform duration-500'
+                       fill
+                       loading='lazy'
+                       sizes={CARD_IMAGE_SIZES_4COL}
+                       placeholder="blur"
+                       blurDataURL={getBlurDataURL()}
+                     />
                   </div>
                 </Card>
               </Link>

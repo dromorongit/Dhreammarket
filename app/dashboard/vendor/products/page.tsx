@@ -9,6 +9,7 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatPrice } from '@/lib/currency'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import { getBlurDataURL, CARD_IMAGE_SIZES_3COL } from '@/lib/image-utils'
 
 interface Product {
   id: string
@@ -186,12 +187,15 @@ export default function VendorProducts() {
 <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
 {Array.isArray(product.images) && product.images.length > 0 ? (
                        <Image
-                         src={product.images[0]?.url || ''}
-                         alt={product.images[0]?.alt || product.name}
-                         width={80}
-                         height={80}
-                         className="w-full h-48 object-cover"
-                       />
+                          src={product.images[0]?.url || ''}
+                          alt={product.images[0]?.alt || product.name}
+                          width={80}
+                          height={80}
+                          className="w-full h-48 object-cover"
+                          sizes={CARD_IMAGE_SIZES_3COL}
+                          placeholder="blur"
+                          blurDataURL={getBlurDataURL()}
+                        />
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center bg-gray-100">
                         <span className="text-gray-400 text-sm">No image</span>

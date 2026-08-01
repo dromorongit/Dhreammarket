@@ -80,44 +80,41 @@ export async function GET(request: NextRequest) {
     perf.markPrismaEnd(prismaPerfStart)
 
 // Use cached ratings from database
-     const vendorsWithMetrics = await Promise.all(
-       vendors.map(async (store) => {
-         // Get order count for popularity
-         const orderItems = await getPrisma().orderItem.findMany({
-           where: {
-             product: {
-               storeId: store.id,
+     const storeIds = vendors.map((v) => v.id)
+     const orderItemsByStore = new Map<string, number>()
+     
+     if (storeIds.length > 0) {
+       const allOrderItems = await getPrisma().orderItem.findMany({
+         where: {
+           product: {
+             storeId: { in: storeIds },
+           },
+         },
+         include: {
+           order: {
+             select: {
+               status: true,
              },
            },
-           include: {
-             order: {
-               select: {
-                 status: true,
-               },
-             },
-           },
-         })
-
-         // Count completed orders only
-         const orderCount = orderItems.filter(item =>
-           item.order.status === 'COMPLETED' || item.order.status === 'DELIVERED'
-         ).length
-
-         // Check if featured status is still valid
-          const now = new Date()
-          const isCurrentlyFeatured = store.isFeatured &&
-            store.featuredUntil &&
-            new Date(store.featuredUntil) > now
-
-         return {
-           ...store,
-           isFeatured: isCurrentlyFeatured,
-           rating: store.averageRating,
-           orderCount,
-           category: store.vendor_categories,
-         }
+         },
        })
-     )
+
+       for (const item of allOrderItems) {
+         const storeId = (item as any).product?.storeId
+         if (storeId && (item.order.status === 'COMPLETED' || item.order.status === 'DELIVERED')) {
+           orderItemsByStore.set(storeId, (orderItemsByStore.get(storeId) || 0) + 1)
+         }
+       }
+     }
+
+     const now = new Date()
+     const vendorsWithMetrics = vendors.map((store) => ({
+       ...store,
+       isFeatured: store.isFeatured && store.featuredUntil && new Date(store.featuredUntil) > now,
+       rating: store.averageRating,
+       orderCount: orderItemsByStore.get(store.id) || 0,
+       category: store.vendor_categories,
+     }))
 
     // Apply ranking logic: Featured first, then by rating, then by order count, then by newest
     const sortedVendors = vendorsWithMetrics.sort((a: any, b: any) => {
@@ -143,6 +140,7 @@ export async function GET(request: NextRequest) {
         totalPages,
       },
     })
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300, max-age=30')
     perf.log()
     return response
   } catch (error) {

@@ -12,6 +12,7 @@ import { formatPrice } from '@/lib/currency'
 import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart } from '@/lib/CartContext'
+import { getBlurDataURL, SEARCH_THUMB_SIZES } from '@/lib/image-utils'
 
 export default function Cart() {
    const router = useRouter()
@@ -139,6 +140,9 @@ export default function Cart() {
                       height={80}
                       className="object-cover rounded-xl w-20 h-20 flex-shrink-0"
                       loading="lazy"
+                      sizes={SEARCH_THUMB_SIZES}
+                      placeholder="blur"
+                      blurDataURL={getBlurDataURL()}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

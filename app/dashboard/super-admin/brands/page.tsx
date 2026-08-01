@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
+import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
 
 interface Brand {
   id: string
@@ -235,7 +236,7 @@ export default function SuperAdminBrandsPage() {
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {brand.logo ? (
-                      <Image src={brand.logo} alt={brand.name} width={80} height={80} className="w-full h-full object-contain" />
+                      <Image src={brand.logo} alt={brand.name} width={80} height={80} className="w-full h-full object-contain" sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()} />
                     ) : (
                       <span className="text-xl font-bold text-royal-blue">{brand.name.charAt(0)}</span>
                     )}

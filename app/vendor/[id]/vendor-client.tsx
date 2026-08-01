@@ -17,6 +17,7 @@ import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
+import { getBlurDataURL, HERO_IMAGE_SIZES, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_3COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 interface VendorProduct {
   id: string
@@ -375,6 +376,9 @@ export default function VendorProfilePage() {
             className="w-full h-full object-cover"
             fill
             priority
+            sizes={HERO_IMAGE_SIZES}
+            placeholder="blur"
+            blurDataURL={getBlurDataURL()}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
@@ -385,7 +389,7 @@ export default function VendorProfilePage() {
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg">
               {vendor.logo ? (
-                <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill />
+                <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
               ) : (
                 <span className="text-4xl font-bold text-slate-700">
                   {vendor.name.charAt(0).toUpperCase()}
@@ -616,6 +620,9 @@ export default function VendorProfilePage() {
                               alt={product.images[0].alt || product.name}
                               className="object-cover"
                               fill
+                              sizes={CARD_IMAGE_SIZES}
+                              placeholder="blur"
+                              blurDataURL={getBlurDataURL()}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-slate-100">
@@ -781,6 +788,9 @@ export default function VendorProfilePage() {
                             alt={service.title}
                             className="object-cover"
                             fill
+                            sizes={CARD_IMAGE_SIZES_3COL}
+                            placeholder="blur"
+                            blurDataURL={getBlurDataURL()}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-slate-100">

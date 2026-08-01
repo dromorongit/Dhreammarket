@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { event } from '@/lib/gtag'
 import { logCartRequest } from '@/lib/CartContext'
+import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
 
 interface WishlistItem {
   id: string
@@ -184,6 +185,9 @@ export default function WishlistClient() {
                         className="object-cover"
                         fill
                         loading="lazy"
+                        sizes={CARD_IMAGE_SIZES_4COL}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">

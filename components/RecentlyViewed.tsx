@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card } from './Card'
 import { Button } from './Button'
 import { Skeleton } from './Skeleton'
+import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
 
 interface RecentlyViewedItem {
   entityType: string
@@ -80,9 +81,9 @@ export function RecentlyViewed() {
               <Card variant="elevated" className="group flex flex-col overflow-hidden">
                 <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
                   {isProduct && product?.image ? (
-                    <Image src={product.image} alt={product.name} className="object-cover" fill loading="lazy" />
+                    <Image src={product.image} alt={product.name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()} />
                   ) : !isProduct && service?.thumbnail ? (
-                    <Image src={service.thumbnail} alt={service.title} className="object-cover" fill loading="lazy" />
+                    <Image src={service.thumbnail} alt={service.title} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-slate-100">
                       <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Button } from './Button'
+import { getBlurDataURL, CARD_IMAGE_SIZES_3COL } from '@/lib/image-utils'
 
 interface ReviewImage {
   id: string
@@ -46,6 +47,9 @@ export function ReviewImages({ productId, images, canEdit, onDelete }: ReviewIma
             className="object-cover w-full h-full"
             fill
             loading="lazy"
+            sizes={CARD_IMAGE_SIZES_3COL}
+            placeholder="blur"
+            blurDataURL={getBlurDataURL()}
           />
           {canEdit && (
             <button

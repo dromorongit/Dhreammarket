@@ -8,6 +8,7 @@ import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import WishlistButton from '@/components/WishlistButton'
 import { event } from '@/lib/gtag'
+import { getBlurDataURL, SEARCH_THUMB_SIZES, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 interface SearchProduct {
   id: string
@@ -446,6 +447,9 @@ const performSearch = useCallback(async (searchQuery: string) => {
                               width={56}
                               height={56}
                               className="object-cover rounded-lg w-14 h-14 flex-shrink-0"
+                              sizes={SEARCH_THUMB_SIZES}
+                              placeholder="blur"
+                              blurDataURL={getBlurDataURL()}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
@@ -515,13 +519,16 @@ const performSearch = useCallback(async (searchQuery: string) => {
                     >
 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
                          {vendor.logo ? (
-                           <Image
-                             src={vendor.logo}
-                             alt={vendor.name}
-                             width={56}
-                             height={56}
-                             className="object-cover rounded-lg w-14 h-14 flex-shrink-0"
-                           />
+                            <Image
+                              src={vendor.logo}
+                              alt={vendor.name}
+                              width={56}
+                              height={56}
+                              className="object-cover rounded-lg w-14 h-14 flex-shrink-0"
+                              sizes={VENDOR_LOGO_SIZES}
+                              placeholder="blur"
+                              blurDataURL={getBlurDataURL()}
+                            />
                          ) : (
                           <span className="text-sm font-bold text-white">
                             {vendor.name.charAt(0).toUpperCase()}

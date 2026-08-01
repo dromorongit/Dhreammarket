@@ -13,6 +13,7 @@ import { type EnterpriseProduct, getEffectivePrice } from '@/lib/homepage-produc
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import WishlistButton from '@/components/WishlistButton';
 import { EmptyState } from '@/components/EmptyState';
+import { getBlurDataURL, CARD_IMAGE_SIZES_5COL } from '@/lib/image-utils';
 
 
 function TrendingProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
@@ -49,6 +50,9 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
                 fill
                 loading='lazy'
+                sizes={CARD_IMAGE_SIZES_5COL}
+                placeholder="blur"
+                blurDataURL={getBlurDataURL()}
               />
             ) : (
               <div className='absolute inset-0 flex items-center justify-center bg-slate-100'>

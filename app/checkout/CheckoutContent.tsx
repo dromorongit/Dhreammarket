@@ -15,6 +15,7 @@ import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
+import { getBlurDataURL, SEARCH_THUMB_SIZES } from '@/lib/image-utils'
 
 interface CartItem {
   id: string
@@ -88,6 +89,9 @@ function OrderSummaryDesktop({ items, subtotal }: {
                     width={56}
                     height={56}
                     className="object-cover w-full h-full"
+                    sizes={SEARCH_THUMB_SIZES}
+                    placeholder="blur"
+                    blurDataURL={getBlurDataURL()}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -156,6 +160,9 @@ function MobileOrderSummary({
                       width={48}
                       height={48}
                       className="object-cover w-full h-full"
+                      sizes={SEARCH_THUMB_SIZES}
+                      placeholder="blur"
+                      blurDataURL={getBlurDataURL()}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
