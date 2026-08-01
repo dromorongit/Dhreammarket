@@ -295,7 +295,7 @@ export default function VendorAnalytics() {
           <ChartCard title="Conversion Chart" icon="🔄">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={[{ name: 'Converted', value: kpis?.conversionRate ?? 0 }, { name: 'Not Converted', value: Math.max(0, 100 - (kpis?.conversionRate ?? 0)) }]} cx="50%" cy="50%" outerRadius={100} dataKey="value" nameKey="name" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}>
+                <Pie data={[{ name: 'Converted', value: kpis?.conversionRate ?? 0 }, { name: 'Not Converted', value: Math.max(0, 100 - (kpis?.conversionRate ?? 0)) }]} cx="50%" cy="50%" outerRadius={100} dataKey="value" nameKey="name" label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`}>
                   <Cell fill="#10B981" />
                   <Cell fill="#e2e8f0" />
                 </Pie>
