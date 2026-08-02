@@ -2405,6 +2405,7 @@ model SubscriptionUsage {
   @@map("subscription_usage")
   @@index([subscriptionId])
   @@index([metric])
+  @@unique([subscriptionId, metric])
 }
 
 model SubscriptionFeature {
