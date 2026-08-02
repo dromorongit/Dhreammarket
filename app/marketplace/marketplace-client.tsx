@@ -475,6 +475,18 @@ function MarketplaceContent() {
   }, [selectedServiceCategory, serviceSortBy, serviceMinPrice, serviceMaxPrice, serviceSearchQuery])
 
   useEffect(() => {
+    setProductPagination(prev => ({ ...prev, totalPages: totalProductCount > 0 ? Math.ceil(totalProductCount / prev.limit) : 0 }))
+  }, [totalProductCount])
+
+  useEffect(() => {
+    setVendorPagination(prev => ({ ...prev, totalPages: totalVendorCount > 0 ? Math.ceil(totalVendorCount / prev.limit) : 0 }))
+  }, [totalVendorCount])
+
+  useEffect(() => {
+    setServicePagination(prev => ({ ...prev, totalPages: totalServiceCount > 0 ? Math.ceil(totalServiceCount / prev.limit) : 0 }))
+  }, [totalServiceCount])
+
+  useEffect(() => {
     const categoryParam = searchParams?.get('category') ?? ''
     const vendorCategoryParam = searchParams?.get('vendorCategory') ?? ''
     const brandParam = searchParams?.get('brand') ?? ''
