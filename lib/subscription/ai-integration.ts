@@ -169,7 +169,7 @@ export async function getVendorSubscriptionInsights(vendorId: string): Promise<{
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
-    include: { plan: true },
+    include: { plan: { include: { featurePermissions: true } } },
   })
   if (!subscription) {
     return { planName: 'None', status: 'NONE', billingCycle: 'MONTHLY', totalPaid: 0, productsUsed: 0, productsLimit: 0, servicesUsed: 0, servicesLimit: 0, featuresEnabled: [], upcomingRenewal: null }
@@ -182,7 +182,7 @@ export async function getVendorSubscriptionInsights(vendorId: string): Promise<{
     where: { vendorId },
   })
 
-  const features = subscription.plan.features
+  const features = subscription.plan.featurePermissions
     .filter((f) => f.isEnabled)
     .map((f) => f.featureKey)
 
