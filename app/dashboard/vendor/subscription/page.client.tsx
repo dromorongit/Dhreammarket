@@ -321,7 +321,7 @@ export default function VendorSubscriptionPage() {
                   <CardHeader>
                     <h3 className="font-semibold text-deep-navy">{plan.name}</h3>
                     <p className="text-2xl font-bold text-royal-blue">
-                      {plan.priceMonthly === 0 ? 'Free' : formatCurrency(plan.priceMonthly)}
+                      {plan.priceMonthly === 0 || plan.priceMonthly === null ? 'Free' : formatCurrency(plan.priceMonthly)}
                       <span className="text-sm font-normal text-gray-500">/month</span>
                     </p>
                     {plan.priceYearly && plan.priceYearly > 0 && (
