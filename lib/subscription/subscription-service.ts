@@ -9,7 +9,7 @@ export async function getSubscriptionPlans() {
     where: { isActive: true },
     orderBy: { displayOrder: 'asc' },
     include: {
-      features: {
+      featurePermissions: {
         select: {
           featureKey: true,
           isEnabled: true,
@@ -26,7 +26,7 @@ export async function getSubscriptionPlanByName(name: string) {
   const plan = await prisma.subscriptionPlan.findUnique({
     where: { name },
     include: {
-      features: {
+      featurePermissions: {
         select: {
           featureKey: true,
           isEnabled: true,
@@ -473,12 +473,12 @@ export async function checkSubscriptionFeatureAccess(vendorId: string, featureKe
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
-    include: { plan: { include: { features: true } } },
+    include: { plan: { include: { featurePermissions: true } } },
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
 
-  const feature = subscription.plan.features.find((f) => f.featureKey === featureKey)
+  const feature = subscription.plan.featurePermissions.find((f) => f.featureKey === featureKey)
   if (!feature) return false
   if (!feature.isEnabled) return false
   if (feature.limit !== null && feature.currentUsage >= feature.limit) return false
@@ -490,11 +490,11 @@ export async function incrementFeatureUsage(vendorId: string, featureKey: string
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
-    include: { plan: { include: { features: true } } },
+    include: { plan: { include: { featurePermissions: true } } },
   })
   if (!subscription) return
 
-  const feature = subscription.plan.features.find((f) => f.featureKey === featureKey)
+  const feature = subscription.plan.featurePermissions.find((f) => f.featureKey === featureKey)
   if (!feature) return
 
   await prisma.subscriptionFeature.update({
