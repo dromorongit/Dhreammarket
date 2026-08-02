@@ -1,3 +1,4 @@
+import { getPrisma } from '@/lib/prisma'
 import { createNotification } from '@/lib/notifications'
 import { NotificationType } from '@prisma/client'
 import { logInfo, logError } from '@/lib/logger'
