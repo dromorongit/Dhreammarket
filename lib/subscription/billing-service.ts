@@ -192,6 +192,11 @@ export async function processManualPayment(subscriptionId: string, amount: numbe
     },
   })
 
+  const invoiceWithPayments = await prisma.subscriptionInvoice.findUnique({
+    where: { id: invoice.id },
+    include: { payments: true },
+  })
+
   await prisma.vendorSubscription.update({
     where: { id: subscriptionId },
     data: {
@@ -211,5 +216,5 @@ export async function processManualPayment(subscriptionId: string, amount: numbe
   })
 
   logInfo(`Manual payment processed: subscription=${subscriptionId}, amount=${amount}`)
-  return { invoice, payment: invoice.payments[0] }
+  return { invoice, payment: invoiceWithPayments?.payments[0] ?? null }
 }
