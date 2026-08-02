@@ -1,9 +1,10 @@
+import { NextRequest } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { subscriptionPlans, planBenefits, getFeatureRestrictions } from '@/lib/subscription/types'
 import { SubscriptionDashboardData } from '@/lib/subscription/types'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
