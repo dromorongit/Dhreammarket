@@ -507,7 +507,7 @@ export async function getSubscriptionUsage(vendorId: string) {
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
-    include: { usageRecords: { orderBy: { recordedAt: 'desc' } } },
+    include: { usageRecords: { orderBy: { recordedAt: 'desc' } }, plan: true },
   })
   if (!subscription) return []
 
