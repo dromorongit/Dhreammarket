@@ -333,7 +333,7 @@ export default function SuperAdminSubscriptionPage() {
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-500 mt-1">
-                        {plan.priceMonthly === 0 ? 'Free' : `${formatCurrency(plan.priceMonthly)}/mo`}
+                        {plan.priceMonthly === 0 || plan.priceMonthly === null ? 'Free' : `${formatCurrency(plan.priceMonthly)}/mo`}
                         {plan.priceYearly && plan.priceYearly > 0 && ` | ${formatCurrency(plan.priceYearly)}/yr`}
                       </p>
                       <p className="text-sm text-gray-500">
