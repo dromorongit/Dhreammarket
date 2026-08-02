@@ -17,7 +17,8 @@ import {
   generateSubscriptionInvoice,
   processSubscriptionPayment,
   getSubscriptionHistory,
-} from '@/lib/subscription/subscription-service'
+ } from '@/lib/subscription/subscription-service'
+import { processManualPayment } from '@/lib/subscription/billing-service'
 import { logInfo, logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
