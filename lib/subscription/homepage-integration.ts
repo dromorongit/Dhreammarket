@@ -12,6 +12,7 @@ export async function getFeaturedVendorsForHomepage(limit: number = 10) {
     },
     include: {
       vendor: { select: { email: true, store: { select: { name: true, slug: true, logo: true, averageRating: true } } } },
+      plan: true,
     },
     orderBy: { totalPaid: 'desc' },
     take: limit,
@@ -39,6 +40,7 @@ export async function getSponsoredVendorsForHomepage(limit: number = 10) {
     },
     include: {
       vendor: { select: { email: true, store: { select: { name: true, slug: true, logo: true, averageRating: true } } } },
+      plan: true,
     },
     orderBy: { totalPaid: 'desc' },
     take: limit,
@@ -66,6 +68,7 @@ export async function getVendorsWithPromotionCredits(limit: number = 20) {
     },
     include: {
       vendor: { select: { email: true, store: { select: { name: true, slug: true } } } },
+      plan: true,
     },
     orderBy: { totalPaid: 'desc' },
     take: limit,
