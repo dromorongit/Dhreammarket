@@ -1,6 +1,4 @@
 import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { verifyToken } from '@/lib/auth-middleware'
 
 export default async function VendorSubscriptionValidation({ children }: { children: React.ReactNode }) {
