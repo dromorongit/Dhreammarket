@@ -263,6 +263,7 @@ model Product {
   restockOrders            RestockOrder[]
   collectionItems          CollectionItem[]
   flashDealProducts        FlashDealProduct[]
+  advertisementCampaigns   AdvertisementCampaign[]
 
   @@map("products")
   @@index([storeId])
@@ -301,6 +302,7 @@ model Service {
   reviews                 ServiceReview[]
   collectionItems         CollectionItem[]
   flashDealProducts       FlashDealProduct[]
+  advertisementCampaigns  AdvertisementCampaign[]
 
   @@map("services")
   @@index([vendorId])
@@ -2523,6 +2525,8 @@ model AdvertisementCampaign {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   vendor              User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  product             Product? @relation(fields: [selectedProductId], references: [id])
+  service             Service? @relation(fields: [selectedServiceId], references: [id])
   placements          AdvertisementPlacement[]
   payments            AdvertisementPayment[]
   invoice             AdvertisementInvoice?
