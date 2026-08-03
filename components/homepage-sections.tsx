@@ -508,7 +508,7 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
       expectedRestockDate: product.expectedRestockDate,
     })
     const hasDiscount = (badgeData.discountPercentage ?? 0) > 0
-    const widthClass = isDesktop ? 'w-full' : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
+    const widthClass = isDesktop ? 'snap-start flex-shrink-0 w-[calc(25%-12px)]' : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
     const aspectClass = isDesktop ? 'aspect-[4/5]' : 'aspect-[3/4]'
 
     return (
@@ -579,9 +579,11 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        <div className="hidden lg:grid grid-cols-2 gap-8">
-          {products.slice(0, 4).map((product) => renderProductCard(product, true))}
-        </div>
+        <div className="hidden lg:flex -mx-4 px-4 overflow-x-auto scrollbar-hide snap-mandatory">
+           <div className="flex gap-4" style={{ width: 'max-content' }}>
+             {products.slice(0, 4).map((product) => renderProductCard(product, true))}
+           </div>
+         </div>
 
         <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>

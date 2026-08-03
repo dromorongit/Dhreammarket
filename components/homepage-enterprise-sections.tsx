@@ -719,7 +719,7 @@ export function EnterpriseGadgetDisplaySection({
     const discountedPrice = getDiscountedPrice(product)
     const hasDiscount = discountedPrice !== null && discountedPrice < product.price
     const widthClass = isDesktop
-      ? 'w-full'
+      ? 'snap-start flex-shrink-0 w-[calc(25%-12px)]'
       : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
     const aspectClass = isDesktop ? 'aspect-[4/5]' : 'aspect-[3/4]'
 
@@ -730,7 +730,7 @@ export function EnterpriseGadgetDisplaySection({
             <ProductImage
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
-              sizes={isDesktop ? CARD_IMAGE_SIZES_2COL : CARD_IMAGE_SIZES_4COL}
+              sizes={isDesktop ? CARD_IMAGE_SIZES_4COL : CARD_IMAGE_SIZES_2COL}
             />
             <div className='absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent' />
             <div className='absolute top-3 left-3 right-3 flex justify-between items-start'>
@@ -789,9 +789,11 @@ export function EnterpriseGadgetDisplaySection({
           )}
         </div>
 
-        {/* Desktop grid */}
-        <div className='hidden lg:grid grid-cols-2 gap-8'>
-          {products.slice(0, 4).map((product) => renderProductCard(product, true))}
+        {/* Desktop horizontal scroll - Single row */}
+        <div className='hidden lg:flex -mx-4 px-4 overflow-x-auto scrollbar-hide snap-mandatory'>
+          <div className='flex gap-4' style={{ width: 'max-content' }}>
+            {products.slice(0, 4).map((product) => renderProductCard(product, true))}
+          </div>
         </div>
 
         {/* Mobile & tablet horizontal scroll - Two independent rows */}
