@@ -725,44 +725,43 @@ export function EnterpriseGadgetDisplaySection({
 
     return (
       <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
-        <Card
-          variant='elevated'
-          className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 bg-slate-800/50 border border-slate-700/50 h-full'
-        >
-          <div className={`relative ${aspectClass} bg-slate-800 overflow-hidden`}>
+        <div className='group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500'>
+          <div className={`relative ${aspectClass} bg-slate-50 overflow-hidden`}>
             <ProductImage
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
               sizes={isDesktop ? CARD_IMAGE_SIZES_2COL : CARD_IMAGE_SIZES_4COL}
             />
-            <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+            <div className='absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent' />
             <div className='absolute top-3 left-3 right-3 flex justify-between items-start'>
-              <Badge variant='premium' size='sm' className='backdrop-blur-sm'>Tech</Badge>
+              <span className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-400 text-white text-[11px] font-semibold uppercase tracking-wider shadow-sm'>
+                Tech
+              </span>
               <WishlistButton productId={product.id} size="sm" className="relative z-10" />
             </div>
-            <div className='absolute bottom-0 left-0 right-0 p-5 sm:p-6'>
-              <h3 className='text-base sm:text-lg font-bold text-white mb-1 line-clamp-2 leading-tight'>
-                {product.name}
-              </h3>
-              {product.store && (
-                <p className='text-white/70 text-xs sm:text-sm mb-2 truncate'>
-                  {product.store.name}
-                </p>
-              )}
-              <div className='flex items-baseline gap-2 mb-3'>
-                {hasDiscount && (
-                  <span className='text-sm text-white/60 line-through'>
-                    {formatPrice(product.price)}
-                  </span>
-                )}
-                <span className='text-xl sm:text-2xl font-bold text-premium-gold'>{formatPrice(effectivePrice)}</span>
-              </div>
-              <Button variant='gradient' size='sm' className='w-full rounded-full font-semibold'>
-                View Deal
-              </Button>
-            </div>
           </div>
-        </Card>
+          <div className='p-5 space-y-3 flex-1 flex flex-col'>
+            <h3 className='text-sm font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight'>
+              {product.name}
+            </h3>
+            {product.store && (
+              <p className='text-xs text-slate-500 truncate'>
+                {product.store.name}
+              </p>
+            )}
+            <div className='flex items-baseline gap-2 mt-auto'>
+              {hasDiscount && (
+                <span className='text-xs text-slate-400 line-through'>
+                  {formatPrice(product.price)}
+                </span>
+              )}
+              <span className='text-lg font-bold text-royal-blue'>{formatPrice(effectivePrice)}</span>
+            </div>
+            <Button variant='gradient' size='sm' className='w-full rounded-full font-semibold mt-auto'>
+              View Deal
+            </Button>
+          </div>
+        </div>
       </Link>
     )
   }

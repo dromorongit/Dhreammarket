@@ -513,53 +513,55 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
 
     return (
       <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
-        <Card variant="elevated" className="group flex flex-col overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 h-full">
-          <div className={`relative ${aspectClass} bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden`}>
+        <div className="group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
+          <div className={`relative ${aspectClass} bg-slate-50 overflow-hidden`}>
             {product.images?.[0] ? (
               <Image
                 src={product.images[0].url}
                 alt={product.images[0].alt || product.name}
-                className="object-cover"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 fill
                 sizes={isDesktop ? CARD_IMAGE_SIZES_4COL : CARD_IMAGE_SIZES_2COL}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-slate-50">
                 <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818v-.386M9.75 3.104V5.25A2.25 2.25 0 004.875 7.5h4.5a2.25 2.25 0 012.25 2.25v2.25A2.25 2.25 0 0111.25 12h3a2.25 2.25 0 012.25 2.25v2.25A2.25 2.25 0 004.875 7.5v-4.25" />
                 </svg>
               </div>
             )}
             <ProductBadges product={badgeData} />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="premium" size="sm">Tech</Badge>
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-white mb-1 line-clamp-2 leading-tight">{product.name}</h3>
-              {product.store && (
-                <p className="text-white/80 text-xs sm:text-sm mb-2 truncate">{product.store.name}</p>
-              )}
-              <div className="flex items-baseline gap-2 mb-3">
-                {hasDiscount && (
-                  <span className="text-sm text-white/60 line-through">
-                    {formatPrice(product.price)}
-                  </span>
-                )}
-                <span className="text-xl sm:text-2xl font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-              </div>
-              <Button variant="gradient" size="sm" className="w-full rounded-full font-semibold">View Deal</Button>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+            <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-400 text-white text-[11px] font-semibold uppercase tracking-wider shadow-sm">
+                Tech
+              </span>
             </div>
           </div>
-        </Card>
+          <div className="p-5 space-y-3 flex-1 flex flex-col">
+            <h3 className="text-sm font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">{product.name}</h3>
+            {product.store && (
+              <p className="text-xs text-slate-500 truncate">{product.store.name}</p>
+            )}
+            <div className="flex items-baseline gap-2 mt-auto">
+              {hasDiscount && (
+                <span className="text-xs text-slate-400 line-through">
+                  {formatPrice(product.price)}
+                </span>
+              )}
+              <span className="text-lg font-bold text-royal-blue">{formatPrice(effectivePrice)}</span>
+            </div>
+            <Button variant="gradient" size="sm" className="w-full rounded-full font-semibold mt-auto">View Deal</Button>
+          </div>
+        </div>
       </Link>
     )
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-white overflow-hidden">
+    <section className="relative py-16 lg:py-24 bg-slate-50 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
           <SectionPill
