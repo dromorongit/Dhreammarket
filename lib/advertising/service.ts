@@ -147,7 +147,7 @@ export async function recordPayment(
       paystackRef,
       paystackPaymentId,
       status: 'PAID',
-      metadata: metadata || null,
+      metadata: metadata || null as any,
     },
   })
 
