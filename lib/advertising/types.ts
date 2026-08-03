@@ -1,5 +1,6 @@
 import type { AdvertisementCampaign } from '@prisma/client'
-import type { JsonValue } from '.prisma/client'
+
+type JsonValue = any
 
 export interface AdvertisementCampaignData {
   title: string
