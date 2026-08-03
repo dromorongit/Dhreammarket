@@ -70,6 +70,7 @@ model User {
   rewardRedemptions        RewardRedemption[]
   vendorRewardCampaigns    VendorRewardCampaign[]
   vendorSubscriptions      VendorSubscription[]
+  advertisementCampaigns   AdvertisementCampaign[]
 
   @@map("users")
 }
@@ -1165,6 +1166,16 @@ enum NotificationType {
   SUBSCRIPTION_CANCELLED
   INVOICE_GENERATED
   PAYMENT_FAILED
+  CAMPAIGN_SUBMITTED
+  CAMPAIGN_APPROVED
+  CAMPAIGN_REJECTED
+  CAMPAIGN_ACTIVATED
+  CAMPAIGN_EXPIRING_SOON
+  CAMPAIGN_EXPIRED
+  CAMPAIGN_PAYMENT_SUCCESS
+  CAMPAIGN_PAYMENT_FAILED
+  CAMPAIGN_SUSPENDED
+  CAMPAIGN_EXTENDED
 }
 
 enum FeedbackType {
@@ -2476,4 +2487,187 @@ enum SubscriptionAction {
   INVOICE_GENERATED
   PAYMENT_SUCCESS
   PAYMENT_FAILED
+}
+
+// ===== MODULE 21: Advertising & Promotional Marketplace =====
+
+model AdvertisementCampaign {
+  id                  String   @id @default(cuid())
+  vendorId            String
+  title               String
+  campaignType        AdvertisementCampaignType @default(SPONSORED_PRODUCT)
+  selectedProductId   String?
+  selectedServiceId   String?
+  homepageSection     String?
+  duration            Int      // in days
+  price               Float
+  paymentStatus       PaymentStatus @default(PENDING)
+  campaignStatus      AdvertisementCampaignStatus @default(PENDING_PAYMENT)
+  startDate           DateTime?
+  endDate             DateTime?
+  approvedAt          DateTime?
+  rejectedAt          DateTime?
+  rejectedReason      String?
+  suspendedAt         DateTime?
+  extendedUntil       DateTime?
+  paystackRef         String?
+  paystackPaymentId   String?
+  invoiceId           String?
+  maxSlots            Int      @default(1)
+  currentSlots        Int      @default(0)
+  views               Int      @default(0)
+  clicks              Int      @default(0)
+  ordersGenerated     Int      @default(0)
+  bookingsGenerated   Int      @default(0)
+  revenueGenerated    Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  vendor              User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  placements          AdvertisementPlacement[]
+  payments            AdvertisementPayment[]
+  invoice             AdvertisementInvoice?
+  analytics           AdvertisementAnalytics[]
+  history             AdvertisementHistory[]
+
+  @@map("advertisement_campaigns")
+  @@index([vendorId])
+  @@index([campaignStatus])
+  @@index([paymentStatus])
+  @@index([homepageSection])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model AdvertisementPlacement {
+  id              String   @id @default(cuid())
+  campaignId      String
+  sectionSlug     String
+  productId       String?
+  serviceId       String?
+  displayOrder    Int      @default(0)
+  isSponsored     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("advertisement_placements")
+  @@unique([campaignId, sectionSlug, productId])
+  @@unique([campaignId, sectionSlug, serviceId])
+  @@index([sectionSlug])
+  @@index([isSponsored])
+}
+
+model AdvertisementPayment {
+  id              String   @id @default(cuid())
+  campaignId      String
+  amount          Float
+  currency        String   @default("GHS")
+  paystackRef     String?
+  paystackPaymentId String?
+  status          PaymentStatus @default(PENDING)
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("advertisement_payments")
+  @@index([paystackRef])
+  @@index([status])
+  @@index([campaignId])
+}
+
+model AdvertisementInvoice {
+  id              String   @id @default(cuid())
+  campaignId      String   @unique
+  invoiceNumber   String   @unique
+  amount          Float
+  currency        String   @default("GHS")
+  periodStart     DateTime
+  periodEnd       DateTime
+  status          InvoiceStatus @default(PENDING)
+  paystackInvoiceId String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("advertisement_invoices")
+  @@index([invoiceNumber])
+  @@index([status])
+}
+
+model AdvertisementAnalytics {
+  id              String   @id @default(cuid())
+  campaignId      String
+  date            DateTime
+  views           Int      @default(0)
+  clicks          Int      @default(0)
+  ordersGenerated Int      @default(0)
+  bookingsGenerated Int    @default(0)
+  revenueGenerated Float   @default(0)
+  ctr             Float    @default(0)
+  conversionRate  Float    @default(0)
+  roi             Float    @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("advertisement_analytics")
+  @@index([campaignId])
+  @@index([date])
+}
+
+model AdvertisementHistory {
+  id              String   @id @default(cuid())
+  campaignId      String
+  action          AdvertisementCampaignAction
+  performedBy     String   // userId
+  performedByRole String
+  details         Json?
+  createdAt       DateTime @default(now())
+  campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("advertisement_history")
+  @@index([campaignId])
+  @@index([performedBy])
+  @@index([createdAt])
+}
+
+enum AdvertisementCampaignType {
+  SPONSORED_PRODUCT
+  SPONSORED_SERVICE
+  TRENDING_NOW_BOOST
+  TRENDING_SERVICE_BOOST
+  FEATURED_PRODUCT_PLACEMENT
+  FEATURED_SERVICE_PLACEMENT
+  SEARCH_RESULT_BOOST
+  CATEGORY_BOOST
+  VENDOR_SPOTLIGHT
+}
+
+enum AdvertisementCampaignStatus {
+  PENDING_PAYMENT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+enum AdvertisementCampaignAction {
+  CREATED
+  PAYMENT_INITIATED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  SUBMITTED_FOR_APPROVAL
+  APPROVED
+  REJECTED
+  ACTIVATED
+  SUSPENDED
+  EXTENDED
+  EXPIRED
+  CANCELLED
+  RENEWED
 }

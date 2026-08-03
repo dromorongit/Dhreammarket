@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
+import { getActiveSponsoredPlacements } from '@/lib/advertising/service'
 
 const prisma = getPrisma()
 
@@ -278,13 +279,40 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    const total = results.products.length + results.vendors.length + results.productCategories.length + results.vendorCategories.length + results.brands.length + results.services.length + results.serviceCategories.length
+     const total = results.products.length + results.vendors.length + results.productCategories.length + results.vendorCategories.length + results.brands.length + results.services.length + results.serviceCategories.length
 
-    return NextResponse.json({
-      query,
-      results,
-      total,
-    })
+     let sponsoredProductIds: string[] = []
+     let sponsoredServiceIds: string[] = []
+
+     try {
+       const sponsoredPlacements = await getActiveSponsoredPlacements('Sponsored')
+       sponsoredProductIds = sponsoredPlacements
+         .filter((p) => p.type === 'PRODUCT')
+         .map((p) => p.entityId)
+       sponsoredServiceIds = sponsoredPlacements
+         .filter((p) => p.type === 'SERVICE')
+         .map((p) => p.entityId)
+     } catch (e) {
+       console.error('[Search] Sponsored placements fetch failed:', e)
+     }
+
+     if (sponsoredProductIds.length > 0 && results.products.length > 0) {
+       const sponsoredProducts = results.products.filter((p: any) => sponsoredProductIds.includes(p.id))
+       const nonSponsoredProducts = results.products.filter((p: any) => !sponsoredProductIds.includes(p.id))
+       results.products = [...sponsoredProducts.map((p: any) => ({ ...p, isSponsored: true, badge: 'Sponsored' })), ...nonSponsoredProducts]
+     }
+
+     if (sponsoredServiceIds.length > 0 && results.services.length > 0) {
+       const sponsoredServices = results.services.filter((s: any) => sponsoredServiceIds.includes(s.id))
+       const nonSponsoredServices = results.services.filter((s: any) => !sponsoredServiceIds.includes(s.id))
+       results.services = [...sponsoredServices.map((s: any) => ({ ...s, isSponsored: true, badge: 'Sponsored' })), ...nonSponsoredServices]
+     }
+
+     return NextResponse.json({
+       query,
+       results,
+       total,
+     })
   } catch (error) {
     console.error('Search error:', error)
     return NextResponse.json(

@@ -4,6 +4,7 @@ import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 import { PerformanceLogger } from '@/lib/performance'
 import type { ContentSource } from '@/lib/homepage-constants'
+import { getActiveSponsoredPlacements } from '@/lib/advertising/service'
 
 export const revalidate = 60
 
@@ -604,19 +605,91 @@ export async function GET(_request: NextRequest) {
         p && expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
       )
 
-      return {
-        id: section.id,
-        name: section.name,
-        slug: section.slug,
-        type: section.type,
-        subtitle: section.subtitle,
-        displayOrder: section.displayOrder,
-        contentSource,
-        products: sortedProducts,
-        services: sortedServices,
-        vendors: sortedVendors,
-        brands: sortedBrands,
-      }
+       let sponsoredProducts: any[] = []
+       let sponsoredServices: any[] = []
+       let sponsoredVendors: any[] = []
+       let sponsoredBrands: any[] = []
+
+       try {
+         const sponsoredPlacements = await getActiveSponsoredPlacements(sectionSlug)
+         sponsoredProducts = sponsoredPlacements
+           .filter((p) => p.type === 'PRODUCT')
+           .map((p) => ({
+             id: p.entityId,
+             _sponsored: true,
+             _campaignId: p.campaignId,
+             _campaignTitle: p.campaignTitle,
+             _badge: p.badge,
+             _displayOrder: p.displayOrder,
+           }))
+         sponsoredServices = sponsoredPlacements
+           .filter((p) => p.type === 'SERVICE')
+           .map((p) => ({
+             id: p.entityId,
+             _sponsored: true,
+             _campaignId: p.campaignId,
+             _campaignTitle: p.campaignTitle,
+             _badge: p.badge,
+             _displayOrder: p.displayOrder,
+           }))
+         sponsoredVendors = sponsoredPlacements
+           .filter((p) => p.type === 'VENDOR')
+           .map((p) => ({
+             id: p.entityId,
+             _sponsored: true,
+             _campaignId: p.campaignId,
+             _campaignTitle: p.campaignTitle,
+             _badge: p.badge,
+             _displayOrder: p.displayOrder,
+           }))
+       } catch (e) {
+         console.error('[homepage/public] Sponsored placements fetch failed:', e)
+       }
+
+       const allProducts = [...sponsoredProducts, ...sortedProducts]
+       const allServices = [...sponsoredServices, ...sortedServices]
+       const allVendors = [...sponsoredVendors, ...sortedVendors]
+       const allBrands = [...sponsoredBrands, ...sortedBrands]
+
+       const seenProductIds = new Set<string>()
+       const seenServiceIds = new Set<string>()
+       const seenVendorIds = new Set<string>()
+       const seenBrandIds = new Set<string>()
+
+       const dedupedProducts = allProducts.filter((p: any) => {
+         if (seenProductIds.has(p.id)) return false
+         seenProductIds.add(p.id)
+         return true
+       })
+       const dedupedServices = allServices.filter((s: any) => {
+         if (seenServiceIds.has(s.id)) return false
+         seenServiceIds.add(s.id)
+         return true
+       })
+       const dedupedVendors = allVendors.filter((v: any) => {
+         if (seenVendorIds.has(v.id)) return false
+         seenVendorIds.add(v.id)
+         return true
+       })
+       const dedupedBrands = allBrands.filter((b: any) => {
+         if (seenBrandIds.has(b.id)) return false
+         seenBrandIds.add(b.id)
+         return true
+       })
+
+       return {
+         id: section.id,
+         name: section.name,
+         slug: section.slug,
+         type: section.type,
+         subtitle: section.subtitle,
+         displayOrder: section.displayOrder,
+         contentSource,
+         products: dedupedProducts.slice(0, maxProducts),
+         services: dedupedServices.slice(0, maxServices),
+         vendors: dedupedVendors.slice(0, maxVendors),
+         brands: dedupedBrands.slice(0, 10),
+       }
     }))).map((result, index) => {
       if (result.status === 'fulfilled') {
         return result.value

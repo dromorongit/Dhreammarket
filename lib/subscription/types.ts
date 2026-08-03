@@ -107,6 +107,12 @@ export interface FeatureRestrictions {
   cashbackCampaigns: boolean
   rewardCampaigns: boolean
   vendorAdvertisements: boolean
+  campaignCreation: boolean
+  sponsoredSearchBoost: boolean
+  categoryBoosts: boolean
+  vendorSpotlight: boolean
+  priorityApproval: boolean
+  unlimitedCampaigns: boolean
 }
 
 export function getFeatureRestrictions(planName: string): FeatureRestrictions {
@@ -123,6 +129,12 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
         cashbackCampaigns: false,
         rewardCampaigns: false,
         vendorAdvertisements: false,
+        campaignCreation: false,
+        sponsoredSearchBoost: false,
+        categoryBoosts: false,
+        vendorSpotlight: false,
+        priorityApproval: false,
+        unlimitedCampaigns: false,
       }
     case 'Starter':
       return {
@@ -136,6 +148,12 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
         cashbackCampaigns: false,
         rewardCampaigns: false,
         vendorAdvertisements: false,
+        campaignCreation: false,
+        sponsoredSearchBoost: false,
+        categoryBoosts: false,
+        vendorSpotlight: false,
+        priorityApproval: false,
+        unlimitedCampaigns: false,
       }
     case 'Business':
       return {
@@ -149,6 +167,12 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
         cashbackCampaigns: true,
         rewardCampaigns: true,
         vendorAdvertisements: false,
+        campaignCreation: false,
+        sponsoredSearchBoost: false,
+        categoryBoosts: false,
+        vendorSpotlight: false,
+        priorityApproval: false,
+        unlimitedCampaigns: false,
       }
     case 'Professional':
       return {
@@ -162,6 +186,12 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
         cashbackCampaigns: true,
         rewardCampaigns: true,
         vendorAdvertisements: true,
+        campaignCreation: true,
+        sponsoredSearchBoost: true,
+        categoryBoosts: true,
+        vendorSpotlight: false,
+        priorityApproval: false,
+        unlimitedCampaigns: false,
       }
     case 'Enterprise':
       return {
@@ -175,6 +205,12 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
         cashbackCampaigns: true,
         rewardCampaigns: true,
         vendorAdvertisements: true,
+        campaignCreation: true,
+        sponsoredSearchBoost: true,
+        categoryBoosts: true,
+        vendorSpotlight: true,
+        priorityApproval: true,
+        unlimitedCampaigns: true,
       }
     default:
       return getFeatureRestrictions('Free')
