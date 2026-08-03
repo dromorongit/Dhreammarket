@@ -72,7 +72,7 @@ export async function recommendCampaignForVendor(vendorId: string): Promise<Camp
 
   const trendingProducts = await prisma.product.findMany({
     where: { stock: { gt: 0 }, OR: [{ availabilityType: 'IN_STOCK' }, { availabilityType: 'PREORDER' }] },
-    select: { id: true, name: true, slug: true, salesCount: true, averageRating: true },
+    select: { id: true, name: true, slug: true, price: true, salesCount: true, averageRating: true },
     orderBy: { salesCount: 'desc' },
     take: 5,
   })
@@ -93,7 +93,7 @@ export async function recommendCampaignForVendor(vendorId: string): Promise<Camp
 
   const trendingServices = await prisma.service.findMany({
     where: { status: 'PUBLISHED', isActive: true, availabilityStatus: 'AVAILABLE' },
-    select: { id: true, title: true, slug: true, serviceRequests: { select: { id: true, status: true } } },
+    select: { id: true, title: true, slug: true, startingPrice: true, serviceRequests: { select: { id: true, status: true } } },
     orderBy: { createdAt: 'desc' },
     take: 5,
   })

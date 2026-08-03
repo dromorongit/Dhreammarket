@@ -1,3 +1,5 @@
+import type { AdvertisementCampaign, JsonValue } from '@prisma/client'
+
 export interface AdvertisementCampaignData {
   title: string
   campaignType: AdvertisementCampaignType
@@ -75,7 +77,7 @@ export interface AdvertisementPayment {
   paystackRef: string | null
   paystackPaymentId: string | null
   status: string
-  metadata: Record<string, any> | null
+  metadata: JsonValue | null
   createdAt: Date
   updatedAt: Date
 }
@@ -90,7 +92,7 @@ export interface AdvertisementInvoice {
   periodEnd: Date
   status: string
   paystackInvoiceId: string | null
-  metadata: Record<string, any> | null
+  metadata: JsonValue | null
   createdAt: Date
   updatedAt: Date
 }
@@ -117,7 +119,7 @@ export interface AdvertisementHistory {
   action: AdvertisementCampaignAction
   performedBy: string
   performedByRole: string
-  details: Record<string, any> | null
+  details: JsonValue | null
   createdAt: Date
 }
 

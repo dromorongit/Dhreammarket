@@ -38,6 +38,14 @@ export function Card({ className, children, variant = 'default', padding = 'lg',
   )
 }
 
+export function CardTitle({ className, children, ...props }: CardProps) {
+  return (
+    <h3 className={cn('text-lg font-semibold', className)} {...props}>
+      {children}
+    </h3>
+  )
+}
+
 Card.Header = CardHeader
 Card.Content = CardContent
 Card.Footer = CardFooter

@@ -122,7 +122,7 @@ export async function updateCampaignStatus(
       action: status as AdvertisementCampaignAction,
       performedBy,
       performedByRole,
-      details: details || null,
+      details: (details || null) as any,
     },
   })
 
@@ -190,7 +190,7 @@ export async function recordPaymentFailed(
       currency: 'GHS',
       paystackRef: paystackRef || null,
       status: 'FAILED',
-      metadata: metadata || null,
+      metadata: metadata || null as any,
     },
   })
 
@@ -382,8 +382,6 @@ export async function getActiveSponsoredPlacements(sectionSlug: string): Promise
     },
     include: {
       campaign: { select: { id: true, title: true } },
-      product: { select: { id: true, name: true, slug: true } },
-      service: { select: { id: true, title: true, slug: true } },
     },
     orderBy: { displayOrder: 'asc' },
   })
@@ -417,8 +415,6 @@ export async function getHomepageRenderContext(sectionSlug: string, sectionType:
     },
     include: {
       campaign: { select: { id: true, title: true } },
-      product: true,
-      service: true,
     },
     orderBy: { displayOrder: 'asc' },
   })

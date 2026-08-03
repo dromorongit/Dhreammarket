@@ -1,5 +1,6 @@
 import { getPrisma } from '@/lib/prisma'
-import { createNotification, NotificationType } from '@/lib/notifications'
+import { createNotification } from '@/lib/notifications'
+import type { NotificationType } from '@prisma/client'
 import { logInfo, logError } from '@/lib/logger'
 
 export async function sendCampaignNotification(
