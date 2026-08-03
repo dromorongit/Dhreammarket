@@ -1,8 +1,7 @@
 'use client'
 
-'use client'
-
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -167,7 +166,7 @@ export default function FlashDealsPage() {
                           <Card key={item.id} variant="outline" className="overflow-hidden">
                             <div className="aspect-[4/3] bg-gray-100 relative">
                               {entity?.images?.[0] ? (
-                                <img src={entity.images[0].url} alt={product?.name || service?.title} className="w-full h-full object-cover" />
+                                <Image src={entity.images[0].url} alt={product?.name || service?.title} className="object-cover" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 33vw" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

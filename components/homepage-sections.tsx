@@ -494,11 +494,81 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
 
 export function GadgetDisplaySection({ section }: HomepageSectionProps) {
   const products = (section.products || [])
+
+  const renderProductCard = (product: typeof products[0], isDesktop: boolean) => {
+    const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
+    const badgeData = calculateProductBadges({
+      price: product.price,
+      flashSalePrice: product.flashSalePrice,
+      salesPrice: product.salesPrice,
+      dealsPrice: product.dealsPrice,
+      stock: product.stock,
+      availabilityType: product.availabilityType,
+      expectedArrivalDate: product.expectedArrivalDate,
+      expectedRestockDate: product.expectedRestockDate,
+    })
+    const hasDiscount = (badgeData.discountPercentage ?? 0) > 0
+    const widthClass = isDesktop ? 'w-full' : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
+    const aspectClass = isDesktop ? 'aspect-[4/5]' : 'aspect-[3/4]'
+
+    return (
+      <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
+        <Card variant="elevated" className="group flex flex-col overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 h-full">
+          <div className={`relative ${aspectClass} bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden`}>
+            {product.images?.[0] ? (
+              <Image
+                src={product.images[0].url}
+                alt={product.images[0].alt || product.name}
+                className="object-cover"
+                fill
+                sizes={isDesktop ? CARD_IMAGE_SIZES_4COL : CARD_IMAGE_SIZES_2COL}
+                placeholder="blur"
+                blurDataURL={getBlurDataURL()}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
+                </svg>
+              </div>
+            )}
+            <ProductBadges product={badgeData} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="premium" size="sm">Tech</Badge>
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-white mb-1 line-clamp-2 leading-tight">{product.name}</h3>
+              {product.store && (
+                <p className="text-white/80 text-xs sm:text-sm mb-2 truncate">{product.store.name}</p>
+              )}
+              <div className="flex items-baseline gap-2 mb-3">
+                {hasDiscount && (
+                  <span className="text-sm text-white/60 line-through">
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+                <span className="text-xl sm:text-2xl font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+              </div>
+              <Button variant="gradient" size="sm" className="w-full rounded-full font-semibold">View Deal</Button>
+            </div>
+          </div>
+        </Card>
+      </Link>
+    )
+  }
+
   return (
     <section className="relative py-16 lg:py-24 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
-          <Badge variant="premium" className="mb-3">Premium Tech</Badge>
+          <SectionPill
+            label="PREMIUM TECH"
+            gradientFrom="from-amber-500"
+            gradientVia="via-yellow-500"
+            gradientTo="to-amber-400"
+            icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>}
+          />
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
             {section.name}
           </h2>
@@ -507,117 +577,15 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
- <div className="hidden lg:grid grid-cols-2 gap-6">
-            {products.slice(0, 4).map((product) => {
-              const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-              const badgeData = calculateProductBadges({
-                price: product.price,
-                flashSalePrice: product.flashSalePrice,
-                salesPrice: product.salesPrice,
-                dealsPrice: product.dealsPrice,
-                stock: product.stock,
-                availabilityType: product.availabilityType,
-                expectedArrivalDate: product.expectedArrivalDate,
-                expectedRestockDate: product.expectedRestockDate,
-              })
-              return (
- <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
-                     <Card variant="elevated" className="group overflow-hidden hover:shadow-2xl transition-all duration-500">
- <div className="relative aspect-[16/9] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                       {product.images?.[0] ? (
-                         <Image
-                           src={product.images[0].url}
-                           alt={product.images[0].alt || product.name}
-                           className="object-cover"
-                           fill
-                           sizes={CARD_IMAGE_SIZES_4COL}
-                           placeholder="blur"
-                           blurDataURL={getBlurDataURL()}
-                         />
-                       ) : (
-                       <div className="w-full h-full flex items-center justify-center">
-                         <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
-                         </svg>
-                       </div>
-                     )}
-                     <ProductBadges product={badgeData} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                     <div className="absolute bottom-0 left-0 right-0 p-6">
-                       <Badge variant="premium" size="sm" className="mb-2">Tech</Badge>
-                       <h3 className="text-xl font-bold text-white mb-1">{product.name}</h3>
-                       <p className="text-white/80 text-sm mb-3">{product.store?.name}</p>
-                      <div className="flex items-baseline gap-2">
-{(badgeData.discountPercentage ?? 0) > 0 && (
-                           <span className="text-lg text-white/60 line-through">
-                             {formatPrice(product.price)}
-                           </span>
-                        )}
-                        <span className="text-2xl font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            )
-           })}
-         </div>
+        <div className="hidden lg:grid grid-cols-2 gap-8">
+          {products.slice(0, 4).map((product) => renderProductCard(product, true))}
+        </div>
 
-<div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
-           <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-             {products.slice(0, 6).map((product) => {
-               const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
-               const badgeData = calculateProductBadges({
-                 price: product.price,
-                 flashSalePrice: product.flashSalePrice,
-                 salesPrice: product.salesPrice,
-                 dealsPrice: product.dealsPrice,
-                 stock: product.stock,
-                 availabilityType: product.availabilityType,
-                 expectedArrivalDate: product.expectedArrivalDate,
-                 expectedRestockDate: product.expectedRestockDate,
-               })
-               return (
-                 <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className="w-64 flex-shrink-0">
-                   <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300">
-<div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-                         {product.images?.[0] ? (
-                           <Image
-                             src={product.images[0].url}
-                             alt={product.images[0].alt || product.name}
-                             className="object-cover"
-                             fill
-                             sizes={CARD_IMAGE_SIZES_2COL}
-                             placeholder="blur"
-                             blurDataURL={getBlurDataURL()}
-                           />
-                         ) : (
-                         <div className="w-full h-full flex items-center justify-center">
-                           <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818V3.104m-9 0A2.25 2.25 0 004.875 5.25h4.5A2.25 2.25 0 0011.25 3.104m-9 0V5.25A2.25 2.25 0 004.875 7.5h4.5A2.25 2.25 0 0011.25 5.25" />
-                           </svg>
-                         </div>
-                       )}
-                     <ProductBadges product={badgeData} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <h3 className="text-sm font-bold text-white mb-1 line-clamp-1">{product.name}</h3>
-                         <div className="flex items-baseline gap-1">
-{(badgeData.discountPercentage ?? 0) > 0 && (
-                              <span className="text-xs text-white/60 line-through">
-                                {formatPrice(product.price)}
-                              </span>
-                           )}
-                           <span className="text-lg font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                         </div>
-                       </div>
-                     </div>
-                   </Card>
-                 </Link>
-               )
-             })}
-           </div>
-         </div>
+        <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+            {products.slice(0, 6).map((product) => renderProductCard(product, false))}
+          </div>
+        </div>
       </div>
     </section>
   )

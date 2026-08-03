@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -178,9 +179,9 @@ export default function CustomerDashboardPage() {
                 {followedVendors.map((vendor) => (
                   <Card key={vendor.id} variant="elevated">
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                      <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
                         {vendor.logo ? (
-                          <img src={vendor.logo} alt={vendor.name} className="w-full h-full rounded-full object-cover" />
+                          <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill sizes="64px" />
                         ) : (
                           <span className="text-2xl font-bold text-gray-400">{vendor.name[0]}</span>
                         )}

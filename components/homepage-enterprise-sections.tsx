@@ -714,6 +714,59 @@ export function EnterpriseGadgetDisplaySection({
   const topRowProducts = mobileProducts.slice(0, half);
   const bottomRowProducts = mobileProducts.slice(half);
 
+  const renderProductCard = (product: EnterpriseProduct, isDesktop: boolean) => {
+    const effectivePrice = getEffectivePrice(product)
+    const discountedPrice = getDiscountedPrice(product)
+    const hasDiscount = discountedPrice !== null && discountedPrice < product.price
+    const widthClass = isDesktop
+      ? 'w-full'
+      : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
+    const aspectClass = isDesktop ? 'aspect-[4/5]' : 'aspect-[3/4]'
+
+    return (
+      <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
+        <Card
+          variant='elevated'
+          className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 bg-slate-800/50 border border-slate-700/50 h-full'
+        >
+          <div className={`relative ${aspectClass} bg-slate-800 overflow-hidden`}>
+            <ProductImage
+              product={product}
+              className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
+              sizes={isDesktop ? CARD_IMAGE_SIZES_2COL : CARD_IMAGE_SIZES_4COL}
+            />
+            <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+            <div className='absolute top-3 left-3 right-3 flex justify-between items-start'>
+              <Badge variant='premium' size='sm' className='backdrop-blur-sm'>Tech</Badge>
+              <WishlistButton productId={product.id} size="sm" className="relative z-10" />
+            </div>
+            <div className='absolute bottom-0 left-0 right-0 p-5 sm:p-6'>
+              <h3 className='text-base sm:text-lg font-bold text-white mb-1 line-clamp-2 leading-tight'>
+                {product.name}
+              </h3>
+              {product.store && (
+                <p className='text-white/70 text-xs sm:text-sm mb-2 truncate'>
+                  {product.store.name}
+                </p>
+              )}
+              <div className='flex items-baseline gap-2 mb-3'>
+                {hasDiscount && (
+                  <span className='text-sm text-white/60 line-through'>
+                    {formatPrice(product.price)}
+                  </span>
+                )}
+                <span className='text-xl sm:text-2xl font-bold text-premium-gold'>{formatPrice(effectivePrice)}</span>
+              </div>
+              <Button variant='gradient' size='sm' className='w-full rounded-full font-semibold'>
+                View Deal
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </Link>
+    )
+  }
+
   return (
     <section className='relative py-16 lg:py-24 bg-gradient-to-br from-slate-900 via-deep-navy to-slate-900 overflow-hidden'>
       <div className='absolute inset-0 pointer-events-none'>
@@ -721,51 +774,25 @@ export function EnterpriseGadgetDisplaySection({
         <div className='absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl' />
       </div>
       <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <SectionHeader
-          badge='Premium Tech'
-          title={section.name}
-          subtitle={
-            section.subtitle ??
-            'Latest phones, laptops, accessories & gaming gear'
-          }
-          dark
-        />
+        <div className='mb-10'>
+          <SectionPill
+            label='PREMIUM TECH'
+            gradientFrom='from-amber-500'
+            gradientVia='via-yellow-500'
+            gradientTo='to-amber-400'
+            icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>}
+          />
+          <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-white'>
+            {section.name}
+          </h2>
+          {section.subtitle && (
+            <p className='mt-2 text-slate-300'>{section.subtitle}</p>
+          )}
+        </div>
 
         {/* Desktop grid */}
-        <div className='hidden lg:grid grid-cols-2 gap-6'>
-{products.slice(0, 4).map((product) => (
-             <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
-               <Card
-                variant='elevated'
-                className='group overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 bg-slate-800/50 border border-slate-700/50'
-              >
-                <div className='relative aspect-[16/9] bg-slate-800 overflow-hidden'>
-                  <ProductImage
-                    product={product}
-                    className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
-                    sizes={CARD_IMAGE_SIZES_2COL}
-                  />
-                  <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
-                  <div className='absolute bottom-0 left-0 right-0 p-6'>
-                    <Badge variant='premium' size='sm' className='mb-2'>
-                      Tech
-                    </Badge>
-                    <h3 className='text-xl font-bold text-white mb-1 line-clamp-1'>
-                      {product.name}
-                    </h3>
-                    {product.store && (
-                      <p className='text-white/70 text-sm mb-2'>
-                        {product.store.name}
-                      </p>
-                    )}
-                    <span className='text-2xl font-bold text-premium-gold'>
-                      {formatPrice(getEffectivePrice(product))}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+        <div className='hidden lg:grid grid-cols-2 gap-8'>
+          {products.slice(0, 4).map((product) => renderProductCard(product, true))}
         </div>
 
         {/* Mobile & tablet horizontal scroll - Two independent rows */}
@@ -773,68 +800,14 @@ export function EnterpriseGadgetDisplaySection({
           {topRowProducts.length > 0 && (
             <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
               <div className='flex gap-4'>
-{topRowProducts.map((product) => (
-                   <Link
-                     key={product.id}
-                     href={`/marketplace/product/${product.slug ?? product.id}`}
-                     className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
-                   >
-                    <Card
-                      variant='elevated'
-                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
-                    >
-                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
-                        <ProductImage
-                          product={product}
-                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                        />
-                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
-                        <div className='absolute bottom-0 left-0 right-0 p-4'>
-                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
-                            {product.name}
-                          </h3>
-                          <span className='text-lg font-bold text-premium-gold'>
-                            {formatPrice(getEffectivePrice(product))}
-                          </span>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                {topRowProducts.map((product) => renderProductCard(product, false))}
               </div>
             </div>
           )}
           {bottomRowProducts.length > 0 && (
             <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
               <div className='flex gap-4'>
-{bottomRowProducts.map((product) => (
-                   <Link
-                     key={product.id}
-                     href={`/marketplace/product/${product.slug ?? product.id}`}
-                     className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
-                   >
-                    <Card
-                      variant='elevated'
-                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
-                    >
-                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
-                        <ProductImage
-                          product={product}
-                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                        />
-                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
-                        <div className='absolute bottom-0 left-0 right-0 p-4'>
-                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
-                            {product.name}
-                          </h3>
-                          <span className='text-lg font-bold text-premium-gold'>
-                            {formatPrice(getEffectivePrice(product))}
-                          </span>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                {bottomRowProducts.map((product) => renderProductCard(product, false))}
               </div>
             </div>
           )}
@@ -852,9 +825,9 @@ export function EnterpriseGadgetDisplaySection({
           </Link>
         </div>
       </div>
-      </section>
-    );
-  }
+    </section>
+  );
+}
 
   export function TopSellingSection({
   products,
