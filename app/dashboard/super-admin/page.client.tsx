@@ -958,6 +958,16 @@ interface SupportTicket {
                   <span className="text-sm font-medium text-slate-700 group-hover:text-cyan-700 transition-colors">Product Categories</span>
                 </div>
               </Link>
+              <Link href="/dashboard/super-admin/advertising" className="group">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-amber-50 hover:border-amber-200 border border-transparent transition-all">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 group-hover:text-amber-700 transition-colors">Advertising</span>
+                </div>
+              </Link>
               {/* Services Section */}
               <div className="col-span-full mt-4 mb-2">
                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">Services</h3>

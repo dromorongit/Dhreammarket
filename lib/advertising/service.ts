@@ -126,8 +126,62 @@ export async function updateCampaignStatus(
     },
   })
 
+  if (status === 'ACTIVE') {
+    await createPlacementsForCampaign(campaignId)
+  } else if (['SUSPENDED', 'REJECTED', 'CANCELLED', 'EXPIRED'].includes(status)) {
+    await prisma.advertisementPlacement.updateMany({
+      where: { campaignId },
+      data: { isSponsored: false },
+    })
+  }
+
   logInfo(`Campaign ${campaignId} status updated to ${status} by ${performedBy}`)
   return campaign
+}
+
+async function createPlacementsForCampaign(campaignId: string) {
+  const prisma = getPrisma()
+  const campaign = await prisma.advertisementCampaign.findUnique({
+    where: { id: campaignId },
+    include: { placements: true },
+  })
+
+  if (!campaign || !campaign.homepageSection) return
+
+  const existingPlacements = campaign.placements || []
+  if (existingPlacements.length > 0) return
+
+  const placementsToCreate: any[] = []
+
+  if (campaign.selectedProductId) {
+    placementsToCreate.push({
+      campaignId,
+      sectionSlug: campaign.homepageSection,
+      productId: campaign.selectedProductId,
+      serviceId: null,
+      displayOrder: 0,
+      isSponsored: true,
+    })
+  }
+
+  if (campaign.selectedServiceId) {
+    placementsToCreate.push({
+      campaignId,
+      sectionSlug: campaign.homepageSection,
+      productId: null,
+      serviceId: campaign.selectedServiceId,
+      displayOrder: 0,
+      isSponsored: true,
+    })
+  }
+
+  if (placementsToCreate.length > 0) {
+    await prisma.advertisementPlacement.createMany({
+      data: placementsToCreate,
+      skipDuplicates: true,
+    })
+    logInfo(`Created ${placementsToCreate.length} placement(s) for campaign ${campaignId}`)
+  }
 }
 
 export async function recordPayment(
@@ -506,6 +560,11 @@ export async function expireOldCampaigns() {
         performedByRole: 'SYSTEM',
         details: { reason: 'Campaign duration expired' },
       },
+    })
+
+    await prisma.advertisementPlacement.updateMany({
+      where: { campaignId: campaign.id },
+      data: { isSponsored: false },
     })
 
     logInfo(`Campaign ${campaign.id} expired automatically`)

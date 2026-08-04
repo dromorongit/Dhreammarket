@@ -175,6 +175,9 @@ export default function VendorDashboardPage() {
               {tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
             </button>
           ))}
+          <Link href="/dashboard/vendor/advertising" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">
+            Advertising
+          </Link>
         </div>
 
         {activeTab === 'overview' && (
