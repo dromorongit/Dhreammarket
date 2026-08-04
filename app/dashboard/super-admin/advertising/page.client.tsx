@@ -54,6 +54,17 @@ const statusColors: Record<string, string> = {
   SUSPENDED: 'destructive',
 }
 
+const homepageSections = [
+  { slug: 'Sponsored', label: 'Sponsored' },
+  { slug: 'Trending Now', label: 'Trending Now' },
+  { slug: 'Trending Services', label: 'Trending Services' },
+  { slug: 'Featured Products', label: 'Featured Products' },
+  { slug: 'Featured Services', label: 'Featured Services' },
+  { slug: 'Flash Sales', label: 'Flash Sales' },
+  { slug: 'Big Top Deals', label: 'Big Top Deals' },
+  { slug: 'Gadget Display', label: 'Gadget Display' },
+]
+
 export default function SuperAdminAdvertisingClient() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,6 +79,58 @@ export default function SuperAdminAdvertisingClient() {
   const [rejectReason, setRejectReason] = useState('')
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectTargetId, setRejectTargetId] = useState('')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [vendors, setVendors] = useState<Array<{ id: string; email: string; profile?: { firstName: string | null; lastName: string | null } }>>([])
+  const [products, setProducts] = useState<Array<{ id: string; name: string; price: number }>>([])
+  const [services, setServices] = useState<Array<{ id: string; title: string; startingPrice: number }>>([])
+  const [loadingLookups, setLoadingLookups] = useState(false)
+  const [createForm, setCreateForm] = useState({
+    vendorId: '',
+    title: '',
+    campaignType: 'SPONSORED_PRODUCT',
+    selectedProductId: '',
+    selectedServiceId: '',
+    homepageSection: 'Sponsored',
+    duration: 7,
+    price: 100,
+    maxSlots: 1,
+    campaignStatus: 'PENDING_APPROVAL',
+    startDate: '',
+    endDate: '',
+  })
+  const [createLoading, setCreateLoading] = useState(false)
+
+  const loadLookups = async () => {
+    setLoadingLookups(true)
+    try {
+      const [vendorsRes, productsRes, servicesRes] = await Promise.all([
+        fetch('/api/admin/vendors?limit=100'),
+        fetch('/api/products?limit=100'),
+        fetch('/api/vendor/services?limit=100'),
+      ])
+      if (vendorsRes.ok) {
+        const data = await vendorsRes.json()
+        setVendors(Array.isArray(data?.vendors) ? data.vendors : [])
+      }
+      if (productsRes.ok) {
+        const data = await productsRes.json()
+        setProducts(Array.isArray(data?.products) ? data.products : [])
+      }
+      if (servicesRes.ok) {
+        const data = await servicesRes.json()
+        setServices(Array.isArray(data?.services) ? data.services : [])
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingLookups(false)
+    }
+  }
+
+  const handleOpenCreate = () => {
+    setShowCreateModal(true)
+    loadLookups()
+  }
 
   const fetchCampaigns = useCallback(async () => {
     setLoading(true)
@@ -124,6 +187,62 @@ export default function SuperAdminAdvertisingClient() {
     await handleStatusUpdate(campaignId, 'CANCELLED')
   }
 
+  const handleCreateCampaign = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreateLoading(true)
+    try {
+      const payload: any = {
+        title: createForm.title,
+        campaignType: createForm.campaignType,
+        selectedProductId: createForm.selectedProductId || undefined,
+        selectedServiceId: createForm.selectedServiceId || undefined,
+        homepageSection: createForm.homepageSection,
+        duration: createForm.duration,
+        price: createForm.price,
+        maxSlots: createForm.maxSlots,
+        vendorId: createForm.vendorId,
+      }
+      if (createForm.campaignStatus === 'ACTIVE' && createForm.startDate && createForm.endDate) {
+        payload.campaignStatus = 'ACTIVE'
+      } else if (createForm.campaignStatus === 'APPROVED') {
+        payload.campaignStatus = 'APPROVED'
+      } else {
+        payload.campaignStatus = 'PENDING_APPROVAL'
+      }
+
+      const response = await fetch('/api/advertising/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to create campaign')
+      }
+      setShowCreateModal(false)
+      setCreateForm({
+        vendorId: '',
+        title: '',
+        campaignType: 'SPONSORED_PRODUCT',
+        selectedProductId: '',
+        selectedServiceId: '',
+        homepageSection: 'Sponsored',
+        duration: 7,
+        price: 100,
+        maxSlots: 1,
+        campaignStatus: 'PENDING_APPROVAL',
+        startDate: '',
+        endDate: '',
+      })
+      await fetchCampaigns()
+    } catch (err) {
+      console.error('Create campaign error:', err)
+      alert(err instanceof Error ? err.message : 'Failed to create campaign')
+    } finally {
+      setCreateLoading(false)
+    }
+  }
+
   const filteredCampaigns = campaigns
     .filter((c) => {
       if (!searchQuery) return true
@@ -175,9 +294,14 @@ export default function SuperAdminAdvertisingClient() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-deep-navy">Advertising & Promotional Marketplace</h2>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/dashboard/super-admin">Back to Dashboard</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/dashboard/super-admin">Back to Dashboard</Link>
+          </Button>
+          <Button size="sm" onClick={handleOpenCreate}>
+            Create Advertising Campaign
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -615,6 +739,209 @@ export default function SuperAdminAdvertisingClient() {
                   Reject Campaign
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto" variant="elevated">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Create Advertising Campaign</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowCreateModal(false)}>
+                Close
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateCampaign} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Vendor</label>
+                  {loadingLookups ? (
+                    <div className="text-sm text-slate-500">Loading vendors...</div>
+                  ) : (
+                    <select
+                      value={createForm.vendorId}
+                      onChange={(e) => setCreateForm({ ...createForm, vendorId: e.target.value })}
+                      className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      required
+                    >
+                      <option value="">Select a vendor</option>
+                      {vendors.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.profile ? `${v.profile.firstName || ''} ${v.profile.lastName || ''}`.trim() || v.email : v.email}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Campaign Title</label>
+                  <input
+                    type="text"
+                    value={createForm.title}
+                    onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                    className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Campaign Type</label>
+                  <select
+                    value={createForm.campaignType}
+                    onChange={(e) => setCreateForm({ ...createForm, campaignType: e.target.value })}
+                    className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                  >
+                    {Object.entries(campaignTypeLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {(createForm.campaignType === 'SPONSORED_PRODUCT' || createForm.campaignType === 'FEATURED_PRODUCT_PLACEMENT') && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Product</label>
+                    {loadingLookups ? (
+                      <div className="text-sm text-slate-500">Loading products...</div>
+                    ) : (
+                      <select
+                        value={createForm.selectedProductId}
+                        onChange={(e) => setCreateForm({ ...createForm, selectedProductId: e.target.value, selectedServiceId: '' })}
+                        className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      >
+                        <option value="">Select a product</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name} - GH₵ {p.price.toFixed(2)}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
+                {(createForm.campaignType === 'SPONSORED_SERVICE' || createForm.campaignType === 'FEATURED_SERVICE_PLACEMENT') && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Service</label>
+                    {loadingLookups ? (
+                      <div className="text-sm text-slate-500">Loading services...</div>
+                    ) : (
+                      <select
+                        value={createForm.selectedServiceId}
+                        onChange={(e) => setCreateForm({ ...createForm, selectedServiceId: e.target.value, selectedProductId: '' })}
+                        className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      >
+                        <option value="">Select a service</option>
+                        {services.map((s) => (
+                          <option key={s.id} value={s.id}>{s.title} - GH₵ {s.startingPrice.toFixed(2)}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Homepage Section</label>
+                  <select
+                    value={createForm.homepageSection}
+                    onChange={(e) => setCreateForm({ ...createForm, homepageSection: e.target.value })}
+                    className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                  >
+                    {homepageSections.map((s) => (
+                      <option key={s.slug} value={s.slug}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Duration (days)</label>
+                    <input
+                      type="number"
+                      value={createForm.duration}
+                      onChange={(e) => setCreateForm({ ...createForm, duration: parseInt(e.target.value) || 7 })}
+                      className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      min={1}
+                      max={30}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Price (GHS)</label>
+                    <input
+                      type="number"
+                      value={createForm.price}
+                      onChange={(e) => setCreateForm({ ...createForm, price: parseFloat(e.target.value) || 0 })}
+                      className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      min={0}
+                      step={0.01}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Slots</label>
+                    <input
+                      type="number"
+                      value={createForm.maxSlots}
+                      onChange={(e) => setCreateForm({ ...createForm, maxSlots: parseInt(e.target.value) || 1 })}
+                      className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      min={1}
+                      max={10}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Initial Status</label>
+                  <select
+                    value={createForm.campaignStatus}
+                    onChange={(e) => setCreateForm({ ...createForm, campaignStatus: e.target.value })}
+                    className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                  >
+                    <option value="PENDING_APPROVAL">Pending Approval</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="ACTIVE">Active</option>
+                  </select>
+                </div>
+
+                {createForm.campaignStatus === 'ACTIVE' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">Start Date</label>
+                      <input
+                        type="date"
+                        value={createForm.startDate}
+                        onChange={(e) => setCreateForm({ ...createForm, startDate: e.target.value })}
+                        className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">End Date</label>
+                      <input
+                        type="date"
+                        value={createForm.endDate}
+                        onChange={(e) => setCreateForm({ ...createForm, endDate: e.target.value })}
+                        className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div className="text-sm font-medium text-blue-900 mb-1">Campaign Cost Preview</div>
+                  <div className="text-2xl font-bold text-blue-700">GH₵ {(createForm.price * createForm.duration).toFixed(2)}</div>
+                  <div className="text-sm text-blue-600 mt-1">
+                    {createForm.price.toFixed(2)} GHS/day × {createForm.duration} days
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end">
+                  <Button type="button" variant="ghost" onClick={() => setShowCreateModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" loading={createLoading}>
+                    Create Campaign
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         </div>

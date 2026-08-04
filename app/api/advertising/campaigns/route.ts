@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    if (!payload || (payload.role !== 'VENDOR' && payload.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
       duration,
       price,
       maxSlots,
+      vendorId,
     } = body
 
     if (!title || !campaignType || !duration || !price) {
@@ -85,13 +86,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const subscriptionCheck = await canVendorCreateCampaign(payload.userId)
-    if (!subscriptionCheck.allowed) {
-      return NextResponse.json({ error: subscriptionCheck.reason }, { status: 403 })
+    const targetVendorId = payload.role === 'SUPER_ADMIN' ? vendorId : payload.userId
+    if (!targetVendorId) {
+      return NextResponse.json({ error: 'vendorId is required for admin campaign creation' }, { status: 400 })
     }
 
-    const [campaign, limitInfo] = await Promise.all([
-      createCampaign(payload.userId, {
+    let limitInfo = { maxCampaigns: 0, currentCampaigns: 0 }
+    if (payload.role === 'VENDOR') {
+      const subscriptionCheck = await canVendorCreateCampaign(payload.userId)
+      if (!subscriptionCheck.allowed) {
+        return NextResponse.json({ error: subscriptionCheck.reason }, { status: 403 })
+      }
+      limitInfo = await getVendorCampaignLimit(payload.userId)
+    }
+
+    const [campaign] = await Promise.all([
+      createCampaign(targetVendorId, {
         title,
         campaignType,
         selectedProductId,
@@ -101,19 +111,18 @@ export async function POST(request: NextRequest) {
         price,
         maxSlots,
       }),
-      getVendorCampaignLimit(payload.userId),
     ])
 
-    if (limitInfo.maxCampaigns > 0 && limitInfo.currentCampaigns >= limitInfo.maxCampaigns) {
+    if (payload.role === 'VENDOR' && limitInfo.maxCampaigns > 0 && limitInfo.currentCampaigns >= limitInfo.maxCampaigns) {
       return NextResponse.json(
         { error: `Campaign limit of ${limitInfo.maxCampaigns} reached for your plan` },
         { status: 403 }
       )
     }
 
-    await notifyCampaignSubmitted(payload.userId, campaign.title, campaign.id)
+    await notifyCampaignSubmitted(targetVendorId, campaign.title, campaign.id)
 
-    logInfo(`Campaign created: id=${campaign.id}, vendor=${payload.userId}`)
+    logInfo(`Campaign created: id=${campaign.id}, vendor=${targetVendorId}, by=${payload.role}`)
     return NextResponse.json({ campaign, limit: limitInfo }, { status: 201 })
   } catch (error) {
     logError(`Error creating campaign: ${error}`)

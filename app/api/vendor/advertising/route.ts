@@ -34,11 +34,17 @@ export async function GET(request: NextRequest) {
     }
 
     const status = statusMap[tab] as any
-    const campaigns = await getCampaignsByVendor(payload.userId, status || undefined)
-    const features = await getSubscriptionPlanFeatures(payload.userId)
+    const [allCampaigns, features] = await Promise.all([
+      getCampaignsByVendor(payload.userId),
+      getSubscriptionPlanFeatures(payload.userId),
+    ])
+
+    const campaigns = status
+      ? allCampaigns.filter((c) => c.campaignStatus === status)
+      : allCampaigns
 
     const analytics = await Promise.all(
-      campaigns
+      allCampaigns
         .filter((c) => c.campaignStatus === 'ACTIVE')
         .slice(0, 5)
         .map((c) => getCampaignAnalytics(c.id))
@@ -46,13 +52,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       campaigns,
+      allCampaigns,
       features,
       analytics: analytics.filter(Boolean),
+      totalCampaigns: allCampaigns.length,
       tabs: {
-        active: campaigns.filter((c) => c.campaignStatus === 'ACTIVE').length,
-        pending: campaigns.filter((c) => c.campaignStatus === 'PENDING_APPROVAL').length,
-        rejected: campaigns.filter((c) => c.campaignStatus === 'REJECTED').length,
-        expired: campaigns.filter((c) => c.campaignStatus === 'EXPIRED').length,
+        active: allCampaigns.filter((c) => c.campaignStatus === 'ACTIVE').length,
+        pending: allCampaigns.filter((c) => c.campaignStatus === 'PENDING_APPROVAL').length,
+        rejected: allCampaigns.filter((c) => c.campaignStatus === 'REJECTED').length,
+        expired: allCampaigns.filter((c) => c.campaignStatus === 'EXPIRED').length,
       },
     })
   } catch (error) {

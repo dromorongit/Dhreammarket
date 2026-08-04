@@ -92,6 +92,8 @@ const homepageSections = [
 
 export default function VendorAdvertisingClient() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([])
+  const [totalCampaigns, setTotalCampaigns] = useState(0)
   const [features, setFeatures] = useState<Features | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -127,6 +129,8 @@ export default function VendorAdvertisingClient() {
       if (!response.ok) throw new Error('Failed to fetch advertising data')
       const data = await response.json()
       setCampaigns(data.campaigns || [])
+      setAllCampaigns(data.allCampaigns || data.campaigns || [])
+      setTotalCampaigns(data.totalCampaigns || (data.campaigns || []).length)
       setFeatures(data.features || null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load advertising data')
@@ -259,19 +263,19 @@ export default function VendorAdvertisingClient() {
     return true
   })
 
-  const totalViews = campaigns.reduce((sum, c) => sum + c.views, 0)
-  const totalClicks = campaigns.reduce((sum, c) => sum + c.clicks, 0)
-  const totalRevenue = campaigns.reduce((sum, c) => sum + c.revenueGenerated, 0)
+  const totalViews = allCampaigns.reduce((sum, c) => sum + c.views, 0)
+  const totalClicks = allCampaigns.reduce((sum, c) => sum + c.clicks, 0)
+  const totalRevenue = allCampaigns.reduce((sum, c) => sum + c.revenueGenerated, 0)
   const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0
-  const totalSpend = campaigns.reduce((sum, c) => {
+  const totalSpend = allCampaigns.reduce((sum, c) => {
     return sum + (c.payments?.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.amount, 0) || 0)
   }, 0)
 
   const tabs = {
-    active: campaigns.filter((c) => c.campaignStatus === 'ACTIVE').length,
-    pending: campaigns.filter((c) => c.campaignStatus === 'PENDING_APPROVAL').length,
-    rejected: campaigns.filter((c) => c.campaignStatus === 'REJECTED').length,
-    expired: campaigns.filter((c) => c.campaignStatus === 'EXPIRED').length,
+    active: allCampaigns.filter((c) => c.campaignStatus === 'ACTIVE').length,
+    pending: allCampaigns.filter((c) => c.campaignStatus === 'PENDING_APPROVAL').length,
+    rejected: allCampaigns.filter((c) => c.campaignStatus === 'REJECTED').length,
+    expired: allCampaigns.filter((c) => c.campaignStatus === 'EXPIRED').length,
   }
 
   const getEntityName = (campaign: Campaign) => campaign.product?.name || campaign.service?.title || 'Unknown'
@@ -341,7 +345,7 @@ export default function VendorAdvertisingClient() {
           <CardContent className="pt-4">
             <div className="text-sm text-slate-500">Remaining Slots</div>
             <div className="text-2xl font-bold text-deep-navy">
-              {features ? Math.max(0, features.maxCampaigns - campaigns.length) : '-'}
+              {features ? Math.max(0, features.maxCampaigns - totalCampaigns) : '-'}
             </div>
           </CardContent>
         </Card>

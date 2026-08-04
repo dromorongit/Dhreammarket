@@ -107,14 +107,26 @@ export async function updateCampaignStatus(
 
   if (status === 'APPROVED') updateData.approvedAt = new Date()
   if (status === 'REJECTED') updateData.rejectedAt = new Date()
-  if (status === 'ACTIVE') updateData.startDate = new Date()
   if (status === 'EXPIRED') updateData.endDate = new Date()
   if (status === 'SUSPENDED') updateData.suspendedAt = new Date()
+
+  if (status === 'ACTIVE') {
+    updateData.startDate = new Date()
+  }
 
   const campaign = await prisma.advertisementCampaign.update({
     where: { id: campaignId },
     data: updateData,
   })
+
+  if (status === 'ACTIVE' && !campaign.endDate) {
+    const endDate = new Date(campaign.startDate || new Date())
+    endDate.setDate(endDate.getDate() + campaign.duration)
+    await prisma.advertisementCampaign.update({
+      where: { id: campaignId },
+      data: { endDate },
+    })
+  }
 
   await prisma.advertisementHistory.create({
     data: {
