@@ -709,28 +709,20 @@ export function EnterpriseGadgetDisplaySection({
   const products = section?.products ?? [];
   if (!products.length) return null;
 
-  const mobileProducts = products.slice(0, 20);
-  const half = Math.ceil(mobileProducts.length / 2);
-  const topRowProducts = mobileProducts.slice(0, half);
-  const bottomRowProducts = mobileProducts.slice(half);
-
-  const renderProductCard = (product: EnterpriseProduct, isDesktop: boolean) => {
+  const renderProductCard = (product: EnterpriseProduct) => {
     const effectivePrice = getEffectivePrice(product)
     const discountedPrice = getDiscountedPrice(product)
     const hasDiscount = discountedPrice !== null && discountedPrice < product.price
-    const widthClass = isDesktop
-      ? 'snap-start flex-shrink-0 w-[calc(25%-12px)]'
-      : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
-    const aspectClass = isDesktop ? 'aspect-[4/5]' : 'aspect-[3/4]'
+    const widthClass = 'snap-start flex-shrink-0 w-[310px] sm:w-[330px] md:w-[390px] lg:w-[480px]'
 
     return (
       <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
         <div className='group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500'>
-          <div className={`relative ${aspectClass} bg-slate-50 overflow-hidden`}>
+          <div className='relative aspect-[4/5] bg-slate-50 overflow-hidden'>
             <ProductImage
               product={product}
               className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700'
-              sizes={isDesktop ? CARD_IMAGE_SIZES_4COL : CARD_IMAGE_SIZES_2COL}
+              sizes={CARD_IMAGE_SIZES_4COL}
             />
             <div className='absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent' />
             <div className='absolute top-3 left-3 right-3 flex justify-between items-start'>
@@ -789,29 +781,8 @@ export function EnterpriseGadgetDisplaySection({
           )}
         </div>
 
-        {/* Desktop horizontal scroll - Single row */}
-        <div className='hidden lg:flex -mx-4 px-4 overflow-x-auto scrollbar-hide snap-mandatory'>
-          <div className='flex gap-4' style={{ width: 'max-content' }}>
-            {products.slice(0, 4).map((product) => renderProductCard(product, true))}
-          </div>
-        </div>
-
-        {/* Mobile & tablet horizontal scroll - Two independent rows */}
-        <div className='lg:hidden space-y-4'>
-          {topRowProducts.length > 0 && (
-            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
-              <div className='flex gap-4'>
-                {topRowProducts.map((product) => renderProductCard(product, false))}
-              </div>
-            </div>
-          )}
-          {bottomRowProducts.length > 0 && (
-            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
-              <div className='flex gap-4'>
-                {bottomRowProducts.map((product) => renderProductCard(product, false))}
-              </div>
-            </div>
-          )}
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+          {products.slice(0, 20).map((product) => renderProductCard(product))}
         </div>
 
         <div className='mt-8 text-center'>
