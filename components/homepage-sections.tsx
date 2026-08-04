@@ -495,7 +495,7 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
 export function GadgetDisplaySection({ section }: HomepageSectionProps) {
   const products = (section.products || [])
 
-  const renderProductCard = (product: typeof products[0], isDesktop: boolean) => {
+  const renderProductCard = (product: typeof products[0]) => {
     const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
     const badgeData = calculateProductBadges({
       price: product.price,
@@ -508,20 +508,18 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
       expectedRestockDate: product.expectedRestockDate,
     })
     const hasDiscount = (badgeData.discountPercentage ?? 0) > 0
-    const widthClass = isDesktop ? 'snap-start flex-shrink-0 w-[calc(25%-12px)]' : 'snap-start flex-shrink-0 w-[calc(80%-16px)] sm:w-[calc(55%-16px)] md:w-[calc(40%-16px)]'
-    const aspectClass = isDesktop ? 'aspect-[4/5]' : 'aspect-[3/4]'
 
     return (
-      <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
+      <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className="snap-start flex-shrink-0 w-[260px] sm:w-[300px] lg:w-[340px]">
         <div className="group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-          <div className={`relative ${aspectClass} bg-slate-50 overflow-hidden`}>
+          <div className="relative aspect-[4/5] bg-slate-50 overflow-hidden">
             {product.images?.[0] ? (
               <Image
                 src={product.images[0].url}
                 alt={product.images[0].alt || product.name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 fill
-                sizes={isDesktop ? CARD_IMAGE_SIZES_4COL : CARD_IMAGE_SIZES_2COL}
+                sizes={CARD_IMAGE_SIZES_4COL}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
               />
@@ -579,17 +577,9 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        <div className="hidden lg:flex -mx-4 px-4 overflow-x-auto scrollbar-hide snap-mandatory">
-           <div className="flex gap-4" style={{ width: 'max-content' }}>
-             {products.slice(0, 4).map((product) => renderProductCard(product, true))}
-           </div>
-         </div>
-
-        <div className="lg:hidden -mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-            {products.slice(0, 6).map((product) => renderProductCard(product, false))}
+        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {products.slice(0, 6).map((product) => renderProductCard(product))}
           </div>
-        </div>
       </div>
     </section>
   )
