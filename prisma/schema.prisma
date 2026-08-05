@@ -2308,17 +2308,17 @@ enum RewardType {
 model SubscriptionPlan {
   id              String   @id @default(cuid())
   name            String   @unique
-  priceMonthly    Float?
-  priceYearly     Float?
-  productsLimit   Int      @default(20)
-  servicesLimit   Int      @default(10)
-  isActive        Boolean  @default(true)
-  isFeatured      Boolean  @default(false)
-  displayOrder    Int      @default(0)
+  priceMonthly    Float?   @map("price_monthly")
+  priceYearly     Float?   @map("price_yearly")
+  productsLimit   Int      @default(20) @map("products_limit")
+  servicesLimit   Int      @default(10) @map("services_limit")
+  isActive        Boolean  @default(true) @map("is_active")
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  displayOrder    Int      @default(0) @map("display_order")
   description     String?
   benefits        Json     @default("[]")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   vendorSubscriptions VendorSubscription[]
   featurePermissions SubscriptionFeature[]
 
@@ -2329,23 +2329,23 @@ model SubscriptionPlan {
 
 model VendorSubscription {
   id              String   @id @default(cuid())
-  vendorId        String
-  planId          String
-  status          SubscriptionStatus @default(TRIAL)
-  billingCycle    SubscriptionBillingCycle @default(MONTHLY)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  nextRenewalAt   DateTime
-  trialEndsAt     DateTime?
-  cancelledAt     DateTime?
-  cancelledAtPeriodEnd Boolean @default(false)
-  autoRenew       Boolean  @default(false)
-  paystackCustomerId String?
-  paystackSubscriptionId String?
-  totalPaid       Float    @default(0)
+  vendorId        String   @map("vendor_id")
+  planId          String   @map("plan_id")
+  status          String   @default("TRIAL") @map("status")
+  billingCycle    String   @default("MONTHLY") @map("billing_cycle")
+  currentPeriodStart DateTime @map("current_period_start")
+  currentPeriodEnd   DateTime @map("current_period_end")
+  nextRenewalAt   DateTime @map("next_renewal_at")
+  trialEndsAt     DateTime? @map("trial_ends_at")
+  cancelledAt     DateTime? @map("cancelled_at")
+  cancelledAtPeriodEnd Boolean @default(false) @map("cancelled_at_period_end")
+  autoRenew       Boolean  @default(false) @map("auto_renew")
+  paystackCustomerId String? @map("paystack_customer_id")
+  paystackSubscriptionId String? @map("paystack_subscription_id")
+  totalPaid       Float    @default(0) @map("total_paid")
   notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   vendor          User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   plan            SubscriptionPlan @relation(fields: [planId], references: [id])
   invoices        SubscriptionInvoice[]
@@ -2363,17 +2363,17 @@ model VendorSubscription {
 
 model SubscriptionInvoice {
   id              String   @id @default(cuid())
-  subscriptionId  String
-  invoiceNumber   String   @unique
+  subscriptionId  String   @map("subscription_id")
+  invoiceNumber   String   @unique @map("invoice_number")
   amount          Float
   currency        String   @default("GHS")
-  periodStart     DateTime
-  periodEnd       DateTime
-  status          InvoiceStatus @default(PENDING)
-  paystackInvoiceId String?
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  status          String   @default("PENDING") @map("status")
+  paystackInvoiceId String? @map("paystack_invoice_id")
   metadata        Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   subscription    VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   payments        SubscriptionPayment[]
 
@@ -2385,17 +2385,17 @@ model SubscriptionInvoice {
 
 model SubscriptionPayment {
   id              String   @id @default(cuid())
-  invoiceId       String
-  subscriptionId  String
+  invoiceId       String   @map("invoice_id")
+  subscriptionId  String   @map("subscription_id")
   amount          Float
   currency        String   @default("GHS")
-  paystackRef     String?
-  paystackPaymentId String?
-  status          PaymentStatus @default(PENDING)
-  paymentMethod   String?
+  paystackRef     String?  @map("paystack_ref")
+  paystackPaymentId String? @map("paystack_payment_id")
+  status          String   @default("PENDING") @map("status")
+  paymentMethod   String?  @map("payment_method")
   metadata        Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   invoice         SubscriptionInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   subscription    VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
@@ -2407,12 +2407,12 @@ model SubscriptionPayment {
 
 model SubscriptionUsage {
   id              String   @id @default(cuid())
-  subscriptionId  String
-  metric          String   // "products_count", "services_count", "storage_mb", "api_calls"
-  currentValue    Float    @default(0)
-  limit           Float?
-  percentage      Float    @default(0)
-  recordedAt      DateTime @default(now())
+  subscriptionId  String   @map("subscription_id")
+  metric          String   @map("metric") // "products_count", "services_count", "storage_mb", "api_calls"
+  currentValue    Float    @default(0) @map("current_value")
+  limit           Float?   @map("limit")
+  percentage      Float    @default(0) @map("percentage")
+  recordedAt      DateTime @default(now()) @map("recorded_at")
   subscription    VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@map("subscription_usage")
@@ -2423,13 +2423,13 @@ model SubscriptionUsage {
 
 model SubscriptionFeature {
   id              String   @id @default(cuid())
-  planId          String
-  featureKey      String   // "ai_recommendations", "advanced_analytics", "homepage_promotions", etc.
-  isEnabled       Boolean  @default(false)
-  limit           Int?     // null means unlimited
-  currentUsage    Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  planId          String   @map("plan_id")
+  featureKey      String   @map("feature_key") // "ai_recommendations", "advanced_analytics", "homepage_promotions", etc.
+  isEnabled       Boolean  @default(false) @map("is_enabled")
+  limit           Int?     @map("limit")
+  currentUsage    Int      @default(0) @map("current_usage")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   plan            SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@map("subscription_features")
@@ -2440,14 +2440,14 @@ model SubscriptionFeature {
 
 model SubscriptionHistory {
   id              String   @id @default(cuid())
-  subscriptionId  String
-  action          SubscriptionAction
-  fromPlanId      String?
-  toPlanId        String?
+  subscriptionId  String   @map("subscription_id")
+  action          String   @map("action")
+  fromPlanId      String?  @map("from_plan_id")
+  toPlanId        String?  @map("to_plan_id")
   amount          Float?
-  billingCycle    SubscriptionBillingCycle?
-  notes           String?
-  createdAt       DateTime @default(now())
+  billingCycle    String?  @map("billing_cycle")
+  notes           String?  @map("notes")
+  createdAt       DateTime @default(now()) @map("created_at")
   subscription    VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@map("subscription_history")
@@ -2495,35 +2495,35 @@ enum SubscriptionAction {
 
 model AdvertisementCampaign {
   id                  String   @id @default(cuid())
-  vendorId            String
+  vendorId            String   @map("vendor_id")
   title               String
-  campaignType        AdvertisementCampaignType @default(SPONSORED_PRODUCT)
-  selectedProductId   String?
-  selectedServiceId   String?
-  homepageSection     String?
-  duration            Int      // in days
+  campaignType        String   @default("SPONSORED_PRODUCT") @map("campaign_type")
+  selectedProductId   String?  @map("selected_product_id")
+  selectedServiceId   String?  @map("selected_service_id")
+  homepageSection     String?  @map("homepage_section")
+  duration            Int      @map("duration") // in days
   price               Float
-  paymentStatus       PaymentStatus @default(PENDING)
-  campaignStatus      AdvertisementCampaignStatus @default(PENDING_PAYMENT)
-  startDate           DateTime?
-  endDate             DateTime?
-  approvedAt          DateTime?
-  rejectedAt          DateTime?
-  rejectedReason      String?
-  suspendedAt         DateTime?
-  extendedUntil       DateTime?
-  paystackRef         String?
-  paystackPaymentId   String?
-  invoiceId           String?
-  maxSlots            Int      @default(1)
-  currentSlots        Int      @default(0)
+  paymentStatus       String   @default("PENDING") @map("payment_status")
+  campaignStatus      String   @default("PENDING_PAYMENT") @map("campaign_status")
+  startDate           DateTime? @map("start_date")
+  endDate             DateTime? @map("end_date")
+  approvedAt          DateTime? @map("approved_at")
+  rejectedAt          DateTime? @map("rejected_at")
+  rejectedReason      String?  @map("rejected_reason")
+  suspendedAt         DateTime? @map("suspended_at")
+  extendedUntil       DateTime? @map("extended_until")
+  paystackRef         String?  @map("paystack_ref")
+  paystackPaymentId   String?  @map("paystack_payment_id")
+  invoiceId           String?  @map("invoice_id")
+  maxSlots            Int      @default(1) @map("max_slots")
+  currentSlots        Int      @default(0) @map("current_slots")
   views               Int      @default(0)
   clicks              Int      @default(0)
-  ordersGenerated     Int      @default(0)
-  bookingsGenerated   Int      @default(0)
-  revenueGenerated    Float    @default(0)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  ordersGenerated     Int      @default(0) @map("orders_generated")
+  bookingsGenerated   Int      @default(0) @map("bookings_generated")
+  revenueGenerated    Float    @default(0) @map("revenue_generated")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
   vendor              User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   product             Product? @relation(fields: [selectedProductId], references: [id])
   service             Service? @relation(fields: [selectedServiceId], references: [id])
@@ -2544,14 +2544,14 @@ model AdvertisementCampaign {
 
 model AdvertisementPlacement {
   id              String   @id @default(cuid())
-  campaignId      String
-  sectionSlug     String
-  productId       String?
-  serviceId       String?
-  displayOrder    Int      @default(0)
-  isSponsored     Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  campaignId      String   @map("campaign_id")
+  sectionSlug     String   @map("section_slug")
+  productId       String?  @map("product_id")
+  serviceId       String?  @map("service_id")
+  displayOrder    Int     @default(0) @map("display_order")
+  isSponsored     Boolean @default(true) @map("is_sponsored")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("advertisement_placements")
@@ -2563,15 +2563,15 @@ model AdvertisementPlacement {
 
 model AdvertisementPayment {
   id              String   @id @default(cuid())
-  campaignId      String
+  campaignId      String   @map("campaign_id")
   amount          Float
   currency        String   @default("GHS")
-  paystackRef     String?
-  paystackPaymentId String?
-  status          PaymentStatus @default(PENDING)
+  paystackRef     String?  @map("paystack_ref")
+  paystackPaymentId String? @map("paystack_payment_id")
+  status          String   @default("PENDING")
   metadata        Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("advertisement_payments")
@@ -2582,17 +2582,17 @@ model AdvertisementPayment {
 
 model AdvertisementInvoice {
   id              String   @id @default(cuid())
-  campaignId      String   @unique
-  invoiceNumber   String   @unique
+  campaignId      String   @unique @map("campaign_id")
+  invoiceNumber   String   @unique @map("invoice_number")
   amount          Float
   currency        String   @default("GHS")
-  periodStart     DateTime
-  periodEnd       DateTime
-  status          InvoiceStatus @default(PENDING)
-  paystackInvoiceId String?
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  status          String   @default("PENDING")
+  paystackInvoiceId String? @map("paystack_invoice_id")
   metadata        Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("advertisement_invoices")
@@ -2602,18 +2602,18 @@ model AdvertisementInvoice {
 
 model AdvertisementAnalytics {
   id              String   @id @default(cuid())
-  campaignId      String
+  campaignId      String   @map("campaign_id")
   date            DateTime
   views           Int      @default(0)
   clicks          Int      @default(0)
-  ordersGenerated Int      @default(0)
-  bookingsGenerated Int    @default(0)
-  revenueGenerated Float   @default(0)
+  ordersGenerated Int      @default(0) @map("orders_generated")
+  bookingsGenerated Int    @default(0) @map("bookings_generated")
+  revenueGenerated Float   @default(0) @map("revenue_generated")
   ctr             Float    @default(0)
-  conversionRate  Float    @default(0)
+  conversionRate  Float    @default(0) @map("conversion_rate")
   roi             Float    @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("advertisement_analytics")
@@ -2623,12 +2623,12 @@ model AdvertisementAnalytics {
 
 model AdvertisementHistory {
   id              String   @id @default(cuid())
-  campaignId      String
-  action          AdvertisementCampaignAction
-  performedBy     String   // userId
-  performedByRole String
+  campaignId      String   @map("campaign_id")
+  action          String   @map("action")
+  performedBy     String   @map("performed_by") // userId
+  performedByRole String   @map("performed_by_role")
   details         Json?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
   campaign        AdvertisementCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("advertisement_history")

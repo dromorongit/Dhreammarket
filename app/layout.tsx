@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Navbar } from '@/components/Navbar'
+import { TopContactBar } from '@/components/TopContactBar'
 import { Footer } from '@/components/Footer'
 import { CartProvider } from '@/lib/CartContext'
 import QueryProvider from '@/components/QueryProvider'
@@ -43,6 +44,7 @@ export default function RootLayout({
         <OrganizationJsonLd />
         <CartProvider>
           <QueryProvider>
+            <TopContactBar />
             <Navbar />
             <main className="min-h-screen">
               {children}
