@@ -73,6 +73,7 @@ model User {
   advertisementCampaigns   AdvertisementCampaign[]
 
   @@map("users")
+  @@index([role, createdAt])
 }
 
 model PendingRegistration {
@@ -173,6 +174,9 @@ model Store {
   followers                VendorFollow[]
 
   @@map("stores")
+  @@index([isVerified, featuredUntil])
+  @@index([categoryId, isVerified])
+  @@index([isFeatured, featuredUntil])
 }
 
 model VendorCategory {
@@ -268,6 +272,10 @@ model Product {
   @@map("products")
   @@index([storeId])
   @@index([categoryId])
+  @@index([stock, availabilityType])
+  @@index([availabilityType, createdAt])
+  @@index([brand])
+  @@index([name])
 }
 
 model Service {
@@ -307,6 +315,7 @@ model Service {
   @@map("services")
   @@index([vendorId])
   @@index([categoryId])
+  @@index([status, isActive, availabilityStatus])
 }
 
 model ServiceCategory {
@@ -487,6 +496,10 @@ model Order {
   vendorReviews         VendorReview[]
 
   @@map("orders")
+  @@index([paymentStatus, createdAt])
+  @@index([status, paymentStatus])
+  @@index([orderType, paymentStatus, fulfillmentStatus])
+  @@index([deletedAt, paymentStatus])
 }
 
 model OrderItem {
@@ -556,6 +569,8 @@ model ProductReview {
   reply      VendorReply?
 
   @@unique([userId, productId])
+  @@index([productId])
+  @@index([isApproved, isHidden])
   @@map("product_reviews")
 }
 
@@ -576,6 +591,8 @@ model VendorReview {
   replies    VendorReviewReply[]
 
   @@unique([userId, storeId])
+  @@index([storeId])
+  @@index([isApproved, isHidden])
   @@map("vendor_reviews")
 }
 
@@ -865,6 +882,7 @@ model HomepageSection {
   vendors      HomepageSectionVendor[]
 
   @@map("homepage_sections")
+  @@index([isEnabled, displayOrder])
 }
 
 model HomepageSectionProduct {
@@ -1724,7 +1742,7 @@ model Coupon {
   @@map("coupons")
   @@index([code])
   @@index([expiryDate])
-  @@index([isActive])
+  @@index([isActive, expiryDate])
 }
 
 model CouponUsage {
@@ -1789,6 +1807,7 @@ model FlashDealProduct {
   @@index([flashDealId])
   @@index([productId])
   @@index([serviceId])
+  @@index([dealPrice])
 }
 
 enum DiscountType {

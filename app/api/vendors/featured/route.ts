@@ -48,37 +48,33 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Calculate ratings for each vendor
-    const vendorsWithRatings = await Promise.all(
-      featuredVendors.map(async (store) => {
-        const reviews = await getPrisma().productReview.findMany({
-          where: {
-            product: {
-              storeId: store.id,
-            },
-          },
-          select: {
-            rating: true,
-          },
-        })
+    const storeIds = featuredVendors.map((s) => s.id)
 
-        const averageRating = reviews.length > 0
-          ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-          : 0
+    const ratingsResult = await getPrisma().$queryRaw<
+      { storeId: string; avgRating: number }[]
+    >`
+      SELECT p."storeId" as "storeId", AVG(pr.rating) as "avgRating"
+      FROM product_reviews pr
+      INNER JOIN products p ON p.id = pr."productId"
+      WHERE p."storeId" IN (${storeIds})
+      GROUP BY p."storeId"
+    `
 
-        return {
-          id: store.id,
-          name: store.name,
-          description: store.description,
-          isVerified: store.isVerified,
-          logo: store.logo,
-          banner: store.banner,
-          rating: Math.round(averageRating * 10) / 10,
-          productCount: store._count.products,
-          category: store.vendor_categories,
-        }
-      })
+    const avgRatingByStore = new Map(
+      ratingsResult.map((r) => [r.storeId, Math.round(r.avgRating * 10) / 10]),
     )
+
+    const vendorsWithRatings = featuredVendors.map((store) => ({
+      id: store.id,
+      name: store.name,
+      description: store.description,
+      isVerified: store.isVerified,
+      logo: store.logo,
+      banner: store.banner,
+      rating: avgRatingByStore.get(store.id) || 0,
+      productCount: store._count.products,
+      category: store.vendor_categories,
+    }))
 
     const totalPages = Math.ceil(total / limit)
 

@@ -6,8 +6,10 @@ import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatCurrency } from '@/lib/currency'
-import { AIVendorInsights } from '@/components/ai'
-import { AIRecommendations } from '@/components/ai'
+import dynamic from 'next/dynamic'
+
+const AIVendorInsights = dynamic(() => import('@/components/ai').then(m => m.AIVendorInsights), { ssr: false })
+const AIRecommendations = dynamic(() => import('@/components/ai').then(m => m.AIRecommendations), { ssr: false })
 
 interface VendorProduct {
   id: string

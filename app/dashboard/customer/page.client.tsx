@@ -1,19 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
-import { CollectionsGrid } from '@/components/CollectionsGrid'
-import { RecentlyViewed } from '@/components/RecentlyViewed'
+const CollectionsGrid = dynamic(() => import('@/components/CollectionsGrid'), { ssr: false })
+const RecentlyViewed = dynamic(() => import('@/components/RecentlyViewed'), { ssr: false })
 import { RecommendationCard } from '@/components/RecommendationCard'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
 import { StarRating } from '@/components/StarRating'
-import { AICustomerInsights } from '@/components/ai'
-import { AIRecommendations } from '@/components/ai'
+import { Suspense } from 'react'
+import dynamic from 'next/dynamic'
+
+const AICustomerInsights = dynamic(() => import('@/components/ai').then((m) => m.AICustomerInsights), { ssr: false })
+const AIRecommendations = dynamic(() => import('@/components/ai').then((m) => m.AIRecommendations), { ssr: false })
 
 export default function CustomerDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -24,13 +27,7 @@ export default function CustomerDashboardPage() {
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (activeTab !== 'overview') {
-      fetchTabData(activeTab)
-    }
-  }, [activeTab])
-
-  const fetchTabData = async (tab: string) => {
+  const fetchTabData = useCallback(async (tab: string) => {
     setLoading(true)
     try {
       switch (tab) {
@@ -61,7 +58,13 @@ export default function CustomerDashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab !== 'overview') {
+      fetchTabData(activeTab)
+    }
+  }, [activeTab, fetchTabData])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,20 +147,24 @@ export default function CustomerDashboardPage() {
 
         {activeTab === 'collections' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-deep-navy">My Collections</h2>
-              <Button asChild>
-                <Link href="/dashboard/customer/collections/new">New Collection</Link>
-              </Button>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-deep-navy">My Collections</h2>
+                <Button asChild>
+                  <Link href="/dashboard/customer/collections/new">New Collection</Link>
+                </Button>
+              </div>
+              <Suspense fallback={<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div className="bg-white rounded-xl p-6 h-40 animate-pulse"></div><div className="bg-white rounded-xl p-6 h-40 animate-pulse"></div><div className="bg-white rounded-xl p-6 h-40 animate-pulse"></div></div>}>
+                <CollectionsGrid />
+              </Suspense>
             </div>
-            <CollectionsGrid />
-          </div>
         )}
 
         {activeTab === 'recently-viewed' && (
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Recently Viewed</h2>
-            <RecentlyViewed />
+            <Suspense fallback={<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"><div className="bg-white rounded-xl h-64 animate-pulse"></div><div className="bg-white rounded-xl h-64 animate-pulse"></div><div className="bg-white rounded-xl h-64 animate-pulse"></div><div className="bg-white rounded-xl h-64 animate-pulse"></div></div>}>
+              <RecentlyViewed />
+            </Suspense>
           </div>
         )}
 
@@ -265,8 +272,10 @@ export default function CustomerDashboardPage() {
             </div>
 
             <div className="mt-8">
-              <AICustomerInsights userId="" />
-            </div>
+                <Suspense fallback={<div className="bg-white rounded-xl p-6 h-64 animate-pulse"></div>}>
+                  <AICustomerInsights userId="" />
+                </Suspense>
+              </div>
           </div>
         )}
       </div>

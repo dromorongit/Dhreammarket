@@ -25,17 +25,14 @@ export async function GET(request: NextRequest) {
       categoryId: { not: null },
     }
 
-    // Filter by vendor category
     if (vendorCategoryId) {
       where.categoryId = vendorCategoryId
     }
 
-    // Filter by verification status
     if (verified !== null) {
       where.isVerified = verified === 'true'
     }
 
-    // Search by store name or vendor email
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -43,12 +40,9 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Determine orderBy based on sortBy parameter
     let orderBy: any = { createdAt: 'desc' }
-    if (sortBy === 'rating') {
-      orderBy = [{ isFeatured: 'desc' }, { createdAt: 'desc' }] // Featured first, then by date as secondary
-    } else if (sortBy === 'popular') {
-      orderBy = [{ isFeatured: 'desc' }, { createdAt: 'desc' }] // Featured first, then by date as secondary
+    if (sortBy === 'rating' || sortBy === 'popular') {
+      orderBy = [{ isFeatured: 'desc' }, { createdAt: 'desc' }]
     }
 
     const [vendors, total] = await Promise.all([
@@ -79,53 +73,61 @@ export async function GET(request: NextRequest) {
     ])
     perf.markPrismaEnd(prismaPerfStart)
 
-// Use cached ratings from database
-     const storeIds = vendors.map((v) => v.id)
-     const orderItemsByStore = new Map<string, number>()
-     
-     if (storeIds.length > 0) {
-       const allOrderItems = await getPrisma().orderItem.findMany({
-         where: {
-           product: {
-             storeId: { in: storeIds },
-           },
-         },
-         include: {
-           order: {
-             select: {
-               status: true,
-             },
-           },
-         },
-       })
+    const storeIds = vendors.map((v) => v.id)
 
-       for (const item of allOrderItems) {
-         const storeId = (item as any).product?.storeId
-         if (storeId && (item.order.status === 'COMPLETED' || item.order.status === 'DELIVERED')) {
-           orderItemsByStore.set(storeId, (orderItemsByStore.get(storeId) || 0) + 1)
-         }
-       }
-     }
+    const orderCountsByStore = storeIds.length > 0
+      ? await getPrisma().orderItem.groupBy({
+          by: ['productId'],
+          where: {
+            product: {
+              storeId: { in: storeIds },
+            },
+            order: {
+              status: { in: ['COMPLETED', 'DELIVERED'] },
+            },
+          },
+          _count: {
+            id: true,
+          },
+        })
+      : []
 
-     const now = new Date()
-     const vendorsWithMetrics = vendors.map((store) => ({
-       ...store,
-       isFeatured: store.isFeatured && store.featuredUntil && new Date(store.featuredUntil) > now,
-       rating: store.averageRating,
-       orderCount: orderItemsByStore.get(store.id) || 0,
-       category: store.vendor_categories,
-     }))
+    const productStoreMap = new Map<string, string>()
+    if (storeIds.length > 0) {
+      const products = await getPrisma().product.findMany({
+        where: { storeId: { in: storeIds } },
+        select: { id: true, storeId: true },
+      })
+      for (const p of products) {
+        productStoreMap.set(p.id, p.storeId)
+      }
+    }
 
-    // Apply ranking logic: Featured first, then by rating, then by order count, then by newest
+    const orderItemsByStore = new Map<string, number>()
+    for (const group of orderCountsByStore) {
+      const storeId = productStoreMap.get(group.productId as string)
+      if (storeId) {
+        orderItemsByStore.set(
+          storeId,
+          (orderItemsByStore.get(storeId) || 0) + (group._count?.id ?? 0)
+        )
+      }
+    }
+
+    const now = new Date()
+    const vendorsWithMetrics = vendors.map((store) => ({
+      ...store,
+      isFeatured: store.isFeatured && store.featuredUntil && new Date(store.featuredUntil) > now,
+      rating: store.averageRating,
+      orderCount: orderItemsByStore.get(store.id) || 0,
+      category: store.vendor_categories,
+    }))
+
     const sortedVendors = vendorsWithMetrics.sort((a: any, b: any) => {
-      // Featured vendors first
       if (a.isFeatured && !b.isFeatured) return -1
       if (!a.isFeatured && b.isFeatured) return 1
-      // Then by rating (highest first)
       if (b.rating !== a.rating) return b.rating - a.rating
-      // Then by order count (popularity)
       if (b.orderCount !== a.orderCount) return b.orderCount - a.orderCount
-      // Then by newest
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
 

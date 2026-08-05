@@ -333,10 +333,12 @@ export default function SuperAdminHomepagePage() {
   }, []);
 
   useEffect(() => {
-    fetchSections();
-    fetchVendors();
-    fetchBrands();
-    fetchPreviewData();
+    Promise.all([
+      fetchSections(),
+      fetchVendors(),
+      fetchBrands(),
+      fetchPreviewData(),
+    ])
   }, [fetchSections, fetchVendors, fetchBrands, fetchPreviewData]);
 
   useEffect(() => {

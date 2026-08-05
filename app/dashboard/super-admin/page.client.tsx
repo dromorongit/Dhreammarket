@@ -1,17 +1,31 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
-import {
-  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  ComposedChart, ReferenceLine
-} from 'recharts'
+
+const LineChart = dynamic(() => import('recharts').then((m) => m.LineChart), { ssr: false })
+const Line = dynamic(() => import('recharts').then((m) => m.Line), { ssr: false })
+const AreaChart = dynamic(() => import('recharts').then((m) => m.AreaChart), { ssr: false })
+const Area = dynamic(() => import('recharts').then((m) => m.Area), { ssr: false })
+const BarChart = dynamic(() => import('recharts').then((m) => m.BarChart), { ssr: false })
+const Bar = dynamic(() => import('recharts').then((m) => m.Bar), { ssr: false })
+const PieChart = dynamic(() => import('recharts').then((m) => m.PieChart), { ssr: false })
+const Pie = dynamic(() => import('recharts').then((m) => m.Pie), { ssr: false })
+const Cell = dynamic(() => import('recharts').then((m) => m.Cell), { ssr: false })
+const XAxis = dynamic(() => import('recharts').then((m) => m.XAxis), { ssr: false })
+const YAxis = dynamic(() => import('recharts').then((m) => m.YAxis), { ssr: false })
+const CartesianGrid = dynamic(() => import('recharts').then((m) => m.CartesianGrid), { ssr: false })
+const Tooltip = dynamic(() => import('recharts').then((m) => m.Tooltip), { ssr: false })
+const ResponsiveContainer = dynamic(() => import('recharts').then((m) => m.ResponsiveContainer), { ssr: false })
+const Legend = dynamic(() => import('recharts').then((m) => m.Legend), { ssr: false })
+const ComposedChart = dynamic(() => import('recharts').then((m) => m.ComposedChart), { ssr: false })
+const ReferenceLine = dynamic(() => import('recharts').then((m) => m.ReferenceLine), { ssr: false })
 
 interface PlatformStats {
   totalUsers: number
@@ -181,19 +195,28 @@ interface SupportTicket {
     fetchAnalytics()
   }, [fetchAnalytics])
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-GH', {
       style: 'currency',
       currency: 'GHS',
     }).format(amount)
-  }
+  }, [])
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = useCallback((dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-GH', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     })
+  }, [])
+
+  const COLORS = useMemo(() => [
+    '#0B1F3A', '#2563EB', '#C89B2B', '#10B981', '#F59E0B',
+    '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1',
+  ], [])
+
+  function formatNumber(num: number) {
+    return num.toLocaleString()
   }
 
   if (loading) {
@@ -1013,20 +1036,7 @@ interface SupportTicket {
       }
     }
 
- const COLORS = [
-   '#0B1F3A', '#2563EB', '#C89B2B', '#10B981', '#F59E0B',
-   '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1',
- ]
-
- function formatNumber(num: number) {
-   return num.toLocaleString()
- }
-
- function formatCurrency(amount: number) {
-   return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(amount)
- }
-
- function MetricCard({ label, value, trend }: { label: string; value: string | number; trend: 'up' | 'down' | 'neutral' }) {
+  function MetricCard({ label, value, trend }: { label: string; value: string | number; trend: 'up' | 'down' | 'neutral' }) {
    const trendColors = { up: 'text-emerald-600', down: 'text-rose-600', neutral: 'text-slate-500' }
    const trendIcons = { up: '↑', down: '↓', neutral: '→' }
    return (

@@ -1,83 +1,84 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
+  generateEtags: true,
+  reactStrictMode: true,
+  swcMinify: true,
   experimental: {
     serverComponentsExternalPackages: [
-      "@prisma/client",
-      "prisma",
-      "@prisma/adapter-pg",
-      "cloudinary",
-      "pg",
+      '@prisma/client',
+      'prisma',
+      '@prisma/adapter-pg',
+      'cloudinary',
+      'pg',
     ],
+    optimizePackageImports: ['recharts', 'react-icons', 'lucide-react'],
   },
   images: {
+    deviceSizes: [640, 768, 1024, 1280, 1536, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 2592000,
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
       },
       {
-        protocol: "http",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
+        protocol: 'http',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
       },
       {
-        protocol: "https",
-        hostname: "cloudinary.com",
-        pathname: "/**",
+        protocol: 'https',
+        hostname: 'cloudinary.com',
+        pathname: '/**',
       },
       {
-        protocol: "http",
-        hostname: "cloudinary.com",
-        pathname: "/**",
+        protocol: 'http',
+        hostname: 'cloudinary.com',
+        pathname: '/**',
       },
     ],
   },
   webpack: (config, { isServer }) => {
-    // Externalize Prisma packages to prevent webpack from bundling them
-    // This is critical for both server and client builds
     config.externals = [
       ...(config.externals || []),
       ({ context, request }, callback) => {
         if (
-          request === "@prisma/client" ||
-          request === "prisma" ||
-          request === "@prisma/adapter-pg" ||
-          request === "cloudinary" ||
-          request === "pg"
+          request === '@prisma/client' ||
+          request === 'prisma' ||
+          request === '@prisma/adapter-pg' ||
+          request === 'cloudinary' ||
+          request === 'pg'
         ) {
-          return callback(null, `commonjs ${request}`);
+          return callback(null, `commonjs ${request}`)
         }
-        callback();
+        callback()
       },
-    ];
+    ]
 
-    // Handle node: protocol imports by replacing them with regular imports
-    // This is needed for both server and client builds because Prisma Client v7
-    // uses node: prefixed imports (e.g. node:crypto, node:fs) which webpack
-    // cannot resolve by default.
-    const webpack = require("webpack");
+    const webpack = require('webpack')
     config.plugins.push(
       new webpack.NormalModuleReplacementPlugin(/^node:(.+)$/, (resource) => {
-        // Mutate resource.request in place - returning a value does not work
-        resource.request = resource.request.replace(/^node:/, "");
+        resource.request = resource.request.replace(/^node:/, '')
       }),
-    );
+    )
 
-    // Also add resolve alias for node: protocol imports
-    config.resolve = config.resolve || {};
+    config.resolve = config.resolve || {}
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
-      "node:crypto": "crypto",
-      "node:fs": "fs",
-      "node:os": "os",
-      "node:path": "path",
-      async_hooks: "async_hooks",
-      dns: "dns",
-      net: "net",
-    };
+      'node:crypto': 'crypto',
+      'node:fs': 'fs',
+      'node:os': 'os',
+      'node:path': 'path',
+      async_hooks: 'async_hooks',
+      dns: 'dns',
+      net: 'net',
+    }
 
-    // Provide fallbacks for Node.js core modules in non-server context
     if (!isServer) {
       config.resolve.fallback = {
         ...(config.resolve.fallback || {}),
@@ -88,51 +89,50 @@ const nextConfig = {
         stream: false,
         buffer: false,
         util: false,
-      };
+      }
     }
 
-    return config;
+    return config
   },
   async headers() {
-    const isProduction = process.env.NODE_ENV === "production"
+    const isProduction = process.env.NODE_ENV === 'production'
 
     const headers = [
       {
-        key: "X-Content-Type-Options",
-        value: "nosniff",
+        key: 'X-Content-Type-Options',
+        value: 'nosniff',
       },
       {
-        key: "X-Frame-Options",
-        value: "DENY",
+        key: 'X-Frame-Options',
+        value: 'DENY',
       },
       {
-        key: "Referrer-Policy",
-        value: "strict-origin-when-cross-origin",
+        key: 'Referrer-Policy',
+        value: 'strict-origin-when-cross-origin',
       },
       {
-        key: "Permissions-Policy",
-        value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
       },
     ]
 
     if (isProduction) {
       headers.push({
-        key: "Strict-Transport-Security",
-        value: "max-age=63072000; includeSubDomains; preload",
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
       })
     }
 
     return [
       {
-        source: "/(.*)",
+        source: '/(.*)',
         headers,
       },
     ]
   },
-};
+}
 
-// Sentry configuration for error monitoring in production
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require('@sentry/nextjs')
 
 module.exports = withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
@@ -144,8 +144,8 @@ module.exports = withSentryConfig(nextConfig, {
   disableEdgeWebpackPlugin: !process.env.SENTRY_DSN,
   release: {
     name:
-      process.env.NODE_ENV === "production"
-        ? require("./package.json").version
+      process.env.NODE_ENV === 'production'
+        ? require('./package.json').version
         : undefined,
   },
-});
+})

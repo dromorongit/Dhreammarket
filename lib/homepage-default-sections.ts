@@ -10,13 +10,16 @@ export async function ensureDefaultHomepageSections(prisma: PrismaClient) {
     return
   }
 
-  for (const section of DEFAULT_HOMEPAGE_SECTIONS) {
-    try {
-      const existing = await prisma.homepageSection.findUnique({
-        where: { slug: section.slug },
-      })
+  const existingSlugs = await prisma.homepageSection.findMany({
+    where: { slug: { in: DEFAULT_HOMEPAGE_SECTIONS.map((s) => s.slug) } },
+    select: { slug: true },
+  })
+  const existingSlugSet = new Set(existingSlugs.map((s) => s.slug))
+  const missingSections = DEFAULT_HOMEPAGE_SECTIONS.filter((s) => !existingSlugSet.has(s.slug))
 
-      const existingSettings = (existing?.settings || {}) as Record<string, any>
+  for (const section of missingSections) {
+    try {
+      const existingSettings = {} as Record<string, any>
       const settings = {
         ...existingSettings,
         contentSource: section.contentSource,

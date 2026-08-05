@@ -9,7 +9,7 @@ import { PerformanceLogger } from '@/lib/performance'
 import { sanitizeUserContent } from '@/lib/sanitize'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 60
+export const revalidate = 120
 
 export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)

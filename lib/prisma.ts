@@ -63,3 +63,21 @@ function registerDisconnectHandlers(): void {
     logInfo('Graceful shutdown handlers registered for Prisma')
   }
 }
+
+export async function withCache<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlMs: number = 60000
+): Promise<T> {
+  const cache = globalForPrisma as unknown as { _cache?: Map<string, { value: T; expiresAt: number }> }
+  if (!cache._cache) {
+    cache._cache = new Map()
+  }
+  const cached = cache._cache.get(key)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value
+  }
+  const value = await fetcher()
+  cache._cache.set(key, { value, expiresAt: Date.now() + ttlMs })
+  return value
+}

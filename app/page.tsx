@@ -208,88 +208,88 @@ export default function Home() {
       <InfiniteBannerRail />
 
       {/* ─── Registration Call-to-Action ─── */}
-      <RegistrationCTA />
+       <RegistrationCTA />
 
-      {/* ─── Featured Collections ─── */}
-      <FeaturedCollectionsSection />
+       {/* ─── Featured Collections ─── */}
+       <FeaturedCollectionsSection />
 
-      {/* ─── Managed homepage sections rendered by displayOrder ─── */}
-      {managedData.sections
-        .filter((s) => isManagedSectionSlug(s.slug))
-        .sort((a, b) => a.displayOrder - b.displayOrder)
-        .map((section) => {
-          const sectionProps = {
-            id: section.id,
-            name: section.name,
-            slug: section.slug,
-            type: section.type,
-            subtitle: section.subtitle,
-            displayOrder: section.displayOrder,
-            contentSource: section.contentSource,
-            products: section.products,
-            services: section.services,
-            vendors: section.vendors,
-            brands: section.brands || [],
-          }
-          if (section.slug === 'sponsored')
-            return <SponsoredSection key={section.id} section={sectionProps} />
-          if (section.slug === 'trending-now')
-            return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'trending-services') {
-            return (
-              <Fragment key={section.id}>
-                <TrendingServicesSection section={sectionProps} />
-                <section className="relative py-16 lg:py-24">
-                  <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    controls={false}
-                    preload="auto"
-                    className="w-full h-auto object-cover"
-                    width="1600"
-                    height="900"
-                  >
-                    <source src="/videos/newvideo.mp4" type="video/mp4" />
-                  </video>
-                </section>
-                <PhoneRail />
-                <ElectronicsShowcaseSection />
-              </Fragment>
-            )
-          }
-          if (section.slug === 'verified-vendors')
-            return <VerifiedVendorsSection key={section.id} section={sectionProps} />
-          if (section.slug === 'food-showcase')
-            return <FoodShowcaseSection key={section.id} />
-          if (section.slug === 'flash-sales')
-            return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'gadget-display')
-            return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'big-top-deals')
-            return <BigTopDealsSection key={section.id} section={sectionProps} loading={loadingManaged} />
-          if (section.slug === 'brand-store')
-            return (
-              <BrandStoreSection
-                key={section.id}
-                section={sectionProps}
-                brands={section.brands || []}
-                loading={loadingManaged}
-              />
-            )
-          if (section.slug === 'top-clearance-sales')
-            return <TopClearanceSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
-           if (section.slug === 'top-services')
-             return <TrendingServicesSection key={section.id} section={sectionProps} />
-          if (section.slug === 'home-theatre')
-            return <HomeTheatreSection key={section.id} section={sectionProps} loading={loadingManaged} />
-           if (section.slug === 'top-express-offers')
-             return <TopExpressOffersSection key={section.id} section={sectionProps} loading={loadingManaged} />
-           if (section.slug === 'new-services')
-             return <NewServicesSection key={section.id} section={sectionProps} />
-           return null
-        })}
+       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
+       {managedData.sections
+         .filter((s) => isManagedSectionSlug(s.slug))
+         .sort((a, b) => a.displayOrder - b.displayOrder)
+         .map((section) => {
+           const sectionProps = {
+             id: section.id,
+             name: section.name,
+             slug: section.slug,
+             type: section.type,
+             subtitle: section.subtitle,
+             displayOrder: section.displayOrder,
+             contentSource: section.contentSource,
+             products: section.products,
+             services: section.services,
+             vendors: section.vendors,
+             brands: section.brands || [],
+           }
+           if (section.slug === 'sponsored')
+             return <SponsoredSection key={section.id} section={sectionProps} />
+           if (section.slug === 'trending-now')
+             return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+           if (section.slug === 'trending-services') {
+             return (
+               <Fragment key={section.id}>
+                 <TrendingServicesSection section={sectionProps} />
+                 <section className="relative py-16 lg:py-24">
+                   <video
+                     autoPlay
+                     muted
+                     loop
+                     playsInline
+                     controls={false}
+                     preload="auto"
+                     className="w-full h-auto object-cover"
+                     width="1600"
+                     height="900"
+                   >
+                     <source src="/videos/newvideo.mp4" type="video/mp4" />
+                   </video>
+                 </section>
+                 <PhoneRail />
+                 <ElectronicsShowcaseSection />
+               </Fragment>
+             )
+           }
+           if (section.slug === 'verified-vendors')
+             return <VerifiedVendorsSection key={section.id} section={sectionProps} />
+           if (section.slug === 'food-showcase')
+             return <FoodShowcaseSection key={section.id} />
+           if (section.slug === 'flash-sales')
+             return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+           if (section.slug === 'gadget-display')
+             return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
+           if (section.slug === 'big-top-deals')
+             return <BigTopDealsSection key={section.id} section={sectionProps} loading={loadingManaged} />
+           if (section.slug === 'brand-store')
+             return (
+               <BrandStoreSection
+                 key={section.id}
+                 section={sectionProps}
+                 brands={section.brands || []}
+                 loading={loadingManaged}
+               />
+             )
+           if (section.slug === 'top-clearance-sales')
+             return <TopClearanceSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+            if (section.slug === 'top-services')
+              return <TrendingServicesSection key={section.id} section={sectionProps} />
+           if (section.slug === 'home-theatre')
+             return <HomeTheatreSection key={section.id} section={sectionProps} loading={loadingManaged} />
+            if (section.slug === 'top-express-offers')
+              return <TopExpressOffersSection key={section.id} section={sectionProps} loading={loadingManaged} />
+            if (section.slug === 'new-services')
+              return <NewServicesSection key={section.id} section={sectionProps} />
+            return null
+         })}
 
       {/* ─── Featured Products (always shown) ─── */}
       {!loadingManaged && (

@@ -6,7 +6,7 @@ import { PerformanceLogger } from '@/lib/performance'
 import type { ContentSource } from '@/lib/homepage-constants'
 import { getActiveSponsoredPlacements } from '@/lib/advertising/service'
 
-export const revalidate = 60
+export const revalidate = 120
 
 interface TrendingWeights {
   recentSales: number

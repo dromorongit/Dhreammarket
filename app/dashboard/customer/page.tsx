@@ -1,10 +1,13 @@
 import CustomerDashboardValidation from './validation'
 import CustomerDashboardClient from './page.client'
+import { Suspense } from 'react'
 
 export default function CustomerDashboardPage() {
   return (
     <CustomerDashboardValidation>
-      <CustomerDashboardClient />
+      <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="animate-pulse space-y-4 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"><div className="h-10 bg-gray-200 rounded w-64 mb-8"></div><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div className="bg-white rounded-xl h-40"></div><div className="bg-white rounded-xl h-40"></div><div className="bg-white rounded-xl h-40"></div></div></div></div>}>
+        <CustomerDashboardClient />
+      </Suspense>
     </CustomerDashboardValidation>
   )
 }

@@ -66,14 +66,20 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    const collectionsWithCounts = await Promise.all(
-      collections.map(async (c) => {
-        const itemCount = await getPrisma().collectionItem.count({
-          where: { collectionId: c.id },
+    const collectionIds = collections.map((c) => c.id)
+    const countsResult = collectionIds.length > 0
+      ? await getPrisma().collectionItem.groupBy({
+          by: ['collectionId'],
+          where: { collectionId: { in: collectionIds } },
+          _count: { id: true },
         })
-        return { ...c, itemCount }
-      })
-    )
+      : []
+
+    const countMap = new Map(countsResult.map((r) => [r.collectionId, r._count.id]))
+    const collectionsWithCounts = collections.map((c) => ({
+      ...c,
+      itemCount: countMap.get(c.id) || 0,
+    }))
 
     return NextResponse.json({ collections: collectionsWithCounts })
   } catch (error) {
