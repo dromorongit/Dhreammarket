@@ -92,11 +92,9 @@ export function AdvertisingDashboard({ campaigns, features, tabs, analytics }: A
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Advertising Dashboard</h2>
-        {features.canCreateCampaigns && (
-          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-            {showCreateForm ? 'Cancel' : 'Create Campaign'}
-          </Button>
-        )}
+        <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+          {showCreateForm ? 'Cancel' : 'Create Campaign'}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

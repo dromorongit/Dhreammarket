@@ -288,11 +288,9 @@ export default function VendorAdvertisingClient() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/dashboard/vendor">Back to Dashboard</Link>
           </Button>
-          {features?.canCreateCampaigns && (
-            <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-              {showCreateForm ? 'Cancel' : 'Create Campaign'}
-            </Button>
-          )}
+          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+            {showCreateForm ? 'Cancel' : 'Create Campaign'}
+          </Button>
         </div>
       </div>
 

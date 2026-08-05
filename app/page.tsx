@@ -213,9 +213,6 @@ export default function Home() {
       {/* ─── Featured Collections ─── */}
       <FeaturedCollectionsSection />
 
-      {/* ─── Premium Phone Rail ─── */}
-      <PhoneRail />
-
       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
       {managedData.sections
         .filter((s) => isManagedSectionSlug(s.slug))
@@ -257,6 +254,7 @@ export default function Home() {
                     <source src="/videos/newvideo.mp4" type="video/mp4" />
                   </video>
                 </section>
+                <PhoneRail />
                 <ElectronicsShowcaseSection />
               </Fragment>
             )
