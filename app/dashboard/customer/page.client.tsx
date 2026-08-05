@@ -6,8 +6,8 @@ import Link from 'next/link'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
-const CollectionsGrid = dynamic(() => import('@/components/CollectionsGrid'), { ssr: false })
-const RecentlyViewed = dynamic(() => import('@/components/RecentlyViewed'), { ssr: false })
+const CollectionsGrid = dynamic(() => import('@/components/CollectionsGrid').then((m) => m.CollectionsGrid), { ssr: false })
+const RecentlyViewed = dynamic(() => import('@/components/RecentlyViewed').then((m) => m.RecentlyViewed), { ssr: false })
 import { RecommendationCard } from '@/components/RecommendationCard'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
