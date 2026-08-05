@@ -215,7 +215,7 @@ interface SupportTicket {
     '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1',
   ], [])
 
-  function formatNumber(num: number) {
+  const formatNumber = (num: number) => {
     return num.toLocaleString()
   }
 
