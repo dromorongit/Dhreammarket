@@ -290,7 +290,7 @@ export default function VendorAdvertisingClient() {
           </Button>
           {features?.canCreateCampaigns && (
             <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-              {showCreateForm ? 'Cancel' : 'New Campaign'}
+              {showCreateForm ? 'Cancel' : 'Create Campaign'}
             </Button>
           )}
         </div>

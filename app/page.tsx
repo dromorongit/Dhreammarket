@@ -48,6 +48,7 @@ import {
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
+import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
@@ -211,6 +212,9 @@ export default function Home() {
 
       {/* ─── Featured Collections ─── */}
       <FeaturedCollectionsSection />
+
+      {/* ─── Premium Phone Rail ─── */}
+      <PhoneRail />
 
       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
       {managedData.sections
