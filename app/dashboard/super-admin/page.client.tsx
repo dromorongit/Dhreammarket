@@ -127,10 +127,21 @@ interface SupportTicket {
      customerGrowthOverTime: Array<{ date: string; count: number }>
      marketplaceActivity: Array<{ date: string; orders: number; bookings: number; revenue: number }>
      monthlyComparison: Array<{ month: string; revenue: number; orders: number; bookings: number }>
-   }
- }
+  }
+}
 
- export default function SuperAdminDashboard() {
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('en-GH', {
+    style: 'currency',
+    currency: 'GHS',
+  }).format(amount)
+}
+
+function formatNumber(num: number) {
+  return num.toLocaleString()
+}
+
+export default function SuperAdminDashboard() {
    try {
    const [stats, setStats] = useState<PlatformStats | null>(null)
    const [admins, setAdmins] = useState<AdminUser[]>([])
@@ -195,13 +206,6 @@ interface SupportTicket {
     fetchAnalytics()
   }, [fetchAnalytics])
 
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-GH', {
-      style: 'currency',
-      currency: 'GHS',
-    }).format(amount)
-  }, [])
-
   const formatDate = useCallback((dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('en-GH', {
       year: 'numeric',
@@ -214,10 +218,6 @@ interface SupportTicket {
     '#0B1F3A', '#2563EB', '#C89B2B', '#10B981', '#F59E0B',
     '#8B5CF6', '#EC4899', '#06B6D4', '#F97316', '#6366F1',
   ], [])
-
-  const formatNumber = (num: number) => {
-    return num.toLocaleString()
-  }
 
   if (loading) {
     return (
