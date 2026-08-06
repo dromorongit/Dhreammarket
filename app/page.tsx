@@ -49,6 +49,7 @@ import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
+import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
@@ -235,11 +236,12 @@ export default function Home() {
              return <SponsoredSection key={section.id} section={sectionProps} />
            if (section.slug === 'trending-now')
              return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
-           if (section.slug === 'trending-services') {
-             return (
-               <Fragment key={section.id}>
-                 <TrendingServicesSection section={sectionProps} />
-                 <section className="relative py-16 lg:py-24">
+            if (section.slug === 'trending-services') {
+              return (
+                <Fragment key={section.id}>
+                  <TrendingServicesSection section={sectionProps} />
+                  <CarShowcaseCarousel />
+                  <section className="relative py-16 lg:py-24">
                    <video
                      autoPlay
                      muted
