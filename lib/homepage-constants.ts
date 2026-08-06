@@ -23,6 +23,7 @@ export const MANAGED_SECTION_SLUGS = [
   'mens-sneakers',
   'televisions',
   'appliances',
+  'quick-links',
 ] as const
 
 export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
@@ -37,27 +38,19 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     contentSource: 'MANUAL' as const,
   },
   {
+    name: 'Quick Links',
+    slug: 'quick-links',
+    type: 'QUICKLINK_CARD_GRID' as const,
+    subtitle: 'Fast access to popular categories',
+    displayOrder: 2,
+    contentSource: 'MANUAL' as const,
+  },
+  {
     name: 'Trending Now',
     slug: 'trending-now',
     type: 'TRENDING_NOW' as const,
     subtitle: 'Discover what\'s currently trending across Dhream Market.',
-    displayOrder: 2,
-    contentSource: 'HYBRID' as const,
-  },
-  {
-    name: 'Dynamic Random Product Rail',
-    slug: 'dynamic-random-product-rail',
-    type: 'TRENDING_NOW' as const,
-    subtitle: 'Discover random marketplace products.',
     displayOrder: 3,
-    contentSource: 'AUTOMATIC' as const,
-  },
-  {
-    name: 'Trending Services',
-    slug: 'trending-services',
-    type: 'TRENDING_SERVICES' as const,
-    subtitle: "Discover what's currently trending in services.",
-    displayOrder: 4,
     contentSource: 'HYBRID' as const,
   },
   {
@@ -65,7 +58,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'fashion',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Premium fashion picks curated for you',
-    displayOrder: 5,
+    displayOrder: 4,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -73,7 +66,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'mens-sneakers',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Premium sneakers and athleisure footwear',
-    displayOrder: 6,
+    displayOrder: 5,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -81,15 +74,31 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'verified-vendors',
     type: 'FEATURED_VENDORS' as const,
     subtitle: 'Trusted and verified vendors you can rely on.',
+    displayOrder: 6,
+    contentSource: 'AUTOMATIC' as const,
+  },
+  {
+    name: 'Dynamic Random Product Rail',
+    slug: 'dynamic-random-product-rail',
+    type: 'TRENDING_NOW' as const,
+    subtitle: 'Discover random marketplace products.',
     displayOrder: 7,
     contentSource: 'AUTOMATIC' as const,
+  },
+  {
+    name: 'Trending Services',
+    slug: 'trending-services',
+    type: 'TRENDING_SERVICES' as const,
+    subtitle: "Discover what's currently trending in services.",
+    displayOrder: 8,
+    contentSource: 'HYBRID' as const,
   },
   {
     name: 'Food & Grocery Showcase',
     slug: 'food-showcase',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Discover the best food and grocery vendors near you.',
-    displayOrder: 8,
+    displayOrder: 9,
     contentSource: 'AUTOMATIC' as const,
   },
   {
@@ -97,7 +106,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'flash-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Limited time offers',
-    displayOrder: 9,
+    displayOrder: 10,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -105,7 +114,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'gadget-display',
     type: 'LARGE_FEATURE_CARDS' as const,
     subtitle: 'Premium tech deals',
-    displayOrder: 10,
+    displayOrder: 11,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -113,7 +122,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'big-top-deals',
     type: 'BIG_DEALS' as const,
     subtitle: 'Biggest savings on premium products',
-    displayOrder: 11,
+    displayOrder: 12,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -121,7 +130,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'brand-store',
     type: 'BRAND_GRID' as const,
     subtitle: 'Explore products from your favorite brands',
-    displayOrder: 12,
+    displayOrder: 13,
     contentSource: 'AUTOMATIC' as const,
   },
   {
@@ -129,7 +138,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'top-clearance-sales',
     type: 'FLASH_SALES' as const,
     subtitle: 'Massive clearance offers',
-    displayOrder: 13,
+    displayOrder: 14,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -137,7 +146,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'top-services',
     type: 'SERVICE_GRID' as const,
     subtitle: 'Premium services marketplace',
-    displayOrder: 14,
+    displayOrder: 15,
     contentSource: 'AUTOMATIC' as const,
   },
   {
@@ -145,7 +154,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'home-theatre',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Home entertainment systems',
-    displayOrder: 15,
+    displayOrder: 16,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -153,7 +162,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'top-express-offers',
     type: 'BIG_DEALS' as const,
     subtitle: 'Express delivery exclusive deals',
-    displayOrder: 16,
+    displayOrder: 17,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -161,7 +170,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'new-services',
     type: 'SERVICE_GRID' as const,
     subtitle: 'Fresh services just added to Dhream Market',
-    displayOrder: 17,
+    displayOrder: 18,
     contentSource: 'AUTOMATIC' as const,
   },
   {
@@ -169,7 +178,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'groceries',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Essential groceries delivered fresh to your door',
-    displayOrder: 18,
+    displayOrder: 19,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -177,7 +186,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'televisions',
     type: 'LARGE_FEATURE_CARDS' as const,
     subtitle: 'Premium television showcase',
-    displayOrder: 19,
+    displayOrder: 20,
     contentSource: 'MANUAL' as const,
   },
   {
@@ -185,7 +194,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     slug: 'appliances',
     type: 'PRODUCT_GRID' as const,
     subtitle: 'Premium home appliances for your lifestyle',
-    displayOrder: 20,
+    displayOrder: 21,
     contentSource: 'MANUAL' as const,
   },
 ]

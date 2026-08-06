@@ -217,11 +217,14 @@ export default function Home() {
        {/* ─── Featured Collections ─── */}
        <FeaturedCollectionsSection />
 
-       {/* ─── Managed homepage sections rendered by displayOrder ─── */}
-       {managedData.sections
-         .filter((s) => isManagedSectionSlug(s.slug))
-         .sort((a, b) => a.displayOrder - b.displayOrder)
-         .map((section) => {
+        {/* ─── Managed homepage sections rendered by displayOrder ─── */}
+        {managedData.sections
+          .filter((s) => isManagedSectionSlug(s.slug))
+          .sort((a, b) => {
+            const diff = a.displayOrder - b.displayOrder
+            return diff !== 0 ? diff : a.slug.localeCompare(b.slug)
+          })
+          .map((section) => {
            const sectionProps = {
              id: section.id,
              name: section.name,
@@ -235,16 +238,18 @@ export default function Home() {
              vendors: section.vendors,
              brands: section.brands || [],
            }
-             if (section.slug === 'sponsored')
-               return (
-                 <>
-                   <DynamicRandomProductRail />
-                   <PromotionalFeatureImageStrip />
-                   <SponsoredSection key={section.id} section={sectionProps} />
-                 </>
-               )
-            if (section.slug === 'trending-now')
-              return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+              if (section.slug === 'sponsored')
+                return (
+                  <>
+                    <DynamicRandomProductRail />
+                    <PromotionalFeatureImageStrip />
+                    <SponsoredSection key={section.id} section={sectionProps} />
+                  </>
+                )
+             if (section.slug === 'quick-links')
+               return <QuickLinksSection key={section.id} />
+             if (section.slug === 'trending-now')
+               return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'trending-services') {
               return (
                 <Fragment key={section.id}>
@@ -332,11 +337,6 @@ export default function Home() {
 
       {/* ─── Featured Services (always shown) ─── */}
       <FeaturedServicesSection />
-
-      {/* ─── Quick Links Section (hardcoded) ─── */}
-      {!loadingManaged && (
-        <QuickLinksSection />
-      )}
 
       {/* ─── New Arrivals Section (hardcoded) ─── */}
       {!loadingManaged && (
