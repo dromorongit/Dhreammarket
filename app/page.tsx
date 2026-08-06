@@ -52,6 +52,7 @@ import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
+import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
@@ -233,13 +234,14 @@ export default function Home() {
              vendors: section.vendors,
              brands: section.brands || [],
            }
-            if (section.slug === 'sponsored')
-              return (
-                <>
-                  <DynamicRandomProductRail />
-                  <SponsoredSection key={section.id} section={sectionProps} />
-                </>
-              )
+             if (section.slug === 'sponsored')
+               return (
+                 <>
+                   <DynamicRandomProductRail />
+                   <PromotionalFeatureImageStrip />
+                   <SponsoredSection key={section.id} section={sectionProps} />
+                 </>
+               )
             if (section.slug === 'trending-now')
               return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'trending-services') {
