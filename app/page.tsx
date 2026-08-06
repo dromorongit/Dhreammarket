@@ -233,15 +233,16 @@ export default function Home() {
              vendors: section.vendors,
              brands: section.brands || [],
            }
-           if (section.slug === 'sponsored')
-             return <SponsoredSection key={section.id} section={sectionProps} />
+            if (section.slug === 'sponsored')
+              return (
+                <>
+                  <DynamicRandomProductRail />
+                  <SponsoredSection key={section.id} section={sectionProps} />
+                </>
+              )
             if (section.slug === 'trending-now')
               return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
-            if (section.slug === 'dynamic-random-product-rail')
-              return <DynamicRandomProductRail key={section.id} />
-            if (section.slug === 'dynamic-random-product-rail-2')
-              return <DynamicRandomProductRail key={section.id} />
-             if (section.slug === 'trending-services') {
+            if (section.slug === 'trending-services') {
               return (
                 <Fragment key={section.id}>
                   <TrendingServicesSection section={sectionProps} />
