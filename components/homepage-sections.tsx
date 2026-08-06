@@ -1306,6 +1306,19 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
     <section className="relative py-16 lg:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <SectionPill
+              label="PREMIUM"
+              gradientFrom="from-amber-500"
+              gradientVia="via-yellow-500"
+              gradientTo="to-amber-400"
+              icon={
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                </svg>
+              }
+            />
+          </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
             {section.name}
           </h2>
