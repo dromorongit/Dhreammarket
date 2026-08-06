@@ -49,6 +49,7 @@ import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
+import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 
@@ -234,9 +235,11 @@ export default function Home() {
            }
            if (section.slug === 'sponsored')
              return <SponsoredSection key={section.id} section={sectionProps} />
-           if (section.slug === 'trending-now')
-             return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
-            if (section.slug === 'trending-services') {
+            if (section.slug === 'trending-now')
+              return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+            if (section.slug === 'dynamic-random-product-rail')
+              return <DynamicRandomProductRail key={section.id} />
+             if (section.slug === 'trending-services') {
               return (
                 <Fragment key={section.id}>
                   <TrendingServicesSection section={sectionProps} />
