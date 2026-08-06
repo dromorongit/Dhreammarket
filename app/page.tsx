@@ -163,14 +163,14 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
               <Link href="/register">
-                <Button size="lg" className="px-10 py-4 shadow-lg shadow-royal-blue/30">
-                  Get Started Free
-                </Button>
+              <Button size="lg" className="shadow-lg shadow-royal-blue/30">
+                Get Started Free
+              </Button>
               </Link>
               <Link href="/marketplace">
-                <Button variant="outline" size="lg" className="px-10 py-4 border-white/30 text-white hover:bg-white/10">
-                  Explore Marketplace
-                </Button>
+              <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10">
+                Explore Marketplace
+              </Button>
               </Link>
             </div>
 
@@ -238,6 +238,8 @@ export default function Home() {
             if (section.slug === 'trending-now')
               return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'dynamic-random-product-rail')
+              return <DynamicRandomProductRail key={section.id} />
+            if (section.slug === 'dynamic-random-product-rail-2')
               return <DynamicRandomProductRail key={section.id} />
              if (section.slug === 'trending-services') {
               return (

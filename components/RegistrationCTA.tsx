@@ -13,7 +13,7 @@ export function RegistrationCTA() {
             Want a better shopping experience?
           </h2>
           <Link href="/register">
-            <Button variant="primary" size="sm" className="rounded-full px-5 py-2">
+            <Button variant="primary" size="sm" className="rounded-full px-4 py-1.5">
               Create Free Account
               <MdArrowForward className="w-4 h-4 ml-1.5" />
             </Button>
