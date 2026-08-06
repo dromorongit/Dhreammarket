@@ -258,6 +258,35 @@
   }
 }
 
+/* Dynamic random product rail marquee — reuses .rail-track animation engine
+   with --marquee-translate calibrated to one set of 10 product cards
+   (10 items + 9 gaps of 10px = 1890/2290/2690px, matching item widths). */
+.product-rail-track {
+  display: flex;
+  gap: 10px;
+  animation: marquee 16s linear infinite running;
+  width: max-content;
+  will-change: transform;
+  --marquee-translate: -1890px;
+  background: #ffffff;
+}
+
+@media (min-width: 640px) {
+  .product-rail-track {
+    gap: 10px;
+    animation-duration: 13s;
+    --marquee-translate: -2290px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .product-rail-track {
+    gap: 10px;
+    animation-duration: 13s;
+    --marquee-translate: -2690px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -300,6 +329,25 @@
     .phone-rail-track {
       animation-duration: 13s !important;
       --marquee-translate: -2480px !important;
+    }
+  }
+  .product-rail-track {
+    animation-name: marquee !important;
+    animation-duration: 16s !important;
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
+    --marquee-translate: -1890px !important;
+  }
+  @media (min-width: 640px) {
+    .product-rail-track {
+      animation-duration: 13s !important;
+      --marquee-translate: -2290px !important;
+    }
+  }
+  @media (min-width: 1024px) {
+    .product-rail-track {
+      animation-duration: 13s !important;
+      --marquee-translate: -2690px !important;
     }
   }
 }
