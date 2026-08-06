@@ -25,6 +25,7 @@ import {
   NewServicesSection,
   VerifiedVendorsSection,
   SponsoredSection,
+  PremiumCategorySection,
 } from '@/components/homepage-sections'
 import {
   useEnterpriseHomepageData,
@@ -298,6 +299,16 @@ export default function Home() {
               return <TopExpressOffersSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'new-services')
               return <NewServicesSection key={section.id} section={sectionProps} />
+            if (section.slug === 'fashion')
+              return <PremiumCategorySection key={section.id} section={sectionProps} />
+            if (section.slug === 'groceries')
+              return <PremiumCategorySection key={section.id} section={sectionProps} />
+            if (section.slug === 'mens-sneakers')
+              return <PremiumCategorySection key={section.id} section={sectionProps} />
+            if (section.slug === 'televisions')
+              return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
+            if (section.slug === 'appliances')
+              return <PremiumCategorySection key={section.id} section={sectionProps} />
             return null
          })}
 

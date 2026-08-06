@@ -1268,6 +1268,89 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
   )
 }
 
+export function PremiumCategorySection({ section }: HomepageSectionProps) {
+  const products = section.products || []
+  const displayProducts = products.slice(0, 20)
+  const half = Math.ceil(displayProducts.length / 2)
+  const topRowProducts = displayProducts.slice(0, half)
+  const bottomRowProducts = displayProducts.slice(half)
+  const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
+
+  const fetchWishlistStatus = useCallback(async () => {
+    if (!products.length) return
+    try {
+      const productIds = products.map((p) => p.id).join(',')
+      const response = await fetch(`/api/wishlist/check?productIds=${productIds}`)
+      if (response.ok) {
+        const data = await response.json()
+        setWishlistedProductIds(new Set(data.productIds ?? []))
+      }
+    } catch (error) {
+      console.error('Error fetching wishlist status:', error)
+    }
+  }, [products])
+
+  useEffect(() => {
+    fetchWishlistStatus()
+  }, [fetchWishlistStatus])
+
+  if (displayProducts.length === 0) return null
+
+  const renderPremiumCard = (product: EnterpriseProduct) => (
+    <div className="rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/50 via-slate-300/20 to-slate-200/50 transition-all duration-300 h-full group">
+      <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+    </div>
+  )
+
+  return (
+    <section className="relative py-16 lg:py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
+            {section.name}
+          </h2>
+          {section.subtitle && (
+            <p className="text-slate-600 mt-2">{section.subtitle}</p>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {topRowProducts.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {topRowProducts.map((product) => (
+                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    {renderPremiumCard(product)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {bottomRowProducts.length > 0 && (
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {bottomRowProducts.map((product) => (
+                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    {renderPremiumCard(product)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link href="/marketplace">
+            <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
+              See More
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const sectionRenderers: Record<string, React.FC<HomepageSectionProps>> = {
   product_grid: ProductGridSection,
   featured_vendors: FeaturedVendorsSection,

@@ -18,6 +18,11 @@ export const MANAGED_SECTION_SLUGS = [
   'top-express-offers',
   'new-services',
   'food-showcase',
+  'fashion',
+  'groceries',
+  'mens-sneakers',
+  'televisions',
+  'appliances',
 ] as const
 
 export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]
@@ -142,6 +147,46 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
     subtitle: 'Fresh services just added to Dhream Market',
     displayOrder: 15,
     contentSource: 'AUTOMATIC' as const,
+  },
+  {
+    name: 'Fashion',
+    slug: 'fashion',
+    type: 'PRODUCT_GRID' as const,
+    subtitle: 'Premium fashion picks curated for you',
+    displayOrder: 16,
+    contentSource: 'MANUAL' as const,
+  },
+  {
+    name: 'Groceries',
+    slug: 'groceries',
+    type: 'PRODUCT_GRID' as const,
+    subtitle: 'Essential groceries delivered fresh to your door',
+    displayOrder: 17,
+    contentSource: 'MANUAL' as const,
+  },
+  {
+    name: "Men's Sneakers",
+    slug: 'mens-sneakers',
+    type: 'PRODUCT_GRID' as const,
+    subtitle: 'Premium sneakers and athleisure footwear',
+    displayOrder: 18,
+    contentSource: 'MANUAL' as const,
+  },
+  {
+    name: 'Televisions',
+    slug: 'televisions',
+    type: 'LARGE_FEATURE_CARDS' as const,
+    subtitle: 'Premium television showcase',
+    displayOrder: 19,
+    contentSource: 'MANUAL' as const,
+  },
+  {
+    name: 'Appliances',
+    slug: 'appliances',
+    type: 'PRODUCT_GRID' as const,
+    subtitle: 'Premium home appliances for your lifestyle',
+    displayOrder: 20,
+    contentSource: 'MANUAL' as const,
   },
 ]
 

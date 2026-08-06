@@ -169,6 +169,36 @@ const DEFAULT_SECTIONS = [
     type: "BIG_DEALS",
     subtitle: "Express delivery exclusive deals",
   },
+  {
+    name: "Fashion",
+    slug: "fashion",
+    type: "PRODUCT_GRID",
+    subtitle: "Premium fashion picks curated for you",
+  },
+  {
+    name: "Groceries",
+    slug: "groceries",
+    type: "PRODUCT_GRID",
+    subtitle: "Essential groceries delivered fresh to your door",
+  },
+  {
+    name: "Men's Sneakers",
+    slug: "mens-sneakers",
+    type: "PRODUCT_GRID",
+    subtitle: "Premium sneakers and athleisure footwear",
+  },
+  {
+    name: "Televisions",
+    slug: "televisions",
+    type: "LARGE_FEATURE_CARDS",
+    subtitle: "Premium television showcase",
+  },
+  {
+    name: "Appliances",
+    slug: "appliances",
+    type: "PRODUCT_GRID",
+    subtitle: "Premium home appliances for your lifestyle",
+  },
 ];
 
 export default function SuperAdminHomepagePage() {
