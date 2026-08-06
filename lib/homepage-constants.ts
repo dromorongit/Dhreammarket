@@ -42,7 +42,7 @@ export const DEFAULT_HOMEPAGE_SECTIONS = [
   {
     name: 'Dynamic Random Product Rail',
     slug: 'dynamic-random-product-rail',
-    type: 'RANDOM_PRODUCTS' as const,
+    type: 'TRENDING_NOW' as const,
     subtitle: 'Discover random marketplace products.',
     displayOrder: 3,
     contentSource: 'AUTOMATIC' as const,
