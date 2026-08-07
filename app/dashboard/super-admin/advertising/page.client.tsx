@@ -84,6 +84,7 @@ export default function SuperAdminAdvertisingClient() {
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: number }>>([])
   const [services, setServices] = useState<Array<{ id: string; title: string; startingPrice: number }>>([])
   const [loadingLookups, setLoadingLookups] = useState(false)
+  const [lookupsError, setLookupsError] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState({
     vendorId: '',
     title: '',
@@ -102,9 +103,10 @@ export default function SuperAdminAdvertisingClient() {
 
   const loadLookups = async () => {
     setLoadingLookups(true)
+    setLookupsError(null)
     try {
       const [vendorsRes, productsRes, servicesRes] = await Promise.all([
-        fetch('/api/admin/vendors?limit=100'),
+        fetch('/api/super-admin/advertising/vendors?limit=100'),
         fetch('/api/products?limit=100'),
         fetch('/api/vendor/services?limit=100'),
       ])
@@ -120,8 +122,8 @@ export default function SuperAdminAdvertisingClient() {
         const data = await servicesRes.json()
         setServices(Array.isArray(data?.services) ? data.services : [])
       }
-    } catch {
-      // silent
+    } catch (err) {
+      setLookupsError(err instanceof Error ? err.message : 'Failed to load form data')
     } finally {
       setLoadingLookups(false)
     }
@@ -292,7 +294,7 @@ export default function SuperAdminAdvertisingClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-deep-navy">Advertising & Promotional Marketplace</h2>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="sm">
@@ -341,23 +343,23 @@ export default function SuperAdminAdvertisingClient() {
           ) : (
             <div className="space-y-3">
               {topCampaigns.map((campaign, idx) => (
-                <div key={campaign.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-deep-navy">{idx + 1}. {campaign.title}</div>
-                    <div className="text-sm text-slate-500">
-                      {campaignTypeLabels[campaign.campaignType] || campaign.campaignType}
-                    </div>
-                    <div className="text-sm text-slate-500">
-                      {campaign.vendor?.profile ? `${campaign.vendor.profile.firstName || ''} ${campaign.vendor.profile.lastName || ''}`.trim() : campaign.vendor?.email}
-                    </div>
+              <div key={campaign.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border border-slate-200 rounded-xl">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-deep-navy truncate">{idx + 1}. {campaign.title}</div>
+                  <div className="text-sm text-slate-500 truncate">
+                    {campaignTypeLabels[campaign.campaignType] || campaign.campaignType}
                   </div>
-                  <div className="text-right ml-4">
-                    <div className="font-semibold text-deep-navy">GH₵ {campaign.revenueGenerated.toFixed(2)}</div>
-                    <div className="text-sm text-slate-500">
-                      {campaign.views} views | {campaign.clicks} clicks
-                    </div>
+                  <div className="text-sm text-slate-500 truncate">
+                    {campaign.vendor?.profile ? `${campaign.vendor.profile.firstName || ''} ${campaign.vendor.profile.lastName || ''}`.trim() : campaign.vendor?.email}
                   </div>
                 </div>
+                <div className="text-right sm:ml-4 flex-shrink-0">
+                  <div className="font-semibold text-deep-navy">GH₵ {campaign.revenueGenerated.toFixed(2)}</div>
+                  <div className="text-sm text-slate-500 truncate">
+                    {campaign.views} views | {campaign.clicks} clicks
+                  </div>
+                </div>
+              </div>
               ))}
             </div>
           )}
@@ -375,12 +377,12 @@ export default function SuperAdminAdvertisingClient() {
               placeholder="Search campaigns, vendors, products, services..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+              className="flex-1 w-full md:w-auto rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
             />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+              className="w-full md:w-auto rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
             >
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
@@ -395,7 +397,7 @@ export default function SuperAdminAdvertisingClient() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+              className="w-full md:w-auto rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
             >
               <option value="">All Types</option>
               {Object.entries(campaignTypeLabels).map(([value, label]) => (
@@ -409,7 +411,7 @@ export default function SuperAdminAdvertisingClient() {
                 setSortField(field)
                 setSortOrder(order)
               }}
-              className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+              className="w-full md:w-auto rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
             >
               <option value="createdAt:desc">Newest First</option>
               <option value="createdAt:asc">Oldest First</option>
@@ -448,32 +450,32 @@ export default function SuperAdminAdvertisingClient() {
                     <CardContent className="pt-4">
                       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-deep-navy truncate">{campaign.title}</h3>
-                            <Badge variant={statusColors[campaign.campaignStatus] as any || 'default'} size="sm">
+                          <div className="flex items-center gap-2 mb-1 min-w-0">
+                            <h3 className="font-semibold text-deep-navy truncate min-w-0">{campaign.title}</h3>
+                            <Badge variant={statusColors[campaign.campaignStatus] as any || 'default'} size="sm" className="flex-shrink-0">
                               {campaign.campaignStatus.replace('_', ' ')}
                             </Badge>
                           </div>
                           <p className="text-sm text-slate-500">
                             {campaignTypeLabels[campaign.campaignType] || campaign.campaignType}
                           </p>
-                          <p className="text-sm text-slate-500">
+                          <p className="text-sm text-slate-500 break-words">
                             Vendor: {vendorName}
                             {campaign.vendor?.id && (
-                              <Link href={`/dashboard/admin/vendors?vendorId=${campaign.vendor.id}`} className="text-royal-blue hover:underline ml-2">
+                              <Link href={`/dashboard/admin/vendors?vendorId=${campaign.vendor.id}`} className="text-royal-blue hover:underline ml-1">
                                 View Vendor
                               </Link>
                             )}
                           </p>
-                          <p className="text-sm text-slate-500">
+                          <p className="text-sm text-slate-500 break-words">
                             Entity: {entityName}
                             {campaign.product?.id && (
-                              <Link href={`/marketplace/product/${campaign.product.slug || campaign.product.id}`} className="text-royal-blue hover:underline ml-2">
+                              <Link href={`/marketplace/product/${campaign.product.slug || campaign.product.id}`} className="text-royal-blue hover:underline ml-1">
                                 View Product
                               </Link>
                             )}
                             {campaign.service?.id && (
-                              <Link href={`/marketplace/service/${campaign.service.slug || campaign.service.id}`} className="text-royal-blue hover:underline ml-2">
+                              <Link href={`/marketplace/service/${campaign.service.slug || campaign.service.id}`} className="text-royal-blue hover:underline ml-1">
                                 View Service
                               </Link>
                             )}
@@ -754,11 +756,18 @@ export default function SuperAdminAdvertisingClient() {
               </Button>
             </CardHeader>
             <CardContent>
+              {lookupsError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl mb-4">
+                  <p className="text-sm text-rose-700">{lookupsError}</p>
+                </div>
+              )}
               <form onSubmit={handleCreateCampaign} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Vendor</label>
                   {loadingLookups ? (
                     <div className="text-sm text-slate-500">Loading vendors...</div>
+                  ) : vendors.length === 0 ? (
+                    <div className="text-sm text-slate-500 p-3 bg-slate-50 border border-slate-200 rounded-xl">No vendors available</div>
                   ) : (
                     <select
                       value={createForm.vendorId}
