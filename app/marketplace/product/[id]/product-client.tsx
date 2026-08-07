@@ -16,10 +16,11 @@ import WishlistButton from '@/components/WishlistButton'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { MdVerified } from 'react-icons/md'
-import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus } from 'react-icons/fi'
+import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus, FiPhone } from 'react-icons/fi'
 import { event } from '@/lib/gtag'
 import { AISimilar } from '@/components/ai'
 import { AICrossSelling } from '@/components/ai'
+import { getTelLink, formatGhanaPhoneNumber } from '@/lib/phone'
 
 interface ProductImage {
   id: string
@@ -70,6 +71,7 @@ interface ProductData {
     isVerified: boolean
     badgeTier: string | null
     logo: string | null
+    mainPhoneNumber: string | null
   } | null
   brandRelation: {
     id: string
@@ -570,31 +572,45 @@ export default function ProductClient() {
                       </span>
                     </div>
                   )}
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      <span className="font-semibold text-gray-900 text-sm md:text-base truncate">
-                        {truncateVendorName(product.store?.name ?? 'Unknown Store')}
-                      </span>
-                      {(() => {
-                        const badge = product.store?.badgeTier || (product.store?.isVerified ? 'TRUSTED' : null)
-                        const badgeInfo = getVendorBadgeColor(product.store?.badgeTier, product.store?.isVerified ?? false)
-                        if (!badgeInfo) return null
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="font-semibold text-gray-900 text-sm md:text-base truncate">
+                          {truncateVendorName(product.store?.name ?? 'Unknown Store')}
+                        </span>
+                        {(() => {
+                          const badge = product.store?.badgeTier || (product.store?.isVerified ? 'TRUSTED' : null)
+                          const badgeInfo = getVendorBadgeColor(product.store?.badgeTier, product.store?.isVerified ?? false)
+                          if (!badgeInfo) return null
+                          return (
+                            <MdVerified
+                              className="w-5 h-5"
+                              style={{ color: badgeInfo.color }}
+                              title={badgeInfo.tooltip}
+                            />
+                          )
+                        })()}
+                      </div>
+                      <Link
+                        href={`/vendor/${product.store?.slug ?? product.store?.id}`}
+                        className="text-xs md:text-sm text-[#1E40AF] hover:underline"
+                      >
+                        View Store
+                      </Link>
+                      {product.store?.mainPhoneNumber && (() => {
+                        const telLink = getTelLink(product.store.mainPhoneNumber)
+                        const formattedPhone = formatGhanaPhoneNumber(product.store.mainPhoneNumber) || product.store.mainPhoneNumber
                         return (
-                          <MdVerified
-                            className="w-5 h-5"
-                            style={{ color: badgeInfo.color }}
-                            title={badgeInfo.tooltip}
-                          />
+                          <a
+                            href={telLink || '#'}
+                            className="inline-flex items-center gap-1.5 text-xs md:text-sm text-[#1E40AF] hover:underline mt-1"
+                          >
+                            <FiPhone className="w-3.5 h-3.5" />
+                            <span>Call Vendor</span>
+                            <span className="text-slate-600">{formattedPhone}</span>
+                          </a>
                         )
                       })()}
                     </div>
-                    <Link
-                      href={`/vendor/${product.store?.slug ?? product.store?.id}`}
-                      className="text-xs md:text-sm text-[#1E40AF] hover:underline"
-                    >
-                      View Store
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>
