@@ -282,7 +282,7 @@ export default function VendorAdvertisingClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold text-deep-navy">Advertising Dashboard</h2>
         <div className="flex gap-2">
           <Button asChild variant="ghost" size="sm">
@@ -497,20 +497,22 @@ export default function VendorAdvertisingClient() {
         </Card>
       )}
 
-      <div className="flex gap-2 border-b border-slate-200">
-        {['active', 'pending', 'rejected', 'expired'].map((tab) => (
-          <button
-            key={tab}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab
-                ? 'border-royal-blue text-royal-blue'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)} ({tabs[tab as keyof typeof tabs]})
-          </button>
-        ))}
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2 border-b border-slate-200 min-w-max">
+          {['active', 'pending', 'rejected', 'expired'].map((tab) => (
+            <button
+              key={tab}
+              className={`whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-royal-blue text-royal-blue'
+                  : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)} ({tabs[tab as keyof typeof tabs]})
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -558,7 +560,7 @@ export default function VendorAdvertisingClient() {
                         {campaignTypeLabels[campaign.campaignType] || campaign.campaignType}
                       </p>
                       <p className="text-sm text-slate-500">Entity: {entityName}</p>
-                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-600">
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-600">
                         <span>Price: GH₵ {campaign.price.toFixed(2)}</span>
                         <span>Duration: {campaign.duration} days</span>
                         <span>Views: {campaign.views.toLocaleString()}</span>
@@ -595,7 +597,7 @@ export default function VendorAdvertisingClient() {
       )}
 
       {selectedCampaign && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
           <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto" variant="elevated">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Campaign Details</CardTitle>
@@ -604,7 +606,7 @@ export default function VendorAdvertisingClient() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <div className="text-sm text-slate-500">Status</div>
                   <Badge variant={statusColors[selectedCampaign.campaignStatus] as any || 'default'}>
@@ -625,7 +627,7 @@ export default function VendorAdvertisingClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <div className="text-sm text-slate-500">Views</div>
                   <div className="font-medium text-deep-navy">{selectedCampaign.views.toLocaleString()}</div>
@@ -646,7 +648,7 @@ export default function VendorAdvertisingClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <div className="text-sm text-slate-500">Spend</div>
                   <div className="font-medium text-deep-navy">
@@ -730,7 +732,7 @@ export default function VendorAdvertisingClient() {
                         <div>
                           <span className="font-medium">{new Date(a.date).toLocaleDateString()}</span>
                         </div>
-                        <div className="flex gap-4 text-slate-600">
+                        <div className="flex flex-wrap gap-x-4 gap-y-2 text-slate-600">
                           <span>{a.views} views</span>
                           <span>{a.clicks} clicks</span>
                           <span>{a.ctr.toFixed(2)}% CTR</span>
