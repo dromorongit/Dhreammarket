@@ -80,7 +80,7 @@ export default function SuperAdminAdvertisingClient() {
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectTargetId, setRejectTargetId] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [vendors, setVendors] = useState<Array<{ id: string; email: string; profile?: { firstName: string | null; lastName: string | null } }>>([])
+  const [vendors, setVendors] = useState<Array<{ id: string; email: string; profile?: { firstName: string | null; lastName: string | null }; store?: { name: string } }>>([])
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: number }>>([])
   const [services, setServices] = useState<Array<{ id: string; title: string; startingPrice: number }>>([])
   const [loadingLookups, setLoadingLookups] = useState(false)
@@ -778,7 +778,7 @@ export default function SuperAdminAdvertisingClient() {
                       <option value="">Select a vendor</option>
                       {vendors.map((v) => (
                         <option key={v.id} value={v.id}>
-                          {v.profile ? `${v.profile.firstName || ''} ${v.profile.lastName || ''}`.trim() || v.email : v.email}
+                          {v.store?.name?.trim() ? v.store.name.trim() : 'Unnamed Store'}
                         </option>
                       ))}
                     </select>
