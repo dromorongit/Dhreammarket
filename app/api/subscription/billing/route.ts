@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'initializePayment': {
-        const { vendorEmail, amount, billingCycle, callbackUrl, targetPlanName } = body
-        if (!amount) {
-          return NextResponse.json({ error: 'Amount required' }, { status: 400 })
+        const { planName, billingCycle, vendorEmail, callbackUrl } = body
+        if (!planName) {
+          return NextResponse.json({ error: 'Plan name required' }, { status: 400 })
         }
 
         let email = vendorEmail
@@ -40,8 +40,31 @@ export async function POST(request: NextRequest) {
           email = vendor.email
         }
 
-        const result = await initializeBillingPayment(payload.userId, email, amount, billingCycle || 'MONTHLY', callbackUrl, targetPlanName)
-        return NextResponse.json(result)
+        // The authoritative plan price is resolved server-side from the database
+        // inside initializeBillingPayment - a frontend-supplied amount is never trusted.
+        const result = await initializeBillingPayment(
+          payload.userId,
+          email,
+          planName,
+          billingCycle || 'MONTHLY',
+          callbackUrl
+        )
+
+        if (!result.success) {
+          logError('Billing payment initialization failed', undefined, { vendorId: payload.userId, planName, error: result.error })
+          return NextResponse.json({ error: result.error || 'Failed to initialize payment' }, { status: 502 })
+        }
+
+        return NextResponse.json({
+          success: true,
+          authorizationUrl: result.authorizationUrl,
+          accessCode: result.accessCode,
+          reference: result.reference,
+          amount: result.amount,
+          currency: result.currency,
+          planName,
+          billingCycle: billingCycle || 'MONTHLY',
+        })
       }
 
       case 'verifyPayment': {
@@ -74,8 +97,11 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
     }
-  } catch (error) {
+   } catch (error) {
     logError('Error in billing endpoint:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    // Surface the safe, real reason instead of masking it as a generic 500.
+    // These messages never include secrets (the Paystack key is never part of them).
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -98,7 +98,7 @@ export default function VendorSubscriptionPage() {
     setActionMessage(null)
     try {
       const plan = subscription?.plans.find((p) => p.name === planName)
-      const isPaid = plan && plan.priceMonthly !== null && plan.priceMonthly > 0
+      const isPaid = plan && (plan.priceMonthly ?? 0) > 0
 
       if (isPaid) {
         const res = await fetch('/api/subscription/billing', {
@@ -106,7 +106,7 @@ export default function VendorSubscriptionPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'initializePayment',
-            amount: plan.priceMonthly,
+            planName,
             billingCycle: 'MONTHLY',
           }),
         })
@@ -140,6 +140,46 @@ export default function VendorSubscriptionPage() {
       setActionLoading(false)
     }
   }
+
+  // After Paystack redirects back to the dashboard with a transaction reference,
+  // verify the payment server-side and refresh the subscription state.
+  const verifyOnReturn = useCallback(async (reference: string) => {
+    setActionLoading(true)
+    setActionMessage(null)
+    try {
+      const res = await fetch('/api/subscription/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verifyPayment', reference }),
+      })
+      const data = await res.json()
+      if (res.ok && (data.success || data.status === 'success')) {
+        setActionMessage(data.upgraded
+          ? 'Payment verified. Your subscription has been upgraded.'
+          : 'Payment verified. Your subscription has been updated.')
+      } else {
+        setActionMessage(data.error || 'Payment could not be verified. Your subscription was not changed.')
+      }
+    } catch {
+      setActionMessage('Payment verification failed. Please contact support.')
+    } finally {
+      const url = new URL(window.location.href)
+      url.search = ''
+      window.history.replaceState({}, '', url.toString())
+      setActionLoading(false)
+      fetchSubscription()
+    }
+  }, [fetchSubscription])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const reference = params.get('reference') || params.get('trxref')
+    if (reference) {
+      verifyOnReturn(reference)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleRenew = async (subscriptionId: string) => {
     setActionLoading(true)
