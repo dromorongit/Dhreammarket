@@ -383,7 +383,7 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
               </div>
 
               <div className="mb-6">
-                <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+                <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
                   {showFullDescription ? service.description : descriptionPreview}
                 </p>
                 {service.description && service.description.length > 150 && (

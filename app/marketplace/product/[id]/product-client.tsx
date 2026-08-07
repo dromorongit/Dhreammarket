@@ -491,7 +491,7 @@ export default function ProductClient() {
                )}
 
                <div className="mb-6">
-                <p className="text-slate-600 text-sm md:text-base leading-relaxed">
+                <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
                   {showFullDescription ? product.description : descriptionPreview}
                 </p>
                 {product.description && product.description.length > 150 && (
@@ -645,7 +645,7 @@ export default function ProductClient() {
           <div className="min-h-[200px]">
             {activeTab === 'description' ? (
               <div className="prose prose-slate max-w-none">
-                <p className="text-slate-600 leading-relaxed text-sm md:text-base">
+                <p className="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-line">
                   {product.description ?? 'No description available for this product.'}
                 </p>
               </div>
