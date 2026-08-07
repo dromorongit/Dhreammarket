@@ -488,9 +488,9 @@ export default function VendorAdvertisingClient() {
 
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="text-sm font-medium text-blue-900 mb-1">Campaign Cost Preview</div>
-                <div className="text-2xl font-bold text-blue-700">GH₵ {(formData.price * formData.duration).toFixed(2)}</div>
+                <div className="text-2xl font-bold text-blue-700">GH₵ {(formData.price * (typeof formData.duration === 'number' ? formData.duration : 0)).toFixed(2)}</div>
                 <div className="text-sm text-blue-600 mt-1">
-                  {formData.price.toFixed(2)} GHS/day × {formData.duration} days
+                  {formData.price.toFixed(2)} GHS/day × {typeof formData.duration === 'number' ? formData.duration : '-'} days
                 </div>
               </div>
 

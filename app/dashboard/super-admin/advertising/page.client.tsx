@@ -946,9 +946,9 @@ export default function SuperAdminAdvertisingClient() {
 
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                   <div className="text-sm font-medium text-blue-900 mb-1">Campaign Cost Preview</div>
-                  <div className="text-2xl font-bold text-blue-700">GH₵ {(createForm.price * createForm.duration).toFixed(2)}</div>
+                  <div className="text-2xl font-bold text-blue-700">GH₵ {(createForm.price * (typeof createForm.duration === 'number' ? createForm.duration : 0)).toFixed(2)}</div>
                   <div className="text-sm text-blue-600 mt-1">
-                    {createForm.price.toFixed(2)} GHS/day × {createForm.duration} days
+                    {createForm.price.toFixed(2)} GHS/day × {typeof createForm.duration === 'number' ? createForm.duration : '-'} days
                   </div>
                 </div>
 
