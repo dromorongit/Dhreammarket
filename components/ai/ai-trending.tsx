@@ -8,6 +8,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import Image from 'next/image'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface AITrendingItem {
   id: string
@@ -25,6 +26,8 @@ interface AITrendingItem {
   trendScore: number
   trendDirection: 'rising' | 'falling' | 'stable'
   type: string
+  stock?: number | null
+  availabilityType?: string | null
 }
 
 interface AITrendingProps {
@@ -94,6 +97,9 @@ function AITrendingCard({ item }: { item: AITrendingItem }) {
             </Button>
           </Link>
         </div>
+        {isProduct && (
+          <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
+        )}
       </div>
     </Card>
   )

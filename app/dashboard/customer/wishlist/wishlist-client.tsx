@@ -12,6 +12,7 @@ import { formatPrice } from '@/lib/currency'
 import { event } from '@/lib/gtag'
 import { logCartRequest } from '@/lib/CartContext'
 import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface WishlistItem {
   id: string
@@ -23,6 +24,7 @@ interface WishlistItem {
     salesPrice: number | null
     dealsPrice: number | null
     availabilityType: string
+    stock?: number | null
     images: Array<{
       id: string
       url: string
@@ -238,6 +240,7 @@ export default function WishlistClient() {
                       {removingItemId === item.id ? 'Removing...' : 'Remove'}
                     </Button>
                   </div>
+                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
                 </CardContent>
               </Card>
             )

@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
@@ -1205,6 +1206,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                       </Button>
                     </Link>
                   </div>
+                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
                 </div>
               </Card>
             )
@@ -1308,6 +1310,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                       </Button>
                     </Link>
                   </div>
+                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
                 </div>
               </Card>
             )
@@ -1411,6 +1414,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                       </Button>
                     </Link>
                   </div>
+                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
                 </div>
               </Card>
             )

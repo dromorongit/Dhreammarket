@@ -8,6 +8,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import Image from 'next/image'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface AISimilarItem {
   id: string
@@ -25,6 +26,8 @@ interface AISimilarItem {
   reason: string
   type: string
   score: number
+  stock?: number | null
+  availabilityType?: string | null
 }
 
 interface AISimilarProps {
@@ -86,6 +89,9 @@ function AISimilarCard({ item }: { item: AISimilarItem }) {
             </Button>
           </Link>
         </div>
+        {isProduct && (
+          <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
+        )}
       </div>
     </Card>
   )

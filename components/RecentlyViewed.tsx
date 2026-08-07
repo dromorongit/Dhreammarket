@@ -7,6 +7,7 @@ import { Card } from './Card'
 import { Button } from './Button'
 import { Skeleton } from './Skeleton'
 import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface RecentlyViewedItem {
   entityType: string
@@ -19,6 +20,8 @@ interface RecentlyViewedItem {
     salesPrice?: number | null
     dealsPrice?: number | null
     image?: string | null
+    stock?: number | null
+    availabilityType?: string | null
     store?: { name: string } | null
   }
   service?: {
@@ -98,6 +101,9 @@ export function RecentlyViewed() {
                   </h3>
                   {isProduct && product?.store && (
                     <p className="text-xs text-slate-500 mt-1">{product.store.name}</p>
+                  )}
+                  {isProduct && (
+                    <ProductStockIndicator stock={product?.stock} availabilityType={product?.availabilityType} />
                   )}
                 </div>
               </Card>

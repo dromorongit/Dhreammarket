@@ -7,6 +7,7 @@ import { Card } from './Card'
 import { Button } from './Button'
 import { Badge } from './Badge'
 import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface RecommendationCardProps {
   item: {
@@ -21,6 +22,8 @@ interface RecommendationCardProps {
     store?: { name: string } | null
     reason: string
     type: string
+    stock?: number | null
+    availabilityType?: string | null
   }
 }
 
@@ -55,6 +58,9 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
           <span className="text-lg font-bold text-royal-blue">${price.toFixed(2)}</span>
           <p className="text-xs text-gray-400 mt-1">{item.reason}</p>
         </div>
+        {isProduct && (
+          <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
+        )}
       </div>
     </Card>
   )

@@ -11,6 +11,7 @@ import { MdVerified } from 'react-icons/md';
 import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import { type EnterpriseProduct, getEffectivePrice } from '@/lib/homepage-product-utils';
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
+import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import WishlistButton from '@/components/WishlistButton';
 import { EmptyState } from '@/components/EmptyState';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL } from '@/lib/image-utils';
@@ -99,6 +100,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
                 })()}
               </div>
             )}
+            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
           </div>
         </Card>
       </Link>

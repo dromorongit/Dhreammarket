@@ -17,6 +17,7 @@ import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import ServiceCard from '@/components/ServiceCard'
 import WishlistButton from '@/components/WishlistButton'
 import { AIRecommendations } from '@/components/ai'
@@ -252,6 +253,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
             </Button>
           </Link>
         </div>
+        <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
       </div>
     </Card>
   )

@@ -15,6 +15,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
 import { getBlurDataURL, HERO_IMAGE_SIZES, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_3COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
@@ -670,6 +671,7 @@ export default function VendorProfilePage() {
                             return null
                           })()}
                         </div>
+                        <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
                       </div>
                     </Card>
                   )

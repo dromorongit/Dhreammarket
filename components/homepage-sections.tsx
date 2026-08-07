@@ -17,6 +17,7 @@ import { MdVerified } from 'react-icons/md'
 import { HiShieldCheck } from 'react-icons/hi'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import { TrendingNowSection } from './TrendingNowSection'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WishlistButton from '@/components/WishlistButton'
@@ -146,14 +147,15 @@ return (
                    )
                  }
                  return null
-               })()}
-             </div>
-           )}
-        </div>
-      </div>
-     </Card>
-   )
- })
+                })()}
+              </div>
+            )}
+            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+         </div>
+       </div>
+      </Card>
+    )
+  })
 
  export function ProductGridSection({ section }: HomepageSectionProps) {
   const products = section.products || []
@@ -552,6 +554,7 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
               <span className="text-lg font-bold text-royal-blue">{formatPrice(effectivePrice)}</span>
             </div>
             <Button variant="gradient" size="sm" className="w-full rounded-full font-semibold mt-auto">View Deal</Button>
+            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
           </div>
         </div>
       </Link>

@@ -8,6 +8,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import Image from 'next/image'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface AIRecommendationItem {
   id: string
@@ -25,6 +26,8 @@ interface AIRecommendationItem {
   reason: string
   type: string
   score: number
+  stock?: number | null
+  availabilityType?: string | null
 }
 
 interface AIRecommendationsProps {
@@ -90,6 +93,9 @@ function AIRecommendationCard({ item }: { item: AIRecommendationItem }) {
             </Button>
           </Link>
         </div>
+        {isProduct && (
+          <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
+        )}
       </div>
     </Card>
   )

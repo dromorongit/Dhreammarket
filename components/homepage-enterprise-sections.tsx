@@ -16,6 +16,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge';
 import WishlistButton from '@/components/WishlistButton';
 import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageData, getDiscountPercent, getEffectivePrice, getDiscountedPrice, dedupeProducts, collectProductIds, normalizeBrand, EMPTY_ENTERPRISE_DATA } from '@/lib/homepage-product-utils'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
+import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
@@ -305,6 +306,7 @@ function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterprisePr
                  })()}
                 </div>
               )}
+              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -381,6 +383,7 @@ function SponsoredCard({ product, initialIsWishlisted }: { product: EnterprisePr
                  })()}
                 </div>
               )}
+              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -457,6 +460,7 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                  })()}
                 </div>
               )}
+              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -538,6 +542,7 @@ function StandardCard({
                  })()}
                 </div>
               )}
+              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -752,6 +757,7 @@ export function EnterpriseGadgetDisplaySection({
             <Button variant='gradient' size='sm' className='w-full rounded-full font-semibold mt-auto'>
               View Deal
             </Button>
+            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
           </div>
         </div>
       </Link>

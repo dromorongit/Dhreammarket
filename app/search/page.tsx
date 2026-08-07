@@ -13,6 +13,7 @@ import { formatPrice } from '@/lib/currency'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
+import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import WishlistButton from '@/components/WishlistButton'
 import ServiceCard from '@/components/ServiceCard'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
@@ -655,13 +656,14 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
                    )
                  }
                  return null
-               })()}
-             </div>
-           )}
-         </div>
-       </Card>
-     </Link>
-   )
+                })()}
+              </div>
+            )}
+            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+          </div>
+        </Card>
+      </Link>
+    )
 }
 
 /* ─── SkeletonCard (inline for search page) ─── */
