@@ -92,7 +92,7 @@ export default function SuperAdminAdvertisingClient() {
     selectedProductId: '',
     selectedServiceId: '',
     homepageSection: 'Sponsored',
-    duration: 7,
+    duration: '' as number | '',
     price: 100,
     maxSlots: 1,
     campaignStatus: 'PENDING_APPROVAL',
@@ -193,13 +193,20 @@ export default function SuperAdminAdvertisingClient() {
     e.preventDefault()
     setCreateLoading(true)
     try {
+      const duration = typeof createForm.duration === 'number' ? createForm.duration : NaN
+      if (isNaN(duration) || duration < 1) {
+        alert('Please enter a valid campaign duration (positive number of days)')
+        setCreateLoading(false)
+        return
+      }
+
       const payload: any = {
         title: createForm.title,
         campaignType: createForm.campaignType,
         selectedProductId: createForm.selectedProductId || undefined,
         selectedServiceId: createForm.selectedServiceId || undefined,
         homepageSection: createForm.homepageSection,
-        duration: createForm.duration,
+        duration,
         price: createForm.price,
         maxSlots: createForm.maxSlots,
         vendorId: createForm.vendorId,
@@ -229,7 +236,7 @@ export default function SuperAdminAdvertisingClient() {
         selectedProductId: '',
         selectedServiceId: '',
         homepageSection: 'Sponsored',
-        duration: 7,
+        duration: '' as number | '',
         price: 100,
         maxSlots: 1,
         campaignStatus: 'PENDING_APPROVAL',
@@ -862,18 +869,21 @@ export default function SuperAdminAdvertisingClient() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Duration (days)</label>
-                    <input
-                      type="number"
-                      value={createForm.duration}
-                      onChange={(e) => setCreateForm({ ...createForm, duration: parseInt(e.target.value) || 7 })}
-                      className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
-                      min={1}
-                      max={30}
-                    />
-                  </div>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium text-slate-700 mb-2">Duration (days)</label>
+                     <input
+                       type="number"
+                       value={createForm.duration}
+                       onChange={(e) => {
+                         const value = e.target.value
+                         setCreateForm({ ...createForm, duration: value === '' ? '' : parseInt(value) || 7 })
+                       }}
+                       className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                       min={1}
+                       max={30}
+                     />
+                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Price (GHS)</label>
                     <input

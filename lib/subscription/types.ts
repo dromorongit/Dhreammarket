@@ -218,8 +218,11 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
 }
 
 export interface SubscriptionDashboardData {
+  subscriptionId: string
   currentPlan: string
   subscriptionStatus: string
+  startDate: string | null
+  endDate: string | null
   nextRenewal: string | null
   productsRemaining: number
   servicesRemaining: number
@@ -237,6 +240,32 @@ export interface SubscriptionDashboardData {
     currentValue: number
     limit: number | null
     percentage: number
+  }>
+  plans: Array<{
+    name: string
+    priceMonthly: number | null
+    priceYearly: number | null
+    productsLimit: number
+    servicesLimit: number
+    benefits: string[]
+    restrictions: {
+      productLimits: boolean
+      serviceLimits: boolean
+      homepagePromotions: boolean
+      sponsoredProducts: boolean
+      sponsoredServices: boolean
+      premiumAnalytics: boolean
+      advancedAI: boolean
+      cashbackCampaigns: boolean
+      rewardCampaigns: boolean
+      vendorAdvertisements: boolean
+      campaignCreation: boolean
+      sponsoredSearchBoost: boolean
+      categoryBoosts: boolean
+      vendorSpotlight: boolean
+      priorityApproval: boolean
+      unlimitedCampaigns: boolean
+    }
   }>
 }
 

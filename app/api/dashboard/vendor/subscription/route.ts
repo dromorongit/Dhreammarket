@@ -35,6 +35,8 @@ export async function GET(request: NextRequest) {
     const currentPlan = subscription?.plan?.name ?? 'Free'
     const status = subscription?.status ?? 'NONE'
     const nextRenewal = subscription?.nextRenewalAt?.toISOString() ?? null
+    const startDate = subscription?.currentPeriodStart?.toISOString() ?? null
+    const endDate = subscription?.currentPeriodEnd?.toISOString() ?? null
 
     const productCount = await prisma.product.count({
       where: { store: { userId: payload.userId } },
@@ -75,13 +77,17 @@ export async function GET(request: NextRequest) {
     }))
 
     const data: SubscriptionDashboardData = {
+      subscriptionId: subscription?.id ?? '',
       currentPlan,
       subscriptionStatus: status,
+      startDate,
+      endDate,
       nextRenewal,
       productsRemaining: productsLimit > 0 ? Math.max(productsLimit - productCount, 0) : -1,
       servicesRemaining: servicesLimit > 0 ? Math.max(servicesLimit - serviceCount, 0) : -1,
       billingHistory,
       usage,
+      plans,
     }
 
     return new Response(JSON.stringify(data), {

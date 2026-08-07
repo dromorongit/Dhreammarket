@@ -114,7 +114,7 @@ export default function VendorAdvertisingClient() {
     selectedProductId: '',
     selectedServiceId: '',
     homepageSection: 'Sponsored',
-    duration: 7,
+    duration: '' as number | '',
     price: 100,
     maxSlots: 1,
   })
@@ -184,10 +184,22 @@ export default function VendorAdvertisingClient() {
     e.preventDefault()
     setSubmitting(true)
     try {
+      const duration = typeof formData.duration === 'number' ? formData.duration : NaN
+      if (isNaN(duration) || duration < 1) {
+        alert('Please enter a valid campaign duration (positive number of days)')
+        setSubmitting(false)
+        return
+      }
+
+      const payload = {
+        ...formData,
+        duration,
+      }
+
       const response = await fetch('/api/advertising/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
       if (!response.ok) {
         const data = await response.json()
@@ -200,7 +212,7 @@ export default function VendorAdvertisingClient() {
         selectedProductId: '',
         selectedServiceId: '',
         homepageSection: 'Sponsored',
-        duration: 7,
+        duration: '' as number | '',
         price: 100,
         maxSlots: 1,
       })
@@ -441,7 +453,10 @@ export default function VendorAdvertisingClient() {
                   <input
                     type="number"
                     value={formData.duration}
-                    onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 7 })}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setFormData({ ...formData, duration: value === '' ? '' : parseInt(value) || 7 })
+                    }}
                     className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
                     min={1}
                     max={30}

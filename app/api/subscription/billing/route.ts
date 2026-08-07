@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-middleware'
 import { initializeBillingPayment, verifyBillingPayment, createManualRenewalInvoice, processManualPayment } from '@/lib/subscription/billing-service'
+import { getPrisma } from '@/lib/prisma'
 import { logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -22,12 +23,25 @@ export async function POST(request: NextRequest) {
 
     switch (action) {
       case 'initializePayment': {
-        const { vendorEmail, amount, billingCycle, callbackUrl } = body
-        if (!vendorEmail || !amount) {
-          return NextResponse.json({ error: 'Email and amount required' }, { status: 400 })
+        const { vendorEmail, amount, billingCycle, callbackUrl, targetPlanName } = body
+        if (!amount) {
+          return NextResponse.json({ error: 'Amount required' }, { status: 400 })
         }
-        const result = await initializeBillingPayment(payload.userId, vendorEmail, amount, billingCycle || 'MONTHLY', callbackUrl)
-        return NextResponse.json({ ...result })
+
+        let email = vendorEmail
+        if (!email) {
+          const vendor = await getPrisma().user.findUnique({
+            where: { id: payload.userId },
+            select: { email: true },
+          })
+          if (!vendor) {
+            return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+          }
+          email = vendor.email
+        }
+
+        const result = await initializeBillingPayment(payload.userId, email, amount, billingCycle || 'MONTHLY', callbackUrl, targetPlanName)
+        return NextResponse.json(result)
       }
 
       case 'verifyPayment': {
@@ -36,7 +50,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Payment reference required' }, { status: 400 })
         }
         const result = await verifyBillingPayment(reference)
-        return NextResponse.json({ ...result })
+        return NextResponse.json(result)
       }
 
       case 'manualRenewalInvoice': {

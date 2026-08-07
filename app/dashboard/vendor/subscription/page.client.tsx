@@ -25,12 +25,21 @@ interface SubscriptionPlan {
     cashbackCampaigns: boolean
     rewardCampaigns: boolean
     vendorAdvertisements: boolean
+    campaignCreation: boolean
+    sponsoredSearchBoost: boolean
+    categoryBoosts: boolean
+    vendorSpotlight: boolean
+    priorityApproval: boolean
+    unlimitedCampaigns: boolean
   }
 }
 
 interface SubscriptionData {
+  subscriptionId: string
   currentPlan: string
   subscriptionStatus: string
+  startDate: string | null
+  endDate: string | null
   nextRenewal: string | null
   productsRemaining: number
   servicesRemaining: number
@@ -49,106 +58,158 @@ interface SubscriptionData {
     limit: number | null
     percentage: number
   }>
+  plans: SubscriptionPlan[]
 }
 
 export default function VendorSubscriptionPage() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   const fetchSubscription = useCallback(async () => {
+    setLoading(true)
+    setActionMessage(null)
     try {
       const res = await fetch('/api/dashboard/vendor/subscription')
       if (res.ok) {
         const data = await res.json()
         setSubscription(data)
+      } else {
+        setActionMessage('Failed to load subscription data')
       }
     } catch (err) {
       console.error('Error fetching subscription:', err)
+      setActionMessage('Failed to load subscription data')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const fetchPlans = useCallback(async () => {
-    try {
-      const res = await fetch('/api/subscription/admin?action=plans')
-      if (res.ok) {
-        const data = await res.json()
-        setPlans(data.plans ?? [])
-      }
-    } catch (err) {
-      console.error('Error fetching plans:', err)
-    }
-  }, [])
-
   useEffect(() => {
     fetchSubscription()
-    fetchPlans()
-  }, [fetchSubscription, fetchPlans])
+  }, [fetchSubscription])
 
   const handleUpgrade = async (planName: string) => {
+    setActionLoading(true)
+    setActionMessage(null)
     try {
-      const res = await fetch('/api/subscription/vendor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upgrade', planName, billingCycle: 'MONTHLY' }),
-      })
-      if (res.ok) {
+      const plan = subscription?.plans.find((p) => p.name === planName)
+      const isPaid = plan && plan.priceMonthly !== null && plan.priceMonthly > 0
+
+      if (isPaid) {
+        const res = await fetch('/api/subscription/billing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'initializePayment',
+            amount: plan.priceMonthly,
+            billingCycle: 'MONTHLY',
+          }),
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to initialize payment')
+        }
         const data = await res.json()
+        if (data.authorizationUrl) {
+          window.location.href = data.authorizationUrl
+        } else {
+          throw new Error('No payment authorization URL received')
+        }
+      } else {
+        const res = await fetch('/api/subscription/vendor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'upgrade', planName, billingCycle: 'MONTHLY' }),
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to upgrade subscription')
+        }
         setSubscription((prev) => prev ? { ...prev, currentPlan: planName, subscriptionStatus: 'ACTIVE' } : null)
         setShowUpgradeModal(false)
+        setActionMessage(`Successfully upgraded to ${planName}`)
       }
     } catch (err) {
-      console.error('Error upgrading subscription:', err)
+      setActionMessage(err instanceof Error ? err.message : 'Upgrade failed')
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const handleRenew = async (subscriptionId: string) => {
+    setActionLoading(true)
+    setActionMessage(null)
     try {
       const res = await fetch('/api/subscription/vendor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'renew', subscriptionId }),
       })
-      if (res.ok) {
-        fetchSubscription()
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to renew subscription')
       }
+      setActionMessage('Subscription renewed successfully')
+      fetchSubscription()
     } catch (err) {
-      console.error('Error renewing subscription:', err)
+      setActionMessage(err instanceof Error ? err.message : 'Renewal failed')
+    } finally {
+      setActionLoading(false)
     }
   }
 
   const handleCancel = async () => {
+    setShowCancelConfirm(false)
+    setActionLoading(true)
+    setActionMessage(null)
     try {
       const res = await fetch('/api/subscription/vendor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'cancel', atPeriodEnd: true }),
       })
-      if (res.ok) {
-        fetchSubscription()
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to cancel subscription')
       }
+      setActionMessage('Subscription cancellation scheduled. Access continues until the end of your billing period.')
+      fetchSubscription()
     } catch (err) {
-      console.error('Error cancelling subscription:', err)
+      setActionMessage(err instanceof Error ? err.message : 'Cancellation failed')
+    } finally {
+      setActionLoading(false)
     }
   }
 
-  const handleGenerateInvoice = async (subscriptionId: string) => {
+  const handleGenerateInvoice = async () => {
+    if (!subscription?.subscriptionId) {
+      setActionMessage('No subscription found to generate invoice')
+      return
+    }
+    setActionLoading(true)
+    setActionMessage(null)
     try {
       const res = await fetch('/api/subscription/vendor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generateInvoice', subscriptionId }),
+        body: JSON.stringify({ action: 'generateInvoice', subscriptionId: subscription.subscriptionId }),
       })
-      if (res.ok) {
+      if (!res.ok) {
         const data = await res.json()
-        console.log('Invoice generated:', data.invoice)
+        throw new Error(data.error || 'Failed to generate invoice')
       }
+      const data = await res.json()
+      setActionMessage(`Invoice ${data.invoice?.invoiceNumber ?? ''} generated successfully`)
+      fetchSubscription()
     } catch (err) {
-      console.error('Error generating invoice:', err)
+      setActionMessage(err instanceof Error ? err.message : 'Invoice generation failed')
+    } finally {
+      setActionLoading(false)
     }
   }
 
@@ -160,10 +221,24 @@ export default function VendorSubscriptionPage() {
     )
   }
 
+  if (!subscription) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">No subscription data available.</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-deep-navy mb-8">Subscription & Monetization</h1>
+
+        {actionMessage && (
+          <div className={`p-4 rounded-xl mb-6 ${actionMessage.includes('success') || actionMessage.includes('scheduled') ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' : 'bg-rose-50 border border-rose-200 text-rose-700'}`}>
+            <p className="text-sm font-medium">{actionMessage}</p>
+          </div>
+        )}
 
         <div className="flex gap-2 mb-8 border-b border-gray-200">
           {['overview', 'billing', 'usage', 'plans'].map((tab) => (
@@ -181,7 +256,7 @@ export default function VendorSubscriptionPage() {
           ))}
         </div>
 
-        {activeTab === 'overview' && subscription && (
+        {activeTab === 'overview' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
@@ -191,6 +266,12 @@ export default function VendorSubscriptionPage() {
                 <CardContent>
                   <p className="text-2xl font-bold text-royal-blue">{subscription.currentPlan}</p>
                   <p className="text-sm text-gray-500">Status: {subscription.subscriptionStatus}</p>
+                  {subscription.startDate && (
+                    <p className="text-sm text-gray-500">Started: {new Date(subscription.startDate).toLocaleDateString()}</p>
+                  )}
+                  {subscription.endDate && (
+                    <p className="text-sm text-gray-500">Ends: {new Date(subscription.endDate).toLocaleDateString()}</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -259,15 +340,15 @@ export default function VendorSubscriptionPage() {
               </CardContent>
             </Card>
 
-            <div className="flex gap-4">
-              <Button onClick={() => setShowUpgradeModal(true)}>Upgrade Plan</Button>
-              <Button variant="outline" onClick={() => handleGenerateInvoice(subscription?.currentPlan ?? '')}>Generate Invoice</Button>
-              <Button variant="outline" onClick={handleCancel}>Cancel Subscription</Button>
+            <div className="flex flex-wrap gap-4">
+              <Button onClick={() => setShowUpgradeModal(true)} disabled={actionLoading}>Upgrade Plan</Button>
+              <Button variant="outline" onClick={handleGenerateInvoice} disabled={actionLoading}>Generate Invoice</Button>
+              <Button variant="outline" onClick={() => setShowCancelConfirm(true)} disabled={actionLoading}>Cancel Subscription</Button>
             </div>
           </div>
         )}
 
-        {activeTab === 'billing' && subscription && (
+        {activeTab === 'billing' && (
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Billing History</h2>
             {subscription.billingHistory.length === 0 ? (
@@ -301,7 +382,7 @@ export default function VendorSubscriptionPage() {
           </div>
         )}
 
-        {activeTab === 'usage' && subscription && (
+        {activeTab === 'usage' && (
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Usage Details</h2>
             <Card>
@@ -316,8 +397,8 @@ export default function VendorSubscriptionPage() {
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Available Plans</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {plans.map((plan) => (
-                <Card key={plan.name} className={plan.name === subscription?.currentPlan ? 'ring-2 ring-royal-blue' : ''}>
+              {subscription.plans.map((plan) => (
+                <Card key={plan.name} className={plan.name === subscription.currentPlan ? 'ring-2 ring-royal-blue' : ''}>
                   <CardHeader>
                     <h3 className="font-semibold text-deep-navy">{plan.name}</h3>
                     <p className="text-2xl font-bold text-royal-blue">
@@ -340,10 +421,13 @@ export default function VendorSubscriptionPage() {
                       <p>Products: {plan.productsLimit === -1 ? 'Unlimited' : plan.productsLimit}</p>
                       <p>Services: {plan.servicesLimit === -1 ? 'Unlimited' : plan.servicesLimit}</p>
                     </div>
-                    {plan.name !== subscription?.currentPlan && (
-                      <Button onClick={() => handleUpgrade(plan.name)} className="w-full">
+                    {plan.name !== subscription.currentPlan && (
+                      <Button onClick={() => handleUpgrade(plan.name)} className="w-full" disabled={actionLoading}>
                         {plan.name === 'Free' ? 'Select' : 'Upgrade'}
                       </Button>
+                    )}
+                    {plan.name === subscription.currentPlan && (
+                      <Button variant="outline" className="w-full" disabled>Current Plan</Button>
                     )}
                   </CardContent>
                 </Card>
@@ -353,12 +437,12 @@ export default function VendorSubscriptionPage() {
         )}
 
         {showUpgradeModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
               <h3 className="text-lg font-semibold mb-4">Upgrade Plan</h3>
               <p className="text-gray-500 mb-4">Select a plan to upgrade to:</p>
-              <div className="space-y-2">
-                {plans.filter((p) => p.name !== subscription?.currentPlan).map((plan) => (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {subscription.plans.filter((p) => p.name !== subscription.currentPlan).map((plan) => (
                   <button
                     key={plan.name}
                     onClick={() => handleUpgrade(plan.name)}
@@ -369,7 +453,22 @@ export default function VendorSubscriptionPage() {
                   </button>
                 ))}
               </div>
-              <Button variant="outline" onClick={() => setShowUpgradeModal(false)} className="mt-4 w-full">Cancel</Button>
+              <Button variant="outline" onClick={() => setShowUpgradeModal(false)} className="mt-4 w-full" disabled={actionLoading}>Cancel</Button>
+            </div>
+          </div>
+        )}
+
+        {showCancelConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Cancel Subscription</h3>
+              <p className="text-gray-500 mb-4">
+                Are you sure you want to cancel your subscription? Your current plan will remain active until the end of your billing period ({subscription.endDate ? new Date(subscription.endDate).toLocaleDateString() : 'N/A'}). After that, you will lose access to premium features.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button variant="ghost" onClick={() => setShowCancelConfirm(false)} disabled={actionLoading}>Keep Subscription</Button>
+                <Button variant="danger" onClick={handleCancel} loading={actionLoading}>Confirm Cancellation</Button>
+              </div>
             </div>
           </div>
         )}
