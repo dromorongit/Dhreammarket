@@ -7,7 +7,7 @@ import {
   updateCampaignStatus,
   getCampaignAnalytics,
 } from '@/lib/advertising/service'
-import { getSubscriptionPlanFeatures } from '@/lib/advertising/subscription-integration'
+import { getSubscriptionPlanFeatures, getVendorCampaignLimit } from '@/lib/advertising/subscription-integration'
 import { logInfo, logError } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
@@ -34,9 +34,10 @@ export async function GET(request: NextRequest) {
     }
 
     const status = statusMap[tab] as any
-    const [allCampaigns, features] = await Promise.all([
+    const [allCampaigns, features, limitInfo] = await Promise.all([
       getCampaignsByVendor(payload.userId),
       getSubscriptionPlanFeatures(payload.userId),
+      getVendorCampaignLimit(payload.userId),
     ])
 
     const campaigns = status
@@ -56,6 +57,8 @@ export async function GET(request: NextRequest) {
       features,
       analytics: analytics.filter(Boolean),
       totalCampaigns: allCampaigns.length,
+      consumedSlots: limitInfo.currentCampaigns,
+      maxSlots: limitInfo.maxCampaigns,
       tabs: {
         active: allCampaigns.filter((c) => c.campaignStatus === 'ACTIVE').length,
         pending: allCampaigns.filter((c) => c.campaignStatus === 'PENDING_APPROVAL').length,

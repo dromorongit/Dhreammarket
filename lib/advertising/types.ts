@@ -11,6 +11,9 @@ export interface AdvertisementCampaignData {
   duration: number
   price: number
   maxSlots?: number
+  campaignStatus?: AdvertisementCampaignStatus
+  startDate?: Date
+  endDate?: Date
 }
 
 export type AdvertisementCampaignType =

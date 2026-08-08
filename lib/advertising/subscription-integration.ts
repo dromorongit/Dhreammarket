@@ -43,14 +43,23 @@ export async function getVendorCampaignLimit(vendorId: string): Promise<{ maxCam
   const isEnterprise = plan.name === 'Enterprise'
   const maxCampaigns = isEnterprise ? -1 : 5
 
-  const currentCampaigns = await prisma.advertisementCampaign.count({
-    where: { vendorId },
-  })
+  const currentCampaigns = await getConsumedCampaignSlots(prisma, vendorId)
 
   return {
     maxCampaigns: maxCampaigns === -1 ? -1 : maxCampaigns,
     currentCampaigns,
   }
+}
+
+export async function getConsumedCampaignSlots(prisma: any, vendorId: string): Promise<number> {
+  return prisma.advertisementCampaign.count({
+    where: {
+      vendorId,
+      campaignStatus: {
+        in: ['ACTIVE', 'PENDING_APPROVAL'],
+      },
+    },
+  })
 }
 
 export async function getSubscriptionPlanFeatures(vendorId: string): Promise<{

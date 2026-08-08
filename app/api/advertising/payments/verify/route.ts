@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { verifyCampaignPayment } from '@/lib/advertising/paystack-integration'
-import { recordPayment, recordPaymentFailed, getCampaignById } from '@/lib/advertising/service'
-import { generateInvoice } from '@/lib/advertising/service'
+import { recordPayment, recordPaymentFailed, getCampaignById, updateCampaignStatus, generateInvoice } from '@/lib/advertising/service'
 import { notifyPaymentSuccessful } from '@/lib/advertising/notification-integration'
 import { logInfo, logError } from '@/lib/logger'
 
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
       notifyPaymentSuccessful(campaign.vendorId, campaign.title, amount, reference),
     ])
 
-    await updateCampaignToPendingApproval(campaignId)
+    await updateCampaignStatus(campaignId, 'PENDING_APPROVAL', payload.userId, payload.role, { action: 'PAYMENT_SUCCESS', paystackRef: reference })
 
     logInfo(`Payment verified for campaign ${campaignId}: ref=${reference}`)
     return NextResponse.json({ success: true, campaignId, reference, amount })
@@ -60,16 +59,4 @@ export async function POST(request: NextRequest) {
     logError(`Error verifying campaign payment: ${error}`)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
-
-async function updateCampaignToPendingApproval(campaignId: string) {
-  const prisma = getPrisma()
-  await prisma.advertisementCampaign.update({
-    where: { id: campaignId },
-    data: {
-      campaignStatus: 'PENDING_APPROVAL',
-      paymentStatus: 'PAID',
-      updatedAt: new Date(),
-    },
-  })
 }

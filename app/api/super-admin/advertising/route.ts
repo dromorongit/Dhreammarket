@@ -29,7 +29,13 @@ export async function GET(request: NextRequest) {
 
     const prisma = getPrisma()
     const where: any = {}
-    if (status) where.campaignStatus = status
+    if (status) {
+      where.campaignStatus = status
+    } else {
+      where.campaignStatus = {
+        not: 'PENDING_PAYMENT',
+      }
+    }
 
     const [campaigns, totalCount, revenueStats, expiredCount] = await Promise.all([
       prisma.advertisementCampaign.findMany({

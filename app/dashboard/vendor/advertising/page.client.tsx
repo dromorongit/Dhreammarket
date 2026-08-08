@@ -94,6 +94,8 @@ export default function VendorAdvertisingClient() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([])
   const [totalCampaigns, setTotalCampaigns] = useState(0)
+  const [consumedSlots, setConsumedSlots] = useState(0)
+  const [planMaxSlots, setPlanMaxSlots] = useState(0)
   const [features, setFeatures] = useState<Features | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -131,6 +133,8 @@ export default function VendorAdvertisingClient() {
       setCampaigns(data.campaigns || [])
       setAllCampaigns(data.allCampaigns || data.campaigns || [])
       setTotalCampaigns(data.totalCampaigns || (data.campaigns || []).length)
+      setConsumedSlots(data.consumedSlots || 0)
+      setPlanMaxSlots(data.maxSlots || 0)
       setFeatures(data.features || null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load advertising data')
@@ -141,6 +145,8 @@ export default function VendorAdvertisingClient() {
 
   useEffect(() => {
     fetchDashboardData()
+    const interval = setInterval(fetchDashboardData, 30000)
+    return () => clearInterval(interval)
   }, [fetchDashboardData])
 
   const fetchProducts = useCallback(async () => {
@@ -355,7 +361,7 @@ export default function VendorAdvertisingClient() {
           <CardContent className="pt-4">
             <div className="text-sm text-slate-500">Remaining Slots</div>
             <div className="text-2xl font-bold text-deep-navy">
-              {features ? Math.max(0, features.maxCampaigns - totalCampaigns) : '-'}
+              {features ? (planMaxSlots === -1 ? 'Unlimited' : Math.max(0, planMaxSlots - consumedSlots)) : '-'}
             </div>
           </CardContent>
         </Card>

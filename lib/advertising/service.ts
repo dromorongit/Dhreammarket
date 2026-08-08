@@ -16,8 +16,21 @@ import {
   HomepageRenderContext,
 } from './types'
 
-export async function createCampaign(vendorId: string, data: AdvertisementCampaignData) {
+export async function createCampaign(
+  vendorId: string,
+  data: AdvertisementCampaignData & { campaignStatus?: AdvertisementCampaignStatus },
+  performedByRole: string = 'VENDOR'
+) {
   const prisma = getPrisma()
+
+  const status = data.campaignStatus || 'PENDING_PAYMENT'
+  const paymentStatus = status === 'PENDING_PAYMENT' ? 'PENDING' : 'PAID'
+  const startDate = data.startDate || (status === 'ACTIVE' ? new Date() : null)
+  const endDate = data.endDate || (status === 'ACTIVE' ? (() => {
+    const d = new Date(startDate || new Date())
+    d.setDate(d.getDate() + data.duration)
+    return d
+  })() : null)
 
   const campaign = await prisma.advertisementCampaign.create({
     data: {
@@ -30,8 +43,10 @@ export async function createCampaign(vendorId: string, data: AdvertisementCampai
       duration: data.duration,
       price: data.price,
       maxSlots: data.maxSlots || 1,
-      campaignStatus: 'PENDING_PAYMENT',
-      paymentStatus: 'PENDING',
+      campaignStatus: status,
+      paymentStatus,
+      startDate,
+      endDate,
     },
     include: {
       vendor: { select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } } },
@@ -42,17 +57,23 @@ export async function createCampaign(vendorId: string, data: AdvertisementCampai
     },
   })
 
+  const historyAction = status === 'PENDING_PAYMENT' ? 'CREATED' : status === 'PENDING_APPROVAL' ? 'SUBMITTED_FOR_APPROVAL' : 'CREATED'
+
   await prisma.advertisementHistory.create({
     data: {
       campaignId: campaign.id,
-      action: 'CREATED',
+      action: historyAction,
       performedBy: vendorId,
-      performedByRole: 'VENDOR',
-      details: { title: campaign.title, campaignType: campaign.campaignType, price: campaign.price },
+      performedByRole: performedByRole,
+      details: { title: campaign.title, campaignType: campaign.campaignType, price: campaign.price, initialStatus: status },
     },
   })
 
-  logInfo(`Campaign created: id=${campaign.id}, vendor=${vendorId}, type=${data.campaignType}`)
+  if (status === 'ACTIVE') {
+    await createPlacementsForCampaign(campaign.id)
+  }
+
+  logInfo(`Campaign created: id=${campaign.id}, vendor=${vendorId}, type=${data.campaignType}, status=${status}`)
   return campaign
 }
 
@@ -128,10 +149,21 @@ export async function updateCampaignStatus(
     })
   }
 
+  const actionMap: Record<string, AdvertisementCampaignAction> = {
+    'PENDING_PAYMENT': 'CREATED',
+    'PENDING_APPROVAL': 'SUBMITTED_FOR_APPROVAL',
+    'APPROVED': 'APPROVED',
+    'REJECTED': 'REJECTED',
+    'ACTIVE': 'ACTIVATED',
+    'EXPIRED': 'EXPIRED',
+    'CANCELLED': 'CANCELLED',
+    'SUSPENDED': 'SUSPENDED',
+  }
+
   await prisma.advertisementHistory.create({
     data: {
       campaignId,
-      action: status as AdvertisementCampaignAction,
+      action: actionMap[status] || 'CREATED',
       performedBy,
       performedByRole,
       details: (details || null) as any,
@@ -350,7 +382,6 @@ export async function recordAnalytics(
         revenueGenerated: existing.revenueGenerated + (data.revenueGenerated || 0),
         ctr: data.clicks && data.views ? data.clicks / data.views : existing.ctr,
         conversionRate: data.ordersGenerated && data.clicks ? data.ordersGenerated / data.clicks : existing.conversionRate,
-        roi: data.revenueGenerated && (data.revenueGenerated > 0) ? data.revenueGenerated / (data.revenueGenerated * 0.3) : existing.roi,
         updatedAt: new Date(),
       },
     })
@@ -366,7 +397,7 @@ export async function recordAnalytics(
         revenueGenerated: data.revenueGenerated || 0,
         ctr: data.clicks && data.views ? data.clicks / data.views : 0,
         conversionRate: data.ordersGenerated && data.clicks ? data.ordersGenerated / data.clicks : 0,
-        roi: data.revenueGenerated && (data.revenueGenerated > 0) ? data.revenueGenerated / (data.revenueGenerated * 0.3) : 0,
+        roi: 0,
       },
     })
   }
@@ -388,7 +419,7 @@ export async function getCampaignAnalytics(campaignId: string): Promise<Campaign
   const prisma = getPrisma()
   const campaign = await prisma.advertisementCampaign.findUnique({
     where: { id: campaignId },
-    select: { views: true, clicks: true, ordersGenerated: true, bookingsGenerated: true, revenueGenerated: true },
+    select: { views: true, clicks: true, ordersGenerated: true, bookingsGenerated: true, revenueGenerated: true, price: true, duration: true },
   })
 
   if (!campaign) {
@@ -408,7 +439,14 @@ export async function getCampaignAnalytics(campaignId: string): Promise<Campaign
   const totalRevenue = campaign.revenueGenerated
   const ctr = totalViews > 0 ? totalClicks / totalViews : 0
   const conversionRate = totalClicks > 0 ? totalOrders / totalClicks : 0
-  const roi = totalRevenue > 0 ? totalRevenue / (totalRevenue * 0.3) : 0
+
+  const paidPayments = await prisma.advertisementPayment.aggregate({
+    where: { campaignId, status: 'PAID' },
+    _sum: { amount: true },
+  })
+
+  const totalCost = paidPayments._sum.amount || campaign.price * campaign.duration
+  const roi = totalCost > 0 ? (totalRevenue - totalCost) / totalCost : 0
 
   return {
     totalViews,
@@ -442,6 +480,7 @@ export async function getActiveSponsoredPlacements(sectionSlug: string): Promise
       isSponsored: true,
       campaign: {
         campaignStatus: 'ACTIVE',
+        paymentStatus: 'PAID',
         startDate: { lte: now },
         endDate: { gte: now },
       },
@@ -475,6 +514,7 @@ export async function getHomepageRenderContext(sectionSlug: string, sectionType:
       isSponsored: true,
       campaign: {
         campaignStatus: 'ACTIVE',
+        paymentStatus: 'PAID',
         startDate: { lte: now },
         endDate: { gte: now },
       },

@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
       price,
       maxSlots,
       vendorId,
+      campaignStatus,
     } = body
 
     if (!title || !campaignType || !duration || !price) {
@@ -91,39 +92,77 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'vendorId is required for admin campaign creation' }, { status: 400 })
     }
 
-    let limitInfo = { maxCampaigns: 0, currentCampaigns: 0 }
     if (payload.role === 'VENDOR') {
       const subscriptionCheck = await canVendorCreateCampaign(payload.userId)
       if (!subscriptionCheck.allowed) {
         return NextResponse.json({ error: subscriptionCheck.reason }, { status: 403 })
       }
-      limitInfo = await getVendorCampaignLimit(payload.userId)
+
+      const limitInfo = await getVendorCampaignLimit(payload.userId)
+      if (limitInfo.maxCampaigns > 0 && limitInfo.currentCampaigns >= limitInfo.maxCampaigns) {
+        return NextResponse.json(
+          { error: `Campaign limit of ${limitInfo.maxCampaigns} reached for your plan` },
+          { status: 403 }
+        )
+      }
+
+      if (selectedProductId) {
+        const product = await getPrisma().product.findUnique({
+          where: { id: selectedProductId },
+          select: { id: true, storeId: true },
+        })
+        if (!product) {
+          return NextResponse.json({ error: 'Selected product not found' }, { status: 400 })
+        }
+        const store = await getPrisma().store.findUnique({
+          where: { id: product.storeId },
+          select: { userId: true },
+        })
+        if (!store || store.userId !== payload.userId) {
+          return NextResponse.json({ error: 'Selected product does not belong to your store' }, { status: 400 })
+        }
+      }
+
+      if (selectedServiceId) {
+        const service = await getPrisma().service.findUnique({
+          where: { id: selectedServiceId },
+          select: { id: true, vendorId: true },
+        })
+        if (!service) {
+          return NextResponse.json({ error: 'Selected service not found' }, { status: 400 })
+        }
+        if (service.vendorId !== payload.userId) {
+          return NextResponse.json({ error: 'Selected service does not belong to your store' }, { status: 400 })
+        }
+      }
     }
 
-    const [campaign] = await Promise.all([
-      createCampaign(targetVendorId, {
-        title,
-        campaignType,
-        selectedProductId,
-        selectedServiceId,
-        homepageSection,
-        duration,
-        price,
-        maxSlots,
-      }),
-    ])
+    const prisma = getPrisma()
+    const initialStatus = payload.role === 'SUPER_ADMIN' && campaignStatus
+      ? campaignStatus
+      : 'PENDING_PAYMENT'
 
-    if (payload.role === 'VENDOR' && limitInfo.maxCampaigns > 0 && limitInfo.currentCampaigns >= limitInfo.maxCampaigns) {
-      return NextResponse.json(
-        { error: `Campaign limit of ${limitInfo.maxCampaigns} reached for your plan` },
-        { status: 403 }
-      )
+    const validStatuses: string[] = ['PENDING_PAYMENT', 'PENDING_APPROVAL', 'APPROVED', 'ACTIVE']
+    if (!validStatuses.includes(initialStatus)) {
+      return NextResponse.json({ error: `Invalid initial status: ${initialStatus}` }, { status: 400 })
     }
+
+    const campaign = await createCampaign(targetVendorId, {
+      title,
+      campaignType,
+      selectedProductId,
+      selectedServiceId,
+      homepageSection,
+      duration,
+      price,
+      maxSlots,
+      campaignStatus: initialStatus,
+    }, payload.role)
 
     await notifyCampaignSubmitted(targetVendorId, campaign.title, campaign.id)
 
-    logInfo(`Campaign created: id=${campaign.id}, vendor=${targetVendorId}, by=${payload.role}`)
-    return NextResponse.json({ campaign, limit: limitInfo }, { status: 201 })
+    logInfo(`Campaign created: id=${campaign.id}, vendor=${targetVendorId}, by=${payload.role}, status=${initialStatus}`)
+    return NextResponse.json({ campaign }, { status: 201 })
   } catch (error) {
     logError(`Error creating campaign: ${error}`)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -213,6 +213,8 @@ export default function SuperAdminAdvertisingClient() {
       }
       if (createForm.campaignStatus === 'ACTIVE' && createForm.startDate && createForm.endDate) {
         payload.campaignStatus = 'ACTIVE'
+        payload.startDate = createForm.startDate
+        payload.endDate = createForm.endDate
       } else if (createForm.campaignStatus === 'APPROVED') {
         payload.campaignStatus = 'APPROVED'
       } else {
@@ -394,7 +396,6 @@ export default function SuperAdminAdvertisingClient() {
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="PENDING_APPROVAL">Pending Approval</option>
-              <option value="PENDING_PAYMENT">Pending Payment</option>
               <option value="APPROVED">Approved</option>
               <option value="REJECTED">Rejected</option>
               <option value="EXPIRED">Expired</option>
