@@ -92,7 +92,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'vendorId is required for admin campaign creation' }, { status: 400 })
     }
 
+    const prisma = getPrisma()
+
     if (payload.role === 'VENDOR') {
+      await prisma.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${payload.userId}))`
+
       const subscriptionCheck = await canVendorCreateCampaign(payload.userId)
       if (!subscriptionCheck.allowed) {
         return NextResponse.json({ error: subscriptionCheck.reason }, { status: 403 })
@@ -137,7 +141,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const prisma = getPrisma()
     const initialStatus = payload.role === 'SUPER_ADMIN' && campaignStatus
       ? campaignStatus
       : 'PENDING_PAYMENT'

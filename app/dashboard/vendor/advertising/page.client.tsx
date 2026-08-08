@@ -276,6 +276,7 @@ export default function VendorAdvertisingClient() {
   const filteredCampaigns = campaigns.filter((c) => {
     if (activeTab === 'active') return c.campaignStatus === 'ACTIVE'
     if (activeTab === 'pending') return c.campaignStatus === 'PENDING_APPROVAL'
+    if (activeTab === 'pending-payment') return c.campaignStatus === 'PENDING_PAYMENT'
     if (activeTab === 'rejected') return c.campaignStatus === 'REJECTED'
     if (activeTab === 'expired') return c.campaignStatus === 'EXPIRED'
     return true
@@ -292,6 +293,7 @@ export default function VendorAdvertisingClient() {
   const tabs = {
     active: allCampaigns.filter((c) => c.campaignStatus === 'ACTIVE').length,
     pending: allCampaigns.filter((c) => c.campaignStatus === 'PENDING_APPROVAL').length,
+    'pending-payment': allCampaigns.filter((c) => c.campaignStatus === 'PENDING_PAYMENT').length,
     rejected: allCampaigns.filter((c) => c.campaignStatus === 'REJECTED').length,
     expired: allCampaigns.filter((c) => c.campaignStatus === 'EXPIRED').length,
   }
@@ -520,7 +522,7 @@ export default function VendorAdvertisingClient() {
 
       <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <div className="flex gap-2 border-b border-slate-200 min-w-max">
-          {['active', 'pending', 'rejected', 'expired'].map((tab) => (
+          {['active', 'pending', 'pending-payment', 'rejected', 'expired'].map((tab) => (
             <button
               key={tab}
               className={`whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -530,7 +532,7 @@ export default function VendorAdvertisingClient() {
               }`}
               onClick={() => setActiveTab(tab)}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)} ({tabs[tab as keyof typeof tabs]})
+              {tab === 'pending-payment' ? 'Pending Payment' : tab.charAt(0).toUpperCase() + tab.slice(1)} ({tabs[tab as keyof typeof tabs]})
             </button>
           ))}
         </div>

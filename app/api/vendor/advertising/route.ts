@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const statusMap: Record<string, string> = {
       active: 'ACTIVE',
       pending: 'PENDING_APPROVAL',
+      'pending-payment': 'PENDING_PAYMENT',
       rejected: 'REJECTED',
       expired: 'EXPIRED',
       all: '',
