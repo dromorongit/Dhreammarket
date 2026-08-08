@@ -1484,40 +1484,38 @@ export function QuickLinksSection() {
            </h2>
            <p className='text-slate-600 mt-2'>Fast access to popular categories</p>
          </div>
-         <div className='overflow-x-auto overflow-y-hidden scrollbar-hide snap-x snap-mandatory scroll-smooth'>
-           <div className='flex gap-5 lg:gap-6 px-4 -mx-4 sm:-mx-6 lg:-mx-8 pb-4 touch-pan-x'>
-             {QUICK_LINKS.map((link) => {
-               const isInternalScroll = link.href.startsWith('/#');
-               return (
-                 <a
-                   key={link.name}
-                   href={link.href}
-                   className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-3xl snap-start flex-shrink-0 cursor-pointer'
-                   tabIndex={0}
-                   onClick={(e) => {
-                     if (isInternalScroll) {
-                       e.preventDefault();
-                       const targetId = link.href.substring(2);
-                       const targetElement = document.getElementById(targetId);
-                       if (targetElement) {
-                         targetElement.scrollIntoView({ behavior: 'smooth' });
-                       }
-                     }
-                   }}
-                 >
-                    <Card variant='elevated' className='p-4 text-center hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-300 h-full min-h-[160px] min-w-[160px] max-w-[200px] w-[180px] bg-gradient-to-br from-white via-white/95 to-slate-50/50 border-slate-100/80'>
-                       <div className='w-36 h-36 mx-auto mb-3 rounded-2xl group-hover:scale-105 transition-transform duration-300 shadow-md group-hover:shadow-lg overflow-hidden aspect-square'>
-                         <Image src={link.image} alt={link.name} width={144} height={144} className='w-full h-full object-cover' />
-                       </div>
-                     <h3 className='text-sm sm:text-base font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
-                       {link.name}
-                     </h3>
-                   </Card>
-                 </a>
-               );
-             })}
-           </div>
-         </div>
+          <div className='grid grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5'>
+            {QUICK_LINKS.map((link) => {
+              const isInternalScroll = link.href.startsWith('/#');
+              return (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className='group focus:outline-none focus:ring-2 focus:ring-royal-blue rounded-3xl cursor-pointer block'
+                  tabIndex={0}
+                  onClick={(e) => {
+                    if (isInternalScroll) {
+                      e.preventDefault();
+                      const targetId = link.href.substring(2);
+                      const targetElement = document.getElementById(targetId);
+                      if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }}
+                >
+                   <Card variant='elevated' className='p-3 sm:p-4 text-center hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-300 h-full bg-gradient-to-br from-white via-white/95 to-slate-50/50 border-slate-100/80'>
+                      <div className='w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 mx-auto mb-2 sm:mb-3 rounded-2xl group-hover:scale-105 transition-transform duration-300 shadow-md group-hover:shadow-lg overflow-hidden aspect-square'>
+                        <Image src={link.image} alt={link.name} width={144} height={144} className='w-full h-full object-cover' />
+                      </div>
+                    <h3 className='text-xs sm:text-sm lg:text-base font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
+                      {link.name}
+                    </h3>
+                  </Card>
+                </a>
+              );
+            })}
+          </div>
        </div>
      </section>
    );
