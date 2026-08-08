@@ -123,8 +123,6 @@ export default function StaticBannerCarousel() {
     }, 2000)
   }
 
-  const currentSlideIndex = trackIndex - 1
-
   return (
     <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Static promotional banners">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -164,30 +162,6 @@ export default function StaticBannerCarousel() {
                   draggable={false}
                 />
               </div>
-            ))}
-          </div>
-
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-            {SLIDES.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  clearAutoPlay()
-                  setIsInteracting(true)
-                  goTo(index + 1)
-                  setTimeout(() => {
-                    setIsInteracting(false)
-                    startAutoPlay()
-                  }, 2000)
-                }}
-                className={`transition-all duration-300 ease-premium rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
-                  currentSlideIndex === index
-                    ? 'w-8 h-2.5 bg-white shadow-lg shadow-black/20'
-                    : 'w-2.5 h-2.5 bg-white/50 hover:bg-white/80'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-                aria-current={currentSlideIndex === index ? 'true' : 'false'}
-              />
             ))}
           </div>
         </div>
