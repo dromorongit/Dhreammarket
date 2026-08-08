@@ -1505,9 +1505,9 @@ export function QuickLinksSection() {
                   }}
                 >
                    <Card variant='elevated' className='p-3 sm:p-4 text-center hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-300 h-full bg-gradient-to-br from-white via-white/95 to-slate-50/50 border-slate-100/80'>
-                      <div className='w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 mx-auto mb-2 sm:mb-3 rounded-2xl group-hover:scale-105 transition-transform duration-300 shadow-md group-hover:shadow-lg overflow-hidden aspect-square'>
-                        <Image src={link.image} alt={link.name} width={144} height={144} className='w-full h-full object-cover' />
-                      </div>
+                       <div className='w-12 h-12 sm:w-20 sm:h-20 lg:w-32 lg:h-32 mx-auto mb-2 sm:mb-3 rounded-2xl group-hover:scale-105 transition-transform duration-300 shadow-md group-hover:shadow-lg overflow-hidden'>
+                         <Image src={link.image} alt={link.name} width={144} height={144} className='w-full h-full object-cover' />
+                       </div>
                     <h3 className='text-xs sm:text-sm lg:text-base font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
                       {link.name}
                     </h3>
