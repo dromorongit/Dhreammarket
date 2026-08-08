@@ -17,12 +17,12 @@ const EXTENDED_SLIDES = [...SLIDES, SLIDES[0]]
 
 export default function StaticBannerCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [translateX, setTranslateX] = useState(0)
+  const [containerWidth, setContainerWidth] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isInteracting, setIsInteracting] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const trackRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef(0)
   const dragCurrentX = useRef(0)
   const isDragging = useRef(false)
@@ -33,6 +33,17 @@ export default function StaticBannerCarousel() {
     const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
     mediaQuery.addEventListener('change', handler)
     return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth)
+      }
+    }
+    updateWidth()
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
   }, [])
 
   const clearAutoPlay = useCallback(() => {
@@ -50,35 +61,38 @@ export default function StaticBannerCarousel() {
   }, [clearAutoPlay])
 
   useEffect(() => {
-    if (!isInteracting) {
+    if (!isInteracting && containerWidth > 0) {
       startAutoPlay()
     }
     return clearAutoPlay
-  }, [isInteracting, startAutoPlay, clearAutoPlay])
+  }, [isInteracting, startAutoPlay, clearAutoPlay, containerWidth])
 
   const handleNext = useCallback(() => {
     if (isTransitioning) return
     setIsTransitioning(true)
-    const nextIndex = currentIndex + 1
-    setCurrentIndex(nextIndex)
-    setTranslateX(-nextIndex * 100)
-  }, [currentIndex, isTransitioning])
+    setCurrentIndex((prev) => prev + 1)
+  }, [isTransitioning])
 
   const handlePrev = useCallback(() => {
     if (isTransitioning) return
     setIsTransitioning(true)
-    const prevIndex = currentIndex - 1
-    setCurrentIndex(prevIndex)
-    setTranslateX(-prevIndex * 100)
-  }, [currentIndex, isTransitioning])
+    setCurrentIndex((prev) => prev - 1)
+  }, [isTransitioning])
 
   const handleTransitionEnd = useCallback(() => {
     setIsTransitioning(false)
-    if (currentIndex === EXTENDED_SLIDES.length - 1) {
-      setCurrentIndex(0)
-      setTranslateX(0)
-    }
-  }, [currentIndex])
+    setCurrentIndex((prev) => {
+      if (prev >= SLIDES.length) {
+        return 0
+      }
+      if (prev < 0) {
+        return SLIDES.length - 1
+      }
+      return prev
+    })
+  }, [])
+
+  const translateX = currentIndex * containerWidth
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isTransitioning) return
@@ -117,6 +131,7 @@ export default function StaticBannerCarousel() {
     <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Static promotional banners">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
+          ref={containerRef}
           className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-premium-xl select-none touch-pan-y"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -125,10 +140,9 @@ export default function StaticBannerCarousel() {
           onPointerCancel={handlePointerUp}
         >
           <div
-            ref={trackRef}
             className="flex"
             style={{
-              transform: `translateX(${translateX}%)`,
+              transform: `translateX(-${translateX}px)`,
               transition: isTransitioning
                 ? `transform ${prefersReducedMotion ? 0 : TRANSITION_DURATION}ms ease-in-out`
                 : 'none',
