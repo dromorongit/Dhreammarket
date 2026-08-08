@@ -52,7 +52,7 @@ import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
-import StaticAutoScrollingBannerRail from '@/components/StaticAutoScrollingBannerRail'
+import StaticBannerCarousel from '@/components/StaticBannerCarousel'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
@@ -243,7 +243,7 @@ export default function Home() {
               if (section.slug === 'sponsored')
                 return (
                   <>
-                    <StaticAutoScrollingBannerRail />
+                    <StaticBannerCarousel />
                     <DynamicRandomProductRail />
                     <PromotionalFeatureImageStrip />
                     <SponsoredSection key={section.id} section={sectionProps} />

@@ -218,46 +218,6 @@
   }
 }
 
-/* Static auto-scrolling banner rail marquee */
-.static-banner-rail-track {
-  display: flex;
-  gap: 10px;
-  animation: marquee 16s linear infinite running;
-  width: max-content;
-  will-change: transform;
-  --marquee-translate: -980px;
-  background: #ffffff;
-}
-
-.static-banner-rail-track .banner-item {
-  transition: transform 0.3s ease-out;
-}
-
-@media (min-width: 640px) {
-  .static-banner-rail-track {
-    gap: 10px;
-    animation-duration: 13s;
-    --marquee-translate: -1280px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .static-banner-rail-track {
-    gap: 10px;
-    animation-duration: 13s;
-    --marquee-translate: -1580px;
-  }
-}
-
-@media (hover: hover) {
-  .rail-container:hover .static-banner-rail-track {
-    animation-play-state: paused;
-  }
-  .rail-container:hover .static-banner-rail-track .banner-item {
-    transform: scale(1.03);
-  }
-}
-
 /* Phone rail marquee */
 .phone-rail-track {
   display: flex;
@@ -350,25 +310,6 @@
     .banner-rail-track {
       animation-duration: 13s !important;
       --marquee-translate: -2110px !important;
-    }
-  }
-  .static-banner-rail-track {
-    animation-name: marquee !important;
-    animation-duration: 16s !important;
-    animation-iteration-count: infinite !important;
-    animation-play-state: running !important;
-    --marquee-translate: -980px !important;
-  }
-  @media (min-width: 640px) {
-    .static-banner-rail-track {
-      animation-duration: 13s !important;
-      --marquee-translate: -1280px !important;
-    }
-  }
-  @media (min-width: 1024px) {
-    .static-banner-rail-track {
-      animation-duration: 13s !important;
-      --marquee-translate: -1580px !important;
     }
   }
   .phone-rail-track {
