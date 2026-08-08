@@ -13,27 +13,19 @@ const SLIDES = [
 const AUTO_PLAY_INTERVAL = 2000
 const TRANSITION_DURATION = 500
 
-const EXTENDED_SLIDES = [
-  SLIDES[SLIDES.length - 1],
-  ...SLIDES,
-  SLIDES[0],
-]
+const EXTENDED_SLIDES = [...SLIDES, SLIDES[0]]
 
 export default function StaticBannerCarousel() {
-  const [trackIndex, setTrackIndex] = useState(1)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [translateX, setTranslateX] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [useTransition, setUseTransition] = useState(true)
   const [isInteracting, setIsInteracting] = useState(false)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const trackIndexRef = useRef(1)
+  const trackRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef(0)
   const dragCurrentX = useRef(0)
   const isDragging = useRef(false)
-
-  useEffect(() => {
-    trackIndexRef.current = trackIndex
-  }, [trackIndex])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -53,7 +45,7 @@ export default function StaticBannerCarousel() {
   const startAutoPlay = useCallback(() => {
     clearAutoPlay()
     intervalRef.current = setInterval(() => {
-      setTrackIndex((prev) => prev + 1)
+      handleNext()
     }, AUTO_PLAY_INTERVAL)
   }, [clearAutoPlay])
 
@@ -64,31 +56,29 @@ export default function StaticBannerCarousel() {
     return clearAutoPlay
   }, [isInteracting, startAutoPlay, clearAutoPlay])
 
-  const handleTransitionEnd = useCallback(() => {
-    setIsTransitioning(false)
-    setUseTransition(false)
-    const current = trackIndexRef.current
-    if (current === 0) {
-      setTrackIndex(SLIDES.length)
-    } else if (current === SLIDES.length + 1) {
-      setTrackIndex(1)
-    }
-    requestAnimationFrame(() => setUseTransition(true))
-  }, [])
-
-  const goTo = useCallback((index: number) => {
+  const handleNext = useCallback(() => {
     if (isTransitioning) return
     setIsTransitioning(true)
-    setTrackIndex(index)
-  }, [isTransitioning])
+    const nextIndex = currentIndex + 1
+    setCurrentIndex(nextIndex)
+    setTranslateX(-nextIndex * 100)
+  }, [currentIndex, isTransitioning])
 
-  const next = useCallback(() => {
-    goTo(trackIndexRef.current + 1)
-  }, [goTo])
+  const handlePrev = useCallback(() => {
+    if (isTransitioning) return
+    setIsTransitioning(true)
+    const prevIndex = currentIndex - 1
+    setCurrentIndex(prevIndex)
+    setTranslateX(-prevIndex * 100)
+  }, [currentIndex, isTransitioning])
 
-  const prev = useCallback(() => {
-    goTo(trackIndexRef.current - 1)
-  }, [goTo])
+  const handleTransitionEnd = useCallback(() => {
+    setIsTransitioning(false)
+    if (currentIndex === EXTENDED_SLIDES.length - 1) {
+      setCurrentIndex(0)
+      setTranslateX(0)
+    }
+  }, [currentIndex])
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isTransitioning) return
@@ -112,9 +102,9 @@ export default function StaticBannerCarousel() {
     const threshold = 50
     if (Math.abs(diff) > threshold) {
       if (diff > 0) {
-        next()
+        handleNext()
       } else {
-        prev()
+        handlePrev()
       }
     }
     setTimeout(() => {
@@ -135,10 +125,11 @@ export default function StaticBannerCarousel() {
           onPointerCancel={handlePointerUp}
         >
           <div
+            ref={trackRef}
             className="flex"
             style={{
-              transform: `translateX(-${trackIndex * 100}%)`,
-              transition: useTransition
+              transform: `translateX(${translateX}%)`,
+              transition: isTransitioning
                 ? `transform ${prefersReducedMotion ? 0 : TRANSITION_DURATION}ms ease-in-out`
                 : 'none',
             }}
@@ -154,7 +145,7 @@ export default function StaticBannerCarousel() {
                   src={slide.src}
                   alt={slide.alt}
                   fill
-                  priority={index === 1}
+                  priority={index === 0}
                   sizes={HERO_IMAGE_SIZES}
                   placeholder="blur"
                   blurDataURL={getBlurDataURL()}
