@@ -58,19 +58,9 @@ export default function StaticBannerRail() {
         style={{ scrollBehavior: 'smooth' }}
       >
         {BANNERS.map((banner, i) => (
-          <div key={banner.src} className='flex-shrink-0 w-full snap-center relative aspect-[3/1] md:aspect-[4/1]'>
-            <Image src={banner.src} alt={banner.alt} fill priority={i === 0} className='object-cover' />
+          <div key={banner.src} className='flex-shrink-0 w-full snap-center relative aspect-[3/1] md:aspect-[4/1] bg-white'>
+            <Image src={banner.src} alt={banner.alt} fill priority={i === 0} className='object-contain' />
           </div>
-        ))}
-      </div>
-      <div className='flex justify-center gap-2 mt-3'>
-        {BANNERS.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => scrollToIndex(i)}
-            className={`h-1.5 rounded-full transition-all ${activeIndex === i ? 'w-6 bg-blue-600' : 'w-1.5 bg-gray-300'}`}
-            aria-label={`Go to banner ${i + 1}`}
-          />
         ))}
       </div>
     </div>
