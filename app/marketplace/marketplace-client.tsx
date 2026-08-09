@@ -23,6 +23,7 @@ import WishlistButton from '@/components/WishlistButton'
 import { AIRecommendations } from '@/components/ai'
 import { AITrending } from '@/components/ai'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
+import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 
 interface Product {
   id: string
@@ -1105,21 +1106,24 @@ function MarketplaceContent() {
 
 export default function Marketplace() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-deep-navy mb-4">Loading marketplace...</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8">
-              {[...Array(12)].map((_, i) => (
-                <SkeletonCard key={i} />
-              ))}
+    <>
+      <Suspense fallback={
+        <div className="min-h-screen bg-slate-50 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-deep-navy mb-4">Loading marketplace...</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8">
+                {[...Array(12)].map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    }>
-      <MarketplaceContent />
-    </Suspense>
+      }>
+        <MarketplaceContent />
+      </Suspense>
+      <WhatsAppFloatButton />
+    </>
   )
 }

@@ -56,6 +56,7 @@ import StaticBannerRail from '@/components/StaticBannerRail'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
+import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
@@ -120,8 +121,9 @@ export default function Home() {
     [managedData.sections]
   )
 
- return (
+  return (
     <div className="min-h-screen bg-slate-50">
+      <WhatsAppFloatButton />
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Video background */}
