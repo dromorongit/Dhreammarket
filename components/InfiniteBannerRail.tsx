@@ -92,7 +92,7 @@ export default function InfiniteBannerRail() {
           {BANNERS.map((banner, i) => (
             <div
               key={banner.id}
-              className="flex-shrink-0 w-full snap-center relative aspect-[3/1] md:aspect-[4/1] bg-white"
+              className="flex-shrink-0 w-full snap-center relative aspect-[16/9] bg-white"
             >
               <Link href={banner.href} className="block w-full h-full" aria-label={banner.alt}>
                 <Image

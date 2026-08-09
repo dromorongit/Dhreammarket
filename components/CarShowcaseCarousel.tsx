@@ -97,7 +97,7 @@ export default function CarShowcaseCarousel() {
           {SLIDES.map((slide, i) => (
             <div
               key={slide.src}
-              className="flex-shrink-0 w-full snap-center relative aspect-[3/1] md:aspect-[4/1] bg-white"
+              className="flex-shrink-0 w-full snap-center relative aspect-[16/9] bg-white"
             >
               <Image
                 src={slide.src}

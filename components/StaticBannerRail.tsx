@@ -86,7 +86,7 @@ export default function StaticBannerRail() {
         style={{ scrollBehavior: 'smooth' }}
       >
         {BANNERS.map((banner, i) => (
-          <div key={banner.src} className='flex-shrink-0 w-full snap-center relative aspect-[3/1] md:aspect-[4/1] bg-white'>
+          <div key={banner.src} className='flex-shrink-0 w-full snap-center relative aspect-[16/9] bg-white'>
             <Image src={banner.src} alt={banner.alt} fill priority={i === 0} className='object-contain' />
           </div>
         ))}
