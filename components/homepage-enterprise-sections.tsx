@@ -1505,9 +1505,9 @@ export function QuickLinksSection() {
                   }}
                 >
                    <Card variant='elevated' className='p-3 sm:p-4 text-center hover:shadow-premium-xl hover:-translate-y-1 transition-all duration-300 h-full bg-gradient-to-br from-white via-white/95 to-slate-50/50 border-slate-100/80'>
-                       <div className='w-12 h-12 sm:w-20 sm:h-20 lg:w-32 lg:h-32 mx-auto mb-2 sm:mb-3 rounded-2xl group-hover:scale-105 transition-transform duration-300 shadow-md group-hover:shadow-lg overflow-hidden'>
-                         <Image src={link.image} alt={link.name} width={144} height={144} className='w-full h-full object-cover' />
-                       </div>
+                        <div className='w-full aspect-square mb-2 sm:mb-3 rounded-2xl overflow-hidden group-hover:scale-105 transition-transform duration-300 shadow-md group-hover:shadow-lg'>
+                          <Image src={link.image} alt={link.name} width={144} height={144} className='w-full h-full object-contain' />
+                        </div>
                     <h3 className='text-xs sm:text-sm lg:text-base font-semibold text-deep-navy group-hover:text-royal-blue transition-colors leading-tight line-clamp-2'>
                       {link.name}
                     </h3>
@@ -1895,6 +1895,107 @@ export function ElectronicsShowcaseSection() {
               const categoryId = categoryMap.get(item.categoryName) ?? ''
               const href = categoryId
                 ? `/marketplace?viewMode=services&serviceCategory=${encodeURIComponent(categoryId)}`
+                : '#'
+              return (
+                <Link key={item.title} href={href}>
+                  <Card
+                    variant='elevated'
+                    className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+                  >
+                    <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        className='object-cover group-hover:scale-105 transition-transform duration-500'
+                        fill
+                        loading='lazy'
+                      />
+                    </div>
+                    <div className='p-4 text-center'>
+                      <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                        {item.title}
+                      </h3>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  const PET_CATEGORIES = [
+    {
+      title: 'Puppies',
+      image: '/images/puppies.jpg',
+      categoryName: 'Dogs & Puppies',
+    },
+    {
+      title: 'Cats',
+      image: '/images/cats.jpg',
+      categoryName: 'Cats & Kittens',
+    },
+    {
+      title: 'Small Pets',
+      image: '/images/smallpets.jpg',
+      categoryName: 'Aquariums',
+    },
+    {
+      title: 'Pets Feed',
+      image: '/images/petfeed.jpg',
+      categoryName: 'Pet Food',
+    },
+  ] as const
+
+  export function PetShowcaseSection() {
+    const { data: categoriesData } = useQuery<{ categories: { id: string; name: string; slug: string; children?: { id: string; name: string; slug: string; children?: unknown[] }[] }[] }>({
+      queryKey: ['categories'],
+      queryFn: async () => {
+        const response = await fetch('/api/categories')
+        if (!response.ok) throw new Error('Failed to fetch categories')
+        return response.json()
+      },
+    })
+
+    const categories = categoriesData?.categories ?? []
+
+    const flattenCategories = (cats: typeof categories): { name: string; id: string }[] => {
+      const result: { name: string; id: string }[] = []
+      const walk = (items: typeof categories) => {
+        items.forEach((cat) => {
+          result.push({ name: cat.name, id: cat.id })
+          if (cat.children?.length) {
+            walk(cat.children)
+          }
+        })
+      }
+      walk(cats)
+      return result
+    }
+
+    const flatCategories = useMemo(() => flattenCategories(categories), [categories])
+    const categoryMap = useMemo(() => {
+      const map = new Map<string, string>()
+      flatCategories.forEach((cat) => map.set(cat.name, cat.id))
+      return map
+    }, [flatCategories])
+
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-12'>
+            <Badge variant='premium' className='mb-4'>Pets</Badge>
+            <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+              Want a puffy friend?
+            </h2>
+          </div>
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+            {PET_CATEGORIES.map((item) => {
+              const categoryId = categoryMap.get(item.categoryName) ?? ''
+              const href = categoryId
+                ? `/marketplace?category=${encodeURIComponent(categoryId)}`
                 : '#'
               return (
                 <Link key={item.title} href={href}>

@@ -47,6 +47,7 @@ import {
   FoodShowcaseSection,
   FeaturedCollectionsSection,
   ServiceShowcaseSection,
+  PetShowcaseSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
@@ -297,15 +298,19 @@ export default function Home() {
              return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
            if (section.slug === 'big-top-deals')
              return <BigTopDealsSection key={section.id} section={sectionProps} loading={loadingManaged} />
-           if (section.slug === 'brand-store')
-             return (
-               <BrandStoreSection
-                 key={section.id}
-                 section={sectionProps}
-                 brands={section.brands || []}
-                 loading={loadingManaged}
-               />
-             )
+            if (section.slug === 'brand-store') {
+              return (
+                <>
+                  <BrandStoreSection
+                    key={section.id}
+                    section={sectionProps}
+                    brands={section.brands || []}
+                    loading={loadingManaged}
+                  />
+                  <PetShowcaseSection />
+                </>
+              )
+            }
            if (section.slug === 'top-clearance-sales')
              return <TopClearanceSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'top-services')
