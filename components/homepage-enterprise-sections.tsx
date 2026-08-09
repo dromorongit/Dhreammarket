@@ -1950,7 +1950,9 @@ export function ElectronicsShowcaseSection() {
   ] as const
 
   export function PetShowcaseSection() {
-    const { data: categoriesData } = useQuery<{ categories: { id: string; name: string; slug: string; children?: { id: string; name: string; slug: string; children?: unknown[] }[] }[] }>({
+    type CategoryNode = { id: string; name: string; slug: string; children?: CategoryNode[] }
+
+    const { data: categoriesData } = useQuery<{ categories: CategoryNode[] }>({
       queryKey: ['categories'],
       queryFn: async () => {
         const response = await fetch('/api/categories')
@@ -1961,10 +1963,10 @@ export function ElectronicsShowcaseSection() {
 
     const categories = categoriesData?.categories ?? []
 
-    const flattenCategories = (cats: typeof categories): { name: string; id: string }[] => {
+    const flattenCategories = (cats: CategoryNode[]): { name: string; id: string }[] => {
       const result: { name: string; id: string }[] = []
-      const walk = (items: typeof categories) => {
-        items.forEach((cat) => {
+      const walk = (items: CategoryNode[] | undefined) => {
+        items?.forEach((cat) => {
           result.push({ name: cat.name, id: cat.id })
           if (cat.children?.length) {
             walk(cat.children)
