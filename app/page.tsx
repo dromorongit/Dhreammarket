@@ -598,7 +598,7 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register">
-              <Button size="lg" className="px-10 py-4 shadow-lg shadow-royal-blue/30">
+              <Button size="lg" className="px-5 py-2.5 text-sm shadow-lg shadow-royal-blue/30">
                 Create Free Account
               </Button>
             </Link>
