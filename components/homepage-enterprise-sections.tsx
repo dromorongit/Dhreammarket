@@ -1926,6 +1926,109 @@ export function ElectronicsShowcaseSection() {
     )
   }
 
+  const HOME_DECOR_CATEGORIES = [
+    {
+      title: 'Beddings',
+      image: '/images/bedsheet.jpg',
+      categoryName: 'Bedding',
+    },
+    {
+      title: 'Chandeliers',
+      image: '/images/chandelier.jpg',
+      categoryName: 'Lighting',
+    },
+    {
+      title: 'Pillows',
+      image: '/images/pillow.jpg',
+      categoryName: 'Bedding',
+    },
+    {
+      title: 'Floral Decor',
+      image: '/images/flower.jpg',
+      categoryName: 'Home Decor',
+    },
+  ] as const
+
+  export function HomeDecorShowcaseSection() {
+    type CategoryNode = { id: string; name: string; slug: string; children?: CategoryNode[] }
+
+    const { data: categoriesData } = useQuery<{ categories: CategoryNode[] }>({
+      queryKey: ['categories'],
+      queryFn: async () => {
+        const response = await fetch('/api/categories')
+        if (!response.ok) throw new Error('Failed to fetch categories')
+        return response.json()
+      },
+    })
+
+    const categories = categoriesData?.categories ?? []
+
+    const flattenCategories = (cats: CategoryNode[]): { name: string; id: string }[] => {
+      const result: { name: string; id: string }[] = []
+      const walk = (items: CategoryNode[] | undefined) => {
+        items?.forEach((cat) => {
+          result.push({ name: cat.name, id: cat.id })
+          if (cat.children?.length) {
+            walk(cat.children)
+          }
+        })
+      }
+      walk(cats)
+      return result
+    }
+
+    const flatCategories = useMemo(() => flattenCategories(categories), [categories])
+    const categoryMap = useMemo(() => {
+      const map = new Map<string, string>()
+      flatCategories.forEach((cat) => map.set(cat.name, cat.id))
+      return map
+    }, [flatCategories])
+
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-12'>
+            <Badge variant='premium' className='mb-4'>Home & Decor</Badge>
+            <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+              Make Your Home Beautiful
+            </h2>
+          </div>
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+            {HOME_DECOR_CATEGORIES.map((item) => {
+              const categoryId = categoryMap.get(item.categoryName) ?? ''
+              const href = categoryId
+                ? `/marketplace?category=${encodeURIComponent(categoryId)}`
+                : '#'
+              return (
+                <Link key={item.title} href={href}>
+                  <Card
+                    variant='elevated'
+                    className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+                  >
+                    <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        className='object-cover group-hover:scale-105 transition-transform duration-500'
+                        fill
+                        loading='lazy'
+                      />
+                    </div>
+                    <div className='p-4 text-center'>
+                      <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                        {item.title}
+                      </h3>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   const PET_CATEGORIES = [
     {
       title: 'Puppies',
@@ -1934,7 +2037,7 @@ export function ElectronicsShowcaseSection() {
     },
     {
       title: 'Cats',
-      image: '/images/cats.jpg',
+      image: '/images/Cats.jpg',
       categoryName: 'Cats & Kittens',
     },
     {
