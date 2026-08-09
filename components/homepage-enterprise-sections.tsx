@@ -1719,12 +1719,97 @@ export function ElectronicsShowcaseSection() {
                  </div>
                </Card>
              </Link>
-           ))}
-         </div>
-       </div>
-     </section>
-   );
- }
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const SERVICE_CARDS = [
+    {
+      title: 'Tailor/Seamstress',
+      image: '/images/seamstress.jpg',
+      categoryName: 'Fashion & Tailoring',
+    },
+    {
+      title: 'Barbers',
+      image: '/images/barber.jpg',
+      categoryName: 'Hair & Barber Services',
+    },
+    {
+      title: 'Carpenters',
+      image: '/images/carpenter.jpg',
+      categoryName: 'Carpentry & Woodwork',
+    },
+    {
+      title: 'Plumbers',
+      image: '/images/plumber.jpg',
+      categoryName: 'Plumbing Services',
+    },
+  ] as const
+
+  export function ServiceShowcaseSection() {
+    const { data: categoriesData } = useQuery<{ categories: { id: string; name: string }[] }>({
+      queryKey: ['service-categories'],
+      queryFn: async () => {
+        const response = await fetch('/api/service-categories')
+        if (!response.ok) throw new Error('Failed to fetch service categories')
+        return response.json()
+      },
+    })
+
+    const categories = categoriesData?.categories ?? []
+    const categoryMap = useMemo(() => {
+      const map = new Map<string, string>()
+      categories.forEach((cat) => map.set(cat.name, cat.id))
+      return map
+    }, [categories])
+
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-12'>
+            <Badge variant='premium' className='mb-4'>Services</Badge>
+            <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+              Never Left Out Your Service
+            </h2>
+          </div>
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+            {SERVICE_CARDS.map((item) => {
+              const categoryId = categoryMap.get(item.categoryName) ?? ''
+              const href = categoryId
+                ? `/marketplace?viewMode=services&serviceCategory=${encodeURIComponent(categoryId)}`
+                : '#'
+              return (
+                <Link key={item.title} href={href}>
+                  <Card
+                    variant='elevated'
+                    className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+                  >
+                    <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        className='object-cover group-hover:scale-105 transition-transform duration-500'
+                        fill
+                        loading='lazy'
+                      />
+                    </div>
+                    <div className='p-4 text-center'>
+                      <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                        {item.title}
+                      </h3>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+    )
+  }
 
  const FOOD_CATEGORIES = [
    {
@@ -1839,4 +1924,89 @@ export function ElectronicsShowcaseSection() {
         </div>
       </section>
     );
+  }
+
+  const SERVICE_CARDS = [
+    {
+      title: 'Tailor/Seamstress',
+      image: '/images/seamstress.jpg',
+      categoryName: 'Fashion & Tailoring',
+    },
+    {
+      title: 'Barbers',
+      image: '/images/barber.jpg',
+      categoryName: 'Hair & Barber Services',
+    },
+    {
+      title: 'Carpenters',
+      image: '/images/carpenter.jpg',
+      categoryName: 'Carpentry & Woodwork',
+    },
+    {
+      title: 'Plumbers',
+      image: '/images/plumber.jpg',
+      categoryName: 'Plumbing Services',
+    },
+  ] as const
+
+  export function ServiceShowcaseSection() {
+    const { data: categoriesData } = useQuery<{ categories: { id: string; name: string }[] }>({
+      queryKey: ['service-categories'],
+      queryFn: async () => {
+        const response = await fetch('/api/service-categories')
+        if (!response.ok) throw new Error('Failed to fetch service categories')
+        return response.json()
+      },
+    })
+
+    const categories = categoriesData?.categories ?? []
+    const categoryMap = useMemo(() => {
+      const map = new Map<string, string>()
+      categories.forEach((cat) => map.set(cat.name, cat.id))
+      return map
+    }, [categories])
+
+    return (
+      <section className='relative py-16 lg:py-24 bg-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='mb-12'>
+            <Badge variant='premium' className='mb-4'>Services</Badge>
+            <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
+              Never Left Out Your Service
+            </h2>
+          </div>
+          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6'>
+            {SERVICE_CARDS.map((item) => {
+              const categoryId = categoryMap.get(item.categoryName) ?? ''
+              const href = categoryId
+                ? `/marketplace?viewMode=services&serviceCategory=${encodeURIComponent(categoryId)}`
+                : '#'
+              return (
+                <Link key={item.title} href={href}>
+                  <Card
+                    variant='elevated'
+                    className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+                  >
+                    <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        className='object-cover group-hover:scale-105 transition-transform duration-500'
+                        fill
+                        loading='lazy'
+                      />
+                    </div>
+                    <div className='p-4 text-center'>
+                      <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
+                        {item.title}
+                      </h3>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+    )
   }

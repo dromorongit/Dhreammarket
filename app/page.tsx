@@ -46,6 +46,7 @@ import {
   ElectronicsShowcaseSection,
   FoodShowcaseSection,
   FeaturedCollectionsSection,
+  ServiceShowcaseSection,
 } from '@/components/homepage-enterprise-sections'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
@@ -251,8 +252,14 @@ export default function Home() {
                     <SponsoredSection key={section.id} section={sectionProps} />
                   </>
                 )
-             if (section.slug === 'quick-links')
-               return <QuickLinksSection key={section.id} />
+             if (section.slug === 'quick-links') {
+                return (
+                  <>
+                    <QuickLinksSection key={section.id} />
+                    <ServiceShowcaseSection />
+                  </>
+                )
+              }
              if (section.slug === 'trending-now')
                return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'trending-services') {

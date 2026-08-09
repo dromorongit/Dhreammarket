@@ -493,9 +493,17 @@ function MarketplaceContent() {
     const categoryParam = searchParams?.get('category') ?? ''
     const vendorCategoryParam = searchParams?.get('vendorCategory') ?? ''
     const brandParam = searchParams?.get('brand') ?? ''
+    const viewModeParam = searchParams?.get('viewMode') ?? ''
+    const serviceCategoryParam = searchParams?.get('serviceCategory') ?? ''
     setSelectedCategory(categoryParam)
     setSelectedBrand(brandParam)
     setSelectedVendorCategory(vendorCategoryParam)
+    if (viewModeParam === 'services' || viewModeParam === 'vendors') {
+      setViewMode(viewModeParam)
+    }
+    if (serviceCategoryParam) {
+      setSelectedServiceCategory(serviceCategoryParam)
+    }
   }, [searchParams])
 
   const addToCart = useCallback(async (productId: string, productName?: string, productPrice?: number) => {
