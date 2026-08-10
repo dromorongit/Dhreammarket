@@ -274,8 +274,13 @@ export default function Home() {
                    </>
                  )
                }
-             if (section.slug === 'trending-now')
-               return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+              if (section.slug === 'trending-now')
+                return (
+                  <>
+                    <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
+                    <StaticBannerImage src='/images/stationery2.jpg' alt='Stationery 2' />
+                  </>
+                )
             if (section.slug === 'trending-services') {
               return (
                 <Fragment key={section.id}>
