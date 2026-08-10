@@ -439,6 +439,7 @@ export async function GET(_request: NextRequest) {
                 select: productSelect,
               },
               displayOrder: true,
+              dealEndsAt: true,
             },
           },
           vendors: {
@@ -551,7 +552,7 @@ export async function GET(_request: NextRequest) {
         )
       } else if (contentSource === 'MANUAL') {
         sortedProducts = (section.products || [])
-          .map((sp: any) => sp.product)
+          .map((sp: any) => ({ ...sp.product, dealEndsAt: sp.dealEndsAt ?? null }))
           .filter((p: any) => p && (!settings.excludeOutOfStock || p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
         sortedServices = await safeResolve(
           () => resolveManualServices(settings, maxServices),
@@ -811,7 +812,7 @@ async function resolveManualServices(settings: AutoRankSettings, maxServices: nu
 
 async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxProducts: number): Promise<any[]> {
   const joinTableProducts = (section.products || [])
-    .map((sp: any) => sp.product)
+    .map((sp: any) => ({ ...sp.product, dealEndsAt: sp.dealEndsAt ?? null }))
     .filter((p: any) => p && p.id)
   const joinTableProductIds = joinTableProducts.map((p: any) => p.id)
   const autoProducts = await resolveAutomaticProducts(prisma, section, settings, maxProducts)
@@ -829,10 +830,15 @@ async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null
     },
   })
 
+  const pinnedMap = new Map(pinnedProducts.map((p: any) => [p.id, p]))
+  const mergedPinned = joinTableProducts
+    .filter((jp: any) => pinnedMap.has(jp.id))
+    .map((jp: any) => ({ ...pinnedMap.get(jp.id), dealEndsAt: jp.dealEndsAt }))
+
   const autoIds = new Set(autoProducts.map((p: any) => p.id))
   const newAutoProducts = autoProducts.filter((p: any) => !joinTableProductIds.includes(p.id))
 
-  return [...pinnedProducts, ...newAutoProducts].slice(0, maxProducts)
+  return [...mergedPinned, ...newAutoProducts].slice(0, maxProducts)
 }
 
 async function resolveHybridServices(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxServices: number): Promise<any[]> {

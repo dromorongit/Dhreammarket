@@ -39,35 +39,6 @@ export function useEnterpriseHomepageData() {
   return { data: enterpriseData, loading: isLoading };
 }
 
-function CountdownTimer({ endTime }: { endTime: string }) {
-  const [label, setLabel] = useState<string | null>(null);
-
-  useEffect(() => {
-    const update = () => {
-      const diff = new Date(endTime).getTime() - Date.now();
-      if (diff <= 0) {
-        setLabel('Ended');
-        return;
-      }
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-      setLabel(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
-      );
-    };
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [endTime]);
-
-  return (
-    <span className='font-mono text-[10px] font-bold' suppressHydrationWarning>
-      {label ?? '--:--:--'}
-    </span>
-  );
-}
-
 function ProductImage({
   product,
   className,
@@ -242,9 +213,9 @@ function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterprisePr
                 product={product}
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
-              {product.flashSaleEnd && new Date(product.flashSaleEnd) > new Date() && (
+              {product.dealEndsAt && new Date(product.dealEndsAt) > new Date() && (
                 <div className='absolute top-2 left-2'>
-                  <CountdownTimer endDate={product.flashSaleEnd} />
+                  <CountdownTimer endDate={product.dealEndsAt} />
                 </div>
               )}
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
@@ -411,9 +382,9 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                 product={product}
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
-              {product.dealsEnd && new Date(product.dealsEnd) > new Date() && (
+              {product.dealEndsAt && new Date(product.dealEndsAt) > new Date() && (
                 <div className='absolute top-2 left-2'>
-                  <CountdownTimer endDate={product.dealsEnd} />
+                  <CountdownTimer endDate={product.dealEndsAt} />
                 </div>
               )}
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>

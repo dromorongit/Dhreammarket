@@ -17,6 +17,7 @@ interface HomepageSectionProduct {
   id: string;
   productId: string;
   displayOrder: number;
+  dealEndsAt?: string | null;
   product: Product;
 }
 
@@ -232,6 +233,7 @@ export default function SuperAdminHomepagePage() {
   const [assignedServices, setAssignedServices] = useState<string[]>(
     [],
   );
+  const [dealEndsAt, setDealEndsAt] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -569,7 +571,7 @@ export default function SuperAdminHomepagePage() {
     }
   };
 
-  const handleAssignProducts = async () => {
+  const handleAssignProducts = async (dealEndsAt?: string) => {
     if (!managingSection) return;
     setSaving(true);
     try {
@@ -578,12 +580,18 @@ export default function SuperAdminHomepagePage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productIds: Array.from(selectedProducts) }),
+          body: JSON.stringify({ 
+            products: Array.from(selectedProducts).map((productId) => ({
+              productId,
+              dealEndsAt: dealEndsAt || null,
+            }))
+          }),
         },
       );
       if (response.ok) {
         await fetchSections();
         setSelectedProducts(new Set());
+        setDealEndsAt("");
         const data = await fetch(
           `/api/homepage-sections/${managingSection.id}`,
         ).then((r) => r.json());
@@ -706,6 +714,27 @@ export default function SuperAdminHomepagePage() {
       await fetchSections();
     } catch (err) {
       console.error("Error removing product:", err);
+    }
+  };
+
+  const handleUpdateDealEndsAt = async (sectionId: string, productId: string, dealEndsAt: string) => {
+    try {
+      const response = await fetch(
+        `/api/homepage-sections/${sectionId}/products`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId, dealEndsAt }),
+        },
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setAssignedProducts((prev) =>
+          prev.map((p) => p.productId === productId ? { ...p, dealEndsAt: data.product?.dealEndsAt ?? p.dealEndsAt } : p)
+        );
+      }
+    } catch (err) {
+      console.error("Error updating deal end:", err);
     }
   };
 
@@ -1228,9 +1257,9 @@ export default function SuperAdminHomepagePage() {
                 return next;
               });
             }}
-onAssignProducts={async () => {
-              await handleAssignProducts();
-            }}
+ onAssignProducts={async (dealEndsAt?: string) => {
+               await handleAssignProducts(dealEndsAt);
+             }}
             onAssignVendors={handleAssignVendors}
             onAssignBrands={handleAssignBrands}
             onAssignServices={async () => {
@@ -1239,6 +1268,10 @@ onAssignProducts={async () => {
             onRemoveProduct={async (sectionId, productId) => {
               await handleRemoveProduct(sectionId, productId);
             }}
+            onUpdateDealEndsAt={handleUpdateDealEndsAt}
+            dealEndsAt={dealEndsAt}
+            setDealEndsAt={setDealEndsAt}
+            setAssignedProducts={setAssignedProducts}
             onRemoveBrand={async (sectionId, brandId) => {
               await handleRemoveBrand(sectionId, brandId);
             }}
@@ -1495,8 +1528,12 @@ function ManageSectionModal({
    onAssignVendors,
    onAssignBrands,
    onAssignServices,
-   onRemoveProduct,
-   onRemoveBrand,
+    onRemoveProduct,
+    onRemoveBrand,
+    onUpdateDealEndsAt,
+    setAssignedProducts,
+    dealEndsAt,
+    setDealEndsAt,
     onRemoveService,
     onBulkRemove,
     onBulkRemoveServices,
@@ -1530,12 +1567,16 @@ sectionSupportsServicesFn,
    onVendorToggle: (id: string) => void;
    onBrandToggle: (id: string) => void;
    onServiceToggle: (id: string) => void;
-   onAssignProducts: () => void;
-   onAssignVendors: () => void;
-   onAssignBrands: () => void;
-   onAssignServices: () => void;
-   onRemoveProduct: (sectionId: string, productId: string) => void;
-   onRemoveBrand: (sectionId: string, brandId: string) => void;
+    onAssignProducts: (dealEndsAt?: string) => void;
+    onAssignVendors: () => void;
+    onAssignBrands: () => void;
+    onAssignServices: () => void;
+    onRemoveProduct: (sectionId: string, productId: string) => void;
+    onRemoveBrand: (sectionId: string, brandId: string) => void;
+    onUpdateDealEndsAt: (sectionId: string, productId: string, dealEndsAt: string) => void;
+    setAssignedProducts: (value: React.SetStateAction<HomepageSectionProduct[]>) => void;
+    dealEndsAt: string;
+    setDealEndsAt: (value: string) => void;
     onRemoveService: (sectionId: string, serviceId: string) => void;
     onBulkRemove: (productIds: string[]) => void;
     onBulkRemoveServices: (serviceIds: string[]) => void;
@@ -1562,6 +1603,8 @@ sectionSupportsServicesFn,
   const [draggedProductIndex, setDraggedProductIndex] = useState<number | null>(
     null,
   );
+  const [editingDealEndsAtProductId, setEditingDealEndsAtProductId] = useState<string | null>(null);
+  const [editingDealEndsAtValue, setEditingDealEndsAtValue] = useState<string>("");
   const isSponsoredSection =
     section.type === "SPONSORED_PRODUCTS" || section.type === "SPONSORED";
 
@@ -1636,19 +1679,35 @@ sectionSupportsServicesFn,
                   </select>
                 </div>
               </div>
-             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-               {activeTab === "products" && (
-                 <Button
-                   onClick={onAssignProducts}
-                   loading={saving}
-                   disabled={selectedProducts.size === 0}
-                   size="sm"
-                   className="w-full sm:w-auto min-h-[44px]"
-                 >
-                   Assign {selectedProducts.size} Product
-                   {selectedProducts.size !== 1 ? "s" : ""}
-                 </Button>
-               )}
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {(section.type === "FLASH_SALES" || section.type === "BIG_DEALS") && (
+                  <div className="w-full sm:w-auto">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
+                      Countdown End Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={dealEndsAt}
+                      onChange={(e) => setDealEndsAt(e.target.value)}
+                      className="w-full sm:w-auto px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[44px]"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Optional — sets a countdown timer on this product in this section
+                    </p>
+                  </div>
+                )}
+                {activeTab === "products" && (
+                  <Button
+                    onClick={() => onAssignProducts(dealEndsAt || undefined)}
+                    loading={saving}
+                    disabled={selectedProducts.size === 0}
+                    size="sm"
+                    className="w-full sm:w-auto min-h-[44px]"
+                  >
+                    Assign {selectedProducts.size} Product
+                    {selectedProducts.size !== 1 ? "s" : ""}
+                  </Button>
+                )}
                {activeTab === "vendors" && (
                  <Button
                    onClick={onAssignVendors}
@@ -1828,6 +1887,77 @@ sectionSupportsServicesFn,
                                 {item.product.store?.name}
                               </p>
                             </div>
+                            {(section.type === "FLASH_SALES" || section.type === "BIG_DEALS") && (
+                              <div className="flex items-center gap-1">
+                                {editingDealEndsAtProductId === item.productId ? (
+                                  <>
+                                    <input
+                                      type="datetime-local"
+                                      value={editingDealEndsAtValue}
+                                      onChange={(e) => setEditingDealEndsAtValue(e.target.value)}
+                                      className="w-auto px-2 py-1 text-xs rounded border border-slate-200 focus:ring-2 focus:ring-royal-blue outline-none min-h-[32px]"
+                                    />
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="min-h-[32px] px-2"
+                                      onClick={async () => {
+                                        await onUpdateDealEndsAt(section.id, item.productId, editingDealEndsAtValue);
+                                        setEditingDealEndsAtProductId(null);
+                                        setEditingDealEndsAtValue("");
+                                      }}
+                                    >
+                                      Save
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="min-h-[32px] px-2"
+                                      onClick={() => {
+                                        setEditingDealEndsAtProductId(null);
+                                        setEditingDealEndsAtValue("");
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    {item.dealEndsAt && (
+                                      <span className="text-[10px] text-slate-500 hidden sm:inline">
+                                        Ends: {new Date(item.dealEndsAt).toLocaleString()}
+                                      </span>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="min-h-[32px] px-2"
+                                      onClick={() => {
+                                        setEditingDealEndsAtProductId(item.productId);
+                                        setEditingDealEndsAtValue(item.dealEndsAt ? new Date(item.dealEndsAt).toISOString().slice(0, 16) : "");
+                                      }}
+                                    >
+                                      {item.dealEndsAt ? "Edit Timer" : "Set Timer"}
+                                    </Button>
+                                    {item.dealEndsAt && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="min-h-[32px] px-2 text-red-600"
+                                        onClick={async () => {
+                                          await onUpdateDealEndsAt(section.id, item.productId, "");
+                                          setAssignedProducts((prev) =>
+                                            prev.map((p) => p.productId === item.productId ? { ...p, dealEndsAt: null } : p)
+                                          );
+                                        }}
+                                      >
+                                        Clear
+                                      </Button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"

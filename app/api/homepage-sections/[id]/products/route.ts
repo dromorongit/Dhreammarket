@@ -15,11 +15,20 @@ export async function POST(
 
     const prisma = getPrisma()
     const { id } = await params
-    const { productIds } = await request.json()
+    const body = await request.json()
+    const { products } = body
 
-    if (!productIds || !Array.isArray(productIds) || productIds.length === 0) {
+    if (!products || !Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
-        { error: 'productIds array is required' },
+        { error: 'products array is required' },
+        { status: 400 }
+      )
+    }
+
+    const productIds = products.map((p: any) => p.productId).filter(Boolean)
+    if (productIds.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one valid productId is required' },
         { status: 400 }
       )
     }
@@ -37,11 +46,11 @@ export async function POST(
     }
 
     // Verify all products exist
-    const products = await prisma.product.findMany({
+    const productsInDb = await prisma.product.findMany({
       where: { id: { in: productIds } },
     })
 
-    if (products.length !== productIds.length) {
+    if (productsInDb.length !== productIds.length) {
       return NextResponse.json(
         { error: 'Some products were not found' },
         { status: 404 }
@@ -54,15 +63,16 @@ export async function POST(
       select: { productId: true, displayOrder: true },
     })
     const existingIds = new Set(existing.map((e) => e.productId))
-    const newProductIds = productIds.filter((pid: string) => !existingIds.has(pid))
+    const newProducts = products.filter((p: any) => p.productId && !existingIds.has(p.productId))
 
-    if (newProductIds.length > 0) {
+    if (newProducts.length > 0) {
       const maxOrder = existing.reduce((max, row) => Math.max(max, row.displayOrder), -1)
       await prisma.homepageSectionProduct.createMany({
-        data: newProductIds.map((productId: string, index: number) => ({
+        data: newProducts.map((p: any, index: number) => ({
           sectionId: id,
-          productId,
+          productId: p.productId,
           displayOrder: maxOrder + 1 + index,
+          dealEndsAt: p.dealEndsAt ? new Date(p.dealEndsAt) : null,
         })),
         skipDuplicates: true,
       })
@@ -72,19 +82,89 @@ export async function POST(
       where: { sectionId: id },
       orderBy: { displayOrder: 'asc' },
       include: {
-            product: {
-              include: {
-                images: true,
-                category: true,
-                store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
-              },
-            },
+        product: {
+          include: {
+            images: true,
+            category: true,
+            store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
+          },
+        },
       },
     })
 
     return NextResponse.json({ products: updated.map((p) => p.product) })
   } catch (error) {
     console.error('Error adding products to section:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT /api/homepage-sections/[id]/products - Update dealEndsAt for assigned products
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const authResult = requireSuperAdmin()
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
+
+    const prisma = getPrisma()
+    const { id } = await params
+    const body = await request.json()
+    const { productId, dealEndsAt } = body
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'productId is required' },
+        { status: 400 }
+      )
+    }
+
+    const existing = await prisma.homepageSectionProduct.findUnique({
+      where: {
+        sectionId_productId: {
+          sectionId: id,
+          productId,
+        },
+      },
+    })
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Product is not assigned to this section' },
+        { status: 404 }
+      )
+    }
+
+    const updated = await prisma.homepageSectionProduct.update({
+      where: {
+        sectionId_productId: {
+          sectionId: id,
+          productId,
+        },
+      },
+      data: {
+        dealEndsAt: dealEndsAt ? new Date(dealEndsAt) : null,
+      },
+      include: {
+        product: {
+          include: {
+            images: true,
+            category: true,
+            store: { select: { id: true, name: true, isVerified: true, badgeTier: true } },
+          },
+        },
+      },
+    })
+
+    return NextResponse.json({ product: updated.product })
+  } catch (error) {
+    console.error('Error updating product deal end:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

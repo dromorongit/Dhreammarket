@@ -8,6 +8,7 @@ export interface EnterpriseProduct {
   flashSaleEnd?: string | null
   salesPrice?: number | null
   dealsPrice?: number | null
+  dealEndsAt?: string | null
   stock: number
   salesCount?: number
   isSponsored?: boolean

@@ -96,8 +96,6 @@ export default function EditProduct() {
     lowStockThreshold: '',
     salesPrice: '',
     dealsPrice: '',
-    dealsStart: '',
-    dealsEnd: '',
     brandId: '',
     categoryIds: [] as string[],
     imageUrls: [''],
@@ -192,8 +190,6 @@ export default function EditProduct() {
           lowStockThreshold: p.lowStockThreshold !== undefined && p.lowStockThreshold !== null ? p.lowStockThreshold.toString() : '5',
           salesPrice: p.salesPrice ? p.salesPrice.toString() : '',
           dealsPrice: p.dealsPrice ? p.dealsPrice.toString() : '',
-          dealsStart: p.dealsStart ? new Date(p.dealsStart).toISOString().slice(0, 16) : '',
-          dealsEnd: p.dealsEnd ? new Date(p.dealsEnd).toISOString().slice(0, 16) : '',
           brandId: p.brandId || '',
           categoryIds: categoryIds.length > 0 ? categoryIds : [p.categoryId],
           imageUrls: p.images.length > 0
@@ -271,8 +267,6 @@ export default function EditProduct() {
         lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
         salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
         dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
-        dealsStart: formData.dealsStart ? new Date(formData.dealsStart) : null,
-        dealsEnd: formData.dealsEnd ? new Date(formData.dealsEnd) : null,
         brandId: formData.brandId || null,
         imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
         variants: formData.variants.filter(v => v.color || v.size || v.age),
@@ -597,34 +591,6 @@ export default function EditProduct() {
                       onChange={handleChange}
                       placeholder="Promotional price"
                     />
-                  </div>
-                  <div>
-                    <label htmlFor="dealsStart" className="block text-sm font-medium text-gray-700 mb-2">
-                      Deal Start (Optional)
-                    </label>
-                    <Input
-                      id="dealsStart"
-                      name="dealsStart"
-                      type="datetime-local"
-                      value={formData.dealsStart}
-                      onChange={handleChange}
-                      className="w-full"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Optional — leave blank if there is no fixed start date</p>
-                  </div>
-                  <div>
-                    <label htmlFor="dealsEnd" className="block text-sm font-medium text-gray-700 mb-2">
-                      Deal End (Optional)
-                    </label>
-                    <Input
-                      id="dealsEnd"
-                      name="dealsEnd"
-                      type="datetime-local"
-                      value={formData.dealsEnd}
-                      onChange={handleChange}
-                      className="w-full"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Optional — leave blank if there is no fixed end date</p>
                   </div>
                 </div>
 
