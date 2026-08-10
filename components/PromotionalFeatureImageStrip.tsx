@@ -12,17 +12,17 @@ const PROMO_IMAGES = [
 
 export default function PromotionalFeatureImageStrip() {
   return (
-    <section className="relative py-3 sm:py-4" aria-label="Promotional features">
+     <section className="relative py-2 sm:py-3" aria-label="Promotional features">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-4 gap-2 sm:gap-3 max-w-lg mx-auto">
           {PROMO_IMAGES.map((img) => (
             <div key={img.id} className="flex flex-col items-center">
-              <div className="relative aspect-square w-full">
+              <div className="relative aspect-square w-full rounded-none">
                 <Image
                   src={img.src}
                   alt={img.alt}
                   fill
-                  className="object-cover"
+                  className="object-cover rounded-none"
                   sizes="(max-width: 640px) 20vw, 25vw"
                   placeholder="blur"
                   blurDataURL={getBlurDataURL()}

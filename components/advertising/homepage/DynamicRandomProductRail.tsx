@@ -124,7 +124,7 @@ export default function DynamicRandomProductRail() {
 
   if (loading) {
     return (
-      <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Loading products">
+       <section className="relative py-2 bg-slate-50 overflow-hidden" aria-label="Loading products">
         <div className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-premium-xl rail-container">
           <div className="rail-track product-rail-track">
             {[...Array(10)].map((_, i) => (
@@ -146,7 +146,7 @@ export default function DynamicRandomProductRail() {
   const duplicatedProducts = [...products, ...products]
 
   return (
-    <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Dynamic Random Products">
+     <section className="relative py-2 bg-slate-50 overflow-hidden" aria-label="Dynamic Random Products">
       <div className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-premium-xl rail-container">
         <div className="rail-track product-rail-track" ref={trackRef}>
           {duplicatedProducts.map((product, index) => (
