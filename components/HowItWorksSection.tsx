@@ -4,62 +4,53 @@ import { MdSearch, MdShield, MdInventory } from 'react-icons/md'
 
 const STEPS = [
   {
-    number: '01',
     icon: MdSearch,
     title: 'Browse & Discover',
-    description: 'Explore thousands of products from verified vendors across Ghana, all in one place.',
   },
   {
-    number: '02',
     icon: MdShield,
-    title: 'Order & Pay Securely',
-    description: 'Checkout with confidence using Paystack\'s secure payment processing.',
+    title: 'Pay Securely',
   },
   {
-    number: '03',
     icon: MdInventory,
     title: 'Receive Your Order',
-    description: 'Track your delivery and receive your order right at your doorstep.',
   },
 ]
 
 export default function HowItWorksSection() {
   return (
-    <section className='relative py-16 lg:py-24 bg-white overflow-hidden'>
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='text-center mb-10'>
-          <h2 className='text-2xl md:text-3xl font-bold text-navy mb-2'>
-            How Dhream Market Works
-          </h2>
-          <p className='text-gray-500'>
-            Shopping made simple in three easy steps
-          </p>
-        </div>
+    <section className="w-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2 md:mb-3">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-deep-navy via-royal-blue to-blue-800 px-6 py-6 md:px-10 md:py-8 shadow-lg shadow-blue-900/20 border border-white/10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_55%)]"></div>
 
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 relative'>
-          {STEPS.map((step, index) => {
-            const Icon = step.icon
-            return (
-              <div key={step.number} className='flex flex-col items-center text-center relative'>
-                <div className='relative w-16 h-16 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center mb-4'>
-                  <Icon className='w-7 h-7 text-blue-700' />
-                  <span className='absolute -top-2 -right-2 text-4xl font-bold text-gray-100'>
-                    {step.number}
-                  </span>
-                </div>
-                <h3 className='text-lg font-bold text-navy mb-2'>
-                  {step.title}
-                </h3>
-                <p className='text-sm text-gray-500 max-w-xs'>
-                  {step.description}
-                </p>
+          <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
+            <div className="hidden md:block flex-shrink-0">
+              <h2 className="text-white font-bold text-lg md:text-xl tracking-tight">
+                How It Works
+              </h2>
+            </div>
 
-                {index < STEPS.length - 1 && (
-                  <div className='hidden md:block absolute top-8 left-[60%] w-[80%] border-t-2 border-dashed border-gray-200' />
-                )}
-              </div>
-            )
-          })}
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 w-full md:w-auto">
+              {STEPS.map((step, index) => {
+                const Icon = step.icon
+                return (
+                  <div key={step.title} className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-white whitespace-nowrap">
+                      {step.title}
+                    </span>
+
+                    {index < STEPS.length - 1 && (
+                      <div className="hidden md:block w-px h-10 bg-white/20 mx-2" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>
