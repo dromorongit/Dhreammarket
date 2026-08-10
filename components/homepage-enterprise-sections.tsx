@@ -1808,16 +1808,16 @@ export function ElectronicsShowcaseSection() {
              {FEATURED_COLLECTIONS.map((item) => (
                <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[320px] sm:w-[420px] lg:w-[480px]'>
                  <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      className='object-cover'
-                      fill
-                      loading='lazy'
-                      sizes={CARD_IMAGE_SIZES_4COL}
-                      placeholder="blur"
-                      blurDataURL={getBlurDataURL()}
-                    />
+                     <Image
+                       src={item.image}
+                       alt={item.title}
+                       className='object-contain'
+                       fill
+                       loading='lazy'
+                       sizes={CARD_IMAGE_SIZES_4COL}
+                       placeholder="blur"
+                       blurDataURL={getBlurDataURL()}
+                     />
                  </div>
                </Link>
              ))}
