@@ -246,7 +246,7 @@ export default function LiveSupportWidget() {
   const unreadCount = conversationsData?.conversations?.filter((c) => !c.isReadByCustomer).length || 0
 
   return (
-    <div className="fixed bottom-5 right-5 z-50">
+    <div className="fixed bottom-20 right-5 z-50">
       {isOpen && (
         <div className="mb-4 w-[360px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col max-h-[500px]">
           <div className="bg-gradient-to-r from-deep-navy to-royal-blue text-white p-4 rounded-t-2xl flex items-center justify-between">
