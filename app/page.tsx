@@ -61,6 +61,7 @@ import { RegistrationCTA } from '@/components/RegistrationCTA'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import { FirstOrderDiscountBanner } from '@/components/FirstOrderDiscountBanner'
+import { RecentActivityTicker } from '@/components/RecentActivityTicker'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
@@ -215,6 +216,9 @@ export default function Home() {
           </svg>
         </div>
       </section>
+
+      {/* ─── Recent Marketplace Activity Ticker ─── */}
+      <RecentActivityTicker />
 
       {/* ─── Continuous Infinite Banner Rail ─── */}
       <InfiniteBannerRail />
