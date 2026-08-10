@@ -269,7 +269,7 @@ export default function Home() {
                  return (
                    <>
                      <QuickLinksSection key={section.id} />
-                     <StaticBannerImage />
+                     <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
                      <ServiceShowcaseSection />
                    </>
                  )
@@ -301,8 +301,13 @@ export default function Home() {
                </Fragment>
              )
            }
-           if (section.slug === 'verified-vendors')
-             return <VerifiedVendorsSection key={section.id} section={sectionProps} />
+            if (section.slug === 'verified-vendors')
+              return (
+                <>
+                  <VerifiedVendorsSection key={section.id} section={sectionProps} />
+                  <StaticBannerImage src='/images/gadgetbanner.jpg' alt='Gadget Banner' />
+                </>
+              )
            if (section.slug === 'food-showcase')
              return <FoodShowcaseSection key={section.id} />
            if (section.slug === 'flash-sales')
