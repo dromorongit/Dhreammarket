@@ -209,7 +209,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
     }),
     prisma.$queryRaw<Array<{ rate: number | null }>>`
       SELECT
-        CASE WHEN COUNT(*) > 0 THEN ROUND(COUNT(DISTINCT "orderId") * 100.0 / NULLIF(COUNT(DISTINCT "userId"), 0), 2) ELSE 0 END as rate
+        CASE WHEN COUNT(*) > 0 THEN ROUND(COUNT(DISTINCT "id") * 100.0 / NULLIF(COUNT(DISTINCT "userId"), 0), 2) ELSE 0 END as rate
       FROM "orders"
       WHERE "createdAt" >= ${from} AND "createdAt" <= ${to}
     `,
