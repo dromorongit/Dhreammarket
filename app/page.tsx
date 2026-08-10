@@ -56,6 +56,7 @@ import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
+import StaticBannerImage from '@/components/StaticBannerImage'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 import HowItWorksSection from '@/components/HowItWorksSection'
@@ -264,14 +265,15 @@ export default function Home() {
                     <SponsoredSection key={section.id} section={sectionProps} />
                   </>
                 )
-             if (section.slug === 'quick-links') {
-                return (
-                  <>
-                    <QuickLinksSection key={section.id} />
-                    <ServiceShowcaseSection />
-                  </>
-                )
-              }
+              if (section.slug === 'quick-links') {
+                 return (
+                   <>
+                     <QuickLinksSection key={section.id} />
+                     <StaticBannerImage />
+                     <ServiceShowcaseSection />
+                   </>
+                 )
+               }
              if (section.slug === 'trending-now')
                return <TrendingNowSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'trending-services') {
