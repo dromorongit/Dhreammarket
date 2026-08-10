@@ -1,23 +1,23 @@
 'use client'
 
-import { Search, ShieldCheck, PackageCheck } from 'lucide-react'
+import { MdSearch, MdShield, MdInventory } from 'react-icons/md'
 
 const STEPS = [
   {
     number: '01',
-    icon: Search,
+    icon: MdSearch,
     title: 'Browse & Discover',
     description: 'Explore thousands of products from verified vendors across Ghana, all in one place.',
   },
   {
     number: '02',
-    icon: ShieldCheck,
+    icon: MdShield,
     title: 'Order & Pay Securely',
     description: 'Checkout with confidence using Paystack\'s secure payment processing.',
   },
   {
     number: '03',
-    icon: PackageCheck,
+    icon: MdInventory,
     title: 'Receive Your Order',
     description: 'Track your delivery and receive your order right at your doorstep.',
   },
