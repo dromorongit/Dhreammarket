@@ -60,6 +60,7 @@ import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
+import { FirstOrderDiscountBanner } from '@/components/FirstOrderDiscountBanner'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
@@ -251,6 +252,7 @@ export default function Home() {
                     <StaticBannerRail />
                     <DynamicRandomProductRail />
                     <PromotionalFeatureImageStrip />
+                    <FirstOrderDiscountBanner />
                     <SponsoredSection key={section.id} section={sectionProps} />
                   </>
                 )
