@@ -1,6 +1,6 @@
 'use client'
 
-import { Sparkles } from 'lucide-react'
+import { MdCardGiftcard } from 'react-icons/md'
 
 export function FirstOrderDiscountBanner() {
   return (
@@ -12,7 +12,7 @@ export function FirstOrderDiscountBanner() {
 
           <div className="relative flex flex-col md:flex-row items-center justify-center md:justify-start gap-3 text-center md:text-left">
             <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl bg-premium-gold/20 border border-premium-gold/30 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-premium-gold" strokeWidth={1.5} />
+              <MdCardGiftcard className="w-6 h-6 md:w-7 md:h-7 text-premium-gold" />
             </div>
 
             <div className="space-y-1">
