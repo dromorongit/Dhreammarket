@@ -103,7 +103,7 @@ export default function WishlistButton({
     <button
       onClick={handleClick}
       disabled={loading}
-      className={`${sizeClasses[size]} rounded-full bg-white/90 shadow-sm hover:bg-white transition-colors flex items-center justify-center ${className}`}
+      className={`${sizeClasses[size]} rounded-full bg-white/90 shadow-sm hover:bg-white hover:scale-110 transition-all flex items-center justify-center ${className}`}
       aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
     >
       <FiHeart

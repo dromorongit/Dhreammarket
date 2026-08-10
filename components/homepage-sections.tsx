@@ -83,7 +83,7 @@ interface HomepageSectionProps {
   })
 
 return (
-     <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
+      <Card variant="elevated" className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0">
        <div className="flex flex-col h-full">
          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
@@ -110,8 +110,13 @@ return (
                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                  </svg>
                </div>
-             )}
-             <ProductBadges product={badgeData} />
+              )}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors">
+                  Quick View
+                </Link>
+              </div>
+              <ProductBadges product={badgeData} />
            </div>
          </Link>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
@@ -925,7 +930,7 @@ export function PromoBannerSection({ section }: HomepageSectionProps) {
         </Link>
         <div className="p-2 space-y-1 flex-1 flex flex-col">
           <Link href={`/services/${service.slug}`} className="block">
-            <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+          <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight">
               {service.title}
             </h3>
           </Link>

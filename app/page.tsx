@@ -58,6 +58,7 @@ import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicR
 import StaticBannerRail from '@/components/StaticBannerRail'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
+import HowItWorksSection from '@/components/HowItWorksSection'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import { FirstOrderDiscountBanner } from '@/components/FirstOrderDiscountBanner'
@@ -223,11 +224,14 @@ export default function Home() {
       {/* ─── Continuous Infinite Banner Rail ─── */}
       <InfiniteBannerRail />
 
-      {/* ─── Registration Call-to-Action ─── */}
-       <RegistrationCTA />
+       {/* ─── Registration Call-to-Action ─── */}
+        <RegistrationCTA />
 
-       {/* ─── Featured Collections ─── */}
-       <FeaturedCollectionsSection />
+        {/* ─── How It Works ─── */}
+        <HowItWorksSection />
+
+        {/* ─── Featured Collections ─── */}
+        <FeaturedCollectionsSection />
 
         {/* ─── Managed homepage sections rendered by displayOrder ─── */}
         {managedData.sections

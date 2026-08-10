@@ -155,7 +155,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
   return (
     <Card
       variant="elevated"
-      className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0"
+      className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0"
     >
       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
@@ -169,7 +169,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
             <Image
               src={product.images![0].url}
               alt={product.images![0].alt || product.name}
-              className="object-cover"
+               className="object-cover group-hover:scale-105 transition-transform duration-500"
               fill
               loading="lazy"
               sizes={CARD_IMAGE_SIZES}
@@ -182,8 +182,13 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-          )}
-          <ProductBadges product={calculateProductBadges({
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+              <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors">
+                Quick View
+              </Link>
+            </div>
+            <ProductBadges product={calculateProductBadges({
             price: product.price,
             flashSalePrice: product.flashSalePrice,
             salesPrice: product.salesPrice,
@@ -196,7 +201,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
         </div>
       </Link>
       <div className="p-2 space-y-1 flex-1 flex flex-col">
-        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+        <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight">
           {product.name}
         </h3>
         <div className="flex items-center gap-1.5 flex-wrap">
