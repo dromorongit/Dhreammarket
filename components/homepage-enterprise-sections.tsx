@@ -1833,28 +1833,23 @@ export function ElectronicsShowcaseSection() {
     return (
       <section className='relative py-10 lg:py-14 bg-white'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex gap-4 sm:gap-5 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
-            {FEATURED_COLLECTIONS.map((item) => (
-              <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[320px] sm:w-[420px] lg:w-[480px]'>
-                <Card
-                  variant='elevated'
-                  className='group flex flex-col overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 cursor-pointer h-full p-0'
-                >
-                  <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
-                     <Image
-                       src={item.image}
-                       alt={item.title}
-                       className='object-contain group-hover:scale-[1.03] transition-transform duration-500'
-                       fill
-                       loading='lazy'
-                       sizes={CARD_IMAGE_SIZES_4COL}
-                       placeholder="blur"
-                       blurDataURL={getBlurDataURL()}
-                     />
-                  </div>
-                </Card>
-              </Link>
-            ))}
+           <div className='flex gap-1 sm:gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+             {FEATURED_COLLECTIONS.map((item) => (
+               <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[320px] sm:w-[420px] lg:w-[480px]'>
+                 <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      className='object-cover'
+                      fill
+                      loading='lazy'
+                      sizes={CARD_IMAGE_SIZES_4COL}
+                      placeholder="blur"
+                      blurDataURL={getBlurDataURL()}
+                    />
+                 </div>
+               </Link>
+             ))}
           </div>
         </div>
       </section>
