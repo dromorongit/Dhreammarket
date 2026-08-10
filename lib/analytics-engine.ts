@@ -288,8 +288,8 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
       SELECT b.name, COALESCE(SUM(oi."quantity" * oi."price"), 0) as revenue
       FROM "order_items" oi
       JOIN "orders" o ON oi."orderId" = o."id"
-      JOIN "brands" b ON p."brandId" = b."id"
       JOIN "products" p ON oi."productId" = p."id"
+      JOIN "brands" b ON p."brandId" = b."id"
       WHERE o."createdAt" >= ${from} AND o."createdAt" <= ${to}
       AND o."paymentStatus" = 'PAID' AND o."deletedAt" IS NULL
       GROUP BY b.name
