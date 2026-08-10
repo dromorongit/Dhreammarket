@@ -239,7 +239,7 @@ export function Footer() {
           <div className="flex items-center gap-6">
             <span className="text-slate-500 text-sm">Ghana-First Marketplace</span>
             <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
-            <span className="text-slate-500 text-sm">Powered by Innovation</span>
+             <span className="text-slate-500 text-sm">Powered by DhroneTech</span>
           </div>
         </div>
       </div>
