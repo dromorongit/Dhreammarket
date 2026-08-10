@@ -78,7 +78,7 @@ export default memo(function ServiceCard({ service, wishlistServiceIds, classNam
   return (
     <Card
       variant="elevated"
-      className={`group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0 ${className || ''}`}
+      className={`group flex flex-col overflow-hidden border border-gold/20 hover:shadow-xl hover:border-gold/50 transition-all duration-300 h-full p-0 ${className || ''}`}
     >
       <Link href={`/services/${service.slug}`} className="block">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">

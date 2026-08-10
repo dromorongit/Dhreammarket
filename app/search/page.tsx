@@ -595,7 +595,7 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
 
   return (
 <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-       <Card variant="elevated" className="group flex flex-col overflow-hidden h-full">
+       <Card variant="elevated" className="group flex flex-col overflow-hidden border border-gold/20 hover:border-gold/50 h-full">
          <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
            <WishlistButton
              productId={product.id}

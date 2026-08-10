@@ -228,7 +228,7 @@ function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterprisePr
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <Card
             variant='elevated'
-             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full'
+             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full border border-gold/20 hover:border-gold/50'
           >
             <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
               <WishlistButton
@@ -327,7 +327,7 @@ function SponsoredCard({ product, initialIsWishlisted }: { product: EnterprisePr
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <Card
             variant='elevated'
-             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full'
+             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full border border-gold/20 hover:border-gold/50'
           >
             <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
               <WishlistButton
@@ -341,30 +341,30 @@ function SponsoredCard({ product, initialIsWishlisted }: { product: EnterprisePr
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
-                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
-                  Quick View
-                </Link>
-              </div>
-              <ProductBadges product={calculateProductBadges({
-                price: product.price,
-                flashSalePrice: product.flashSalePrice,
-                salesPrice: product.salesPrice,
-                dealsPrice: product.dealsPrice,
-                stock: product.stock,
-                availabilityType: product.availabilityType,
-                expectedArrivalDate: product.expectedArrivalDate,
-                expectedRestockDate: product.expectedRestockDate,
-                isSponsored: true,
-              })} />
-            </div>
-            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-              <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
-                {product.name}
-              </h3>
-              <div className='flex items-center gap-1.5 flex-wrap'>
-                <span className='text-[11px] font-bold text-royal-blue'>
-                  {formatPrice(getEffectivePrice(product))}
-                </span>
+                 <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
+                   Quick View
+                 </Link>
+               </div>
+               <ProductBadges product={calculateProductBadges({
+                 price: product.price,
+                 flashSalePrice: product.flashSalePrice,
+                 salesPrice: product.salesPrice,
+                 dealsPrice: product.dealsPrice,
+                 stock: product.stock,
+                 availabilityType: product.availabilityType,
+                 expectedArrivalDate: product.expectedArrivalDate,
+                 expectedRestockDate: product.expectedRestockDate,
+                 isSponsored: true,
+               })} />
+             </div>
+             <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+               <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
+                 {product.name}
+               </h3>
+               <div className='flex items-center gap-1.5 flex-wrap'>
+                 <span className='text-[11px] font-bold text-royal-blue'>
+                   {formatPrice(getEffectivePrice(product))}
+                 </span>
                 {discountedPrice && discountedPrice < product.price && (
                   <span className='text-[10px] text-slate-400 line-through'>
                     {formatPrice(product.price)}
@@ -410,7 +410,7 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <Card
             variant='elevated'
-            className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border-2 border-transparent hover:border-rose-200 w-full'
+             className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 border border-gold/20 hover:border-gold/50 w-full'
           >
             <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
               <WishlistButton
@@ -424,29 +424,29 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
-                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
-                  Quick View
-                </Link>
-              </div>
-              <ProductBadges product={calculateProductBadges({
-                price: product.price,
-                flashSalePrice: product.flashSalePrice,
-                salesPrice: product.salesPrice,
-                dealsPrice: product.dealsPrice,
-                stock: product.stock,
-                availabilityType: product.availabilityType,
-                expectedArrivalDate: product.expectedArrivalDate,
-                expectedRestockDate: product.expectedRestockDate,
-              })} />
-            </div>
-            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-              <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
-                {product.name}
-              </h3>
-              <div className='flex items-center gap-1.5 flex-wrap'>
-                <span className='text-sm font-bold text-rose-600'>
-                  {formatPrice(salePrice)}
-                </span>
+                 <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
+                   Quick View
+                 </Link>
+               </div>
+               <ProductBadges product={calculateProductBadges({
+                 price: product.price,
+                 flashSalePrice: product.flashSalePrice,
+                 salesPrice: product.salesPrice,
+                 dealsPrice: product.dealsPrice,
+                 stock: product.stock,
+                 availabilityType: product.availabilityType,
+                 expectedArrivalDate: product.expectedArrivalDate,
+                 expectedRestockDate: product.expectedRestockDate,
+               })} />
+             </div>
+             <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+               <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
+                 {product.name}
+               </h3>
+               <div className='flex items-center gap-1.5 flex-wrap'>
+                 <span className='text-sm font-bold text-rose-600'>
+                   {formatPrice(salePrice)}
+                 </span>
                 {discountedPrice && discountedPrice < product.price && (
                   <span className='text-[11px] text-slate-400 line-through'>
                     {formatPrice(product.price)}
@@ -497,7 +497,7 @@ function StandardCard({
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
           <Card
             variant='elevated'
-             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full'
+             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full border border-gold/20 hover:border-gold/50'
           >
             <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
               <WishlistButton
@@ -511,35 +511,35 @@ function StandardCard({
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
-                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
-                  Quick View
-                </Link>
-              </div>
-              <ProductBadges product={calculateProductBadges({
-                price: product.price,
-                flashSalePrice: product.flashSalePrice,
-                salesPrice: product.salesPrice,
-                dealsPrice: product.dealsPrice,
-                stock: product.stock,
-                availabilityType: product.availabilityType,
-                expectedArrivalDate: product.expectedArrivalDate,
-                expectedRestockDate: product.expectedRestockDate,
-              })} />
-            </div>
-            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-              <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
-                {product.name}
-              </h3>
-              <div className='flex items-center gap-1.5 flex-wrap'>
-                <span className='text-[11px] font-bold text-royal-blue'>
-                  {formatPrice(getEffectivePrice(product))}
-                </span>
-                {getDiscountedPrice(product) && getDiscountedPrice(product)! < product.price && (
-                  <span className='text-[10px] text-slate-400 line-through'>
-                    {formatPrice(product.price)}
-                  </span>
-                )}
-              </div>
+                 <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
+                   Quick View
+                 </Link>
+               </div>
+               <ProductBadges product={calculateProductBadges({
+                 price: product.price,
+                 flashSalePrice: product.flashSalePrice,
+                 salesPrice: product.salesPrice,
+                 dealsPrice: product.dealsPrice,
+                 stock: product.stock,
+                 availabilityType: product.availabilityType,
+                 expectedArrivalDate: product.expectedArrivalDate,
+                 expectedRestockDate: product.expectedRestockDate,
+               })} />
+             </div>
+             <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+               <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
+                 {product.name}
+               </h3>
+               <div className='flex items-center gap-1.5 flex-wrap'>
+                 <span className='text-[11px] font-bold text-royal-blue'>
+                   {formatPrice(getEffectivePrice(product))}
+                 </span>
+                 {getDiscountedPrice(product) && getDiscountedPrice(product)! < product.price && (
+                   <span className='text-[10px] text-slate-400 line-through'>
+                     {formatPrice(product.price)}
+                   </span>
+                 )}
+               </div>
               {product.store && (
                 <div className='flex items-center gap-1 min-w-0'>
                   <p className='text-[10px] text-slate-500 truncate'>
@@ -742,7 +742,7 @@ export function EnterpriseGadgetDisplaySection({
 
     return (
       <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>
-        <div className='group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500'>
+        <div className='group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-gold/20 hover:shadow-2xl hover:border-gold/50 hover:-translate-y-1 transition-all duration-500'>
           <div className='relative aspect-[4/5] bg-slate-50 overflow-hidden'>
             <ProductImage
               product={product}
@@ -1155,7 +1155,7 @@ export function TopClearanceSalesSection({
             <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`}>
               <Card
                 variant='elevated'
-                className='group overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 bg-slate-800/50 border border-slate-700/50'
+                 className='group overflow-hidden rounded-2xl hover:shadow-2xl hover:border-gold/50 transition-all duration-500 bg-slate-800/50 border border-gold/20'
               >
                 <div className='relative aspect-[16/9] bg-slate-800 overflow-hidden'>
                   <WishlistButton
@@ -1205,7 +1205,7 @@ export function TopClearanceSalesSection({
                   >
                     <Card
                       variant='elevated'
-                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
+                      className='group overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 bg-slate-800/50 border border-gold/20'
                     >
                       <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
                         <WishlistButton
@@ -1245,7 +1245,7 @@ export function TopClearanceSalesSection({
                   >
                     <Card
                       variant='elevated'
-                      className='group overflow-hidden rounded-2xl hover:shadow-xl transition-all duration-300 bg-slate-800/50 border border-slate-700/50'
+                      className='group overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 bg-slate-800/50 border border-gold/20'
                     >
                       <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
                         <WishlistButton
@@ -1915,7 +1915,7 @@ export function ElectronicsShowcaseSection() {
                 <Link key={item.title} href={href}>
                   <Card
                     variant='elevated'
-                    className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 cursor-pointer h-full p-0'
+                    className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 cursor-pointer h-full p-0 border border-gold/20'
                   >
                     <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
                       <Image

@@ -83,11 +83,11 @@ interface HomepageSectionProps {
   })
 
 return (
-      <Card variant="elevated" className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0">
-       <div className="flex flex-col h-full">
-         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-<WishlistButton
+      <Card variant="elevated" className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 border border-gold/20 hover:border-gold/50">
+        <div className="flex flex-col h-full">
+          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
+            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+              <WishlistButton
                 productId={product.id}
                 initialIsWishlisted={initialIsWishlisted}
                 size="sm"
@@ -518,9 +518,9 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
 
     return (
       <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className="snap-start flex-shrink-0 w-[260px] sm:w-[300px] lg:w-[340px]">
-        <div className="group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-slate-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
-          <div className="relative aspect-[4/5] bg-slate-50 overflow-hidden">
-            {product.images?.[0] ? (
+         <div className="group flex flex-col overflow-hidden rounded-2xl h-full bg-white shadow-md border border-gold/20 hover:shadow-2xl hover:border-gold/50 hover:-translate-y-1 transition-all duration-500">
+           <div className="relative aspect-[4/5] bg-slate-50 overflow-hidden">
+             {product.images?.[0] ? (
               <Image
                 src={product.images[0].url}
                 alt={product.images[0].alt || product.name}
@@ -744,9 +744,9 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                    })
                    return (
                      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                       <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
-                         <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-                           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+                         <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
+                           <Card variant="elevated" className="group overflow-hidden hover:shadow-xl hover:border-gold/50 transition-all duration-300 border border-gold/20 h-full">
+                             <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
  {product.images?.[0] ? (
                                  <Image
                                    src={product.images[0].url}
@@ -806,7 +806,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                     return (
                       <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
                         <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
-                          <Card variant="elevated" className="group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
+                          <Card variant="elevated" className="group overflow-hidden hover:shadow-xl hover:border-gold/50 transition-all duration-300 border border-gold/20 h-full">
                             <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
  {product.images?.[0] ? (
                                  <Image
@@ -899,7 +899,7 @@ export function PromoBannerSection({ section }: HomepageSectionProps) {
   const imageUrl = service.thumbnail || service.images?.[0]?.imageUrl
 
   return (
-    <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
+    <Card variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0 border border-gold/20 hover:border-gold/50">
       <div className="flex flex-col h-full">
         <Link href={`/services/${service.slug}`} className="block">
           <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
@@ -1305,7 +1305,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
   if (displayProducts.length === 0) return null
 
   const renderPremiumCard = (product: EnterpriseProduct) => (
-    <div className="rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/50 via-slate-300/20 to-slate-200/50 transition-all duration-300 h-full group">
+    <div className="rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/50 via-slate-300/20 to-slate-200/50 transition-all duration-300 h-full group border border-gold/20 hover:border-gold/50">
       <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
     </div>
   )

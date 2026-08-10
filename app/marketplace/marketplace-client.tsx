@@ -155,7 +155,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
   return (
     <Card
       variant="elevated"
-      className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0"
+      className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 border border-gold/20 hover:border-gold/50"
     >
       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
