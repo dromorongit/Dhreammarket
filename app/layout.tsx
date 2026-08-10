@@ -8,6 +8,7 @@ import QueryProvider from '@/components/QueryProvider'
 import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
+import LiveSupportWidget from '@/components/LiveSupportWidget'
 import { Suspense } from 'react'
 
 export const metadata: Metadata = {
@@ -51,6 +52,7 @@ export default function RootLayout({
             </main>
             <Footer />
             <CookieConsentBanner />
+            <LiveSupportWidget />
           </QueryProvider>
         </CartProvider>
       </body>

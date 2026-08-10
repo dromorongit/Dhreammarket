@@ -36,6 +36,8 @@ model User {
   restockOrders            RestockOrder[]
   store                    Store?
   supportTickets           SupportTicket[]
+  assignedSupportTickets   SupportTicket[]           @relation("AssignedSupportTicket")
+  assignedSupportConversations SupportConversation[] @relation("AssignedSupportConversation")
   vendorPayouts            VendorPayout[]                 @relation("VendorPayoutVendor")
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication?
@@ -863,7 +865,71 @@ model SupportTicket {
   updatedAt  DateTime              @updatedAt
   user       User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  conversationRef String?           @unique @db.VarChar(32)
+  guestToken      String?           @unique @db.VarChar(64)
+  assignedAdminId String?
+  lastMessageAt   DateTime?         @default(now())
+  isReadByCustomer Boolean          @default(false)
+  isReadByAdmin   Boolean          @default(false)
+
+  assignedAdmin   User?             @relation("AssignedSupportTicket", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+  messages        SupportMessage[]
+  conversation    SupportConversation?
+
+  @@index([conversationRef])
+  @@index([guestToken])
+  @@index([assignedAdminId])
+  @@index([lastMessageAt])
+  @@index([status, createdAt])
   @@map("support_tickets")
+}
+
+model SupportConversation {
+  id               String                   @id @default(cuid())
+  ticketId         String                   @unique
+  conversationRef  String                   @unique @db.VarChar(32)
+  guestToken       String?                  @unique @db.VarChar(64)
+  status           String                   @default("OPEN")
+  customerType     String                   @default("GUEST")
+  assignedAdminId  String?
+  lastMessageAt    DateTime                 @default(now())
+  isReadByCustomer Boolean                  @default(false)
+  isReadByAdmin    Boolean                  @default(false)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  assignedAdmin   User?       @relation("AssignedSupportConversation", fields: [assignedAdminId], references: [id], onDelete: SetNull)
+
+  @@index([conversationRef])
+  @@index([guestToken])
+  @@index([assignedAdminId])
+  @@index([lastMessageAt])
+  @@index([status])
+  @@map("support_conversations")
+}
+
+model SupportMessage {
+  id          String                   @id @default(cuid())
+  ticketId    String
+  senderType  SupportMessageSenderType
+  senderId    String?
+  message     String
+  isRead      Boolean                  @default(false)
+  createdAt   DateTime                 @default(now())
+
+  ticket      SupportTicket            @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@index([senderType])
+  @@map("support_messages")
+}
+
+enum SupportMessageSenderType {
+  GUEST
+  CUSTOMER
+  ADMIN
+  SUPER_ADMIN
 }
 
 model HomepageSection {

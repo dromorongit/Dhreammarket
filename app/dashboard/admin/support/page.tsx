@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Skeleton } from '@/components/Skeleton'
 import Link from 'next/link'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 interface SupportTicket {
   id: string
@@ -15,7 +16,6 @@ interface SupportTicket {
   type: string
   status: string
   priority: string
-  adminReply: string | null
   createdAt: string
   updatedAt: string
   user?: {
@@ -26,6 +26,15 @@ interface SupportTicket {
       lastName: string | null
     } | null
   } | null
+}
+
+interface SupportMessage {
+  id: string
+  senderType: string
+  senderId?: string
+  message: string
+  isRead: boolean
+  createdAt: string
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -58,16 +67,13 @@ export default function AdminSupportPage() {
   const [error, setError] = useState<string | null>(null)
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState({
-    status: '',
-    type: '',
-    priority: '',
-  })
+  const [filters, setFilters] = useState({ status: '', type: '', priority: '' })
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
   const [replyText, setReplyText] = useState('')
   const [newStatus, setNewStatus] = useState('')
-  const [newPriority, setNewPriority] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
+  const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([])
+  const queryClient = useQueryClient()
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -100,42 +106,126 @@ export default function AdminSupportPage() {
     fetchTickets()
   }, [fetchTickets])
 
-  const handleUpdateTicket = async () => {
-    if (!selectedTicket) return
+  const { refetch: refetchTicketMessages } = useQuery({
+    queryKey: ['admin-support-messages', selectedTicket?.id],
+    queryFn: async () => {
+      if (!selectedTicket) return { messages: [] }
+      const res = await fetch(`/api/support/conversations/${selectedTicket.id}/messages`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to fetch messages')
+      const data = await res.json() as { messages: SupportMessage[] }
+      setTicketMessages(data.messages || [])
+      return data
+    },
+    enabled: !!selectedTicket,
+  })
 
-    setIsUpdating(true)
-    try {
-      const response = await fetch(`/api/admin/support/${selectedTicket.id}`, {
+  useEffect(() => {
+    if (selectedTicket) {
+      refetchTicketMessages()
+    }
+  }, [selectedTicket, refetchTicketMessages])
+
+  useEffect(() => {
+    if (!selectedTicket?.id) return
+
+    let isCancelled = false
+    let interval: NodeJS.Timeout
+
+    const connect = async () => {
+      try {
+        const res = await fetch(`/api/admin/support/tickets/${selectedTicket.id}/stream`)
+        if (!res.ok) return
+
+        const reader = res.body?.getReader()
+        if (!reader) return
+
+        const decoder = new TextDecoder()
+
+        while (!isCancelled) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const text = decoder.decode(value, { stream: true })
+          const lines = text.split('\n')
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6))
+                if (data.type === 'activity' || data.type === 'status') {
+                  refetchTicketMessages()
+                  fetchTickets()
+                }
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }
+      } catch {
+        // retry on error
+        setTimeout(connect, 3000)
+      }
+    }
+
+    connect()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [selectedTicket?.id, refetchTicketMessages, fetchTickets])
+
+  const sendReplyMutation = useMutation({
+    mutationFn: async (message: string) => {
+      if (!selectedTicket) throw new Error('No ticket selected')
+      const res = await fetch(`/api/admin/support/tickets/${selectedTicket.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to send reply')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      setReplyText('')
+      refetchTicketMessages()
+      queryClient.invalidateQueries({ queryKey: ['support-conversations'] })
+    },
+  })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTicket) throw new Error('No ticket selected')
+      const res = await fetch(`/api/admin/support/${selectedTicket.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus || selectedTicket.status,
-          priority: newPriority || selectedTicket.priority,
-          adminReply: replyText,
-        }),
+        body: JSON.stringify({ status: newStatus || selectedTicket.status }),
       })
-
-      if (response.ok) {
-        setSelectedTicket(null)
-        setReplyText('')
-        fetchTickets()
-      } else {
-        const error = await response.json()
-        alert(error.error || 'Failed to update ticket')
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to update status')
       }
-    } catch (error) {
-      console.error('Error updating ticket:', error)
-      alert('Failed to update ticket')
-    } finally {
-      setIsUpdating(false)
-    }
+      return res.json()
+    },
+    onSuccess: () => {
+      fetchTickets()
+    },
+  })
+
+  const handleReply = () => {
+    if (!replyText.trim()) return
+    sendReplyMutation.mutate(replyText.trim())
+  }
+
+  const handleStatusChange = () => {
+    updateStatusMutation.mutate()
   }
 
   const openTicketDetails = (ticket: SupportTicket) => {
     setSelectedTicket(ticket)
     setNewStatus(ticket.status)
-    setNewPriority(ticket.priority)
-    setReplyText(ticket.adminReply || '')
+    setReplyText('')
   }
 
   const formatDate = (dateString: string) => {
@@ -197,7 +287,6 @@ export default function AdminSupportPage() {
           </Button>
         </div>
 
-        {/* Status Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {Object.entries(statusConfig).map(([key, config]) => (
             <Card key={key} className="hover:shadow-md transition-shadow">
@@ -216,7 +305,6 @@ export default function AdminSupportPage() {
           ))}
         </div>
 
-        {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-4">
             <div className="flex flex-col lg:flex-row gap-4">
@@ -271,7 +359,6 @@ export default function AdminSupportPage() {
           </CardContent>
         </Card>
 
-        {/* Tickets Table */}
         <Card>
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
@@ -333,14 +420,6 @@ export default function AdminSupportPage() {
                         <span>{formatDate(ticket.createdAt)}</span>
                       </div>
                       <p className="text-gray-600 line-clamp-2">{ticket.message}</p>
-                      {ticket.adminReply && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <svg className="w-4 h-4 text-royal-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          <span className="text-sm text-royal-blue">Admin has replied</span>
-                        </div>
-                      )}
                     </div>
                     <Button
                       variant="outline"
@@ -359,7 +438,6 @@ export default function AdminSupportPage() {
           )}
         </Card>
 
-        {/* Ticket Detail Modal */}
         {selectedTicket && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -374,7 +452,7 @@ export default function AdminSupportPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => setSelectedTicket(null)}
+                    onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                   >
                     <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -385,7 +463,6 @@ export default function AdminSupportPage() {
               </div>
 
               <div className="p-6 space-y-6">
-                {/* Ticket Details */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Badge variant="default">{typeLabels[selectedTicket.type] || selectedTicket.type}</Badge>
@@ -401,9 +478,29 @@ export default function AdminSupportPage() {
                   </div>
                 </div>
 
-                {/* Admin Reply Section */}
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Admin Response</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversation</h3>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto mb-4">
+                    {ticketMessages.map((msg) => (
+                      <div key={msg.id} className={`flex ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                          msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST'
+                            ? 'bg-royal-blue text-white rounded-br-sm'
+                            : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                        }`}>
+                          {msg.senderType === 'ADMIN' || msg.senderType === 'SUPER_ADMIN' ? (
+                            <p className="text-xs font-medium mb-1 text-royal-blue">
+                              {msg.senderType === 'SUPER_ADMIN' ? 'Support Manager' : 'Support Agent'}
+                            </p>
+                          ) : null}
+                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                          <p className={`text-xs mt-1 ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'text-white/70' : 'text-gray-500'}`}>
+                            {formatDate(msg.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
                   <div className="space-y-4">
                     <div>
@@ -419,21 +516,9 @@ export default function AdminSupportPage() {
                           <option key={key} value={key}>{config.label}</option>
                         ))}
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Update Priority
-                      </label>
-                      <select
-                        value={newPriority}
-                        onChange={(e) => setNewPriority(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        {Object.entries(priorityConfig).map(([key, config]) => (
-                          <option key={key} value={key}>{config.label}</option>
-                        ))}
-                      </select>
+                      <Button variant="outline" size="sm" onClick={handleStatusChange} className="mt-2" disabled={updateStatusMutation.isPending}>
+                        Update Status
+                      </Button>
                     </div>
 
                     <div>
@@ -443,7 +528,7 @@ export default function AdminSupportPage() {
                       <textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        rows={5}
+                        rows={4}
                         placeholder="Type your response here..."
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                       />
@@ -452,38 +537,25 @@ export default function AdminSupportPage() {
                     <div className="flex gap-3">
                       <Button
                         variant="primary"
-                        onClick={handleUpdateTicket}
-                        disabled={isUpdating}
+                        onClick={handleReply}
+                        disabled={!replyText.trim() || sendReplyMutation.isPending}
                         className="flex-1"
                       >
-                        {isUpdating ? 'Updating...' : 'Update & Reply'}
+                        {sendReplyMutation.isPending ? 'Sending...' : 'Send Reply'}
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => setSelectedTicket(null)}
+                        onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
                       >
-                        Cancel
+                        Close
                       </Button>
                     </div>
                   </div>
                 </div>
-
-                {/* Existing Admin Reply */}
-                {selectedTicket.adminReply && (
-                  <div className="border-t pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Previous Admin Reply</h3>
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.adminReply}</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Sent on {formatDate(selectedTicket.updatedAt)}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
-        )}
+          )}
       </div>
     </div>
   )
