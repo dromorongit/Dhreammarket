@@ -1473,7 +1473,7 @@ const QUICK_LINKS: Array<{ name: string; href: string; image: string }> = [
 
 export function QuickLinksSection() {
    return (
-     <section className='relative py-16 lg:py-24 bg-gradient-to-b from-slate-50/50 to-white'>
+      <section className='relative py-10 lg:py-14 bg-gradient-to-b from-slate-50/50 to-white'>
        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
          <div className='mb-10'>
            <div className='flex items-center gap-3 mb-4'>

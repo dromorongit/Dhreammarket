@@ -171,7 +171,7 @@ export function TrendingNowSection({
   const bottomRowProducts = displayProducts.slice(half);
 
   return (
-    <section id='homepage-trending-now' className='relative py-16 lg:py-24 bg-rose-50/[0.05] overflow-hidden'>
+     <section id='homepage-trending-now' className='relative py-10 lg:py-14 bg-rose-50/[0.05] overflow-hidden'>
       <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className='mb-10'>
           <div className='flex items-center gap-3 mb-4'>
