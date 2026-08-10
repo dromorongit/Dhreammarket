@@ -19,6 +19,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
+import CountdownTimer from '@/components/CountdownTimer';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
 
 export function useEnterpriseHomepageData() {
@@ -241,22 +242,9 @@ function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterprisePr
                 product={product}
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
-              {product.flashSaleEnd && (
-                <div className='absolute top-2 right-2 bg-deep-navy/90 text-white px-2 py-1 rounded-full flex items-center gap-1'>
-                  <svg
-                    className='w-3 h-3'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                    />
-                  </svg>
-                  <CountdownTimer endTime={product.flashSaleEnd} />
+              {product.flashSaleEnd && new Date(product.flashSaleEnd) > new Date() && (
+                <div className='absolute top-2 left-2'>
+                  <CountdownTimer endDate={product.flashSaleEnd} />
                 </div>
               )}
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
@@ -423,36 +411,41 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                 product={product}
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
               />
+              {product.dealsEnd && new Date(product.dealsEnd) > new Date() && (
+                <div className='absolute top-2 left-2'>
+                  <CountdownTimer endDate={product.dealsEnd} />
+                </div>
+              )}
                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
-                 <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
-                   Quick View
-                 </Link>
-               </div>
-               <ProductBadges product={calculateProductBadges({
-                 price: product.price,
-                 flashSalePrice: product.flashSalePrice,
-                 salesPrice: product.salesPrice,
-                 dealsPrice: product.dealsPrice,
-                 stock: product.stock,
-                 availabilityType: product.availabilityType,
-                 expectedArrivalDate: product.expectedArrivalDate,
-                 expectedRestockDate: product.expectedRestockDate,
-               })} />
-             </div>
-             <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-               <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
-                 {product.name}
-               </h3>
-               <div className='flex items-center gap-1.5 flex-wrap'>
-                 <span className='text-sm font-bold text-rose-600'>
-                   {formatPrice(salePrice)}
-                 </span>
-                {discountedPrice && discountedPrice < product.price && (
-                  <span className='text-[11px] text-slate-400 line-through'>
-                    {formatPrice(product.price)}
-                  </span>
-                )}
+                  <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
+                    Quick View
+                  </Link>
+                </div>
+                <ProductBadges product={calculateProductBadges({
+                  price: product.price,
+                  flashSalePrice: product.flashSalePrice,
+                  salesPrice: product.salesPrice,
+                  dealsPrice: product.dealsPrice,
+                  stock: product.stock,
+                  availabilityType: product.availabilityType,
+                  expectedArrivalDate: product.expectedArrivalDate,
+                  expectedRestockDate: product.expectedRestockDate,
+                })} />
               </div>
+              <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
+                <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
+                  {product.name}
+                </h3>
+                <div className='flex items-center gap-1.5 flex-wrap'>
+                  <span className='text-sm font-bold text-rose-600'>
+                    {formatPrice(salePrice)}
+                  </span>
+                 {discountedPrice && discountedPrice < product.price && (
+                   <span className='text-[11px] text-slate-400 line-through'>
+                     {formatPrice(product.price)}
+                   </span>
+                 )}
+               </div>
               {product.store && (
                 <div className='flex items-center gap-1 min-w-0'>
                   <p className='text-[10px] text-slate-500 truncate'>

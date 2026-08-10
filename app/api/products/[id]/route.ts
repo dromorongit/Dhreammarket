@@ -194,7 +194,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, lowStockThreshold, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
+    const { name, description, price, stock, lowStockThreshold, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, dealsStart, dealsEnd, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -350,6 +350,8 @@ if (finalAvailabilityType === 'PREORDER') {
         brandId: brandId || null,
         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+        dealsStart: dealsStart ? new Date(dealsStart) : null,
+        dealsEnd: dealsEnd ? new Date(dealsEnd) : null,
         availabilityType: finalAvailabilityType as any,
         expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
         estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays, 10) : null,

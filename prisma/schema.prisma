@@ -247,6 +247,8 @@ model Product {
   isSponsored              Boolean                     @default(false)
   brandId                  String?
   dealsPrice               Float?
+  dealsStart               DateTime?
+  dealsEnd                 DateTime?
   salesPrice               Float?
   availabilityType         ProductAvailabilityType     @default(IN_STOCK)
   expectedArrivalDate      DateTime?

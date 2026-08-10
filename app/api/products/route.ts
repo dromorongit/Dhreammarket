@@ -72,6 +72,8 @@ export async function GET(request: NextRequest) {
           price: true,
           salesPrice: true,
           dealsPrice: true,
+          dealsStart: true,
+          dealsEnd: true,
           stock: true,
           reservedQuantity: true,
           availabilityType: true,
@@ -230,7 +232,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, dealsStart, dealsEnd, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -399,9 +401,11 @@ export async function POST(request: NextRequest) {
           price: parseFloat(price),
           stock: parseInt(stock, 10),
           brandId: brandId || null,
-         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
-         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
-         availabilityType: finalAvailabilityType as any,
+          salesPrice: salesPrice ? parseFloat(salesPrice) : null,
+          dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+          dealsStart: dealsStart ? new Date(dealsStart) : null,
+          dealsEnd: dealsEnd ? new Date(dealsEnd) : null,
+          availabilityType: finalAvailabilityType as any,
           expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
           estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays, 10) : null,
          preOrderNotes: preOrderNotes || null,
