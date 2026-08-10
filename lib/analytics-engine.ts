@@ -329,7 +329,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
       ORDER BY revenue DESC
     `,
     prisma.$queryRaw<Array<{ email: string; revenue: number }>>`
-      SELECT u.email as name, COALESCE(SUM(oi."quantity" * oi."price"), 0) as revenue
+      SELECT u.email, COALESCE(SUM(oi."quantity" * oi."price"), 0) as revenue
       FROM "order_items" oi
       JOIN "orders" o ON oi."orderId" = o."id"
       JOIN "users" u ON o."userId" = u."id"

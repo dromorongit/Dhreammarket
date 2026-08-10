@@ -597,9 +597,9 @@ export default function SuperAdminDashboard() {
                               <p className="text-sm font-medium text-slate-700 break-words">
                                 {admin.profile?.firstName && admin.profile?.lastName 
                                   ? `${admin.profile.firstName} ${admin.profile.lastName}` 
-                                  : admin.email}
+                                  : admin.email || 'No email'}
                               </p>
-                              <p className="text-xs text-slate-500 break-all">{admin.email}</p>
+                              <p className="text-xs text-slate-500 break-all">{admin.email || 'No email'}</p>
                               {admin.mobileNumber && (
                                 <p className="text-xs text-slate-400 mt-1">{admin.mobileNumber}</p>
                               )}
@@ -642,14 +642,14 @@ export default function SuperAdminDashboard() {
                     {vendors.slice(0, 5).map((vendor) => (
                       <div key={vendor.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors gap-3">
                         <div className="flex items-start sm:items-center gap-3 min-w-0">
-<div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+ <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
                             {(vendor.storeName || vendor.store?.name)?.charAt(0) || vendor.email?.charAt(0) || ''}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-slate-700 break-words">
                               {vendor.storeName || vendor.name || 'Unnamed Store'}
                             </p>
-                            <p className="text-xs text-slate-500 break-all">{vendor.email}</p>
+                            <p className="text-xs text-slate-500 break-all">{vendor.email || 'No email'}</p>
                             {vendor.mobileNumber && (
                               <p className="text-xs text-slate-400 mt-1">{vendor.mobileNumber}</p>
                             )}
@@ -742,7 +742,7 @@ export default function SuperAdminDashboard() {
                       <div key={ticket.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
                         <div>
                           <p className="text-sm font-medium text-slate-700">{ticket.subject}</p>
-                          <p className="text-xs text-slate-500">{ticket.user.email}</p>
+                          <p className="text-xs text-slate-500">{ticket.user?.email || 'No email'}</p>
                         </div>
                         <Badge variant={ticket.status === 'OPEN' ? 'warning' : 'success'}>
                           {ticket.status}
