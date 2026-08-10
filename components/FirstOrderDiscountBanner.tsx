@@ -41,7 +41,7 @@ export function FirstOrderDiscountBanner() {
 
   return (
     <section className="w-full">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4 md:mb-6">
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2 md:mb-3">
         <div
           className="relative overflow-hidden rounded-xl bg-gradient-to-r from-deep-navy via-royal-blue to-blue-800 px-4 py-2 md:px-6 md:py-2.5 shadow-md shadow-blue-900/20 border border-white/10"
           style={{
