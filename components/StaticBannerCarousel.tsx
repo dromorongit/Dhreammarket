@@ -128,7 +128,7 @@ export default function StaticBannerCarousel() {
   }
 
   return (
-    <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Static promotional banners">
+    <section className="relative py-3 bg-slate-50 overflow-hidden" aria-label="Static promotional banners">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={containerRef}

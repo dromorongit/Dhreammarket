@@ -157,7 +157,7 @@ function SectionHeader({
   dark?: boolean;
 }) {
   return (
-    <div className='mb-10'>
+    <div className='mb-6'>
       {badge && (
         <Badge variant={dark ? 'premium' : 'danger'} className='mb-3'>
           {badge}
@@ -181,11 +181,11 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
   return (
     <section
       className={
-        dark ? 'relative py-16 lg:py-24 bg-slate-900' : 'relative py-16 lg:py-24'
+        dark ? 'relative py-10 lg:py-14 bg-slate-900' : 'relative py-10 lg:py-14'
       }
     >
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='mb-10'>
+        <div className='mb-6'>
           <div
             className='h-6 w-32 rounded-full mb-3'
           />
@@ -595,7 +595,7 @@ export function FlashSalesSection({
   };
 
   return (
-    <section className='relative py-16 lg:py-24 bg-gradient-to-b from-rose-50 to-white overflow-hidden'>
+    <section className='relative py-10 lg:py-14 bg-gradient-to-b from-rose-50 to-white overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Limited Time'
@@ -608,7 +608,7 @@ export function FlashSalesSection({
             <FlashSaleCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
@@ -669,7 +669,7 @@ export function FlashSalesSection({
   };
 
   return (
-    <section className='relative py-16 lg:py-24 bg-slate-50'>
+    <section className='relative py-10 lg:py-14 bg-slate-50'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Promoted'
@@ -682,7 +682,7 @@ export function FlashSalesSection({
             <SponsoredCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace'>
             <Button
               variant='outline'
@@ -765,13 +765,13 @@ export function EnterpriseGadgetDisplaySection({
   }
 
   return (
-    <section className='relative py-16 lg:py-24 bg-gradient-to-br from-slate-900 via-deep-navy to-slate-900 overflow-hidden'>
+    <section className='relative py-10 lg:py-14 bg-gradient-to-br from-slate-900 via-deep-navy to-slate-900 overflow-hidden'>
       <div className='absolute inset-0 pointer-events-none'>
         <div className='absolute top-0 right-0 w-96 h-96 bg-royal-blue/10 rounded-full blur-3xl' />
         <div className='absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl' />
       </div>
       <div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className='mb-10'>
+        <div className='mb-6'>
           <SectionPill
             label='PREMIUM TECH'
             gradientFrom='from-amber-500'
@@ -791,7 +791,7 @@ export function EnterpriseGadgetDisplaySection({
           {products.slice(0, 20).map((product) => renderProductCard(product))}
         </div>
 
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?category=electronics'>
             <Button
               variant='outline'
@@ -838,7 +838,7 @@ export function EnterpriseGadgetDisplaySection({
   if (!products.length) return null;
 
   return (
-    <section className='relative py-16 lg:py-24 bg-white'>
+    <section className='relative py-10 lg:py-14 bg-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Best Sellers'
@@ -857,7 +857,7 @@ export function EnterpriseGadgetDisplaySection({
             />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=popular'>
             <Button
               variant='outline'
@@ -910,7 +910,7 @@ export function EnterpriseGadgetDisplaySection({
   if (!products.length) return null;
 
   return (
-    <section className='relative py-16 lg:py-24 bg-gradient-to-b from-orange-50 to-white'>
+    <section className='relative py-10 lg:py-14 bg-gradient-to-b from-orange-50 to-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Hot Deals'
@@ -923,7 +923,7 @@ export function EnterpriseGadgetDisplaySection({
             <DealCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
@@ -976,7 +976,7 @@ export function TopClearanceSalesSection({
   if (!products.length) return null;
 
   return (
-    <section className='relative py-16 lg:py-24 bg-gradient-to-b from-green-50 to-white'>
+    <section className='relative py-10 lg:py-14 bg-gradient-to-b from-green-50 to-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Clearance'
@@ -989,7 +989,7 @@ export function TopClearanceSalesSection({
             <DealCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
@@ -1042,7 +1042,7 @@ export function TopClearanceSalesSection({
   if (!products.length) return null;
 
   return (
-    <section className='relative py-16 lg:py-24 bg-slate-50'>
+    <section className='relative py-10 lg:py-14 bg-slate-50'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Services'
@@ -1055,7 +1055,7 @@ export function TopClearanceSalesSection({
             <StandardCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?category=Services'>
             <Button
               variant='outline'
@@ -1113,7 +1113,7 @@ export function TopClearanceSalesSection({
   const bottomRowProducts = mobileProducts.slice(half);
 
   return (
-    <section className='relative py-16 lg:py-24 bg-gradient-to-br from-purple-900 via-deep-navy to-slate-900 overflow-hidden'>
+    <section className='relative py-10 lg:py-14 bg-gradient-to-br from-purple-900 via-deep-navy to-slate-900 overflow-hidden'>
       <div className='absolute inset-0 pointer-events-none'>
         <div className='absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl' />
         <div className='absolute bottom-0 left-0 w-64 h-64 bg-premium-gold/10 rounded-full blur-3xl' />
@@ -1256,7 +1256,7 @@ export function TopClearanceSalesSection({
           )}
         </div>
 
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?category=Electronics'>
             <Button
               variant='outline'
@@ -1309,7 +1309,7 @@ export function TopClearanceSalesSection({
   if (!products.length) return null;
 
   return (
-    <section className='relative py-16 lg:py-24 bg-gradient-to-b from-amber-50 to-white'>
+    <section className='relative py-10 lg:py-14 bg-gradient-to-b from-amber-50 to-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='Express'
@@ -1322,7 +1322,7 @@ export function TopClearanceSalesSection({
             <DealCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
             <Button
               variant='outline'
@@ -1389,9 +1389,9 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
   const displayBrands = brands ?? [];
   if (!displayBrands.length) {
     return (
-      <section className='relative py-16 lg:py-24 bg-fuchsia-50/[0.05]'>
+      <section className='relative py-10 lg:py-14 bg-fuchsia-50/[0.05]'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='mb-10'>
+          <div className='mb-6'>
             <div className='flex items-center gap-3 mb-4'>
               <SectionPill label='FEATURED BRANDS' icon={<TbSparkles />} gradientFrom='from-fuchsia-500' gradientVia='via-pink-500' gradientTo='to-pink-500' />
             </div>
@@ -1405,9 +1405,9 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
   }
 
   return (
-    <section className='relative py-16 lg:py-24 bg-fuchsia-50/[0.05]'>
+    <section className='relative py-10 lg:py-14 bg-fuchsia-50/[0.05]'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionPill label="FEATURED BRANDS" icon={<TbSparkles />} gradientFrom="from-fuchsia-500" gradientVia="via-pink-500" gradientTo="to-pink-500" />
           </div>
@@ -1430,7 +1430,7 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
           </div>
         </div>
 
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace'>
             <Button
               variant='outline'
@@ -1475,7 +1475,7 @@ export function QuickLinksSection() {
    return (
       <section className='relative py-10 lg:py-14 bg-gradient-to-b from-slate-50/50 to-white'>
        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-         <div className='mb-10'>
+         <div className='mb-6'>
            <div className='flex items-center gap-3 mb-4'>
              <SectionPill label='EXPLORE' icon={<TbCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
            </div>
@@ -1562,7 +1562,7 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
   if (!products.length) return null
 
   return (
-    <section id='new-arrivals' className='relative py-16 lg:py-24 bg-white'>
+    <section id='new-arrivals' className='relative py-10 lg:py-14 bg-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='New'
@@ -1575,7 +1575,7 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
             <StandardCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace'>
             <Button
               variant='outline'
@@ -1634,7 +1634,7 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
   if (!products.length) return null
 
   return (
-    <section id='new-this-week' className='relative py-16 lg:py-24 bg-slate-50'>
+    <section id='new-this-week' className='relative py-10 lg:py-14 bg-slate-50'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader
           badge='This Week'
@@ -1647,7 +1647,7 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
             <StandardCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
           )}
         />
-        <div className='mt-8 text-center'>
+        <div className='mt-4 text-center'>
           <Link href='/marketplace'>
             <Button
               variant='outline'
@@ -1688,7 +1688,7 @@ const ELECTRONICS_CATEGORIES = [
 
 export function ElectronicsShowcaseSection() {
    return (
-     <section className='relative py-16 lg:py-24 bg-white'>
+     <section className='relative py-10 lg:py-14 bg-white'>
        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
          <div className='mb-12'>
            <Badge variant='premium' className='mb-4'>Technology</Badge>
@@ -1751,7 +1751,7 @@ export function ElectronicsShowcaseSection() {
 
   export function FoodShowcaseSection() {
     return (
-      <section className='relative py-16 lg:py-24 bg-white'>
+      <section className='relative py-10 lg:py-14 bg-white'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='mb-12'>
             <h2 className='text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy'>
@@ -1811,7 +1811,7 @@ export function ElectronicsShowcaseSection() {
 
   export function FeaturedCollectionsSection() {
     return (
-      <section className='relative py-16 lg:py-24 bg-white'>
+      <section className='relative py-10 lg:py-14 bg-white'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='flex gap-4 sm:gap-5 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
             {FEATURED_COLLECTIONS.map((item) => (
@@ -1882,7 +1882,7 @@ export function ElectronicsShowcaseSection() {
     }, [categories])
 
     return (
-      <section className='relative py-16 lg:py-24 bg-white'>
+      <section className='relative py-10 lg:py-14 bg-white'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='mb-12'>
             <Badge variant='premium' className='mb-4'>Services</Badge>
@@ -1985,7 +1985,7 @@ export function ElectronicsShowcaseSection() {
     }, [flatCategories])
 
     return (
-      <section className='relative py-16 lg:py-24 bg-white'>
+      <section className='relative py-10 lg:py-14 bg-white'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='mb-12'>
             <Badge variant='premium' className='mb-4'>Home & Decor</Badge>
@@ -2088,7 +2088,7 @@ export function ElectronicsShowcaseSection() {
     }, [flatCategories])
 
     return (
-      <section className='relative py-16 lg:py-24 bg-white'>
+      <section className='relative py-10 lg:py-14 bg-white'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='mb-12'>
             <Badge variant='premium' className='mb-4'>Pets</Badge>

@@ -49,7 +49,7 @@ export default function PhoneRail() {
   const duplicatedPhones = [...PHONES, ...PHONES]
 
   return (
-    <section className="relative py-5 bg-slate-50 overflow-hidden" aria-label="Phone rail">
+    <section className="relative py-3 bg-slate-50 overflow-hidden" aria-label="Phone rail">
       <div className="relative rounded-3xl overflow-hidden bg-slate-900 shadow-premium-xl rail-container">
         <div className="rail-track phone-rail-track">
           {duplicatedPhones.map((phone, index) => (

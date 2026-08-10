@@ -33,9 +33,9 @@ export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo
 
  export function HomepageSectionSkeleton() {
    return (
-     <section className="relative py-16 lg:py-24 bg-slate-50">
+     <section className="relative py-10 lg:py-14 bg-slate-50">
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-         <div className="mb-10">
+         <div className="mb-6">
            <Skeleton className="h-8 w-48 mb-3" />
            <Skeleton className="h-4 w-64" />
          </div>
@@ -185,9 +185,9 @@ return (
 
   if (displayProducts.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-white">
+      <section className="relative py-10 lg:py-14 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
               {section.name}
             </h2>
@@ -210,9 +210,9 @@ return (
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-white">
+    <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
             {section.name}
           </h2>
@@ -246,7 +246,7 @@ return (
           )}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <Link href="/marketplace">
 <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
                See More
@@ -263,9 +263,9 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
 
   if (displayVendors.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-slate-50">
+      <section className="relative py-10 lg:py-14 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
               {section.name}
             </h2>
@@ -288,9 +288,9 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-slate-50">
+    <section className="relative py-10 lg:py-14 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
             {section.name}
           </h2>
@@ -437,9 +437,9 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
 
   if (loading) {
     return (
-      <section className="relative py-16 lg:py-24 bg-slate-50">
+      <section className="relative py-10 lg:py-14 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
               {section.name}
             </h2>
@@ -458,9 +458,9 @@ export function QuicklinksSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-slate-50">
+    <section className="relative py-10 lg:py-14 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
             {section.name}
           </h2>
@@ -562,9 +562,9 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-slate-50 overflow-hidden">
+    <section className="relative py-10 lg:py-14 bg-slate-50 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <SectionPill
             label="PREMIUM TECH"
             gradientFrom="from-amber-500"
@@ -593,7 +593,7 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
 
   if (!heroProduct) {
     return (
-      <section className="relative py-16 lg:py-24 bg-gradient-to-br from-deep-navy to-royal-blue">
+      <section className="relative py-10 lg:py-14 bg-gradient-to-br from-deep-navy to-royal-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
             {section.name}
@@ -610,7 +610,7 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
   const hasDiscount = (heroProduct.dealsPrice ?? heroProduct.salesPrice ?? heroProduct.flashSalePrice) != null
 
   return (
-    <section className="relative py-16 lg:py-24 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
+    <section className="relative py-10 lg:py-14 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-premium-gold/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -684,9 +684,9 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
   if (displayProducts.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-white">
+      <section className="relative py-10 lg:py-14 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
               {section.name}
             </h2>
@@ -709,9 +709,9 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-white">
+    <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
             {section.name}
           </h2>
@@ -845,7 +845,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
             )}
          </div>
 
-         <div className="mt-8 text-center">
+         <div className="mt-4 text-center">
            <Link href="/marketplace">
  <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
                 See More
@@ -859,7 +859,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
 export function PromoBannerSection({ section }: HomepageSectionProps) {
   return (
-    <section className="relative py-16 lg:py-24 bg-gradient-to-r from-royal-blue to-deep-navy overflow-hidden">
+    <section className="relative py-10 lg:py-14 bg-gradient-to-r from-royal-blue to-deep-navy overflow-hidden">
       <div className="absolute inset-0">
         <div className="absolute top-0 right-0 w-96 h-96 bg-premium-gold/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
@@ -962,9 +962,9 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
 
   if (displayServices.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-violet-50/[0.05]">
+      <section className="relative py-10 lg:py-14 bg-violet-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <SectionPill label="HOT SERVICES" gradientFrom="from-violet-500" gradientVia="via-blue-500" gradientTo="to-violet-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/></svg>} />
             </div>
@@ -978,9 +978,9 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className={`relative py-16 lg:py-24 ${isTopServices ? 'bg-emerald-50/[0.05]' : 'bg-violet-50/[0.05]'}`}>
+    <section className={`relative py-10 lg:py-14 ${isTopServices ? 'bg-emerald-50/[0.05]' : 'bg-violet-50/[0.05]'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             {isTopServices ? (
               <SectionPill label="TOP SERVICES" gradientFrom="from-emerald-500" gradientVia="via-teal-500" gradientTo="to-emerald-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>} />
@@ -1015,7 +1015,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
             </div>
           )}
         </div>
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <Link href="/services">
             <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
@@ -1034,9 +1034,9 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
 
   if (displayServices.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-sky-50/[0.05]">
+      <section className="relative py-10 lg:py-14 bg-sky-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <SectionPill label="NEW SERVICES" gradientFrom="from-blue-500" gradientVia="via-indigo-500" gradientTo="to-blue-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd"/></svg>} />
             </div>
@@ -1050,9 +1050,9 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-sky-50/[0.05]">
+    <section className="relative py-10 lg:py-14 bg-sky-50/[0.05]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionPill label="NEW SERVICES" gradientFrom="from-blue-500" gradientVia="via-indigo-500" gradientTo="to-blue-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd"/></svg>} />
           </div>
@@ -1083,7 +1083,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
             </div>
           )}
         </div>
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <Link href="/services">
             <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
@@ -1098,9 +1098,9 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
 
   if (displayVendors.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-sky-50/[0.05]">
+      <section className="relative py-10 lg:py-14 bg-sky-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
 <SectionPill label="VERIFIED" icon={<HiShieldCheck />} gradientFrom="from-sky-500" gradientVia="via-cyan-500" gradientTo="to-cyan-500" />
             </div>
@@ -1114,9 +1114,9 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-sky-50/[0.05]">
+    <section className="relative py-10 lg:py-14 bg-sky-50/[0.05]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionPill label="VERIFIED" icon={<HiShieldCheck />} gradientFrom="from-sky-500" gradientVia="via-cyan-500" gradientTo="to-cyan-500" />
           </div>
@@ -1204,9 +1204,9 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
 
   if (displayItems.length === 0) {
     return (
-      <section className="relative py-16 lg:py-24 bg-yellow-50/[0.05]">
+      <section className="relative py-10 lg:py-14 bg-yellow-50/[0.05]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-10">
+          <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <SectionPill label="SPONSORED" gradientFrom="from-amber-500" gradientVia="via-yellow-500" gradientTo="to-amber-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>} />
             </div>
@@ -1220,9 +1220,9 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
   }
 
   return (
-    <section className="relative py-16 lg:py-24 bg-yellow-50/[0.05]">
+    <section className="relative py-10 lg:py-14 bg-yellow-50/[0.05]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionPill label="SPONSORED" gradientFrom="from-amber-500" gradientVia="via-yellow-500" gradientTo="to-amber-400" icon={<svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>} />
           </div>
@@ -1261,7 +1261,7 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
             </div>
           )}
         </div>
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <Link href="/marketplace">
             <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
@@ -1306,9 +1306,9 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
   )
 
   return (
-    <section className="relative py-16 lg:py-24 bg-white">
+    <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-10">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-4">
             <SectionPill
               label="PREMIUM"
@@ -1355,7 +1355,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <Link href="/marketplace">
             <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
               See More

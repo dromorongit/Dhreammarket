@@ -155,7 +155,7 @@ export default function Home() {
         {/* Nav spacer */}
         <div className="h-16 sm:h-20"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
           <div className="text-center max-w-4xl mx-auto">
             {/* Trust badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-6 animate-fade-in-up">
@@ -275,7 +275,7 @@ export default function Home() {
                 <Fragment key={section.id}>
                   <TrendingServicesSection section={sectionProps} />
                   <CarShowcaseCarousel />
-                  <section className="relative py-16 lg:py-24">
+                  <section className="relative py-10 lg:py-14">
                    <video
                      autoPlay
                      muted
@@ -344,9 +344,9 @@ export default function Home() {
 
       {/* ─── Featured Products (always shown) ─── */}
       {!loadingManaged && (
-        <section className="relative py-24 lg:py-32 bg-slate-50">
+        <section className="relative py-10 lg:py-14 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+            <div className="text-center mb-8">
               <Badge variant="premium" className="mb-4">Featured Products</Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Explore Marketplace
@@ -389,7 +389,7 @@ export default function Home() {
 
       {/* ─── Shop by Vendor Type ─── */}
       {!loadingManaged && (
-        <section className="relative py-24 lg:py-32 bg-white">
+        <section className="relative py-10 lg:py-14 bg-white">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
               <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
@@ -407,9 +407,9 @@ export default function Home() {
 
       {/* ─── Fallback: Top Vendors (only when no extra sections) ─── */}
       {!loadingManaged && extraSections.length === 0 && (
-        <section className="relative py-24 lg:py-32 bg-slate-50">
+        <section className="relative py-10 lg:py-14 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+            <div className="text-center mb-8">
               <Badge variant="premium" className="mb-4">Top Rated</Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Top Vendors
@@ -425,9 +425,9 @@ export default function Home() {
 
       {/* ─── Fallback: New Vendors (only when no extra sections) ─── */}
       {!loadingManaged && extraSections.length === 0 && (
-        <section className="relative py-24 lg:py-32 bg-white">
+        <section className="relative py-10 lg:py-14 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+            <div className="text-center mb-8">
               <Badge variant="premium" className="mb-4">Just Joined</Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 New Vendors
@@ -443,9 +443,9 @@ export default function Home() {
 
 {/* ─── Fallback: Popular Categories (only when no extra sections) ─── */}
       {!loadingManaged && extraSections.length === 0 && (
-        <section className="relative py-24 lg:py-32 bg-slate-50">
+        <section className="relative py-10 lg:py-14 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
+            <div className="text-center mb-8">
               <Badge variant="premium" className="mb-4">Browse By</Badge>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Popular Categories
@@ -461,7 +461,7 @@ export default function Home() {
 
       {/* Featured Vendors Preview Section */}
       {!loadingFeatured && featuredVendors.length > 0 && (
-        <section className="relative py-24 lg:py-32 bg-white">
+        <section className="relative py-10 lg:py-14 bg-white">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="animate-fade-in-up">
@@ -472,7 +472,7 @@ export default function Home() {
                 <p className="text-lg text-slate-600 mb-8 leading-relaxed">
                   Start selling on Dhream Market and reach thousands of active buyers. Our platform provides everything you need to build, manage, and grow your business.
                 </p>
-                <ul className="space-y-4 mb-10">
+                <ul className="space-y-4 mb-6">
                   {[
                     'Zero upfront costs',
                     'Built-in payment processing',
@@ -550,11 +550,11 @@ export default function Home() {
       )}
 
       {/* Why Choose Dhream Market Section */}
-      <section className="relative py-24 lg:py-32 bg-slate-50">
+      <section className="relative py-10 lg:py-14 bg-slate-50">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmN2ZhIiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTQwIDJIMHY0MEg0MFoiIGZpbGw9IiNmMGY3ZmEiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4K')] opacity-50"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 lg:mb-24 animate-fade-in-up">
+          <div className="text-center mb-8 lg:mb-12 animate-fade-in-up">
             <Badge variant="premium" className="mb-4">Our Promise</Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
               Why Choose Dhream Market?
@@ -604,7 +604,7 @@ export default function Home() {
         </div>
       </section>
       {/* CTA Section */}
-      <section className="relative py-24 lg:py-32 overflow-hidden">
+      <section className="relative py-10 lg:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900"></div>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZmVmN2ZhIiBvcGFjaXR5PSIwLjAiLz4KPHBhdGggZD0iTTYwIDJIMjZ2NTZIWDYwWiIgZmlsbD0iI2ZmZjdmZmEiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4K')] opacity-20"></div>
 
@@ -613,7 +613,7 @@ export default function Home() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
             Ready to Transform Your Digital Trade?
           </h2>
-          <p className="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-slate-300 mb-6 max-w-2xl mx-auto leading-relaxed">
             Join thousands of businesses already using Dhream Market for their commerce needs. Start free, upgrade as you grow.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -629,7 +629,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <p className="text-sm text-slate-500 mt-8">
+          <p className="text-sm text-slate-500 mt-4">
             No credit card required. Cancel anytime.
           </p>
         </div>
@@ -1446,7 +1446,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
         </div>
 
       {/* See More button - always visible */}
-      <div className="mt-8 text-center">
+      <div className="mt-4 text-center">
         <Link href="/marketplace">
           <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
             See More
@@ -1488,9 +1488,9 @@ function FeaturedServicesSection() {
   )
 
   return (
-    <section className="relative py-24 lg:py-32 bg-white">
+    <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
           <Badge variant="premium" className="mb-4">Featured Services</Badge>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
             Explore Services
@@ -1527,7 +1527,7 @@ function FeaturedServicesSection() {
               )}
             </div>
 
-            <div className="mt-8 text-center">
+            <div className="mt-4 text-center">
               <Link href="/services">
                 <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">
                   See More

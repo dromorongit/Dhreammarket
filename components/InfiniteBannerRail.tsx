@@ -81,12 +81,12 @@ export default function InfiniteBannerRail() {
   }
 
   return (
-     <section className="relative py-3 bg-slate-50" aria-label="Promotional banners">
+     <section className="relative py-2 bg-slate-50" aria-label="Promotional banners">
       <div className="w-full relative">
         <div
           ref={scrollRef}
           onScroll={handleUserScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-1 w-full"
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-0 w-full"
           style={{ scrollBehavior: 'smooth' }}
         >
           {BANNERS.map((banner, i) => (
