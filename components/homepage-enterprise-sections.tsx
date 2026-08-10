@@ -122,11 +122,13 @@ function SectionHeader({
   title,
   subtitle,
   dark = false,
+  countdown,
 }: {
   badge?: string;
   title: string;
   subtitle?: string;
   dark?: boolean;
+  countdown?: React.ReactNode;
 }) {
   return (
     <div className='mb-6'>
@@ -135,11 +137,14 @@ function SectionHeader({
           {badge}
         </Badge>
       )}
-      <h2
-        className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${dark ? 'text-white' : 'text-deep-navy'}`}
-      >
-        {title}
-      </h2>
+      <div className='flex items-center gap-3 flex-wrap'>
+        <h2
+          className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${dark ? 'text-white' : 'text-deep-navy'}`}
+        >
+          {title}
+        </h2>
+        {countdown}
+      </div>
       {subtitle && (
         <p className={`mt-2 ${dark ? 'text-slate-300' : 'text-slate-600'}`}>
           {subtitle}
@@ -209,16 +214,11 @@ function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterprisePr
                 size="sm"
                 className="absolute top-2 right-2 z-10"
               />
-              <ProductImage
-                product={product}
-                className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-              />
-              {product.dealEndsAt && new Date(product.dealEndsAt) > new Date() && (
-                <div className='absolute top-2 left-2'>
-                  <CountdownTimer endDate={product.dealEndsAt} />
-                </div>
-              )}
-               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
+               <ProductImage
+                 product={product}
+                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+               />
+                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
                 <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
                   Quick View
                 </Link>
@@ -378,16 +378,11 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                 size="sm"
                 className="absolute top-2 right-2 z-10"
               />
-              <ProductImage
-                product={product}
-                className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-              />
-              {product.dealEndsAt && new Date(product.dealEndsAt) > new Date() && (
-                <div className='absolute top-2 left-2'>
-                  <CountdownTimer endDate={product.dealEndsAt} />
-                </div>
-              )}
-               <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
+               <ProductImage
+                 product={product}
+                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+               />
+                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
                   <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
                     Quick View
                   </Link>
@@ -570,6 +565,11 @@ export function FlashSalesSection({
   const products = section.products ?? [];
   if (!products.length) return null;
 
+  const soonestDealEndsAt = products
+    .map((p) => p.dealEndsAt)
+    .filter((dealEndsAt): dealEndsAt is string => !!dealEndsAt && new Date(dealEndsAt) > new Date())
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
+
   const defaultSubtitles: Record<string, string> = {
     FLASH_SALES: 'Limited time offers',
     SPONSORED_PRODUCTS: 'Featured by vendors',
@@ -585,6 +585,7 @@ export function FlashSalesSection({
           badge='Limited Time'
           title={section.name}
           subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
+          countdown={soonestDealEndsAt ? <CountdownTimer endDate={soonestDealEndsAt} /> : undefined}
         />
         <ProductRail
           products={products}
@@ -893,6 +894,11 @@ export function EnterpriseGadgetDisplaySection({
   const products = section?.products ?? [];
   if (!products.length) return null;
 
+  const soonestDealEndsAt = products
+    .map((p) => p.dealEndsAt)
+    .filter((dealEndsAt): dealEndsAt is string => !!dealEndsAt && new Date(dealEndsAt) > new Date())
+    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
+
   return (
     <section className='relative py-10 lg:py-14 bg-gradient-to-b from-orange-50 to-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -900,6 +906,7 @@ export function EnterpriseGadgetDisplaySection({
           badge='Hot Deals'
           title={section.name}
           subtitle={section.subtitle ?? 'Biggest savings on premium products'}
+          countdown={soonestDealEndsAt ? <CountdownTimer endDate={soonestDealEndsAt} /> : undefined}
         />
         <ProductRail
           products={products}
