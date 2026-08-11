@@ -1205,10 +1205,132 @@ export function TopClearanceSalesSection({
         {/* Mobile & tablet horizontal scroll - Two independent rows */}
         <div className='lg:hidden space-y-4'>
           {topRowProducts.length > 0 && (
-            <ScrollableRail products={topRowProducts} renderCard={renderProductCard} />
+            <div className='relative'>
+              <div id='home-theatre-top-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+                <div className='flex gap-4'>
+                  {topRowProducts.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/marketplace/product/${product.slug ?? product.id}`}
+                      className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)]'
+                    >
+                      <Card
+                        variant='elevated'
+                        className='group overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 bg-slate-800/50 border border-gold/20'
+                      >
+                        <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
+                          <WishlistButton
+                            productId={product.id}
+                            initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                            size="sm"
+                            className="absolute top-2 right-2 z-10"
+                          />
+                          <ProductImage
+                            product={product}
+                            className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                          />
+                          <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                          <div className='absolute bottom-0 left-0 right-0 p-4'>
+                            <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
+                              {product.name}
+                            </h3>
+                            <span className='text-lg font-bold text-premium-gold'>
+                              {formatPrice(getEffectivePrice(product))}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const container = document.getElementById('home-theatre-top-scroll') as HTMLDivElement | null
+                  container?.scrollBy({ left: -300, behavior: 'smooth' })
+                }}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+                aria-label="Scroll left"
+              >
+                <FiChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const container = document.getElementById('home-theatre-top-scroll') as HTMLDivElement | null
+                  container?.scrollBy({ left: 300, behavior: 'smooth' })
+                }}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+                aria-label="Scroll right"
+              >
+                <FiChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           )}
           {bottomRowProducts.length > 0 && (
-            <ScrollableRail products={bottomRowProducts} renderCard={renderProductCard} />
+            <div className='relative'>
+              <div id='home-theatre-bottom-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+                <div className='flex gap-4'>
+                  {bottomRowProducts.map((product) => (
+                    <Link
+                      key={product.id}
+                      href={`/marketplace/product/${product.slug ?? product.id}`}
+                      className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)]'
+                    >
+                      <Card
+                        variant='elevated'
+                        className='group overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 bg-slate-800/50 border border-gold/20'
+                      >
+                        <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
+                          <WishlistButton
+                            productId={product.id}
+                            initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                            size="sm"
+                            className="absolute top-2 right-2 z-10"
+                          />
+                          <ProductImage
+                            product={product}
+                            className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                          />
+                          <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
+                          <div className='absolute bottom-0 left-0 right-0 p-4'>
+                            <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
+                              {product.name}
+                            </h3>
+                            <span className='text-lg font-bold text-premium-gold'>
+                              {formatPrice(getEffectivePrice(product))}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const container = document.getElementById('home-theatre-bottom-scroll') as HTMLDivElement | null
+                  container?.scrollBy({ left: -300, behavior: 'smooth' })
+                }}
+                className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+                aria-label="Scroll left"
+              >
+                <FiChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const container = document.getElementById('home-theatre-bottom-scroll') as HTMLDivElement | null
+                  container?.scrollBy({ left: 300, behavior: 'smooth' })
+                }}
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+                aria-label="Scroll right"
+              >
+                <FiChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           )}
         </div>
 
