@@ -34,7 +34,7 @@ interface Conversation {
   }
 }
 
-export default function LiveSupportWidget() {
+export default function LiveSupportWidget({ userRole }: { userRole?: string | null }) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [conversationRef, setConversationRef] = useState<string | null>(null)
@@ -262,17 +262,27 @@ export default function LiveSupportWidget() {
 
   const unreadCount = conversationsData?.conversations?.filter((c) => !c.isReadByCustomer).length || 0
 
+  if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+    return null
+  }
+
   return (
     <div className="fixed bottom-20 right-5 z-50">
       {isOpen && (
         <div className="mb-4 w-[360px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col max-h-[500px]">
           <div className="bg-gradient-to-r from-deep-navy to-royal-blue text-white p-4 rounded-t-2xl flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-sm">Live Support</h3>
-              <p className="text-xs text-white/70">
-                {connectionStatus === 'connected' ? 'Online' : connectionStatus === 'connecting' ? 'Connecting...' : 'Reconnecting...'}
-              </p>
-            </div>
+              <div>
+                <h3 className="font-semibold text-sm">Live Support</h3>
+                <p className="text-xs text-white/70">
+                  {conversationRef
+                    ? connectionStatus === 'connected'
+                      ? 'Online'
+                      : connectionStatus === 'connecting'
+                        ? 'Connecting...'
+                        : 'Reconnecting...'
+                    : 'Start a conversation'}
+                </p>
+              </div>
             <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -44,16 +44,16 @@ export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo
            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
              <div className="flex gap-4">
                {[...Array(5)].map((_, i) => (
-                 <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                   <SkeletonCard />
-                 </div>
-               ))}
-             </div>
-           </div>
-           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-             <div className="flex gap-4">
-               {[...Array(5)].map((_, i) => (
-                 <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+<div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <SkeletonCard />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <div className="flex gap-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
                    <SkeletonCard />
                  </div>
                ))}
@@ -805,7 +805,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                         <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
                           <Card variant="elevated" className="group overflow-hidden hover:shadow-xl hover:border-gold/50 transition-all duration-300 border border-gold/20 h-full">
                             <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
- {product.images?.[0] ? (
+  {product.images?.[0] ? (
                                  <Image
                                    src={product.images[0].url}
                                    alt={product.images[0].alt || product.name}
@@ -998,7 +998,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
             <ScrollableRow>
               <div className="flex gap-4">
                 {topRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
                     <CompactServiceCard service={service} />
                   </div>
                 ))}
@@ -1009,7 +1009,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
             <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
                      <CompactServiceCard service={service} />
                    </div>
                  ))}
@@ -1066,7 +1066,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
             <ScrollableRow>
               <div className="flex gap-4">
                 {topRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
                     <CompactServiceCard service={service} />
                   </div>
                 ))}
@@ -1077,7 +1077,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
             <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
                      <CompactServiceCard service={service} />
                    </div>
                  ))}
@@ -1354,8 +1354,8 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
                 ))}
               </div>
              </ScrollableRow>
-          )}
-        </div>
+           )}
+         </div>
 
         <div className="mt-4 text-center">
           <Link href="/marketplace">
