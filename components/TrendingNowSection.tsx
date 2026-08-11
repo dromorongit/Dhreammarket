@@ -194,28 +194,24 @@ export function TrendingNowSection({
         <div className='space-y-4'>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className='flex gap-4 flex-shrink-0'>
-                {topRowProducts.map((product) => (
-                  <TrendingProductCard
-                    key={product.id}
-                    product={product}
-                    initialIsWishlisted={wishlistedProductIds.has(product.id)}
-                  />
-                ))}
-              </div>
+              {topRowProducts.map((product) => (
+                <TrendingProductCard
+                  key={product.id}
+                  product={product}
+                  initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                />
+              ))}
             </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className='flex gap-4 flex-shrink-0'>
-                {bottomRowProducts.map((product) => (
-                  <TrendingProductCard
-                    key={product.id}
-                    product={product}
-                    initialIsWishlisted={wishlistedProductIds.has(product.id)}
-                  />
-                ))}
-              </div>
+              {bottomRowProducts.map((product) => (
+                <TrendingProductCard
+                  key={product.id}
+                  product={product}
+                  initialIsWishlisted={wishlistedProductIds.has(product.id)}
+                />
+              ))}
             </ScrollableRow>
           )}
         </div>

@@ -33,7 +33,7 @@ export default function ScrollableRow({ children, className = '' }: ScrollableRo
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className={`flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4 ${className}`}
+        className={`flex flex-nowrap gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4 ${className}`}
       >
         {children}
       </div>
