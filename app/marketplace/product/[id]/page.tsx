@@ -64,10 +64,10 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
     let relatedProducts: RelatedProduct[] = []
 
     if (product) {
-      if (product.storeId) {
+      if (product.store?.id) {
         vendorProducts = await getPrisma().product.findMany({
           where: {
-            storeId: product.storeId,
+            storeId: product.store.id,
             id: { not: product.id },
           },
           take: 8,
