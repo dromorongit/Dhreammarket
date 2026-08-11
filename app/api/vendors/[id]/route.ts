@@ -52,6 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             slug: true,
             title: true,
             shortDescription: true,
+            description: true,
             startingPrice: true,
             pricingType: true,
             thumbnail: true,
@@ -114,6 +115,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
               slug: true,
               title: true,
               shortDescription: true,
+              description: true,
               startingPrice: true,
               pricingType: true,
               thumbnail: true,
@@ -197,9 +199,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
          expectedRestockDate: p.expectedRestockDate,
          backOrderNotes: p.backOrderNotes,
        })),
-       services: store.services
-         .filter((s: any) => s.status === 'PUBLISHED' && s.isActive)
-         .map((s: any) => ({
+        services: store.services
+          .map((s: any) => ({
            id: s.id,
            slug: s.slug,
            title: s.title,

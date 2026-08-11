@@ -6,9 +6,37 @@ import { syncStoreRating } from '@/lib/rating-sync'
 // Valid order statuses for review eligibility
 const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'] as any
 
+/**
+ * Resolve a raw URL param (which may be a store slug OR a store id) to the
+ * store's actual database id. All subsequent related queries MUST use this
+ * resolved id rather than the raw param, since the param can be either a slug
+ * (e.g. "dhronetech-solutions") or a CUID id depending on what the visitor typed.
+ */
+async function resolveStoreId(idOrSlug: string): Promise<{ id: string; userId: string; averageRating: number; reviewCount: number } | null> {
+  const store = await getPrisma().store.findUnique({
+    where: { slug: idOrSlug },
+    select: {
+      id: true,
+      userId: true,
+      averageRating: true,
+      reviewCount: true,
+    },
+  })
+  if (store) return store
+
+  return await getPrisma().store.findUnique({
+    where: { id: idOrSlug },
+    select: {
+      id: true,
+      userId: true,
+      averageRating: true,
+      reviewCount: true,
+    },
+  })
+}
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const storeId = params.id
     const checkEligibility = request.nextUrl.searchParams.get('checkEligibility') === 'true'
     const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1') || 1)
     const limit = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('limit') || '10') || 10))
@@ -16,12 +44,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       ? request.nextUrl.searchParams.get('sortBy')!
       : 'newest'
 
-    if (!storeId) {
+    const idOrSlug = params.id
+    if (!idOrSlug) {
       return NextResponse.json({ error: 'Store ID is required' }, { status: 400 })
     }
 
-    // If checking eligibility, require authentication
+    // Resolve the slug-or-id to the actual store id before any related query
     if (checkEligibility) {
+      const store = await resolveStoreId(idOrSlug)
+      if (!store) {
+        return NextResponse.json({ canReview: false }, { status: 200 })
+      }
+
       const token = request.cookies.get('token')?.value
       if (!token) {
         return NextResponse.json({ canReview: false }, { status: 200 })
@@ -36,7 +70,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const existingReview = await getPrisma().vendorReview.findUnique({
         where: {
           userId_storeId: {
-            storeId,
+            storeId: store.id,
             userId: payload.userId,
           },
         },
@@ -74,7 +108,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const validOrder = await getPrisma().orderItem.findFirst({
         where: {
           product: {
-            storeId,
+            storeId: store.id,
           },
           order: {
             userId: payload.userId,
@@ -89,14 +123,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ canReview: !!validOrder, reason: validOrder ? null : 'no_valid_order' }, { status: 200 })
     }
 
-    // Get store with cached ratings
-    const store = await getPrisma().store.findUnique({
-      where: { id: storeId },
-      select: {
-        averageRating: true,
-        reviewCount: true,
-      },
-    })
+    const store = await resolveStoreId(idOrSlug)
 
     if (!store) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
@@ -117,7 +144,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const [reviews, totalReviews] = await Promise.all([
       getPrisma().vendorReview.findMany({
         where: {
-          storeId,
+          storeId: store.id,
           isApproved: true,
           isHidden: false,
         },
@@ -147,7 +174,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }),
       getPrisma().vendorReview.count({
         where: {
-          storeId,
+          storeId: store.id,
           isApproved: true,
           isHidden: false,
         },
@@ -208,7 +235,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Only customers can submit reviews' }, { status: 403 })
     }
 
-    const storeId = params.id
+    // Resolve the slug-or-id to the actual store id before any related query
+    const store = await resolveStoreId(params.id)
+
+    if (!store) {
+      return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+    }
+
+    const storeId = store.id
     const { rating, comment } = await request.json()
 
     // Validate rating is an integer
@@ -227,15 +261,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Validate comment (required, minimum 5 characters)
     if (!comment || !comment.trim() || comment.trim().length < 5) {
       return NextResponse.json({ error: 'Comment is required and must be at least 5 characters' }, { status: 400 })
-    }
-
-    // Verify store exists
-    const store = await getPrisma().store.findUnique({
-      where: { id: storeId },
-    })
-
-    if (!store) {
-      return NextResponse.json({ error: 'Store not found' }, { status: 404 })
     }
 
     // Anti self-review protection: prevent vendor from reviewing their own store
@@ -274,8 +299,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })
 
     if (!validOrder) {
-      return NextResponse.json({ 
-        error: 'You can only review vendors from orders that are PROCESSING, SHIPPED, DELIVERED, or COMPLETED' 
+      return NextResponse.json({
+        error: 'You can only review vendors from orders that are PROCESSING, SHIPPED, DELIVERED, or COMPLETED'
       }, { status: 400 })
     }
 
