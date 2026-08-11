@@ -55,6 +55,7 @@ import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import TVInfiniteBannerRail from '@/components/TVInfiniteBannerRail'
 import BeautyInfiniteBannerRail from '@/components/BeautyInfiniteBannerRail'
+import SneakerInfiniteBannerRail from '@/components/SneakerInfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -320,11 +321,12 @@ export default function Home() {
                 </Fragment>
              )
            }
-            if (section.slug === 'verified-vendors')
+             if (section.slug === 'verified-vendors')
               return (
                 <>
                   <VerifiedVendorsSection key={section.id} section={sectionProps} />
                   <StaticBannerImage src='/images/gadgetbanner.jpg' alt='Gadget Banner' />
+                  <SneakerInfiniteBannerRail />
                 </>
               )
            if (section.slug === 'food-showcase')
