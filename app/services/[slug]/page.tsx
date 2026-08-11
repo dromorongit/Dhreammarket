@@ -36,7 +36,6 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
         estimatedDeliveryTime: true,
         thumbnail: true,
         gallery: true,
-        storeId: true,
         store: { select: { id: true, name: true, slug: true, logo: true, averageRating: true, reviewCount: true } },
         category: { select: { id: true, name: true, slug: true } },
       },
@@ -46,10 +45,10 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
     let relatedServices: ServiceForMetadata['relatedServices'] = []
 
     if (service) {
-      if (service.storeId) {
+      if (service.store?.id) {
         vendorServices = await getPrisma().service.findMany({
           where: {
-            storeId: service.storeId,
+            storeId: service.store.id,
             id: { not: service.id },
           },
           take: 8,
@@ -66,10 +65,10 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
         })
       }
 
-      if (service.categoryId) {
+      if (service.category?.id) {
         const categoryServices = await getPrisma().service.findMany({
           where: {
-            categoryId: service.categoryId,
+            categoryId: service.category.id,
             id: { not: service.id },
           },
           take: 8,
