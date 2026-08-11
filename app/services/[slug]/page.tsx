@@ -46,9 +46,9 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
 
     if (service) {
       if (service.store?.id) {
-        vendorServices = await getPrisma().service.findMany({
+        const rawVendorServices = await getPrisma().service.findMany({
           where: {
-            storeId: service.store.id,
+            store: { id: service.store.id },
             id: { not: service.id },
           },
           take: 8,
@@ -62,13 +62,22 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
             thumbnail: true,
             store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
           },
-        }) as ServiceForMetadata['vendorServices']
+        })
+        vendorServices = rawVendorServices.map((s) => ({
+          id: s.id,
+          slug: s.slug,
+          title: s.title,
+          startingPrice: Number(s.startingPrice),
+          pricingType: s.pricingType,
+          thumbnail: s.thumbnail,
+          store: s.store ? { id: s.store.id, name: s.store.name, slug: s.store.slug, isVerified: s.store.isVerified, badgeTier: s.store.badgeTier } : { id: '', name: '', slug: null, isVerified: false, badgeTier: null },
+        }))
       }
 
       if (service.category?.id) {
-        const categoryServices = await getPrisma().service.findMany({
+        const rawCategoryServices = await getPrisma().service.findMany({
           where: {
-            categoryId: service.category.id,
+            category: { id: service.category.id },
             id: { not: service.id },
           },
           take: 8,
@@ -82,9 +91,19 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
             thumbnail: true,
             store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
           },
-        }) as ServiceForMetadata['relatedServices']
+        })
         const vendorServiceIds = new Set(vendorServices.map((s) => s.id))
-        relatedServices = categoryServices.filter((s) => !vendorServiceIds.has(s.id))
+        relatedServices = rawCategoryServices
+          .filter((s) => !vendorServiceIds.has(s.id))
+          .map((s) => ({
+            id: s.id,
+            slug: s.slug,
+            title: s.title,
+            startingPrice: Number(s.startingPrice),
+            pricingType: s.pricingType,
+            thumbnail: s.thumbnail,
+            store: s.store ? { id: s.store.id, name: s.store.name, slug: s.store.slug, isVerified: s.store.isVerified, badgeTier: s.store.badgeTier } : { id: '', name: '', slug: null, isVerified: false, badgeTier: null },
+          }))
       }
 
       return {
