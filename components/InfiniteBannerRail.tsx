@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getBlurDataURL, HERO_IMAGE_SIZES } from '@/lib/image-utils'
-import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 
 const BANNERS = [
   { id: 1, src: '/images/banner1.jpg', alt: 'Promotional Banner 1', href: '/marketplace' },

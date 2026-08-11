@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, type ReactNode } from 'react'
-import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 
 interface ScrollableRowProps {
   children: ReactNode

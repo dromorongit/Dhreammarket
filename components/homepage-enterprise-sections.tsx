@@ -21,7 +21,7 @@ import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
 import CountdownTimer from '@/components/CountdownTimer';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
-import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 export function useEnterpriseHomepageData() {
   const { data, isLoading } = useQuery<{ topSelling: EnterpriseProduct[] }>({

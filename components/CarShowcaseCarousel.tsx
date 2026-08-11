@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 
 const SLIDES = [
   { src: '/images/car1.jpg', alt: 'Car Showcase 1' },
