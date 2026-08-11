@@ -19,7 +19,7 @@ interface RelatedProduct {
   availabilityType: string | null
   images: Array<{ id: string; url: string; alt: string | null }>
   store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
-  category: { id: string; name: string; slug: string } | null
+  category: { id: string; name: string; slug: string | null } | null
 }
 
 interface ProductForMetadata {
