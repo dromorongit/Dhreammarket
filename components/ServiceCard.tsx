@@ -33,7 +33,7 @@ interface Service {
   store: {
     id: string
     name: string
-    slug: string
+    slug: string | null
     isVerified: boolean
     badgeTier: string | null
     averageRating: number

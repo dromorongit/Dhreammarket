@@ -22,6 +22,7 @@ import { TrendingNowSection } from './TrendingNowSection'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WishlistButton from '@/components/WishlistButton'
 import ScrollableRow from './ScrollableRow'
+import TrendingProductCard from './TrendingProductCard'
 
 export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
   return (
@@ -996,26 +997,18 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
         <div className="space-y-4">
           {topRowServices.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {topRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
-                    <CompactServiceCard service={service} />
-                  </div>
-                ))}
-              </div>
+              {topRowServices.map((service: any) => (
+                <ServiceCard key={service.id} service={service} className="flex-shrink-0 snap-start w-[280px] sm:w-[300px] lg:w-[320px]" />
+              ))}
             </ScrollableRow>
           )}
           {bottomRowServices.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {bottomRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
-                     <CompactServiceCard service={service} />
-                   </div>
-                 ))}
-               </div>
-             </ScrollableRow>
-           )}
+              {bottomRowServices.map((service: any) => (
+                <ServiceCard key={service.id} service={service} className="flex-shrink-0 snap-start w-[280px] sm:w-[300px] lg:w-[320px]" />
+              ))}
+            </ScrollableRow>
+          )}
         </div>
         <div className="mt-4 text-center">
           <Link href="/services">
@@ -1064,26 +1057,18 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
         <div className="space-y-4">
           {topRowServices.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {topRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
-                    <CompactServiceCard service={service} />
-                  </div>
-                ))}
-              </div>
+              {topRowServices.map((service: any) => (
+                <ServiceCard key={service.id} service={service} className="flex-shrink-0 snap-start w-[280px] sm:w-[300px] lg:w-[320px]" />
+              ))}
             </ScrollableRow>
           )}
           {bottomRowServices.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {bottomRowServices.map((service: any) => (
-                  <div key={service.id} className="snap-start flex-shrink-0 w-[calc(45%-8px)] sm:w-[calc(22%-12px)] lg:w-[calc(18%-12px)]">
-                     <CompactServiceCard service={service} />
-                   </div>
-                 ))}
-               </div>
-             </ScrollableRow>
-           )}
+              {bottomRowServices.map((service: any) => (
+                <ServiceCard key={service.id} service={service} className="flex-shrink-0 snap-start w-[280px] sm:w-[300px] lg:w-[320px]" />
+              ))}
+            </ScrollableRow>
+          )}
         </div>
         <div className="mt-4 text-center">
           <Link href="/services">
@@ -1301,11 +1286,23 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
 
   if (displayProducts.length === 0) return null
 
-  const renderPremiumCard = (product: EnterpriseProduct) => (
-    <div className="rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/50 via-slate-300/20 to-slate-200/50 transition-all duration-300 h-full group border border-gold/20 hover:border-gold/50">
-      <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-    </div>
-  )
+  const isFashionCategory = section.slug === 'fashion' || section.slug === 'mens-sneakers'
+
+  const renderCard = (product: EnterpriseProduct) => {
+    if (isFashionCategory) {
+      return (
+        <TrendingProductCard
+          product={product}
+          initialIsWishlisted={wishlistedProductIds.has(product.id)}
+        />
+      )
+    }
+    return (
+      <div className="rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/50 via-slate-300/20 to-slate-200/50 transition-all duration-300 h-full group border border-gold/20 hover:border-gold/50">
+        <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+      </div>
+    )
+  }
 
   return (
     <section className="relative py-10 lg:py-14 bg-white">
@@ -1335,27 +1332,19 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
         <div className="space-y-4">
           {topRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {topRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    {renderPremiumCard(product)}
-                  </div>
-                ))}
-              </div>
+              {topRowProducts.map((product) => (
+                renderCard(product)
+              ))}
             </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {bottomRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    {renderPremiumCard(product)}
-                  </div>
-                ))}
-              </div>
-             </ScrollableRow>
-           )}
-         </div>
+              {bottomRowProducts.map((product) => (
+                renderCard(product)
+              ))}
+            </ScrollableRow>
+          )}
+        </div>
 
         <div className="mt-4 text-center">
           <Link href="/marketplace">
