@@ -21,7 +21,7 @@ import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
 import CountdownTimer from '@/components/CountdownTimer';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi';
 
 export function useEnterpriseHomepageData() {
   const { data, isLoading } = useQuery<{ topSelling: EnterpriseProduct[] }>({
@@ -116,7 +116,7 @@ function ProductRail({
             className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
             aria-label="Scroll left"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <FiChevronLeft className="w-5 h-5" />
           </button>
           <button
             type="button"
@@ -127,7 +127,7 @@ function ProductRail({
             className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
             aria-label="Scroll right"
           >
-            <ChevronRight className="w-5 h-5" />
+            <FiChevronRight className="w-5 h-5" />
           </button>
         </div>
       )}
@@ -147,7 +147,7 @@ function ProductRail({
             className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
             aria-label="Scroll left"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <FiChevronLeft className="w-5 h-5" />
           </button>
           <button
             type="button"
@@ -158,7 +158,7 @@ function ProductRail({
             className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
             aria-label="Scroll right"
           >
-            <ChevronRight className="w-5 h-5" />
+            <FiChevronRight className="w-5 h-5" />
           </button>
         </div>
       )}

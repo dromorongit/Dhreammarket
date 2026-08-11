@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, type ReactNode } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi'
 
 interface ScrollableRowProps {
   children: ReactNode
@@ -43,7 +43,7 @@ export default function ScrollableRow({ children, className = '' }: ScrollableRo
         className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
         aria-label="Scroll left"
       >
-        <ChevronLeft className="w-5 h-5" />
+        <FiChevronLeft className="w-5 h-5" />
       </button>
       <button
         type="button"
@@ -51,7 +51,7 @@ export default function ScrollableRow({ children, className = '' }: ScrollableRo
         className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
         aria-label="Scroll right"
       >
-        <ChevronRight className="w-5 h-5" />
+        <FiChevronRight className="w-5 h-5" />
       </button>
     </div>
   )

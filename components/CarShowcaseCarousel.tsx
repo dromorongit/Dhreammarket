@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { FiFiChevronLeft, FiFiChevronRight } from 'react-icons/fi'
 
 const SLIDES = [
   { src: '/images/car1.jpg', alt: 'Car Showcase 1' },
@@ -130,7 +130,7 @@ export default function CarShowcaseCarousel() {
           className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
           aria-label="Previous slide"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <FiChevronLeft className="w-5 h-5" />
         </button>
         <button
           type="button"
@@ -138,7 +138,7 @@ export default function CarShowcaseCarousel() {
           className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
           aria-label="Next slide"
         >
-          <ChevronRight className="w-5 h-5" />
+          <FiChevronRight className="w-5 h-5" />
         </button>
       </div>
     </section>
