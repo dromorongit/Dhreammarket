@@ -1,19 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 interface StatItem {
   label: string
   endValue: number
   suffix: string
 }
-
-const STATS: StatItem[] = [
-  { label: 'Vendors', endValue: 10000, suffix: '+' },
-  { label: 'Products', endValue: 50000, suffix: '+' },
-  { label: 'Happy Customers', endValue: 25000, suffix: '+' },
-  { label: 'Orders Delivered', endValue: 15000, suffix: '+' },
-]
 
 function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string }) {
   const [display, setDisplay] = useState(0)
@@ -55,8 +49,37 @@ function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string
   )
 }
 
+const FALLBACK_STATS: StatItem[] = [
+  { label: 'Vendors', endValue: 0, suffix: '+' },
+  { label: 'Products', endValue: 0, suffix: '+' },
+  { label: 'Happy Customers', endValue: 5000, suffix: '+' },
+  { label: 'Orders Delivered', endValue: 500, suffix: '+' },
+]
+
 export default function TrustStatsStrip() {
   const ref = useRef<HTMLDivElement>(null)
+
+  const { data } = useQuery({
+    queryKey: ['public-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/public-stats')
+      if (!response.ok) throw new Error('Failed to fetch stats')
+      return response.json() as Promise<{
+        vendors: number
+        products: number
+        happyCustomers: number
+        ordersDelivered: number
+      }>
+    },
+    staleTime: 60_000,
+  })
+
+  const stats: StatItem[] = [
+    { label: 'Vendors', endValue: data?.vendors ?? 0, suffix: '+' },
+    { label: 'Products', endValue: data?.products ?? 0, suffix: '+' },
+    { label: 'Happy Customers', endValue: data?.happyCustomers ?? 5000, suffix: '+' },
+    { label: 'Orders Delivered', endValue: data?.ordersDelivered ?? 500, suffix: '+' },
+  ]
 
   return (
     <section className="relative w-full px-4 sm:px-6 lg:px-8">
@@ -65,7 +88,7 @@ export default function TrustStatsStrip() {
         className="max-w-7xl mx-auto rounded-2xl bg-gradient-to-r from-deep-navy via-royal-blue to-deep-navy border border-gold/20 py-4 md:py-5"
       >
         <div className="flex flex-row items-center justify-around md:justify-between divide-x divide-white/10">
-          {STATS.map((stat) => (
+          {stats.map((stat) => (
             <div key={stat.label} className="flex flex-col items-center px-3 md:px-6 text-center">
               <span className="text-xl md:text-3xl font-extrabold text-white">
                 <AnimatedNumber endValue={stat.endValue} suffix={stat.suffix} />

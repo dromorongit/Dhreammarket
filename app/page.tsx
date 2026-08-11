@@ -226,9 +226,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── Trust Stats Strip ─── */}
-      <TrustStatsStrip />
-
       {/* ─── Recent Marketplace Activity Ticker ─── */}
       <RecentActivityTicker />
 
@@ -241,10 +238,13 @@ export default function Home() {
         {/* ─── How It Works ─── */}
         <HowItWorksSection />
 
-        {/* ─── Featured Collections ─── */}
-        <FeaturedCollectionsSection />
+         {/* ─── Featured Collections ─── */}
+         <FeaturedCollectionsSection />
 
-        {/* ─── Managed homepage sections rendered by displayOrder ─── */}
+         {/* ─── Trust Stats Strip ─── */}
+         <TrustStatsStrip />
+
+         {/* ─── Managed homepage sections rendered by displayOrder ─── */}
         {managedData.sections
           .filter((s) => isManagedSectionSlug(s.slug))
           .sort((a, b) => {
