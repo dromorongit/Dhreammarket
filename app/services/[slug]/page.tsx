@@ -62,7 +62,7 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
             thumbnail: true,
             store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
           },
-        })
+        }) as ServiceForMetadata['vendorServices']
       }
 
       if (service.category?.id) {
@@ -82,7 +82,7 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
             thumbnail: true,
             store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
           },
-        })
+        }) as ServiceForMetadata['relatedServices']
         const vendorServiceIds = new Set(vendorServices.map((s) => s.id))
         relatedServices = categoryServices.filter((s) => !vendorServiceIds.has(s.id))
       }
