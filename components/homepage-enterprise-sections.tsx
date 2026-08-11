@@ -85,56 +85,6 @@ function ProductImage({
   );
 }
 
-function ProductRailRow({ products, renderCard }: { products: EnterpriseProduct[]; renderCard: (product: EnterpriseProduct) => ReactNode }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    setCanScrollLeft(el.scrollLeft > 1)
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
-  }, [])
-
-  const scroll = (direction: 'left' | 'right') => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollBy({ left: direction === 'left' ? -300 : 300, behavior: 'smooth' })
-    setTimeout(checkScroll, 400)
-  }
-
-  return (
-    <div className="relative">
-      <div
-        ref={scrollRef}
-        onScroll={checkScroll}
-        className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4"
-      >
-        <div className="flex gap-4">
-          {products.map((product) => renderCard(product))}
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={() => scroll('left')}
-        className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
-        aria-label="Scroll left"
-      >
-        <FiChevronLeft className="w-5 h-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => scroll('right')}
-        className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
-        aria-label="Scroll right"
-      >
-        <FiChevronRight className="w-5 h-5" />
-      </button>
-    </div>
-  )
-}
-
 function ProductRail({
   products,
   renderCard,
@@ -150,8 +100,68 @@ function ProductRail({
 
   return (
     <div className="space-y-4">
-      {topRowProducts.length > 0 && <ProductRailRow products={topRowProducts} renderCard={renderCard} />}
-      {bottomRowProducts.length > 0 && <ProductRailRow products={bottomRowProducts} renderCard={renderCard} />}
+      {topRowProducts.length > 0 && (
+        <div className="relative">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <div className="flex gap-4">
+              {topRowProducts.map((product) => renderCard(product))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: -300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll left"
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: 300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll right"
+          >
+            <FiChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+      {bottomRowProducts.length > 0 && (
+        <div className="relative">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <div className="flex gap-4">
+              {bottomRowProducts.map((product) => renderCard(product))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: -300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll left"
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: 300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll right"
+          >
+            <FiChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2253,62 +2263,3 @@ export function ElectronicsShowcaseSection() {
     )
   }
 
-function ScrollableRail({
-  products,
-  renderCard,
-}: {
-  products: EnterpriseProduct[]
-  renderCard: (product: EnterpriseProduct) => React.ReactNode
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current
-    if (!el) return
-    setCanScrollLeft(el.scrollLeft > 1)
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
-  }, [])
-
-  const scroll = (direction: 'left' | 'right') => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollBy({ left: direction === 'left' ? -300 : 300, behavior: 'smooth' })
-    setTimeout(checkScroll, 400)
-  }
-
-  return (
-    <div className='relative'>
-      <div
-        ref={scrollRef}
-        onScroll={checkScroll}
-        className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'
-      >
-        <div className='flex gap-4'>
-          {products.map((product) => (
-            <div key={product.id} className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'>
-              {renderCard(product)}
-            </div>
-          ))}
-        </div>
-      </div>
-      <button
-        type='button'
-        onClick={() => scroll('left')}
-        className='hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity'
-        aria-label='Scroll left'
-      >
-        <FiChevronLeft className='w-5 h-5' />
-      </button>
-      <button
-        type='button'
-        onClick={() => scroll('right')}
-        className='hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity'
-        aria-label='Scroll right'
-      >
-        <FiChevronRight className='w-5 h-5' />
-      </button>
-    </div>
-  )
-}
