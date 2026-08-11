@@ -118,7 +118,7 @@ function getPricingTypeVariant(pricingType: string): 'default' | 'premium' | 'in
   }
 }
 
-export default function ServiceDetail({ serviceId, vendorServices = [], relatedServices = [] }: ServiceDetailProps) {
+export default function ServiceDetail({ serviceId, vendorServices = [] }: ServiceDetailProps) {
   const params = useParams()
   const slug = params!.slug as string
   const [service, setService] = useState<any>(null)
