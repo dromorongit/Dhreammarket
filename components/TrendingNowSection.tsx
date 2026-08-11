@@ -15,6 +15,7 @@ import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import WishlistButton from '@/components/WishlistButton';
 import { EmptyState } from '@/components/EmptyState';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL } from '@/lib/image-utils';
+import ScrollableRow from './ScrollableRow';
 
 
 function TrendingProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
@@ -192,7 +193,7 @@ export function TrendingNowSection({
 
         <div className='space-y-4'>
           {topRowProducts.length > 0 && (
-            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+            <ScrollableRow>
               <div className='flex gap-4'>
                 {topRowProducts.map((product) => (
                   <TrendingProductCard 
@@ -202,10 +203,10 @@ export function TrendingNowSection({
                   />
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
-            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+            <ScrollableRow>
               <div className='flex gap-4'>
                 {bottomRowProducts.map((product) => (
                   <TrendingProductCard 
@@ -215,7 +216,7 @@ export function TrendingNowSection({
                   />
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
         </div>
 

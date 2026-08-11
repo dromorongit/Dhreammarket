@@ -8,6 +8,20 @@ import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreammarket.png`
 
+interface RelatedProduct {
+  id: string
+  slug: string | null
+  name: string
+  price: number
+  salesPrice: number | null
+  dealsPrice: number | null
+  stock: number
+  availabilityType: string | null
+  images: Array<{ id: string; url: string; alt: string | null }>
+  store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
+  category: { id: string; name: string; slug: string } | null
+}
+
 interface ProductForMetadata {
   id: string
   slug: string | null
@@ -21,6 +35,8 @@ interface ProductForMetadata {
   brandRelation: { name: string } | null
   averageRating: number
   reviewCount: number
+  vendorProducts: RelatedProduct[]
+  relatedProducts: RelatedProduct[]
 }
 
 async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | null> {
@@ -40,10 +56,64 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
         images: { select: { url: true, alt: true } },
         store: { select: { id: true, name: true, slug: true, logo: true } },
         brandRelation: { select: { name: true } },
+        category: { select: { id: true, name: true, slug: true } },
       },
     })
 
+    let vendorProducts: RelatedProduct[] = []
+    let relatedProducts: RelatedProduct[] = []
+
     if (product) {
+      if (product.storeId) {
+        vendorProducts = await getPrisma().product.findMany({
+          where: {
+            storeId: product.storeId,
+            id: { not: product.id },
+          },
+          take: 8,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            price: true,
+            salesPrice: true,
+            dealsPrice: true,
+            stock: true,
+            availabilityType: true,
+            images: { take: 1, select: { id: true, url: true, alt: true } },
+            store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
+            category: { select: { id: true, name: true, slug: true } },
+          },
+        })
+      }
+
+      if (product.categoryId) {
+        const categoryProducts = await getPrisma().product.findMany({
+          where: {
+            categoryId: product.categoryId,
+            id: { not: product.id },
+          },
+          take: 8,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            price: true,
+            salesPrice: true,
+            dealsPrice: true,
+            stock: true,
+            availabilityType: true,
+            images: { take: 1, select: { id: true, url: true, alt: true } },
+            store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
+            category: { select: { id: true, name: true, slug: true } },
+          },
+        })
+        const vendorProductIds = new Set(vendorProducts.map((p) => p.id))
+        relatedProducts = categoryProducts.filter((p) => !vendorProductIds.has(p.id))
+      }
+
       return {
         id: product.id,
         slug: product.slug,
@@ -57,6 +127,8 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
         brandRelation: product.brandRelation,
         averageRating: product.averageRating ?? 0,
         reviewCount: product.reviewCount ?? 0,
+        vendorProducts,
+        relatedProducts,
       }
     }
 
@@ -75,6 +147,7 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
         images: { select: { url: true, alt: true } },
         store: { select: { id: true, name: true, slug: true, logo: true } },
         brandRelation: { select: { name: true } },
+        category: { select: { id: true, name: true, slug: true } },
       },
     })
 
@@ -147,7 +220,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
             }),
           }}
         />
-        <ProductClient />
+        <ProductClient vendorProducts={[]} relatedProducts={[]} />
       </>
     )
   }
@@ -167,7 +240,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
           { name: product?.name ?? 'Product', url: `/marketplace/product/${product?.slug ?? product?.id}` },
         ]}
       />
-      <ProductClient />
+      <ProductClient vendorProducts={product.vendorProducts} relatedProducts={product.relatedProducts} />
     </>
   )
 }

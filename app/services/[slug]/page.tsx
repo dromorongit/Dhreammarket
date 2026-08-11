@@ -18,6 +18,8 @@ interface ServiceForMetadata {
   gallery: string[]
   store: { id: string; name: string; slug: string | null; logo: string | null; averageRating: number; reviewCount: number } | null
   category: { id: string; name: string; slug: string } | null
+  vendorServices: Array<{ id: string; slug: string; title: string; startingPrice: number; pricingType: string; thumbnail: string | null; store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null } }>
+  relatedServices: Array<{ id: string; slug: string; title: string; startingPrice: number; pricingType: string; thumbnail: string | null; store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null } }>
 }
 
 async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | null> {
@@ -34,15 +36,72 @@ async function getServiceInfo(idOrSlug: string): Promise<ServiceForMetadata | nu
         estimatedDeliveryTime: true,
         thumbnail: true,
         gallery: true,
+        storeId: true,
         store: { select: { id: true, name: true, slug: true, logo: true, averageRating: true, reviewCount: true } },
         category: { select: { id: true, name: true, slug: true } },
       },
     })
 
+    let vendorServices: ServiceForMetadata['vendorServices'] = []
+    let relatedServices: ServiceForMetadata['relatedServices'] = []
+
     if (service) {
+      if (service.storeId) {
+        vendorServices = await getPrisma().service.findMany({
+          where: {
+            storeId: service.storeId,
+            id: { not: service.id },
+          },
+          take: 8,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            startingPrice: true,
+            pricingType: true,
+            thumbnail: true,
+            store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
+          },
+        })
+      }
+
+      if (service.categoryId) {
+        const categoryServices = await getPrisma().service.findMany({
+          where: {
+            categoryId: service.categoryId,
+            id: { not: service.id },
+          },
+          take: 8,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            startingPrice: true,
+            pricingType: true,
+            thumbnail: true,
+            store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
+          },
+        })
+        const vendorServiceIds = new Set(vendorServices.map((s) => s.id))
+        relatedServices = categoryServices.filter((s) => !vendorServiceIds.has(s.id))
+      }
+
       return {
-        ...service,
+        id: service.id,
+        slug: service.slug,
+        title: service.title,
+        description: service.description,
         startingPrice: Number(service.startingPrice),
+        pricingType: service.pricingType,
+        estimatedDeliveryTime: service.estimatedDeliveryTime,
+        thumbnail: service.thumbnail,
+        gallery: service.gallery,
+        store: service.store,
+        category: service.category,
+        vendorServices,
+        relatedServices,
       }
     }
 
@@ -105,7 +164,7 @@ export default async function ServiceDetailPage({ params }: { params: { slug: st
   const service = await getServiceInfo(params.slug)
 
   if (!service) {
-return (
+    return (
       <>
         <script
           type="application/ld+json"
@@ -113,7 +172,7 @@ return (
             __html: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Service', name: 'Service Not Found' }),
           }}
         />
-        <ServiceDetailClient serviceId={params.slug} />
+        <ServiceDetailClient serviceId={params.slug} vendorServices={[]} relatedServices={[]} />
       </>
     )
   }
@@ -142,7 +201,7 @@ return (
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <ServiceDetailClient serviceId={service.id} />
+      <ServiceDetailClient serviceId={service.id} vendorServices={service.vendorServices} relatedServices={service.relatedServices} />
     </>
   )
 }

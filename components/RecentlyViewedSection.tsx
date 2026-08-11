@@ -7,6 +7,7 @@ import { Card } from '@/components/Card'
 import { getRecentlyViewed } from '@/lib/recently-viewed'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL } from '@/lib/image-utils'
 import { formatPrice } from '@/lib/currency'
+import ScrollableRow from './ScrollableRow'
 
 interface ProductMinimal {
   id: string
@@ -63,7 +64,7 @@ export default function RecentlyViewedSection() {
           </h2>
           <p className="text-slate-600 mt-2">Pick up where you left off</p>
         </div>
-        <div className="flex gap-4 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-4 scroll-smooth touch-pan-x">
+        <ScrollableRow>
           {products.map((product) => {
             const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
             return (
@@ -108,7 +109,7 @@ export default function RecentlyViewedSection() {
               </Link>
             )
           })}
-        </div>
+        </ScrollableRow>
       </div>
     </section>
   )

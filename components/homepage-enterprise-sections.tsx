@@ -21,6 +21,7 @@ import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
 import CountdownTimer from '@/components/CountdownTimer';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function useEnterpriseHomepageData() {
   const { data, isLoading } = useQuery<{ topSelling: EnterpriseProduct[] }>({
@@ -100,17 +101,65 @@ function ProductRail({
   return (
     <div className="space-y-4">
       {topRowProducts.length > 0 && (
-        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-          <div className="flex gap-4">
-            {topRowProducts.map((product) => renderCard(product))}
+        <div className="relative">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <div className="flex gap-4">
+              {topRowProducts.map((product) => renderCard(product))}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: -300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: 300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       )}
       {bottomRowProducts.length > 0 && (
-        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-          <div className="flex gap-4">
-            {bottomRowProducts.map((product) => renderCard(product))}
+        <div className="relative">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <div className="flex gap-4">
+              {bottomRowProducts.map((product) => renderCard(product))}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: -300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              const container = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLDivElement
+              container.scrollBy({ left: 300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       )}
     </div>

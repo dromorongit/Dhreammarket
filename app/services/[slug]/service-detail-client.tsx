@@ -29,8 +29,54 @@ interface RelatedService {
   category: { id: string; name: string; slug: string }
 }
 
+interface RelatedServiceRail {
+  id: string
+  slug: string
+  title: string
+  startingPrice: number
+  pricingType: string
+  thumbnail: string | null
+  store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
+}
+
 interface ServiceDetailProps {
   serviceId: string
+  vendorServices: RelatedServiceRail[]
+  relatedServices: RelatedServiceRail[]
+}
+
+function ServiceRailCard({ service }: { service: RelatedServiceRail }) {
+  return (
+    <Link href={`/services/${service.slug}`} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+      <Card variant="elevated" className="group flex flex-col overflow-hidden h-full border border-gold/20 hover:border-gold/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 p-0">
+        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+          {service.thumbnail ? (
+            <Image src={service.thumbnail} alt={service.title} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-slate-100">
+              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+          )}
+        </div>
+        <div className="p-2 space-y-1 flex-1 flex flex-col">
+          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+            {service.title}
+          </h3>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-[10px] text-slate-500 truncate">{service.store.name}</p>
+            {service.store.isVerified && (
+              <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0" />
+            )}
+          </div>
+          <span className="text-xs font-bold text-royal-blue">
+            {service.pricingType === 'CUSTOM_QUOTE' ? 'Request Quote' : formatPrice(Number(service.startingPrice))}
+          </span>
+        </div>
+      </Card>
+    </Link>
+  )
 }
 
 function getAvailabilityLabel(status: AvailabilityStatus): string {
@@ -72,7 +118,7 @@ function getPricingTypeVariant(pricingType: string): 'default' | 'premium' | 'in
   }
 }
 
-export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
+export default function ServiceDetail({ serviceId, vendorServices = [], relatedServices = [] }: ServiceDetailProps) {
   const params = useParams()
   const slug = params!.slug as string
   const [service, setService] = useState<any>(null)
@@ -519,55 +565,32 @@ export default function ServiceDetail({ serviceId }: ServiceDetailProps) {
           </div>
         </div>
 
-        {relatedServices.length > 0 && (
-          <section className="mt-16 pt-12 border-t border-slate-200">
-            <h2 className="text-2xl font-bold text-deep-navy mb-8">Related Services</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedServices
-                .filter((s: RelatedService) => s.id !== service.id)
-                .slice(0, 4)
-                .map((related) => (
-                  <Card key={related.id} variant="elevated" className="group flex flex-col overflow-hidden hover:shadow-xl transition-all duration-300 h-full p-0">
-                    <Link href={`/services/${related.slug}`} className="block">
-                      <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
-                        {related.thumbnail ? (
-                          <Image src={related.thumbnail} alt={related.title} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                    <div className="p-2 space-y-1 flex-1 flex flex-col">
-                      <Link href={`/services/${related.slug}`} className="block">
-                        <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
-                          {related.title}
-                        </h3>
-                      </Link>
-                      <div className="mt-auto flex flex-col gap-1.5">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <p className="text-[10px] text-slate-500 truncate min-w-0">
-                            {truncateVendorName(related.store?.name ?? '')}
-                          </p>
-                          {related.store?.isVerified && (
-                            <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0" />
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold text-royal-blue">
-                            {related.pricingType === 'CUSTOM_QUOTE' ? 'Request Quote' : formatPrice(Number(related.startingPrice))}
-                          </span>
-                          <Link href={`/services/${related.slug}`} className="w-full">
-                            <Button variant="primary" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">View Service</Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
+        {vendorServices.length > 0 && service.store && (
+          <section className="mt-8 md:mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
+                More from {service.store.name}
+              </h2>
+              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+                {vendorServices.map((s) => (
+                  <ServiceRailCard key={s.id} service={s} />
                 ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {relatedServices.length > 0 && (
+          <section className="mt-8 md:mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
+                You Might Also Like
+              </h2>
+              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+                {relatedServices.map((s) => (
+                  <ServiceRailCard key={s.id} service={s} />
+                ))}
+              </div>
             </div>
           </section>
         )}

@@ -133,7 +133,69 @@ function renderStars(rating: number, size: 'sm' | 'md' = 'md'): React.ReactNode 
   ))
 }
 
-export default function ProductClient() {
+interface RelatedProductForRail {
+  id: string
+  slug: string | null
+  name: string
+  price: number
+  salesPrice: number | null
+  dealsPrice: number | null
+  stock: number
+  availabilityType: string | null
+  images: Array<{ id: string; url: string; alt: string | null }>
+  store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
+  category: { id: string; name: string; slug: string } | null
+}
+
+interface ProductClientProps {
+  vendorProducts: RelatedProductForRail[]
+  relatedProducts: RelatedProductForRail[]
+}
+
+function RailProductCard({ product }: { product: RelatedProductForRail }) {
+  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+  const hasDiscount = (product.dealsPrice ?? product.salesPrice) != null && product.price > effectivePrice
+
+  return (
+    <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+      <Card variant="elevated" className="group flex flex-col overflow-hidden h-full border border-gold/20 hover:border-gold/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 p-0">
+        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+          {product.images?.[0] ? (
+            <Image
+              src={product.images[0].url}
+              alt={product.images[0].alt || product.name}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              fill
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+              <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          )}
+        </div>
+        <div className="p-2 space-y-1 flex-1 flex flex-col">
+          <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+            {product.name}
+          </h3>
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-royal-blue">{formatPrice(effectivePrice)}</span>
+            {hasDiscount && (
+              <span className="text-[10px] text-slate-400 line-through">{formatPrice(product.price)}</span>
+            )}
+          </div>
+          {product.store && (
+            <p className="text-[10px] text-slate-500 truncate">{product.store.name}</p>
+          )}
+        </div>
+      </Card>
+    </Link>
+  )
+}
+
+export default function ProductClient({ vendorProducts = [], relatedProducts = [] }: ProductClientProps) {
   const params = useParams()
   const productId = params!.id as string
 
@@ -612,9 +674,39 @@ export default function ProductClient() {
                           </a>
                         )
                       })()}
-                    </div>
-                </div>
+          </div>
+        </div>
+
+        {vendorProducts.length > 0 && product.store && (
+          <section className="mt-8 md:mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
+                More from {product.store.name}
+              </h2>
+              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+                {vendorProducts.map((p) => (
+                  <RailProductCard key={p.id} product={p} />
+                ))}
               </div>
+            </div>
+          </section>
+        )}
+
+        {relatedProducts.length > 0 && (
+          <section className="mt-8 md:mt-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
+                You Might Also Like
+              </h2>
+              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+                {relatedProducts.map((p) => (
+                  <RailProductCard key={p.id} product={p} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
             </div>
           </div>
         </div>

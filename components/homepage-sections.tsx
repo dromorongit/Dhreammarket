@@ -21,6 +21,7 @@ import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import { TrendingNowSection } from './TrendingNowSection'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WishlistButton from '@/components/WishlistButton'
+import ScrollableRow from './ScrollableRow'
 
 export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
   return (
@@ -156,9 +157,9 @@ return (
               </div>
             )}
             <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
-         </div>
-       </div>
-      </Card>
+                              </div>
+                             </div>
+                           </Card>
     )
   })
 
@@ -228,26 +229,22 @@ return (
 
         <div className="space-y-4">
           {topRowProducts.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-              <div className="flex gap-4">
-{topRowProducts.map((product) => (
-                   <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                     <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                   </div>
-                 ))}
-               </div>
-             </div>
-           )}
-           {bottomRowProducts.length > 0 && (
-             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-               <div className="flex gap-4">
-                 {bottomRowProducts.map((product) => (
-                   <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                     <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ScrollableRow>
+              {topRowProducts.map((product) => (
+                <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                </div>
+              ))}
+            </ScrollableRow>
+          )}
+          {bottomRowProducts.length > 0 && (
+            <ScrollableRow>
+              {bottomRowProducts.map((product) => (
+                <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                  <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                </div>
+              ))}
+            </ScrollableRow>
           )}
         </div>
 
@@ -536,8 +533,9 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L7.5 9h9l-.621-.621A2.25 2.25 0 0115 8.818v-.386M9.75 3.104V5.25A2.25 2.25 0 004.875 7.5h4.5a2.25 2.25 0 012.25 2.25v2.25A2.25 2.25 0 0111.25 12h3a2.25 2.25 0 012.25 2.25v2.25A2.25 2.25 0 004.875 7.5v-4.25" />
                 </svg>
               </div>
-            )}
-            <ProductBadges product={badgeData} />
+                                 )}
+                               </div>
+                               <ProductBadges product={badgeData} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
             <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-400 text-white text-[11px] font-semibold uppercase tracking-wider shadow-sm">
@@ -561,7 +559,6 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
             <Button variant="gradient" size="sm" className="w-full rounded-full font-semibold mt-auto">View Deal</Button>
             <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
           </div>
-        </div>
       </Link>
     )
   }
@@ -585,10 +582,10 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
           )}
         </div>
 
-        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <ScrollableRow className="gap-6">
             {products.slice(0, 6).map((product) => renderProductCard(product))}
-          </div>
-      </div>
+            </ScrollableRow>
+        </div>
     </section>
   )
 }
@@ -727,68 +724,68 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
 
         <div className="space-y-4">
 {topRowProducts.length > 0 && (
-             <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-               <div className="flex gap-4">
+              <ScrollableRow>
+                <div className="flex gap-4">
                  {topRowProducts.map((product) => {
                    const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
                    const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
-                   const badgeData = calculateProductBadges({
-                     price: product.price,
-                     flashSalePrice: product.flashSalePrice,
-                     salesPrice: product.salesPrice,
-                     dealsPrice: product.dealsPrice,
-                     stock: product.stock,
-                     availabilityType: product.availabilityType,
-                     expectedArrivalDate: product.expectedArrivalDate,
-                     expectedRestockDate: product.expectedRestockDate,
-                   })
-                   return (
-                     <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                         <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
-                           <Card variant="elevated" className="group overflow-hidden hover:shadow-xl hover:border-gold/50 transition-all duration-300 border border-gold/20 h-full">
-                             <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
- {product.images?.[0] ? (
-                                 <Image
-                                   src={product.images[0].url}
-                                   alt={product.images[0].alt || product.name}
-                                   className="object-cover"
-                                   fill
-                                   sizes={CARD_IMAGE_SIZES_2COL}
-                                   placeholder="blur"
-                                   blurDataURL={getBlurDataURL()}
-                                   loading="lazy"
-                                 />
-                               ) : (
-                                 <div className="w-full h-full flex items-center justify-center bg-slate-100">
-                                   <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                   </svg>
-                                 </div>
-                               )}
-                             <ProductBadges product={badgeData} />
-                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                             <div className="absolute bottom-0 left-0 right-0 p-3">
-                               <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                              <div className="flex items-baseline gap-1">
-                                {hasDiscount && (
-                                  <span className="text-xs text-white/60 line-through">
-                                    {formatPrice(product.price)}
-                                  </span>
-                                )}
-                                <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
-                              </div>
-                            </div>
-                            </div>
-                          </Card>
-                        </Link>
-                      </div>
-                    )
+                    const badgeData = calculateProductBadges({
+                      price: product.price,
+                      flashSalePrice: product.flashSalePrice,
+                      salesPrice: product.salesPrice,
+                      dealsPrice: product.dealsPrice,
+                      stock: product.stock,
+                      availabilityType: product.availabilityType,
+                      expectedArrivalDate: product.expectedArrivalDate,
+                      expectedRestockDate: product.expectedRestockDate,
+                    })
+                    return (
+                      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                          <Link href={`/marketplace/product/${product.slug ?? product.id}`}>
+                            <Card variant="elevated" className="group overflow-hidden hover:shadow-xl hover:border-gold/50 transition-all duration-300 border border-gold/20 h-full">
+                              <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
+  {product.images?.[0] ? (
+                                  <Image
+                                    src={product.images[0].url}
+                                    alt={product.images[0].alt || product.name}
+                                    className="object-cover"
+                                    fill
+                                    sizes={CARD_IMAGE_SIZES_2COL}
+                                    placeholder="blur"
+                                    blurDataURL={getBlurDataURL()}
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                                    <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                   </div>
+                                 )}
+                               </div>
+                               <ProductBadges product={badgeData} />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                              <div className="absolute bottom-0 left-0 right-0 p-3">
+                                <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
+                               <div className="flex items-baseline gap-1">
+                                 {hasDiscount && (
+                                   <span className="text-xs text-white/60 line-through">
+                                     {formatPrice(product.price)}
+                                   </span>
+                                 )}
+                                 <span className="text-sm font-bold text-premium-gold">{formatPrice(effectivePrice)}</span>
+                               </div>
+                             </div>
+                           </Card>
+                         </Link>
+                       </div>
+                     )
                   })}
                 </div>
-              </div>
+              </ScrollableRow>
             )}
             {bottomRowProducts.length > 0 && (
-              <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <ScrollableRow>
                 <div className="flex gap-4">
                   {bottomRowProducts.map((product) => {
                     const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
@@ -846,9 +843,9 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                     )
                   })}
                 </div>
-              </div>
-            )}
-         </div>
+             </ScrollableRow>
+          )}
+        </div>
 
          <div className="mt-4 text-center">
            <Link href="/marketplace">
@@ -998,7 +995,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="space-y-4">
           {topRowServices.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {topRowServices.map((service: any) => (
                   <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1006,19 +1003,19 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
           {bottomRowServices.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowServices.map((service: any) => (
                   <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactServiceCard service={service} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                     <CompactServiceCard service={service} />
+                   </div>
+                 ))}
+               </div>
+             </ScrollableRow>
+           )}
         </div>
         <div className="mt-4 text-center">
           <Link href="/services">
@@ -1066,7 +1063,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
         </div>
         <div className="space-y-4">
           {topRowServices.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {topRowServices.map((service: any) => (
                   <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1074,19 +1071,19 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
           {bottomRowServices.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowServices.map((service: any) => (
                   <div key={service.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactServiceCard service={service} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                     <CompactServiceCard service={service} />
+                   </div>
+                 ))}
+               </div>
+             </ScrollableRow>
+           )}
         </div>
         <div className="mt-4 text-center">
           <Link href="/services">
@@ -1128,7 +1125,7 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">{section.name}</h2>
           {section.subtitle && <p className="text-slate-600 mt-2">{section.subtitle}</p>}
         </div>
-        <div className="flex gap-6 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory pb-2 pr-4 md:pr-6 scroll-smooth touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <ScrollableRow className="gap-6">
             {displayVendors.map((vendor: any) => (
               <Link key={vendor.id} href={`/vendor/${vendor.slug ?? vendor.id}`}>
                 <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
@@ -1172,8 +1169,8 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
                 </Card>
               </Link>
             ))}
-        </div>
-      </div>
+            </ScrollableRow>
+          </div>
     </section>
   )
 }
@@ -1236,7 +1233,7 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
         </div>
         <div className="space-y-4">
           {topRowItems.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {topRowItems.map((item: any) => (
                   <div key={item.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1248,10 +1245,10 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
           {bottomRowItems.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowItems.map((item: any) => (
                   <div key={item.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1263,11 +1260,11 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
         </div>
         <div className="mt-4 text-center">
-          <Link href="/marketplace">
+          <Link href="/services">
             <Button variant="outline" size="sm" className="rounded-full px-4 py-1.5 font-semibold shadow-sm hover:shadow-md transition-all">See More</Button>
           </Link>
         </div>
@@ -1337,7 +1334,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
 
         <div className="space-y-4">
           {topRowProducts.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {topRowProducts.map((product) => (
                   <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1345,10 +1342,10 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
                   </div>
                 ))}
               </div>
-            </div>
+            </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowProducts.map((product) => (
                   <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1356,7 +1353,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
                   </div>
                 ))}
               </div>
-            </div>
+             </ScrollableRow>
           )}
         </div>
 

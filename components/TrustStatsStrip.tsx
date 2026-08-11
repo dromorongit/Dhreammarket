@@ -11,9 +11,12 @@ interface StatItem {
 
 function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string }) {
   const [display, setDisplay] = useState(0)
+  const spanRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
-    const node = document.createElement('span')
+    const node = spanRef.current
+    if (!node) return
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -34,15 +37,15 @@ function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string
           requestAnimationFrame(animate)
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.3 }
     )
 
-    if (node) observer.observe(node)
+    observer.observe(node)
     return () => observer.disconnect()
   }, [endValue])
 
   return (
-    <span>
+    <span ref={spanRef}>
       {display.toLocaleString()}
       {suffix}
     </span>

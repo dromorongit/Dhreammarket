@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getBlurDataURL, HERO_IMAGE_SIZES } from '@/lib/image-utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const BANNERS = [
   { id: 1, src: '/images/banner1.jpg', alt: 'Promotional Banner 1', href: '/marketplace' },
@@ -41,6 +42,19 @@ export default function InfiniteBannerRail() {
       isProgrammaticRef.current = false
     }, 1000)
     setActiveIndex(index)
+  }
+
+  const handleArrowScroll = (direction: 'left' | 'right') => {
+    const container = scrollRef.current
+    if (!container) return
+    isUserInteracting.current = true
+    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current)
+    resumeTimeoutRef.current = setTimeout(() => {
+      isUserInteracting.current = false
+    }, 4000)
+
+    const distance = container.clientWidth
+    container.scrollBy({ left: direction === 'left' ? -distance : distance, behavior: 'smooth' })
   }
 
   useEffect(() => {
@@ -109,6 +123,22 @@ export default function InfiniteBannerRail() {
             </div>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => handleArrowScroll('left')}
+          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+          aria-label="Previous banner"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleArrowScroll('right')}
+          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+          aria-label="Next banner"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
     </section>
   )

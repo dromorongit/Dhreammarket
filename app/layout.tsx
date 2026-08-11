@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Navbar } from '@/components/Navbar'
 import TopContactBar from '@/components/TopContactBar'
@@ -10,6 +10,11 @@ import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import LiveSupportWidget from '@/components/LiveSupportWidget'
 import { Suspense } from 'react'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
 
 export const metadata: Metadata = {
   title: {
@@ -38,7 +43,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans">
+      <body className="font-sans overflow-x-hidden">
         <Suspense fallback={null}>
           <GoogleAnalytics />
         </Suspense>
