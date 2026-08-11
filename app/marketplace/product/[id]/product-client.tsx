@@ -15,6 +15,7 @@ import { truncateVendorName } from '@/lib/utils'
 import WishlistButton from '@/components/WishlistButton'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
+import ScrollableRow from '@/components/ScrollableRow'
 import { MdVerified } from 'react-icons/md'
 import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus, FiPhone } from 'react-icons/fi'
 import { event } from '@/lib/gtag'
@@ -683,11 +684,11 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
               <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
                 More from {product.store.name}
               </h2>
-              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <ScrollableRow>
                 {vendorProducts.map((p) => (
                   <RailProductCard key={p.id} product={p} />
                 ))}
-              </div>
+              </ScrollableRow>
             </div>
           </section>
         )}
@@ -698,11 +699,11 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
               <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
                 You Might Also Like
               </h2>
-              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <ScrollableRow>
                 {relatedProducts.map((p) => (
                   <RailProductCard key={p.id} product={p} />
                 ))}
-              </div>
+              </ScrollableRow>
             </div>
           </section>
         )}

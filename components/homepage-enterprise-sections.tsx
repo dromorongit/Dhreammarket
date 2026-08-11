@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, type ReactNode, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, type ReactNode, useCallback, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link';
 import { Card } from '@/components/Card';
@@ -85,6 +85,56 @@ function ProductImage({
   );
 }
 
+function ProductRailRow({ products, renderCard }: { products: EnterpriseProduct[]; renderCard: (product: EnterpriseProduct) => ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 1)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+  }, [])
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollBy({ left: direction === 'left' ? -300 : 300, behavior: 'smooth' })
+    setTimeout(checkScroll, 400)
+  }
+
+  return (
+    <div className="relative">
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4"
+      >
+        <div className="flex gap-4">
+          {products.map((product) => renderCard(product))}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => scroll('left')}
+        className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
+        aria-label="Scroll left"
+      >
+        <FiChevronLeft className="w-5 h-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => scroll('right')}
+        className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
+        aria-label="Scroll right"
+      >
+        <FiChevronRight className="w-5 h-5" />
+      </button>
+    </div>
+  )
+}
+
 function ProductRail({
   products,
   renderCard,
@@ -100,68 +150,8 @@ function ProductRail({
 
   return (
     <div className="space-y-4">
-      {topRowProducts.length > 0 && (
-        <div className="relative">
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-            <div className="flex gap-4">
-              {topRowProducts.map((product) => renderCard(product))}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              const container = e.currentTarget.previousElementSibling as HTMLDivElement
-              container.scrollBy({ left: -300, behavior: 'smooth' })
-            }}
-            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
-            aria-label="Scroll left"
-          >
-            <FiChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              const container = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLDivElement
-              container.scrollBy({ left: 300, behavior: 'smooth' })
-            }}
-            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
-            aria-label="Scroll right"
-          >
-            <FiChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-      {bottomRowProducts.length > 0 && (
-        <div className="relative">
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
-            <div className="flex gap-4">
-              {bottomRowProducts.map((product) => renderCard(product))}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              const container = e.currentTarget.previousElementSibling as HTMLDivElement
-              container.scrollBy({ left: -300, behavior: 'smooth' })
-            }}
-            className="hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
-            aria-label="Scroll left"
-          >
-            <FiChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              const container = e.currentTarget.previousElementSibling?.previousElementSibling as HTMLDivElement
-              container.scrollBy({ left: 300, behavior: 'smooth' })
-            }}
-            className="hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
-            aria-label="Scroll right"
-          >
-            <FiChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
+      {topRowProducts.length > 0 && <ProductRailRow products={topRowProducts} renderCard={renderCard} />}
+      {bottomRowProducts.length > 0 && <ProductRailRow products={bottomRowProducts} renderCard={renderCard} />}
     </div>
   );
 }
@@ -1215,84 +1205,10 @@ export function TopClearanceSalesSection({
         {/* Mobile & tablet horizontal scroll - Two independent rows */}
         <div className='lg:hidden space-y-4'>
           {topRowProducts.length > 0 && (
-            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
-              <div className='flex gap-4'>
-                {topRowProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/marketplace/product/${product.slug ?? product.id}`}
-                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
-                  >
-                    <Card
-                      variant='elevated'
-                      className='group overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 bg-slate-800/50 border border-gold/20'
-                    >
-                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
-                        <WishlistButton
-                          productId={product.id}
-                          initialIsWishlisted={wishlistedProductIds.has(product.id)}
-                          size="sm"
-                          className="absolute top-2 right-2 z-10"
-                        />
-                        <ProductImage
-                          product={product}
-                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                        />
-                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
-                        <div className='absolute bottom-0 left-0 right-0 p-4'>
-                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
-                            {product.name}
-                          </h3>
-                          <span className='text-lg font-bold text-premium-gold'>
-                            {formatPrice(getEffectivePrice(product))}
-                          </span>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <ScrollableRail products={topRowProducts} renderCard={renderProductCard} />
           )}
           {bottomRowProducts.length > 0 && (
-            <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
-              <div className='flex gap-4'>
-                {bottomRowProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/marketplace/product/${product.slug ?? product.id}`}
-                    className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'
-                  >
-                    <Card
-                      variant='elevated'
-                      className='group overflow-hidden rounded-2xl hover:shadow-xl hover:border-gold/50 transition-all duration-300 bg-slate-800/50 border border-gold/20'
-                    >
-                      <div className='relative aspect-[4/3] bg-slate-800 overflow-hidden'>
-                        <WishlistButton
-                          productId={product.id}
-                          initialIsWishlisted={wishlistedProductIds.has(product.id)}
-                          size="sm"
-                          className="absolute top-2 right-2 z-10"
-                        />
-                        <ProductImage
-                          product={product}
-                          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                        />
-                        <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent' />
-                        <div className='absolute bottom-0 left-0 right-0 p-4'>
-                          <h3 className='text-sm font-bold text-white mb-1 line-clamp-1'>
-                            {product.name}
-                          </h3>
-                          <span className='text-lg font-bold text-premium-gold'>
-                            {formatPrice(getEffectivePrice(product))}
-                          </span>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <ScrollableRail products={bottomRowProducts} renderCard={renderProductCard} />
           )}
         </div>
 
@@ -1455,19 +1371,43 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
           <p className="text-gray-500 mb-6">Shop by your favourite brands</p>
         </div>
 
-        <div className='overflow-x-auto overflow-y-hidden scrollbar-hide pb-4'>
-          <div className='flex gap-4'>
-            {displayBrands.map((brand) => {
-              const normalized = normalizeBrand(brand);
-              return (
-                <div
-                  key={normalized.id || normalized.slug}
-                >
-                  <BrandCard brand={brand} />
-                </div>
-              );
-            })}
+        <div className='relative'>
+          <div id='brand-scroll-container' className='overflow-x-auto overflow-y-hidden scrollbar-hide pb-4'>
+            <div className='flex gap-4'>
+              {displayBrands.map((brand) => {
+                const normalized = normalizeBrand(brand);
+                return (
+                  <div
+                    key={normalized.id || normalized.slug}
+                  >
+                    <BrandCard brand={brand} />
+                  </div>
+                );
+              })}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              const container = document.getElementById('brand-scroll-container') as HTMLDivElement | null
+              container?.scrollBy({ left: -300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll brands left"
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const container = document.getElementById('brand-scroll-container') as HTMLDivElement | null
+              container?.scrollBy({ left: 300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll brands right"
+          >
+            <FiChevronRight className="w-5 h-5" />
+          </button>
         </div>
 
         <div className='mt-4 text-center'>
@@ -1850,30 +1790,54 @@ export function ElectronicsShowcaseSection() {
   ] as const
 
   export function FeaturedCollectionsSection() {
-    return (
-      <section className='relative py-10 lg:py-14 bg-white'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-           <div className='flex gap-1 sm:gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
-             {FEATURED_COLLECTIONS.map((item) => (
-               <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[320px] sm:w-[420px] lg:w-[480px]'>
-                 <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
-                     <Image
-                       src={item.image}
-                       alt={item.title}
-                       className='object-contain'
-                       fill
-                       loading='lazy'
-                       sizes={CARD_IMAGE_SIZES_4COL}
-                       placeholder="blur"
-                       blurDataURL={getBlurDataURL()}
-                     />
-                 </div>
-               </Link>
-             ))}
-          </div>
+  return (
+    <section className='relative py-10 lg:py-14 bg-white'>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+         <div className='relative'>
+          <div id='featured-collections-scroll' className='flex gap-1 sm:gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+              {FEATURED_COLLECTIONS.map((item) => (
+                <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[280px] sm:w-[360px] lg:w-[400px] block'>
+                  <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        className='object-contain'
+                        fill
+                        loading='lazy'
+                        sizes={CARD_IMAGE_SIZES_4COL}
+                        placeholder="blur"
+                        blurDataURL={getBlurDataURL()}
+                      />
+                  </div>
+                </Link>
+              ))}
+           </div>
+           <button
+            type="button"
+            onClick={() => {
+              const container = document.getElementById('featured-collections-scroll') as HTMLDivElement | null
+              container?.scrollBy({ left: -300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll collections left"
+          >
+            <FiChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const container = document.getElementById('featured-collections-scroll') as HTMLDivElement | null
+              container?.scrollBy({ left: 300, behavior: 'smooth' })
+            }}
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+            aria-label="Scroll collections right"
+          >
+            <FiChevronRight className="w-5 h-5" />
+          </button>
+         </div>
         </div>
       </section>
-    );
+    )
   }
 
   const SERVICE_CARDS = [
@@ -2166,3 +2130,63 @@ export function ElectronicsShowcaseSection() {
       </section>
     )
   }
+
+function ScrollableRail({
+  products,
+  renderCard,
+}: {
+  products: EnterpriseProduct[]
+  renderCard: (product: EnterpriseProduct) => React.ReactNode
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 1)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+  }, [])
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollBy({ left: direction === 'left' ? -300 : 300, behavior: 'smooth' })
+    setTimeout(checkScroll, 400)
+  }
+
+  return (
+    <div className='relative'>
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'
+      >
+        <div className='flex gap-4'>
+          {products.map((product) => (
+            <div key={product.id} className='snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]'>
+              {renderCard(product)}
+            </div>
+          ))}
+        </div>
+      </div>
+      <button
+        type='button'
+        onClick={() => scroll('left')}
+        className='hidden md:flex absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity'
+        aria-label='Scroll left'
+      >
+        <FiChevronLeft className='w-5 h-5' />
+      </button>
+      <button
+        type='button'
+        onClick={() => scroll('right')}
+        className='hidden md:flex absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity'
+        aria-label='Scroll right'
+      >
+        <FiChevronRight className='w-5 h-5' />
+      </button>
+    </div>
+  )
+}

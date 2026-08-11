@@ -16,6 +16,7 @@ import { MdVerified } from 'react-icons/md'
 import WishlistButton from '@/components/WishlistButton'
 import { PricingType, AvailabilityStatus } from '@prisma/client'
 import { getBlurDataURL, HERO_IMAGE_SIZES, VENDOR_LOGO_SIZES, CARD_IMAGE_SIZES } from '@/lib/image-utils'
+import ScrollableRow from '@/components/ScrollableRow'
 
 interface RelatedService {
   id: string
@@ -571,11 +572,11 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
               <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
                 More from {service.store.name}
               </h2>
-              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <ScrollableRow>
                 {vendorServices.map((s) => (
                   <ServiceRailCard key={s.id} service={s} />
                 ))}
-              </div>
+              </ScrollableRow>
             </div>
           </section>
         )}
@@ -586,11 +587,11 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
               <h2 className="text-xl md:text-2xl font-bold text-deep-navy mb-4 md:mb-6">
                 You Might Also Like
               </h2>
-              <div className="flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+              <ScrollableRow>
                 {relatedServices.map((s) => (
                   <ServiceRailCard key={s.id} service={s} />
                 ))}
-              </div>
+              </ScrollableRow>
             </div>
           </section>
         )}

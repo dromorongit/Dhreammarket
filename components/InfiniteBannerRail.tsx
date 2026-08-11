@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { getBlurDataURL, HERO_IMAGE_SIZES } from '@/lib/image-utils'
@@ -16,10 +16,19 @@ const BANNERS = [
 export default function InfiniteBannerRail() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
   const isUserInteracting = useRef(false)
   const isProgrammaticRef = useRef(false)
   const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const slideStepRef = useRef(0)
+
+  const checkScroll = useCallback(() => {
+    const container = scrollRef.current
+    if (!container) return
+    setCanScrollLeft(container.scrollLeft > 1)
+    setCanScrollRight(container.scrollLeft + container.clientWidth < container.scrollWidth - 1)
+  }, [])
 
   const measureStep = () => {
     const container = scrollRef.current
@@ -40,6 +49,7 @@ export default function InfiniteBannerRail() {
     container.scrollTo({ left: step * index, behavior: 'smooth' })
     setTimeout(() => {
       isProgrammaticRef.current = false
+      checkScroll()
     }, 1000)
     setActiveIndex(index)
   }
@@ -55,13 +65,16 @@ export default function InfiniteBannerRail() {
 
     const distance = container.clientWidth
     container.scrollBy({ left: direction === 'left' ? -distance : distance, behavior: 'smooth' })
+    setTimeout(checkScroll, 500)
   }
 
   useEffect(() => {
     measureStep()
+    checkScroll()
     const onResize = () => {
       slideStepRef.current = 0
       measureStep()
+      checkScroll()
     }
     window.addEventListener('resize', onResize)
     const interval = setInterval(() => {
@@ -76,7 +89,7 @@ export default function InfiniteBannerRail() {
       clearInterval(interval)
       window.removeEventListener('resize', onResize)
     }
-  }, [])
+  }, [checkScroll])
 
   const handleUserScroll = () => {
     if (isProgrammaticRef.current) return
@@ -92,6 +105,7 @@ export default function InfiniteBannerRail() {
     const step = slideStepRef.current || container.clientWidth
     const newIndex = Math.round(container.scrollLeft / step)
     setActiveIndex(newIndex)
+    checkScroll()
   }
 
   return (
@@ -126,7 +140,8 @@ export default function InfiniteBannerRail() {
         <button
           type="button"
           onClick={() => handleArrowScroll('left')}
-          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+          disabled={!canScrollLeft}
+          className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
           aria-label="Previous banner"
         >
           <FiChevronLeft className="w-5 h-5" />
@@ -134,7 +149,8 @@ export default function InfiniteBannerRail() {
         <button
           type="button"
           onClick={() => handleArrowScroll('right')}
-          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700"
+          disabled={!canScrollRight}
+          className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
           aria-label="Next banner"
         >
           <FiChevronRight className="w-5 h-5" />

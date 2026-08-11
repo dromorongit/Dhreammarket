@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 interface StatItem {
@@ -9,13 +9,25 @@ interface StatItem {
   suffix: string
 }
 
-function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string }) {
+interface AnimatedNumberProps {
+  endValue: number
+  suffix: string
+}
+
+function AnimatedNumber({ endValue, suffix }: AnimatedNumberProps) {
   const [display, setDisplay] = useState(0)
   const spanRef = useRef<HTMLSpanElement>(null)
+  const hasAnimatedRef = useRef(false)
+  const rafRef = useRef<number>(0)
 
   useEffect(() => {
     const node = spanRef.current
     if (!node) return
+
+    if (hasAnimatedRef.current) return
+    if (endValue === 0) return
+
+    hasAnimatedRef.current = true
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -30,11 +42,11 @@ function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string
             const eased = 1 - Math.pow(1 - progress, 3)
             setDisplay(Math.floor(eased * endValue))
             if (progress < 1) {
-              requestAnimationFrame(animate)
+              rafRef.current = requestAnimationFrame(animate)
             }
           }
 
-          requestAnimationFrame(animate)
+          rafRef.current = requestAnimationFrame(animate)
         }
       },
       { threshold: 0.3 }
@@ -43,6 +55,14 @@ function AnimatedNumber({ endValue, suffix }: { endValue: number; suffix: string
     observer.observe(node)
     return () => observer.disconnect()
   }, [endValue])
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+    }
+  }, [])
 
   return (
     <span ref={spanRef}>
