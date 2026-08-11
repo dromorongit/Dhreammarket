@@ -12,6 +12,7 @@ import Toggle from '@/components/settings/Toggle'
 interface StoreInfo {
   id: string
   name: string
+  slug: string
   description?: string
   logo?: string
   banner?: string
@@ -56,6 +57,7 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
   const [storeSaving, setStoreSaving] = useState(false)
   const [storeMessage, setStoreMessage] = useState<string | null>(null)
   const [storeError, setStoreError] = useState<string | null>(null)
+  const [newStoreSlug, setNewStoreSlug] = useState<string | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
@@ -141,7 +143,13 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
       if (response.ok) {
         setStore(data.store)
         setStoreMessage('Store information updated successfully')
-        setTimeout(() => setStoreMessage(null), 3000)
+        setTimeout(() => {
+          setStoreMessage(null)
+          setNewStoreSlug(null)
+        }, 5000)
+        if (data.store.slug && data.store.slug !== store?.slug) {
+          setNewStoreSlug(data.store.slug)
+        }
       } else {
         setStoreError(data.error || 'Failed to update store')
       }
@@ -493,6 +501,13 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
       {storeError && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
           <p className="text-sm text-rose-700">{storeError}</p>
+        </div>
+      )}
+
+      {newStoreSlug && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <p className="text-sm text-blue-700 font-medium mb-1">Your store link has been updated:</p>
+          <p className="text-sm text-blue-600 break-all">https://www.dhreamarket.com/vendor/{newStoreSlug}</p>
         </div>
       )}
 

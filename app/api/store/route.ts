@@ -190,8 +190,17 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
      const vendorCategory = await getPrisma().vendorCategory.findUnique({
        where: { id: categoryId }
      })
-     if (!vendorCategory || !vendorCategory.isActive) {
-       return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+      if (!vendorCategory || !vendorCategory.isActive) {
+        return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
+      }
+
+      if (!existingStore) {
+        return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+      }
+
+      let slug = existingStore.slug
+     if (name.trim() !== existingStore.name) {
+       slug = await generateSlug({ baseText: name.trim(), target: 'Store', excludeId: existingStore.id })
      }
    
      // Debug: Log the data being updated
@@ -207,6 +216,7 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
 const store = await getPrisma().store.update({
            where: { userId: payload.userId },
            data: {
+             slug,
              name: name.trim(),
              description: sanitizedDescription || null,
              categoryId: categoryId,

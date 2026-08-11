@@ -36,7 +36,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
         <Card
           variant='elevated'
-          className='group flex flex-col overflow-hidden rounded-2xl hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 h-full p-0 w-full'
+          className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full border border-gold/20 hover:border-gold/50'
         >
           <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
             <WishlistButton
@@ -194,11 +194,11 @@ export function TrendingNowSection({
         <div className='space-y-4'>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className='flex gap-4'>
+              <div className='flex gap-4 flex-shrink-0'>
                 {topRowProducts.map((product) => (
-                  <TrendingProductCard 
-                    key={product.id} 
-                    product={product} 
+                  <TrendingProductCard
+                    key={product.id}
+                    product={product}
                     initialIsWishlisted={wishlistedProductIds.has(product.id)}
                   />
                 ))}
@@ -207,11 +207,11 @@ export function TrendingNowSection({
           )}
           {bottomRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className='flex gap-4'>
+              <div className='flex gap-4 flex-shrink-0'>
                 {bottomRowProducts.map((product) => (
-                  <TrendingProductCard 
-                    key={product.id} 
-                    product={product} 
+                  <TrendingProductCard
+                    key={product.id}
+                    product={product}
                     initialIsWishlisted={wishlistedProductIds.has(product.id)}
                   />
                 ))}

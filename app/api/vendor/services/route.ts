@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
         pricingType: pricingType || 'FIXED_PRICE',
         deliveryType: deliveryType || 'ONLINE',
         availabilityStatus: availabilityStatus || 'AVAILABLE',
-        status: status || 'DRAFT',
+        status: status || 'PUBLISHED',
         thumbnail: thumbnail || null,
         gallery: gallery || [],
         requirementsFromCustomer: requirementsFromCustomer?.trim() || null,
