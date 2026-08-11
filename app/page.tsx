@@ -53,6 +53,7 @@ import {
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
+import TVInfiniteBannerRail from '@/components/TVInfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -311,9 +312,10 @@ export default function Home() {
                      <source src="/videos/newvideo.mp4" type="video/mp4" />
                    </video>
                  </section>
-                 <PhoneRail />
-                 <ElectronicsShowcaseSection />
-               </Fragment>
+                  <PhoneRail />
+                  <ElectronicsShowcaseSection />
+                  <TVInfiniteBannerRail />
+                </Fragment>
              )
            }
             if (section.slug === 'verified-vendors')
