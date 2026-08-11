@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback, type ReactNode, memo } from 'react'
+import { useState, useEffect, useCallback, type ReactNode, memo, Fragment } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -1333,14 +1333,18 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
           {topRowProducts.length > 0 && (
             <ScrollableRow>
               {topRowProducts.map((product) => (
-                renderCard(product)
+                <Fragment key={product.id}>
+                  {renderCard(product)}
+                </Fragment>
               ))}
             </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
             <ScrollableRow>
               {bottomRowProducts.map((product) => (
-                renderCard(product)
+                <Fragment key={product.id}>
+                  {renderCard(product)}
+                </Fragment>
               ))}
             </ScrollableRow>
           )}
