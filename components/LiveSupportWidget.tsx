@@ -92,18 +92,28 @@ export default function LiveSupportWidget() {
 
     setConnectionStatus('connecting')
     let isCancelled = false
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
 
     const connect = async () => {
+      if (isCancelled) return
+
       try {
+        setConnectionStatus('connecting')
         const res = await fetch('/api/support/conversations/' + conversationRef + '/stream')
         if (!res.ok) {
           setConnectionStatus('disconnected')
+          if (!isCancelled) {
+            reconnectTimeout = setTimeout(connect, 3000)
+          }
           return
         }
 
         const reader = res.body?.getReader()
         if (!reader) {
           setConnectionStatus('disconnected')
+          if (!isCancelled) {
+            reconnectTimeout = setTimeout(connect, 3000)
+          }
           return
         }
 
@@ -131,10 +141,14 @@ export default function LiveSupportWidget() {
             }
           }
         }
+
+        if (!isCancelled) {
+          reconnectTimeout = setTimeout(connect, 3000)
+        }
       } catch {
         if (!isCancelled) {
           setConnectionStatus('disconnected')
-          setTimeout(connect, 3000)
+          reconnectTimeout = setTimeout(connect, 3000)
         }
       }
     }
@@ -143,6 +157,9 @@ export default function LiveSupportWidget() {
 
     return () => {
       isCancelled = true
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout)
+      }
     }
   }, [conversationRef, isOpen, isDashboard, refetchMessages])
 

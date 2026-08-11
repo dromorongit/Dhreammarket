@@ -21,6 +21,7 @@ import { event } from '@/lib/gtag'
 import { AISimilar } from '@/components/ai'
 import { AICrossSelling } from '@/components/ai'
 import { getTelLink, formatGhanaPhoneNumber } from '@/lib/phone'
+import { addRecentlyViewed } from '@/lib/recently-viewed'
 
 interface ProductImage {
   id: string
@@ -186,6 +187,7 @@ export default function ProductClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entityType: 'PRODUCT', entityId: productId }),
       }).catch(() => {})
+      addRecentlyViewed(productId)
     }
   }, [productId])
 

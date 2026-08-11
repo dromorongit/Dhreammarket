@@ -64,6 +64,11 @@ import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageSt
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import { FirstOrderDiscountBanner } from '@/components/FirstOrderDiscountBanner'
 import { RecentActivityTicker } from '@/components/RecentActivityTicker'
+import TrustStatsStrip from '@/components/TrustStatsStrip'
+import RecentlyViewedSection from '@/components/RecentlyViewedSection'
+import BlogTeaserSection from '@/components/BlogTeaserSection'
+import BlogArticleModal from '@/components/BlogArticleModal'
+import { BLOG_ARTICLES } from '@/lib/blog-content'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
@@ -127,6 +132,8 @@ export default function Home() {
     () => managedData.sections.filter((s) => !isManagedSectionSlug(s.slug)),
     [managedData.sections]
   )
+
+  const [selectedArticle, setSelectedArticle] = useState<typeof BLOG_ARTICLES[number] | null>(null)
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -218,6 +225,9 @@ export default function Home() {
           </svg>
         </div>
       </section>
+
+      {/* ─── Trust Stats Strip ─── */}
+      <TrustStatsStrip />
 
       {/* ─── Recent Marketplace Activity Ticker ─── */}
       <RecentActivityTicker />
@@ -378,6 +388,9 @@ export default function Home() {
 
       {/* ─── Featured Services (always shown) ─── */}
       <FeaturedServicesSection />
+
+      {/* ─── Recently Viewed Section ─── */}
+      <RecentlyViewedSection />
 
       {/* ─── New Arrivals Section (hardcoded) ─── */}
       {!loadingManaged && (
@@ -619,6 +632,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ─── Blog / Guides Teaser ─── */}
+      <BlogTeaserSection articles={BLOG_ARTICLES} onSelect={setSelectedArticle} />
+
       {/* CTA Section */}
       <section className="relative py-10 lg:py-14 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-deep-navy via-royal-blue/90 to-purple-900"></div>
@@ -650,6 +667,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      <BlogArticleModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
     </div>
   )
 }
