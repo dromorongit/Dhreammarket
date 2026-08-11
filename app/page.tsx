@@ -54,6 +54,7 @@ import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import TVInfiniteBannerRail from '@/components/TVInfiniteBannerRail'
+import BeautyInfiniteBannerRail from '@/components/BeautyInfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -276,15 +277,16 @@ export default function Home() {
                     <SponsoredSection key={section.id} section={sectionProps} />
                   </>
                 )
-              if (section.slug === 'quick-links') {
-                 return (
-                   <>
-                     <QuickLinksSection key={section.id} />
-                     <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
-                     <ServiceShowcaseSection />
-                   </>
-                 )
-               }
+               if (section.slug === 'quick-links') {
+                  return (
+                    <>
+                      <QuickLinksSection key={section.id} />
+                      <BeautyInfiniteBannerRail />
+                      <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
+                      <ServiceShowcaseSection />
+                    </>
+                  )
+                }
               if (section.slug === 'trending-now')
                 return (
                   <>
