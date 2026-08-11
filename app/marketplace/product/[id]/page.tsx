@@ -88,10 +88,10 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
         })
       }
 
-      if (product.categoryId) {
+      if (product.category?.id) {
         const categoryProducts = await getPrisma().product.findMany({
           where: {
-            categoryId: product.categoryId,
+            categoryId: product.category.id,
             id: { not: product.id },
           },
           take: 8,
