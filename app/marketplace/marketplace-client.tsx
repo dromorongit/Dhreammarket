@@ -22,7 +22,7 @@ import ServiceCard from '@/components/ServiceCard'
 import WishlistButton from '@/components/WishlistButton'
 import { AIRecommendations } from '@/components/ai'
 import { AITrending } from '@/components/ai'
-import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
+import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, CARD_IMAGE_SIZES_6COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 
 interface Product {
@@ -172,7 +172,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
                className="object-cover group-hover:scale-105 transition-transform duration-500"
               fill
               loading="lazy"
-              sizes={CARD_IMAGE_SIZES}
+               sizes={CARD_IMAGE_SIZES_6COL}
               placeholder="blur"
               blurDataURL={getBlurDataURL()}
             />
@@ -1009,7 +1009,7 @@ function MarketplaceContent() {
                </div>
                
                {servicesPending ? (
-                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4">
                    {[...Array(6)].map((_, i) => (
                      <SkeletonCard key={i} />
                    ))}
@@ -1030,7 +1030,7 @@ function MarketplaceContent() {
                  </div>
                ) : (
                  <>
-                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4">
+                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 p-4">
                      {services.map((service) => (
                        <ServiceCard key={service.id} service={service} wishlistServiceIds={wishlistedProductIds as Set<string>} />
                      ))}

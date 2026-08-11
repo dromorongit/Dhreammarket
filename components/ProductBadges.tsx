@@ -153,10 +153,13 @@ if (availabilityType === 'BACKORDER') {
                 </div>
               )
             }
-            if (badge.type === 'date') {
-              const bg = badge.variant === 'arrival' ? 'amber' : 'orange'
+             if (badge.type === 'date') {
+              const isArrival = badge.variant === 'arrival'
+              const dateBadgeClasses = isArrival
+                ? 'bg-amber-50 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-full border border-amber-200'
+                : 'bg-orange-50 text-orange-800 text-[10px] px-1.5 py-0.5 rounded-full border border-orange-200'
               return (
-                <div key={badge.key} className={`bg-${bg}-50 text-${bg}-800 text-[10px] px-1.5 py-0.5 rounded-full border border-${bg}-200`}>
+                <div key={badge.key} className={dateBadgeClasses}>
                   {badge.content}
                 </div>
               )

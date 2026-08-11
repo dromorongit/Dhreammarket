@@ -16,7 +16,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import WishlistButton from '@/components/WishlistButton'
 import ServiceCard from '@/components/ServiceCard'
-import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
+import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, CARD_IMAGE_SIZES_6COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands' | 'services'
 
@@ -610,7 +610,7 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
                 className="object-cover"
                 fill
                 loading="lazy"
-                sizes={CARD_IMAGE_SIZES}
+                 sizes={CARD_IMAGE_SIZES_6COL}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
               />
