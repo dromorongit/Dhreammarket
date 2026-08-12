@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Determine processor fee from Paystack response (actual fees or fallback)
-      const paystackFees = paystackResponse.data?.fees ?? null
+      const paystackFees = paystackResponse.data?.fees != null ? paystackResponse.data.fees / 100 : null
       const isFallback = paystackFees === null || paystackFees === undefined || paystackFees <= 0
       let processorFee = resolveProcessorFee(paystackFees, grossAmount)
 

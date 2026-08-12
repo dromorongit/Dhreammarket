@@ -145,10 +145,20 @@ export function verifyWebhookSignature(
   payload: string,
   signature: string
 ): boolean {
+  if (!signature) return false
+  if (!PAYSTACK_SECRET_KEY) return false
+
   const expectedSignature = crypto
-    .createHmac('sha512', PAYSTACK_SECRET_KEY || '')
+    .createHmac('sha512', PAYSTACK_SECRET_KEY)
     .update(payload)
     .digest('hex')
 
-  return signature === expectedSignature
+  const signatureBuffer = Buffer.from(signature, 'hex')
+  const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+
+  if (signatureBuffer.length !== expectedBuffer.length) {
+    return false
+  }
+
+  return crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
 }
