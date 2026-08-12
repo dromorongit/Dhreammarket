@@ -58,7 +58,7 @@ import BeautyInfiniteBannerRail from '@/components/BeautyInfiniteBannerRail'
 import SneakerInfiniteBannerRail from '@/components/SneakerInfiniteBannerRail'
 import BagInfiniteBannerRail from '@/components/BagInfiniteBannerRail'
 import ApplianceInfiniteBannerRail from '@/components/ApplianceInfiniteBannerRail'
-import SneakerBrandBannerRail from '@/components/SneakerBrandBannerRail'
+import SneakerBrandCarousel from '@/components/SneakerBrandCarousel'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -351,7 +351,7 @@ export default function Home() {
                       brands={section.brands || []}
                       loading={loadingManaged}
                     />
-                    <SneakerBrandBannerRail />
+                    <SneakerBrandCarousel />
                     <PetShowcaseSection />
                   </>
                 )
