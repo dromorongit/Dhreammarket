@@ -233,12 +233,21 @@ export async function PATCH(
         updateData.vendorAccepted = false
         updateData.vendorRejected = true
         updateData.vendorRejectionReason = rejectionReason.trim()
-        // Also cancel the order when rejected
         updateData.status = 'CANCELLED'
         updateData.fulfillmentStatus = 'CANCELLED'
         const shouldRefund = existingOrder.paymentStatus === 'PAID'
         if (shouldRefund) {
           updateData.paymentStatus = 'REFUNDED'
+        }
+
+        if (existingOrder.orderType === 'NORMAL') {
+          const stockReleaseResult = await releaseStock(orderId, payload.userId)
+          if (!stockReleaseResult.success) {
+            return NextResponse.json(
+              { error: `Failed to release stock for rejected order: ${stockReleaseResult.error}` },
+              { status: 500 }
+            )
+          }
         }
       }
     }
@@ -357,12 +366,6 @@ export async function PATCH(
     }
 
     if (action === 'reject') {
-      if (existingOrder.orderType === 'NORMAL') {
-        releaseStock(orderId, payload.userId).catch(err => {
-          console.error('Failed to release stock:', err)
-        })
-      }
-
       if (orderWithUser?.user) {
         const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
         createNotification(
