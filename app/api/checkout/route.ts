@@ -14,6 +14,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
+
   // Rate limiting - security hardening
   const rateLimitCheck = rateLimit('checkout')(request)
   if (rateLimitCheck.success !== true) {
@@ -83,11 +85,40 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse customer and shipping info from request
-    const { customerInfo, shippingInfo } = await request.json()
-    console.log('[Checkout API] Payload received - customerInfo:', { 
-      email: customerInfo?.email, 
-      hasShippingInfo: !!shippingInfo 
+    const { customerInfo, shippingInfo, idempotencyKey } = await request.json()
+
+    // Idempotency: check for recent duplicate checkout attempts
+    const effectiveIdempotencyKey = idempotencyKey || crypto.randomUUID()
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
+
+    const recentOrder = await getPrisma().order.findFirst({
+      where: {
+        userId: payload.userId,
+        idempotencyKey: effectiveIdempotencyKey,
+        createdAt: { gte: tenMinutesAgo },
+      },
+      include: { payment: true },
     })
+
+    if (recentOrder) {
+      console.log('[Checkout API] Idempotent request detected - returning existing order:', recentOrder.id)
+      return NextResponse.json({
+        orderId: recentOrder.id,
+        paymentId: recentOrder.payment?.id,
+        reference: recentOrder.payment?.reference,
+        authorizationUrl: recentOrder.payment?.paystackRef
+          ? `${appUrl}/checkout?reference=${recentOrder.payment.reference}`
+          : undefined,
+        pricing: {
+          subtotal: recentOrder.subtotal ?? 0,
+          shipping: recentOrder.shipping ?? 0,
+          tax: recentOrder.tax ?? 0,
+          total: recentOrder.total,
+        },
+        vendorBreakdown: {},
+        idempotent: true,
+      })
+    }
 
     // Calculate subtotal
     const subtotal = cart.items.reduce(
@@ -157,14 +188,15 @@ export async function POST(request: NextRequest) {
      }
 
 // Create order and payment record in a transaction
-     const orderData: any = {
-       userId: payload.userId,
-       total,
-       status: 'PENDING',
-       paymentStatus: 'PENDING',
-       orderType,
-       fulfillmentStatus,
-       // Store customer info
+      const orderData: any = {
+        userId: payload.userId,
+        total,
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        orderType,
+        fulfillmentStatus,
+        idempotencyKey: effectiveIdempotencyKey,
+        // Store customer info
        customerFirstName: customerInfo?.firstName || '',
        customerLastName: customerInfo?.lastName || '',
        customerEmail: customerInfo?.email || user.email,
@@ -235,7 +267,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Paystack payment
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
     const callbackUrl = `${appUrl}/checkout?reference=${reference}`
     console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
 

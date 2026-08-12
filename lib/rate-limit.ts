@@ -18,6 +18,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'password-reset-new': { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3 requests per hour
   'reset-password': { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 requests per 15 minutes
   'support-ticket': { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 tickets per hour
+  'support-message': { windowMs: 5 * 60 * 1000, maxRequests: 30 }, // 30 messages per 5 minutes
   'contact-form': { windowMs: 60 * 60 * 1000, maxRequests: 5 }, // 5 contacts per hour
   checkout: { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 checkouts per hour
   'payment-verification': { windowMs: 60 * 60 * 1000, maxRequests: 20 }, // 20 verifications per hour

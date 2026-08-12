@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -84,6 +85,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 // POST /api/support/conversations/[conversationRef]/messages
 export async function POST(request: NextRequest, { params }: { params: Promise<{ conversationRef: string }> }) {
+  const rateLimitCheck = rateLimit('support-message')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const resolved = await resolveConversation(request, (await params).conversationRef)
     if (!resolved) {

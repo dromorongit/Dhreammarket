@@ -489,7 +489,8 @@ model Order {
   tax                   Float?
   orderType             OrderType              @default(NORMAL)
   fulfillmentStatus     OrderFulfillmentStatus @default(PENDING)
-  inventoryConsumedAt DateTime?
+  idempotencyKey        String?
+  inventoryConsumedAt   DateTime?
   allocatedAt           DateTime?
   fulfillmentEvents     FulfillmentEvent[]
   items                 OrderItem[]
@@ -504,6 +505,7 @@ model Order {
   @@index([status, paymentStatus])
   @@index([orderType, paymentStatus, fulfillmentStatus])
   @@index([deletedAt, paymentStatus])
+  @@index([idempotencyKey])
 }
 
 model OrderItem {
