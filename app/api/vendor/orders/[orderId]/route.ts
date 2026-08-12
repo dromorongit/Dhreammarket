@@ -366,13 +366,13 @@ export async function PATCH(
       if (orderWithUser?.user) {
         const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
         createNotification(
-          orderWithUser.user.id,
+          orderWithUser.userId,
           'ORDER_STATUS_UPDATED',
           'Order Rejected by Vendor',
           `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund is being processed.' : ''}`
         ).catch(err => console.error('Failed to create rejection notification:', err))
 
-        if (await canSendCustomerEmail(orderWithUser.user.id)) {
+        if (await canSendCustomerEmail(orderWithUser.userId)) {
           sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, 'CANCELLED').catch(err => {
             console.error('Failed to send rejection email:', err)
           })
