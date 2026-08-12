@@ -56,6 +56,7 @@ import InfiniteBannerRail from '@/components/InfiniteBannerRail'
 import TVInfiniteBannerRail from '@/components/TVInfiniteBannerRail'
 import BeautyInfiniteBannerRail from '@/components/BeautyInfiniteBannerRail'
 import SneakerInfiniteBannerRail from '@/components/SneakerInfiniteBannerRail'
+import BagInfiniteBannerRail from '@/components/BagInfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -281,6 +282,7 @@ export default function Home() {
                if (section.slug === 'quick-links') {
                   return (
                     <>
+                      <BagInfiniteBannerRail />
                       <QuickLinksSection key={section.id} />
                       <BeautyInfiniteBannerRail />
                       <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
