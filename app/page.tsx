@@ -57,6 +57,7 @@ import TVInfiniteBannerRail from '@/components/TVInfiniteBannerRail'
 import BeautyInfiniteBannerRail from '@/components/BeautyInfiniteBannerRail'
 import SneakerInfiniteBannerRail from '@/components/SneakerInfiniteBannerRail'
 import BagInfiniteBannerRail from '@/components/BagInfiniteBannerRail'
+import ApplianceInfiniteBannerRail from '@/components/ApplianceInfiniteBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -459,6 +460,8 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      <ApplianceInfiniteBannerRail />
 
       {/* ─── Fallback: New Vendors (only when no extra sections) ─── */}
       {!loadingManaged && extraSections.length === 0 && (
