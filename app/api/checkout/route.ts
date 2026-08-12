@@ -87,18 +87,23 @@ export async function POST(request: NextRequest) {
     // Parse customer and shipping info from request
     const { customerInfo, shippingInfo, idempotencyKey } = await request.json()
 
-    // Idempotency: check for recent duplicate checkout attempts
-    const effectiveIdempotencyKey = idempotencyKey || crypto.randomUUID()
+    // Idempotency: only dedupe when client provides a key.
+    // If missing, we still store a fresh key so a later retry that DOES provide one can match.
+    const effectiveIdempotencyKey = idempotencyKey ?? null
+    const storedIdempotencyKey = effectiveIdempotencyKey || crypto.randomUUID()
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000)
 
-    const recentOrder = await getPrisma().order.findFirst({
-      where: {
-        userId: payload.userId,
-        idempotencyKey: effectiveIdempotencyKey,
-        createdAt: { gte: tenMinutesAgo },
-      },
-      include: { payment: true },
-    })
+    let recentOrder = null
+    if (effectiveIdempotencyKey) {
+      recentOrder = await getPrisma().order.findFirst({
+        where: {
+          userId: payload.userId,
+          idempotencyKey: storedIdempotencyKey,
+          createdAt: { gte: tenMinutesAgo },
+        },
+        include: { payment: true },
+      })
+    }
 
     if (recentOrder) {
       console.log('[Checkout API] Idempotent request detected - returning existing order:', recentOrder.id)

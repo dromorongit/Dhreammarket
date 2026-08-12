@@ -38,9 +38,10 @@ export async function reserveStock(
           continue
         }
 
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-        })
+        const productResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+          SELECT stock, "reservedQuantity" FROM products WHERE id = ${item.productId} FOR UPDATE
+        `
+        const product = productResult[0]
 
         if (!product) {
           throw new Error(`Product ${item.productId} not found`)
@@ -61,9 +62,10 @@ export async function reserveStock(
         let shouldReserveProduct = true
 
         if (hasVariant) {
-          const variant = await tx.productVariant.findUnique({
-            where: { id: item.productVariantId },
-          })
+          const variantResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+            SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
+          `
+          const variant = variantResult[0]
 
           if (variant) {
             const availableVariantStock = variant.stock - variant.reservedQuantity
@@ -400,9 +402,10 @@ export async function consumeInventory(
           continue
         }
 
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-        })
+        const productResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+          SELECT stock, "reservedQuantity" FROM products WHERE id = ${item.productId} FOR UPDATE
+        `
+        const product = productResult[0]
 
         if (!product) {
           throw new Error(`Product ${item.productId} not found for inventory consumption`)
@@ -435,9 +438,10 @@ export async function consumeInventory(
         }
 
         if (item.productVariantId) {
-          const variant = await tx.productVariant.findUnique({
-            where: { id: item.productVariantId },
-          })
+          const variantResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+            SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
+          `
+          const variant = variantResult[0]
 
           if (variant) {
             const newVariantStock = variant.stock - item.quantity

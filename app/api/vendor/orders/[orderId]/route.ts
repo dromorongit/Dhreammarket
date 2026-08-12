@@ -5,7 +5,8 @@ import { sendOrderStatusUpdateEmail } from '@/lib/email'
 import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { recordFulfillmentEvent, FulfillmentEventType } from '@/lib/fulfillment-events'
-import { consumeInventory } from '@/lib/stock-reservation'
+import { consumeInventory, releaseStock } from '@/lib/stock-reservation'
+import { createNotification } from '@/lib/notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -235,6 +236,10 @@ export async function PATCH(
         // Also cancel the order when rejected
         updateData.status = 'CANCELLED'
         updateData.fulfillmentStatus = 'CANCELLED'
+        const shouldRefund = existingOrder.paymentStatus === 'PAID'
+        if (shouldRefund) {
+          updateData.paymentStatus = 'REFUNDED'
+        }
       }
     }
 
@@ -348,6 +353,30 @@ export async function PATCH(
         sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, statusToUpdate).catch(err => {
           console.error('Failed to send order status update email:', err)
         })
+      }
+    }
+
+    if (action === 'reject') {
+      if (existingOrder.orderType === 'NORMAL') {
+        releaseStock(orderId, payload.userId).catch(err => {
+          console.error('Failed to release stock:', err)
+        })
+      }
+
+      if (orderWithUser?.user) {
+        const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
+        createNotification(
+          orderWithUser.user.id,
+          'ORDER_STATUS_UPDATED',
+          'Order Rejected by Vendor',
+          `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund is being processed.' : ''}`
+        ).catch(err => console.error('Failed to create rejection notification:', err))
+
+        if (await canSendCustomerEmail(orderWithUser.user.id)) {
+          sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, 'CANCELLED').catch(err => {
+            console.error('Failed to send rejection email:', err)
+          })
+        }
       }
     }
 

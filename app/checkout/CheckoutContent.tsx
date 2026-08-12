@@ -311,6 +311,7 @@ export default function CheckoutContent() {
   })
 const [formErrors, setFormErrors] = useState<Record<string, string>>({})
    const processedRefs = useRef<Set<string>>(new Set())
+   const idempotencyKey = useRef(crypto.randomUUID())
 
    useEffect(() => {
      fetchProfile()
@@ -390,7 +391,7 @@ const [formErrors, setFormErrors] = useState<Record<string, string>>({})
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customerInfo: formData }),
+        body: JSON.stringify({ customerInfo: formData, idempotencyKey: idempotencyKey.current }),
       })
 
       const data = await response.json()
