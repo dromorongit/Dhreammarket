@@ -58,6 +58,7 @@ import BeautyInfiniteBannerRail from '@/components/BeautyInfiniteBannerRail'
 import SneakerInfiniteBannerRail from '@/components/SneakerInfiniteBannerRail'
 import BagInfiniteBannerRail from '@/components/BagInfiniteBannerRail'
 import ApplianceInfiniteBannerRail from '@/components/ApplianceInfiniteBannerRail'
+import SneakerBrandBannerRail from '@/components/SneakerBrandBannerRail'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import StaticBannerRail from '@/components/StaticBannerRail'
@@ -340,20 +341,21 @@ export default function Home() {
              return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
            if (section.slug === 'big-top-deals')
              return <BigTopDealsSection key={section.id} section={sectionProps} loading={loadingManaged} />
-             if (section.slug === 'brand-store') {
-               return (
-                 <>
-                   <HomeDecorShowcaseSection />
-                   <BrandStoreSection
-                     key={section.id}
-                     section={sectionProps}
-                     brands={section.brands || []}
-                     loading={loadingManaged}
-                   />
-                   <PetShowcaseSection />
-                 </>
-               )
-             }
+              if (section.slug === 'brand-store') {
+                return (
+                  <>
+                    <HomeDecorShowcaseSection />
+                    <BrandStoreSection
+                      key={section.id}
+                      section={sectionProps}
+                      brands={section.brands || []}
+                      loading={loadingManaged}
+                    />
+                    <SneakerBrandBannerRail />
+                    <PetShowcaseSection />
+                  </>
+                )
+              }
            if (section.slug === 'top-clearance-sales')
              return <TopClearanceSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
             if (section.slug === 'top-services')
