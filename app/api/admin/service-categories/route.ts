@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromToken } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth-middleware'
+import { cookies } from 'next/headers'
 import { getPrisma } from '@/lib/prisma'
 import { PerformanceLogger } from '@/lib/performance'
 
@@ -9,7 +10,8 @@ export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const userFromToken = getUserFromToken()
+    const token = cookies().get('token')?.value
+    const userFromToken = token ? await verifyToken(token) : null
     if (!userFromToken) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()

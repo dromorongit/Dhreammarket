@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 // GET user by ID
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PATCH - Update user status (ban, unban, disable, re-enable)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -143,7 +143,7 @@ let updatedUser
 // DELETE - Delete a user
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

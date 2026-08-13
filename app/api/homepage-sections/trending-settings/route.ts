@@ -42,7 +42,7 @@ const DEFAULT_SETTINGS: TrendingSettings = {
 // GET /api/homepage-sections/trending-settings - Get trending settings (SUPER_ADMIN)
 export async function GET(request: NextRequest) {
   try {
-    const authResult = requireSuperAdmin()
+    const authResult = await requireSuperAdmin()
     if (authResult instanceof NextResponse) {
       return authResult
     }
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 // PUT /api/homepage-sections/trending-settings - Update trending settings (SUPER_ADMIN)
 export async function PUT(request: NextRequest) {
   try {
-    const authResult = requireSuperAdmin()
+    const authResult = await requireSuperAdmin()
     if (authResult instanceof NextResponse) {
       return authResult
     }

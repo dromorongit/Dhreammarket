@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
@@ -148,7 +148,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()

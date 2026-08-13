@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = requireSuperAdmin()
+    const authResult = await requireSuperAdmin()
     if (authResult instanceof NextResponse) {
       return authResult
     }

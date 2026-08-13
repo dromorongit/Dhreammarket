@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
 // GET all product categories
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 // POST - Create new product category
 export async function POST(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
 // PUT - Update product category
 export async function PUT(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -192,7 +192,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - Remove product category
 export async function DELETE(request: NextRequest) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

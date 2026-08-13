@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const prisma = getPrisma()
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) return authCheck
 
     const prisma = getPrisma()
@@ -74,7 +74,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) return authCheck
 
     const prisma = getPrisma()

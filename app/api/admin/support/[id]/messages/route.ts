@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 // POST /api/admin/support/tickets/[id]/messages
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const adminUser = requireAdmin()
+    const adminUser = await requireAdmin()
     if (adminUser instanceof NextResponse) {
       return adminUser
     }

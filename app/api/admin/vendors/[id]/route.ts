@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
 // GET vendor by ID
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PATCH - Verify or suspend vendor
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -346,7 +346,7 @@ case 'verify':
 // DELETE - Delete a vendor
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // GET all vendor categories
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 // POST create vendor category
 export async function POST(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 // PUT update vendor category
 export async function PUT(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
 // DELETE vendor category
 export async function DELETE(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

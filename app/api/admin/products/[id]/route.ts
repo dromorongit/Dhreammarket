@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 // GET product by ID
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // DELETE - Remove/delete product (moderation)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const adminUser = requireAdmin()
+    const adminUser = await requireAdmin()
     if (adminUser instanceof NextResponse) {
       return adminUser
     }
@@ -110,7 +110,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 // PATCH - Update product (including reserved stock correction)
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const adminUser = requireAdmin()
+    const adminUser = await requireAdmin()
     if (adminUser instanceof NextResponse) {
       return adminUser
     }

@@ -8,7 +8,7 @@ export const runtime = 'nodejs'
 // GET /api/admin/support/tickets/[id]/stream
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const adminUser = requireAdmin()
+    const adminUser = await requireAdmin()
     if (adminUser instanceof NextResponse) {
       return adminUser
     }

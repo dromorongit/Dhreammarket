@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth-middleware'
 
 export async function POST(request: NextRequest) {
   const response = NextResponse.json({ message: 'Logout successful' })
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (token) {
-      const payload = verifyToken(token)
+      const payload = await verifyToken(token)
       if (payload?.sessionId) {
         await getPrisma().session.updateMany({
           where: { sessionId: payload.sessionId, userId: payload.userId, isExpired: false },

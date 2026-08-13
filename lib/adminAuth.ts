@@ -1,4 +1,5 @@
-import { getUserFromToken, type Role } from './auth'
+import { verifyToken, type Role } from './auth-middleware'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export interface AdminUser {
@@ -6,9 +7,13 @@ export interface AdminUser {
   role: Role
 }
 
-export function requireAdmin(): AdminUser | NextResponse {
-  const user = getUserFromToken()
+export async function requireAdmin(): Promise<AdminUser | NextResponse> {
+  const token = cookies().get('token')?.value
+  if (!token) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
 
+  const user = await verifyToken(token)
   if (!user) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
@@ -20,9 +25,13 @@ export function requireAdmin(): AdminUser | NextResponse {
   return user
 }
 
-export function requireSuperAdmin(): AdminUser | NextResponse {
-  const user = getUserFromToken()
+export async function requireSuperAdmin(): Promise<AdminUser | NextResponse> {
+  const token = cookies().get('token')?.value
+  if (!token) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
 
+  const user = await verifyToken(token)
   if (!user) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
@@ -34,9 +43,13 @@ export function requireSuperAdmin(): AdminUser | NextResponse {
   return user
 }
 
-export function requireAdminReturnUser(): { userId: string; role: Role } | null {
-  const user = getUserFromToken()
+export async function requireAdminReturnUser(): Promise<{ userId: string; role: Role } | null> {
+  const token = cookies().get('token')?.value
+  if (!token) {
+    return null
+  }
 
+  const user = await verifyToken(token)
   if (!user) {
     return null
   }

@@ -15,7 +15,7 @@ function parseFilter(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

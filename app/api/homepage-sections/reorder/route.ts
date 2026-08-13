@@ -5,7 +5,7 @@ import { requireSuperAdmin } from '@/lib/adminAuth'
 // PUT /api/homepage-sections/reorder - Reorder sections
 export async function PUT(request: NextRequest) {
   try {
-    const authResult = requireSuperAdmin()
+    const authResult = await requireSuperAdmin()
     if (authResult instanceof NextResponse) {
       return authResult
     }

@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
 // GET all brands
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) return authCheck
 
     const prisma = getPrisma()
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 // POST create brand
 export async function POST(request: NextRequest) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) return authCheck
 
     const prisma = getPrisma()

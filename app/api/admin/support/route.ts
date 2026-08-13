@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   console.log('[ADMIN SUPPORT] GET request started')
   try {
-    const auth = requireAdmin()
+    const auth = await requireAdmin()
     console.log('[ADMIN SUPPORT] Auth check result:', auth instanceof NextResponse ? `response ${auth.status}` : 'authorized')
     if (auth instanceof NextResponse) {
       console.log('[ADMIN SUPPORT] Auth check returned error response:', auth.status)

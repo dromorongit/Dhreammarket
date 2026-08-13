@@ -14,7 +14,7 @@ interface RouteParams {
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const prisma = getPrisma()
     console.log('[ADMIN USERS] Prisma client obtained')
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     console.log('[ADMIN USERS] Auth check result:', authCheck instanceof NextResponse ? `response ${authCheck.status}` : 'authorized')
     if (authCheck instanceof NextResponse) {
       console.log('[ADMIN USERS] Auth check returned error response:', authCheck.status)

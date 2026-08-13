@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { verifyTokenEdge, type TokenPayload } from '@/lib/auth-edge'
+import { verifyToken } from '@/lib/auth-middleware'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       })
     }
 
-    const payload = await verifyTokenEdge(token)
+    const payload = await verifyToken(token)
 
     if (!payload) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {

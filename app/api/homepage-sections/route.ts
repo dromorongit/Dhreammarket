@@ -6,7 +6,7 @@ import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
 // GET /api/homepage-sections - List all homepage sections (SUPER_ADMIN only)
 export async function GET(request: NextRequest) {
   try {
-    const authResult = requireSuperAdmin()
+    const authResult = await requireSuperAdmin()
     if (authResult instanceof NextResponse) {
       return authResult
     }
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 // POST /api/homepage-sections - Create a new homepage section (SUPER_ADMIN only)
 export async function POST(request: NextRequest) {
   try {
-    const authResult = requireSuperAdmin()
+    const authResult = await requireSuperAdmin()
     if (authResult instanceof NextResponse) {
       return authResult
     }

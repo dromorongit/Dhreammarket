@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
-import { getUserFromToken } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth-middleware'
+import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
     // Verify SUPER_ADMIN authentication
-    const user = getUserFromToken()
+    const token = cookies().get('token')?.value
+    const user = token ? await verifyToken(token) : null
     if (!user || user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'SUPER_ADMIN access required' }, { status: 403 })
     }

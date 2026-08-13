@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Require SUPER_ADMIN access
-    const authCheck = requireSuperAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }

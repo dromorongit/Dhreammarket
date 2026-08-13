@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 // GET single order with complete details
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
@@ -136,7 +136,7 @@ return NextResponse.json({
 // PATCH - Update order status (e.g., cancel order)
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const authCheck = requireAdmin()
+    const authCheck = await requireAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
