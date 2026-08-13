@@ -10,6 +10,7 @@ import { Textarea } from '@/components/Textarea'
 import { ServiceRequestTimeline } from '@/components/ServiceRequestTimeline'
 import { formatPrice } from '@/lib/currency'
 import { getStatusBadgeVariant } from '@/lib/service-request-utils'
+import { Skeleton } from '@/components/Skeleton'
 
 interface ServiceRequestDetail {
   id: string
@@ -290,38 +291,74 @@ export default function VendorServiceRequestDetail({ params }: { params: { id: s
             </Card>
 
             {request.status === 'PENDING' || request.status === 'UNDER_REVIEW' ? (
-              <div className="flex gap-3">
-                <Button
-                  variant="success"
-                  onClick={() => handleUpdateStatus('QUOTED')}
-                >
-                  Send Quotation
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleUpdateStatus('DECLINED')}
-                >
-                  Decline
-                </Button>
-              </div>
+              showQuotationForm ? (
+                <Card>
+                  <CardHeader>
+                    <h2 className="text-lg font-semibold text-slate-900">Send Quotation</h2>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleSendQuotation} className="space-y-4">
+                      <Input
+                        label="Quoted Price"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={quotedPrice}
+                        onChange={(e) => setQuotedPrice(e.target.value)}
+                        required
+                      />
+                      <Input
+                        label="Estimated Duration"
+                        type="text"
+                        placeholder="e.g. 3-5 days"
+                        value={estimatedDuration}
+                        onChange={(e) => setEstimatedDuration(e.target.value)}
+                      />
+                      <Textarea
+                        label="Notes"
+                        placeholder="Add any notes about this quotation..."
+                        value={quotationNotes}
+                        onChange={(e) => setQuotationNotes(e.target.value)}
+                      />
+                      <Input
+                        label="Valid Until"
+                        type="date"
+                        value={validUntil}
+                        onChange={(e) => setValidUntil(e.target.value)}
+                        required
+                      />
+                      <div className="flex gap-3">
+                        <Button type="submit" variant="success" loading={submittingQuote}>
+                          Send Quotation
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowQuotationForm(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex gap-3">
+                  <Button
+                    variant="success"
+                    onClick={() => setShowQuotationForm(true)}
+                  >
+                    Send Quotation
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleUpdateStatus('DECLINED')}
+                  >
+                    Decline
+                  </Button>
+                </div>
+              )
             ) : null}
-
-            {request.status === 'QUOTED' && (
-              <div className="flex gap-3">
-                <Button
-                  variant="success"
-                  onClick={() => handleUpdateStatus('ACCEPTED')}
-                >
-                  Mark as Accepted
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleUpdateStatus('DECLINED')}
-                >
-                  Mark as Declined
-                </Button>
-              </div>
-            )}
 
             {request.status === 'ACCEPTED' && (
               <div className="flex gap-3">
@@ -391,8 +428,4 @@ export default function VendorServiceRequestDetail({ params }: { params: { id: s
       </div>
     </main>
   )
-}
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`bg-slate-200 rounded animate-pulse ${className || ''}`} />
 }

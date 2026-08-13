@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const existing = await getPrisma().serviceRequest.findUnique({
       where: { id },
-      select: { customerId: true, vendorId: true, status: true },
+      select: { customerId: true, vendorId: true, status: true, title: true, referenceNumber: true },
     })
 
     if (!existing) {
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       QUOTED: ['ACCEPTED', 'DECLINED', 'CANCELLED'],
       ACCEPTED: ['IN_PROGRESS', 'CANCELLED'],
       IN_PROGRESS: ['COMPLETED', 'CANCELLED'],
+      DECLINED: ['UNDER_REVIEW'],
     }
 
     const allowedTransitions = validTransitions[existing.status]
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         otherPartyId,
         notificationMap[status],
         `Request ${status.replace('_', ' ')}`,
-        `Service request "${id}" status has been updated to ${status}.${notes ? ' Notes: ' + notes : ''}`
+        `Service request "${existing.referenceNumber || existing.title}" status has been updated to ${status}.${notes ? ' Notes: ' + notes : ''}`
       )
     }
 

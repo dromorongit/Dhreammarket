@@ -10,6 +10,7 @@ import { Textarea } from '@/components/Textarea'
 import { ServiceRequestTimeline } from '@/components/ServiceRequestTimeline'
 import { formatPrice } from '@/lib/currency'
 import { getStatusBadgeVariant } from '@/lib/service-request-utils'
+import { Skeleton } from '@/components/Skeleton'
 
 interface ServiceRequestDetail {
   id: string
@@ -399,8 +400,4 @@ export default function CustomerServiceRequestDetail({ params }: { params: { id:
       </div>
     </main>
   )
-}
-
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`bg-slate-200 rounded animate-pulse ${className || ''}`} />
 }

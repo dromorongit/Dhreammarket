@@ -118,13 +118,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    await createNotification(
-      existing.vendorId === payload.userId ? existing.vendorId : existing.vendorId,
-      NotificationType.QUOTE_SENT,
-      'Quotation Sent',
-      `A quotation has been sent for service request "${existing.serviceId}".`
-    )
-
     const customerRequest = await getPrisma().serviceRequest.findUnique({
       where: { id },
       select: { customerId: true },
