@@ -16,7 +16,7 @@ export async function canVendorCreateCampaign(vendorId: string): Promise<{ allow
     return { allowed: false, reason: `Subscription status is ${subscription.status}` }
   }
 
-  const restrictions = getFeatureRestrictions(subscription.plan.name)
+  const restrictions = await getFeatureRestrictions(subscription.plan.name)
 
   if (!restrictions.vendorAdvertisements) {
     return {
@@ -95,7 +95,7 @@ export async function getSubscriptionPlanFeatures(vendorId: string): Promise<{
     }
   }
 
-  const restrictions = getFeatureRestrictions(subscription.plan.name)
+  const restrictions = await getFeatureRestrictions(subscription.plan.name)
   const isEnterprise = subscription.plan.name === 'Enterprise'
 
   return {

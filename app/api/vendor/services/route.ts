@@ -5,6 +5,7 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { generateSlug } from '@/lib/slug'
 import { PerformanceLogger } from '@/lib/performance'
+import { canCreateService } from '@/lib/subscription/feature-restriction'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 60
@@ -149,6 +150,13 @@ export async function POST(request: NextRequest) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Service offering is not enabled for this store' }, { status: 403 })
+    }
+
+    const serviceLimitCheck = await canCreateService(payload.userId)
+    if (!serviceLimitCheck.allowed) {
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return NextResponse.json({ error: serviceLimitCheck.reason || 'Service limit reached for your current plan. Upgrade to add more services.' }, { status: 403 })
     }
 
     const body = await request.json()

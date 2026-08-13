@@ -1,5 +1,4 @@
 import { getPrisma } from '@/lib/prisma'
-import { subscriptionPlans } from '@/lib/subscription/types'
 
 export interface SubscriptionRecommendation {
   vendorId: string
@@ -20,10 +19,14 @@ export async function recommendPlanUpgrade(vendorId: string): Promise<Subscripti
   if (!subscription) return null
 
   const currentPlanName = subscription.plan?.name ?? 'Free'
-  const currentPlanIndex = subscriptionPlans.findIndex((p) => p.name === currentPlanName)
-  if (currentPlanIndex >= subscriptionPlans.length - 1) return null
+  const allPlans = await prisma.subscriptionPlan.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: 'asc' },
+  })
+  const currentPlanIndex = allPlans.findIndex((p) => p.name === currentPlanName)
+  if (currentPlanIndex >= allPlans.length - 1) return null
 
-  const nextPlan = subscriptionPlans[currentPlanIndex + 1]
+  const nextPlan = allPlans[currentPlanIndex + 1]
 
   const productCount = await prisma.product.count({
     where: { store: { userId: vendorId } },

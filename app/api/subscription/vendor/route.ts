@@ -17,8 +17,7 @@ import {
   generateSubscriptionInvoice,
   processSubscriptionPayment,
   getSubscriptionHistory,
- } from '@/lib/subscription/subscription-service'
-import { processManualPayment } from '@/lib/subscription/billing-service'
+  } from '@/lib/subscription/subscription-service'
 import { logInfo, logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -129,18 +128,6 @@ export async function POST(request: NextRequest) {
         }
         const invoice = await generateSubscriptionInvoice(subscriptionId)
         return NextResponse.json({ invoice }, { status: 201 })
-      }
-
-      case 'processPayment': {
-        if (!subscriptionId) {
-          return NextResponse.json({ error: 'Subscription ID required' }, { status: 400 })
-        }
-        const amount = body.amount
-        if (!amount || amount <= 0) {
-          return NextResponse.json({ error: 'Valid amount required' }, { status: 400 })
-        }
-        const result = await processManualPayment(subscriptionId, amount, body.paymentMethod || 'MANUAL')
-        return NextResponse.json({ result })
       }
 
       default:

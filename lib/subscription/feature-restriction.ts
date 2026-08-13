@@ -15,7 +15,7 @@ export async function canCreateProduct(vendorId: string): Promise<{ allowed: boo
   }
 
   const plan = subscription.plan
-  const restrictions = getFeatureRestrictions(plan.name)
+  const restrictions = await getFeatureRestrictions(plan.name)
   const productCount = await prisma.product.count({
     where: { store: { userId: vendorId } },
   })
@@ -46,7 +46,7 @@ export async function canCreateService(vendorId: string): Promise<{ allowed: boo
   }
 
   const plan = subscription.plan
-  const restrictions = getFeatureRestrictions(plan.name)
+  const restrictions = await getFeatureRestrictions(plan.name)
   const serviceCount = await prisma.service.count({
     where: { vendorId },
   })
@@ -71,7 +71,7 @@ export async function canUseHomepagePromotions(vendorId: string): Promise<boolea
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).homepagePromotions
+  return (await getFeatureRestrictions(subscription.plan.name)).homepagePromotions
 }
 
 export async function canUseSponsoredProducts(vendorId: string): Promise<boolean> {
@@ -82,7 +82,7 @@ export async function canUseSponsoredProducts(vendorId: string): Promise<boolean
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).sponsoredProducts
+  return (await getFeatureRestrictions(subscription.plan.name)).sponsoredProducts
 }
 
 export async function canUseSponsoredServices(vendorId: string): Promise<boolean> {
@@ -93,7 +93,7 @@ export async function canUseSponsoredServices(vendorId: string): Promise<boolean
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).sponsoredServices
+  return (await getFeatureRestrictions(subscription.plan.name)).sponsoredServices
 }
 
 export async function canUsePremiumAnalytics(vendorId: string): Promise<boolean> {
@@ -104,7 +104,7 @@ export async function canUsePremiumAnalytics(vendorId: string): Promise<boolean>
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).premiumAnalytics
+  return (await getFeatureRestrictions(subscription.plan.name)).premiumAnalytics
 }
 
 export async function canUseAdvancedAI(vendorId: string): Promise<boolean> {
@@ -115,7 +115,7 @@ export async function canUseAdvancedAI(vendorId: string): Promise<boolean> {
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).advancedAI
+  return (await getFeatureRestrictions(subscription.plan.name)).advancedAI
 }
 
 export async function canUseCashbackCampaigns(vendorId: string): Promise<boolean> {
@@ -126,7 +126,7 @@ export async function canUseCashbackCampaigns(vendorId: string): Promise<boolean
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).cashbackCampaigns
+  return (await getFeatureRestrictions(subscription.plan.name)).cashbackCampaigns
 }
 
 export async function canUseRewardCampaigns(vendorId: string): Promise<boolean> {
@@ -137,7 +137,7 @@ export async function canUseRewardCampaigns(vendorId: string): Promise<boolean> 
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).rewardCampaigns
+  return (await getFeatureRestrictions(subscription.plan.name)).rewardCampaigns
 }
 
 export async function canUseVendorAdvertisements(vendorId: string): Promise<boolean> {
@@ -148,7 +148,7 @@ export async function canUseVendorAdvertisements(vendorId: string): Promise<bool
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return getFeatureRestrictions(subscription.plan.name).vendorAdvertisements
+  return (await getFeatureRestrictions(subscription.plan.name)).vendorAdvertisements
 }
 
 export async function getAllFeatureRestrictions(vendorId: string) {

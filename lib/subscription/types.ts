@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { getPrisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export const subscriptionPlans = [
   {
@@ -115,7 +116,7 @@ export interface FeatureRestrictions {
   unlimitedCampaigns: boolean
 }
 
-export function getFeatureRestrictions(planName: string): FeatureRestrictions {
+function getHardcodedFeatureRestrictions(planName: string): FeatureRestrictions {
   switch (planName) {
     case 'Free':
       return {
@@ -213,8 +214,54 @@ export function getFeatureRestrictions(planName: string): FeatureRestrictions {
         unlimitedCampaigns: true,
       }
     default:
-      return getFeatureRestrictions('Free')
+      return getHardcodedFeatureRestrictions('Free')
   }
+}
+
+export async function getFeatureRestrictions(planName: string): Promise<FeatureRestrictions> {
+  const prisma = getPrisma()
+  const plan = await prisma.subscriptionPlan.findUnique({
+    where: { name: planName },
+    include: { featurePermissions: true },
+  })
+
+  const fallback = getHardcodedFeatureRestrictions(planName)
+
+  if (!plan) {
+    return fallback
+  }
+
+  const featureKeyToRestriction: Record<string, keyof FeatureRestrictions> = {
+    homepage_promotions: 'homepagePromotions',
+    sponsored_products: 'sponsoredProducts',
+    sponsored_services: 'sponsoredServices',
+    premium_analytics: 'premiumAnalytics',
+    advanced_ai: 'advancedAI',
+    cashback_campaigns: 'cashbackCampaigns',
+    reward_campaigns: 'rewardCampaigns',
+    vendor_advertisements: 'vendorAdvertisements',
+    campaign_creation: 'campaignCreation',
+    sponsored_search_boost: 'sponsoredSearchBoost',
+    category_boosts: 'categoryBoosts',
+    vendor_spotlight: 'vendorSpotlight',
+    priority_approval: 'priorityApproval',
+    unlimited_campaigns: 'unlimitedCampaigns',
+  }
+
+  const restrictions: FeatureRestrictions = {
+    ...fallback,
+    productLimits: plan.productsLimit > 0,
+    serviceLimits: plan.servicesLimit > 0,
+  }
+
+  for (const fp of plan.featurePermissions) {
+    const key = featureKeyToRestriction[fp.featureKey]
+    if (key) {
+      restrictions[key] = fp.isEnabled
+    }
+  }
+
+  return restrictions
 }
 
 export interface SubscriptionDashboardData {

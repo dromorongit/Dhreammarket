@@ -416,7 +416,7 @@ export async function createManualRenewalInvoice(subscriptionId: string) {
   return invoice
 }
 
-export async function processManualPayment(subscriptionId: string, amount: number, paymentMethod: string = 'MANUAL') {
+export async function processManualPayment(subscriptionId: string, amount: number, paymentMethod: string = 'MANUAL', adminId?: string) {
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { id: subscriptionId },
@@ -480,7 +480,7 @@ export async function processManualPayment(subscriptionId: string, amount: numbe
       subscriptionId,
       action: 'PAYMENT_SUCCESS',
       amount,
-      notes: `Manual payment received via ${paymentMethod}`,
+      notes: `Manual payment received via ${paymentMethod}${adminId ? ` by admin ${adminId}` : ''}`,
     },
   })
 

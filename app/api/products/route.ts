@@ -7,6 +7,7 @@ import { generateSlug } from '@/lib/slug'
 import { checkAndUpdateExpiredPreOrders } from '@/lib/product-availability'
 import { PerformanceLogger } from '@/lib/performance'
 import { sanitizeUserContent } from '@/lib/sanitize'
+import { canCreateProduct } from '@/lib/subscription/feature-restriction'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 120
@@ -340,13 +341,20 @@ export async function POST(request: NextRequest) {
        where: { userId: payload.userId },
      });
 
-     if (!store) {
-       perf.markPrismaEnd(prismaPerfStart)
-       perf.log()
-       return NextResponse.json({ error: 'Store not found' }, { status: 400 })
-     }
+      if (!store) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: 'Store not found' }, { status: 400 })
+      }
 
-     // Validate availability type based on store settings
+      const productLimitCheck = await canCreateProduct(payload.userId)
+      if (!productLimitCheck.allowed) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: productLimitCheck.reason || 'Product limit reached for your current plan. Upgrade to add more products.' }, { status: 403 })
+      }
+
+      // Validate availability type based on store settings
      const validAvailabilityTypes = ['IN_STOCK']
      if (store.acceptsPreOrders) {
        validAvailabilityTypes.push('PREORDER')

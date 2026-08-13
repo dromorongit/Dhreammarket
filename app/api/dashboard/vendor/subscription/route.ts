@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
-import { subscriptionPlans, planBenefits, getFeatureRestrictions } from '@/lib/subscription/types'
+import { getFeatureRestrictions } from '@/lib/subscription/types'
 import { SubscriptionDashboardData } from '@/lib/subscription/types'
 
 export async function GET(request: NextRequest) {
@@ -22,15 +22,22 @@ export async function GET(request: NextRequest) {
       include: { plan: true },
     })
 
-    const plans = subscriptionPlans.map((p) => ({
-      name: p.name,
-      priceMonthly: p.priceMonthly,
-      priceYearly: p.priceYearly,
-      productsLimit: p.productsLimit,
-      servicesLimit: p.servicesLimit,
-      benefits: planBenefits[p.name as keyof typeof planBenefits],
-      restrictions: getFeatureRestrictions(p.name),
-    }))
+    const dbPlans = await prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: 'asc' },
+    })
+
+    const plans = await Promise.all(
+      dbPlans.map(async (p) => ({
+        name: p.name,
+        priceMonthly: p.priceMonthly,
+        priceYearly: p.priceYearly,
+        productsLimit: p.productsLimit,
+        servicesLimit: p.servicesLimit,
+        benefits: Array.isArray(p.benefits) ? (p.benefits as unknown as string[]) : [],
+        restrictions: await getFeatureRestrictions(p.name),
+      }))
+    )
 
     const currentPlan = subscription?.plan?.name ?? 'Free'
     const status = subscription?.status ?? 'NONE'
@@ -45,7 +52,7 @@ export async function GET(request: NextRequest) {
       where: { vendorId: payload.userId },
     })
 
-    const plan = subscription?.plan ?? subscriptionPlans.find((p) => p.name === 'Free')
+    const plan = subscription?.plan ?? dbPlans.find((p) => p.name === 'Free')
     const productsLimit = plan?.productsLimit ?? 20
     const servicesLimit = plan?.servicesLimit ?? 10
 

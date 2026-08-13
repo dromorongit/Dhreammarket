@@ -91,7 +91,7 @@ export async function canVendorBeFeatured(vendorId: string): Promise<boolean> {
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  const restrictions = getFeatureRestrictions(subscription.plan.name)
+  const restrictions = await getFeatureRestrictions(subscription.plan.name)
   return restrictions.homepagePromotions
 }
 
@@ -103,6 +103,6 @@ export async function canVendorBeSponsored(vendorId: string): Promise<boolean> {
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  const restrictions = getFeatureRestrictions(subscription.plan.name)
+  const restrictions = await getFeatureRestrictions(subscription.plan.name)
   return restrictions.sponsoredProducts || restrictions.sponsoredServices
 }

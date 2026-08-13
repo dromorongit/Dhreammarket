@@ -380,6 +380,7 @@ export async function getExpiredSubscriptions() {
   })
 
   return subscriptions.map((s) => ({
+    subscriptionId: s.id,
     vendorId: s.vendorId,
     vendorName: s.vendor?.email ?? 'Unknown',
     planName: s.plan?.name ?? 'Unknown',

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth-middleware'
 import { initializeBillingPayment, verifyBillingPayment, createManualRenewalInvoice, processManualPayment } from '@/lib/subscription/billing-service'
 import { getPrisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/adminAuth'
+import { createAuditLog } from '@/lib/audit-log'
 import { logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -86,11 +88,35 @@ export async function POST(request: NextRequest) {
       }
 
       case 'manualPayment': {
+        const adminCheck = await requireAdmin()
+        if (adminCheck instanceof NextResponse) {
+          return adminCheck
+        }
+
         const { subscriptionId, amount, paymentMethod } = body
         if (!subscriptionId || !amount || amount <= 0) {
           return NextResponse.json({ error: 'Subscription ID and valid amount required' }, { status: 400 })
         }
-        const result = await processManualPayment(subscriptionId, amount, paymentMethod || 'MANUAL')
+
+        const subscription = await getPrisma().vendorSubscription.findUnique({
+          where: { id: subscriptionId },
+          include: { vendor: { select: { email: true } } },
+        })
+        if (!subscription) {
+          return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
+        }
+
+        const result = await processManualPayment(subscriptionId, amount, paymentMethod || 'MANUAL', adminCheck.userId)
+        await createAuditLog({
+          userId: adminCheck.userId,
+          userRole: adminCheck.role,
+          action: 'MANUAL_PAYMENT_PROCESSED',
+          entityType: 'SUBSCRIPTION',
+          entityId: subscriptionId,
+          beforeData: { status: subscription.status, totalPaid: subscription.totalPaid },
+          afterData: { status: 'ACTIVE', totalPaid: subscription.totalPaid + amount },
+          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+        })
         return NextResponse.json({ result })
       }
 
