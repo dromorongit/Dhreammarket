@@ -77,6 +77,23 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
+        ...(isPublic && {
+          select: {
+            id: true,
+            code: true,
+            type: true,
+            value: true,
+            currency: true,
+            minSpend: true,
+            maxDiscount: true,
+            expiryDate: true,
+            isActive: true,
+            description: true,
+            startDate: true,
+            usageLimit: true,
+            perUserLimit: true,
+          },
+        }),
       }),
       getPrisma().coupon.count({ where }),
     ])
