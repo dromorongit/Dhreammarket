@@ -252,11 +252,21 @@ export default function VendorDashboardPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 21c-2.794 0-5.37-.634-7.74-1.746M9 12a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
-                    <span className="text-sm font-medium text-slate-700">Manage Services</span>
-                  </Link>
-                </Button>
-                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <Link href="/dashboard/vendor/orders">
+                     <span className="text-sm font-medium text-slate-700">Manage Services</span>
+                   </Link>
+                 </Button>
+                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                   <Link href="/dashboard/vendor/store">
+                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 21h16M5 21V7l8-4 8 4v14M9 21v-6h6v6" />
+                       </svg>
+                     </div>
+                     <span className="text-sm font-medium text-slate-700">Manage Store</span>
+                   </Link>
+                 </Button>
+                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                   <Link href="/dashboard/vendor/orders">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />

@@ -13,6 +13,7 @@ import {
   expireOldCampaigns,
 } from '@/lib/advertising/service'
 import { canVendorCreateCampaign, getVendorCampaignLimit } from '@/lib/advertising/subscription-integration'
+import { canVendorBeFeatured, canVendorBeSponsored } from '@/lib/subscription/homepage-integration'
 import { initializeCampaignPayment, verifyCampaignPayment } from '@/lib/advertising/paystack-integration'
 import {
   notifyCampaignSubmitted,
@@ -94,9 +95,9 @@ export async function POST(request: NextRequest) {
 
     const prisma = getPrisma()
 
-    if (payload.role === 'VENDOR') {
-      await prisma.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${payload.userId}))`
+    await prisma.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${targetVendorId}))`
 
+    if (payload.role === 'VENDOR') {
       const subscriptionCheck = await canVendorCreateCampaign(payload.userId)
       if (!subscriptionCheck.allowed) {
         return NextResponse.json({ error: subscriptionCheck.reason }, { status: 403 })
@@ -137,6 +138,20 @@ export async function POST(request: NextRequest) {
         }
         if (service.vendorId !== payload.userId) {
           return NextResponse.json({ error: 'Selected service does not belong to your store' }, { status: 400 })
+        }
+      }
+
+      if (campaignType === 'FEATURED_PRODUCT_PLACEMENT' || campaignType === 'FEATURED_SERVICE_PLACEMENT') {
+        const canBeFeatured = await canVendorBeFeatured(payload.userId)
+        if (!canBeFeatured) {
+          return NextResponse.json({ error: 'Your subscription plan does not support featured placements' }, { status: 403 })
+        }
+      }
+
+      if (campaignType === 'SPONSORED_PRODUCT' || campaignType === 'SPONSORED_SERVICE') {
+        const canBeSponsored = await canVendorBeSponsored(payload.userId)
+        if (!canBeSponsored) {
+          return NextResponse.json({ error: 'Your subscription plan does not support sponsored placements' }, { status: 403 })
         }
       }
     }

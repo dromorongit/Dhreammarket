@@ -46,14 +46,22 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
     }
 
-    const result = await initializeCampaignPayment(id, payload.userId, amount, {
+    const expectedAmount = campaign.price * campaign.duration
+    if (Math.abs(amount - expectedAmount) > 0.01) {
+      return NextResponse.json(
+        { error: `Amount mismatch: expected ${expectedAmount}, got ${amount}` },
+        { status: 400 }
+      )
+    }
+
+    const result = await initializeCampaignPayment(id, payload.userId, expectedAmount, {
       campaignTitle: campaign.title,
       campaignType: campaign.campaignType,
     })
 
     if (!result.success) {
-      await recordPaymentFailed(id, amount, result.reference)
-      await notifyPaymentFailed(payload.userId, campaign.title, amount)
+      await recordPaymentFailed(id, expectedAmount, result.reference)
+      await notifyPaymentFailed(payload.userId, campaign.title, expectedAmount)
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
@@ -62,7 +70,7 @@ export async function POST(
       authorizationUrl: result.authorizationUrl,
       accessCode: result.accessCode,
       reference: result.reference,
-      amount,
+      amount: expectedAmount,
     })
   } catch (error) {
     logError(`Error initializing campaign payment: ${error}`)

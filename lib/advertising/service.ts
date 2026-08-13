@@ -321,6 +321,15 @@ export async function generateInvoice(campaignId: string): Promise<Advertisement
 
   if (!campaign) return null
 
+  const existingInvoice = await prisma.advertisementInvoice.findUnique({
+    where: { campaignId },
+  })
+
+  if (existingInvoice) {
+    logInfo(`Invoice already exists for campaign ${campaignId}: ${existingInvoice.invoiceNumber}`)
+    return existingInvoice
+  }
+
   const now = new Date()
   const periodStart = now
   const periodEnd = new Date(now)

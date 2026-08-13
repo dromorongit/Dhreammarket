@@ -80,6 +80,32 @@ export async function PUT(
       return NextResponse.json({ error: 'Missing campaignStatus' }, { status: 400 })
     }
 
+    const currentCampaign = await getCampaignById(id)
+    if (!currentCampaign) {
+      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+    }
+
+    const currentStatus = currentCampaign.campaignStatus
+
+    const validTransitions: Record<string, string[]> = {
+      PENDING_PAYMENT: ['PENDING_APPROVAL', 'CANCELLED'],
+      PENDING_APPROVAL: ['APPROVED', 'REJECTED', 'CANCELLED'],
+      APPROVED: ['ACTIVE', 'CANCELLED'],
+      ACTIVE: ['SUSPENDED', 'EXPIRED', 'CANCELLED'],
+      SUSPENDED: ['ACTIVE', 'CANCELLED'],
+      REJECTED: ['PENDING_APPROVAL'],
+      EXPIRED: [],
+      CANCELLED: [],
+    }
+
+    const allowedTransitions = validTransitions[currentStatus] || []
+    if (!allowedTransitions.includes(campaignStatus)) {
+      return NextResponse.json(
+        { error: `Invalid transition from ${currentStatus} to ${campaignStatus}` },
+        { status: 400 }
+      )
+    }
+
     const details: Record<string, any> = { actionBy: payload.userId, actionRole: payload.role }
     if (rejectedReason) details.rejectedReason = rejectedReason
 

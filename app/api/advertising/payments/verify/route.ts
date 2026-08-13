@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { verifyCampaignPayment } from '@/lib/advertising/paystack-integration'
-import { recordPayment, recordPaymentFailed, getCampaignById, updateCampaignStatus, generateInvoice } from '@/lib/advertising/service'
+import { recordPaymentFailed, getCampaignById, updateCampaignStatus, generateInvoice } from '@/lib/advertising/service'
 import { notifyPaymentSuccessful } from '@/lib/advertising/notification-integration'
 import { logInfo, logError } from '@/lib/logger'
 
@@ -28,6 +28,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const existingPayment = await getPrisma().advertisementPayment.findFirst({
+      where: { paystackRef: reference },
+    })
+
+    if (existingPayment?.status === 'PAID') {
+      return NextResponse.json({ success: true, alreadyProcessed: true })
+    }
+
     const verification = await verifyCampaignPayment(reference)
     if (!verification.success) {
       await recordPaymentFailed(campaignId, 0, reference)
@@ -43,15 +51,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const finalPaymentCheck = await getPrisma().advertisementPayment.findFirst({
+      where: { paystackRef: reference },
+    })
+
+    if (finalPaymentCheck?.status === 'PAID') {
+      return NextResponse.json({ success: true, alreadyProcessed: true })
+    }
+
     const amount = verification.amount || campaign.price
 
-    await Promise.all([
-      recordPayment(campaignId, amount, reference, verification.reference || ''),
-      generateInvoice(campaignId),
-      notifyPaymentSuccessful(campaign.vendorId, campaign.title, amount, reference),
-    ])
+    const result = await getPrisma().$transaction(async (tx) => {
+      const existingPayment = await tx.advertisementPayment.findFirst({
+        where: { paystackRef: reference },
+      })
 
-    await updateCampaignStatus(campaignId, 'PENDING_APPROVAL', payload.userId, payload.role, { action: 'PAYMENT_SUCCESS', paystackRef: reference })
+      if (existingPayment?.status === 'PAID') {
+        return { alreadyProcessed: true, paymentRecord: existingPayment }
+      }
+
+      let paymentRecord
+      if (existingPayment) {
+        paymentRecord = await tx.advertisementPayment.update({
+          where: { id: existingPayment.id },
+          data: { status: 'PAID', paystackPaymentId: verification.reference || '', updatedAt: new Date() },
+        })
+      } else {
+        paymentRecord = await tx.advertisementPayment.create({
+          data: {
+            campaignId,
+            amount,
+            currency: 'GHS',
+            paystackRef: reference,
+            paystackPaymentId: verification.reference || '',
+            status: 'PAID',
+          },
+        })
+      }
+
+      await generateInvoice(campaignId)
+
+      await tx.advertisementCampaign.update({
+        where: { id: campaignId },
+        data: { paymentStatus: 'PAID', updatedAt: new Date() },
+      })
+
+      await tx.advertisementHistory.create({
+        data: {
+          campaignId,
+          action: 'PAYMENT_SUCCESS',
+          performedBy: campaign.vendorId,
+          performedByRole: 'SYSTEM',
+          details: { amount, paystackRef: reference, paystackPaymentId: verification.reference || '' },
+        },
+      })
+
+      await updateCampaignStatus(campaignId, 'PENDING_APPROVAL', payload.userId, payload.role, { action: 'PAYMENT_SUCCESS', paystackRef: reference })
+      await notifyPaymentSuccessful(campaign.vendorId, campaign.title, amount, reference)
+
+      return { alreadyProcessed: false, paymentRecord }
+    })
+
+    if (result.alreadyProcessed) {
+      return NextResponse.json({ success: true, alreadyProcessed: true })
+    }
 
     logInfo(`Payment verified for campaign ${campaignId}: ref=${reference}`)
     return NextResponse.json({ success: true, campaignId, reference, amount })
