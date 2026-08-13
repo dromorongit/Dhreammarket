@@ -18,7 +18,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
     priority: string
     createdAt: string
     updatedAt: string
-    conversationRef?: string
     user?: {
       id: string
       email: string
