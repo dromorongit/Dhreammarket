@@ -158,7 +158,7 @@ export async function getAllFeatureRestrictions(vendorId: string) {
     include: { plan: true },
   })
   if (!subscription) {
-    return getFeatureRestrictions('Free')
+    return await getFeatureRestrictions('Free')
   }
-  return getFeatureRestrictions(subscription.plan.name)
+  return await getFeatureRestrictions(subscription.plan.name)
 }
