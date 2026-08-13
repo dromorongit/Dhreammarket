@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, password, role, position, mobileNumber, name } = await request.json()
+    const { email, password, role, mobileNumber, name } = await request.json()
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 })
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
     }
 
-    if (!['CUSTOMER', 'VENDOR', 'ADMIN'].includes(role)) {
+    if (!['CUSTOMER', 'VENDOR'].includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
     }
 
@@ -49,10 +49,6 @@ export async function POST(request: NextRequest) {
 
     if (role === 'CUSTOMER' && !name) {
       return NextResponse.json({ error: 'Name is required for customer registration' }, { status: 400 })
-    }
-
-    if (role === 'ADMIN' && (!position || !position.trim())) {
-      return NextResponse.json({ error: 'Position is required for ADMIN accounts' }, { status: 400 })
     }
 
     await getPrisma().pendingRegistration.deleteMany({
@@ -88,7 +84,6 @@ export async function POST(request: NextRequest) {
           otpExpiresAt,
           phone: normalizedPhone,
           role,
-          position: role === 'ADMIN' ? position?.trim() : null,
           name: role === 'CUSTOMER' ? name?.trim() : null,
           hashedPassword,
         },
@@ -98,7 +93,6 @@ export async function POST(request: NextRequest) {
           otpExpiresAt,
           phone: normalizedPhone,
           role,
-          position: role === 'ADMIN' ? position?.trim() : null,
           name: role === 'CUSTOMER' ? name?.trim() : null,
           hashedPassword,
         },
@@ -124,7 +118,6 @@ export async function POST(request: NextRequest) {
             email: normalizedEmail,
             password: hashedPassword,
             role,
-            position: role === 'ADMIN' ? position?.trim() : null,
             isEmailVerified: true,
             emailVerifiedAt: new Date(),
           },
