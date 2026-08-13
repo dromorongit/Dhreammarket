@@ -26,7 +26,7 @@ export async function handleAdvertisingWebhook(body: string, signature: string |
   const parsedBody = JSON.parse(body)
   const reference = parsedBody.data?.reference
 
-  console.log('[Advertising Webhook] Received event for reference:', reference, '- advertising webhook not yet implemented')
+  console.log(`[Paystack Webhook] Advertising event received but no handler implemented yet — reference: ${reference}`)
 
-  return NextResponse.json({ error: 'Advertising webhook not implemented' }, { status: 501 })
+  return NextResponse.json({ received: true, message: 'Advertising webhook not yet implemented' })
 }
