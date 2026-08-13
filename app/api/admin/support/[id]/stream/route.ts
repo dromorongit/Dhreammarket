@@ -5,7 +5,7 @@ import { requireAdmin } from '@/lib/adminAuth'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// GET /api/admin/support/tickets/[id]/stream
+// GET /api/admin/support/[id]/stream
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const adminUser = await requireAdmin()

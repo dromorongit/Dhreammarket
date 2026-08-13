@@ -134,6 +134,47 @@ export async function POST(request: NextRequest) {
 
     const prisma = getPrisma()
 
+    const existingConversation = await prisma.supportConversation.findFirst({
+      where: authUser
+        ? {
+            customerType: 'CUSTOMER',
+            status: { in: ['OPEN', 'IN_PROGRESS'] },
+            ticket: { userId: authUser.userId },
+          }
+        : {
+            customerType: 'GUEST',
+            status: { in: ['OPEN', 'IN_PROGRESS'] },
+            guestToken: guestToken || undefined,
+          },
+      include: {
+        ticket: {
+          select: {
+            id: true,
+            subject: true,
+            message: true,
+            type: true,
+            status: true,
+            priority: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: { lastMessageAt: 'desc' },
+    })
+
+    if (existingConversation) {
+      return NextResponse.json(
+        {
+          message: 'Conversation already in progress',
+          ticket: existingConversation.ticket,
+          conversationRef: existingConversation.conversationRef,
+          customerType: existingConversation.customerType,
+        },
+        { status: 200 }
+      )
+    }
+
     const ticket = await prisma.supportTicket.create({
       data: {
         userId: authUser?.userId || null,

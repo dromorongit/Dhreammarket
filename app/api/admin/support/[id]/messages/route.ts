@@ -2,12 +2,57 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { sanitizeUserContent } from '@/lib/sanitize'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// POST /api/admin/support/tickets/[id]/messages
+// GET /api/admin/support/[id]/messages
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const adminUser = await requireAdmin()
+    if (adminUser instanceof NextResponse) {
+      return adminUser
+    }
+
+    const { id } = await params
+    const prisma = getPrisma()
+
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+    if (!ticket) {
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    const messages = await prisma.supportMessage.findMany({
+      where: { ticketId: id },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        senderType: true,
+        senderId: true,
+        message: true,
+        isRead: true,
+        createdAt: true,
+      },
+    })
+
+    return NextResponse.json({ messages })
+  } catch (error) {
+    console.error('Error fetching admin messages:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// POST /api/admin/support/[id]/messages
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rateLimitCheck = rateLimit('admin-support-message')(request)
+  if (rateLimitCheck.success !== true) {
+    return rateLimitCheck.response
+  }
+
   try {
     const adminUser = await requireAdmin()
     if (adminUser instanceof NextResponse) {

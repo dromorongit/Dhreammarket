@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
         adminReply: true,
         createdAt: true,
         updatedAt: true,
+        conversationRef: true,
         user: {
           select: {
             id: true,

@@ -27,6 +27,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
+    const validTransitions: Record<string, string[]> = {
+      OPEN: ['IN_PROGRESS', 'RESOLVED', 'CLOSED'],
+      IN_PROGRESS: ['OPEN', 'RESOLVED', 'CLOSED'],
+      RESOLVED: ['OPEN', 'CLOSED'],
+      CLOSED: ['OPEN'],
+    }
+
+    if (status) {
+      const allowed = validTransitions[existingTicket.status]
+      if (!allowed || !allowed.includes(status)) {
+        return NextResponse.json(
+          { error: `Cannot transition from ${existingTicket.status} to ${status}` },
+          { status: 400 }
+        )
+      }
+    }
+
     const updateData: any = {}
     if (status) updateData.status = status
     if (priority) updateData.priority = priority

@@ -9,24 +9,25 @@ import { Skeleton } from '@/components/Skeleton'
 import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-interface SupportTicket {
-  id: string
-  subject: string
-  message: string
-  type: string
-  status: string
-  priority: string
-  createdAt: string
-  updatedAt: string
-  user?: {
+  interface SupportTicket {
     id: string
-    email: string
-    profile: {
-      firstName: string | null
-      lastName: string | null
+    subject: string
+    message: string
+    type: string
+    status: string
+    priority: string
+    createdAt: string
+    updatedAt: string
+    conversationRef?: string
+    user?: {
+      id: string
+      email: string
+      profile: {
+        firstName: string | null
+        lastName: string | null
+      } | null
     } | null
-  } | null
-}
+  }
 
 interface SupportMessage {
   id: string
@@ -110,7 +111,7 @@ export default function AdminSupportPage() {
     queryKey: ['admin-support-messages', selectedTicket?.id],
     queryFn: async () => {
       if (!selectedTicket) return { messages: [] }
-      const res = await fetch(`/api/support/conversations/${selectedTicket.id}/messages`, { cache: 'no-store' })
+      const res = await fetch(`/api/admin/support/${selectedTicket.id}/messages`, { cache: 'no-store' })
       if (!res.ok) throw new Error('Failed to fetch messages')
       const data = await res.json() as { messages: SupportMessage[] }
       setTicketMessages(data.messages || [])
@@ -133,7 +134,7 @@ export default function AdminSupportPage() {
 
     const connect = async () => {
       try {
-        const res = await fetch(`/api/admin/support/tickets/${selectedTicket.id}/stream`)
+        const res = await fetch(`/api/admin/support/${selectedTicket.id}/stream`)
         if (!res.ok) return
 
         const reader = res.body?.getReader()
@@ -176,7 +177,7 @@ export default function AdminSupportPage() {
   const sendReplyMutation = useMutation({
     mutationFn: async (message: string) => {
       if (!selectedTicket) throw new Error('No ticket selected')
-      const res = await fetch(`/api/admin/support/tickets/${selectedTicket.id}/messages`, {
+      const res = await fetch(`/api/admin/support/${selectedTicket.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
