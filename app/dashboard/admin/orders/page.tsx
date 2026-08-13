@@ -157,8 +157,7 @@ export default function AdminOrdersPage() {
         return
       }
 
-      setOrders(prev => prev.filter(order => order.id !== orderId))
-      setPagination(prev => ({ ...prev, total: prev.total - 1 }))
+      fetchOrders()
     } catch (err) {
       alert('Failed to delete order')
       console.error(err)
@@ -387,7 +386,7 @@ export default function AdminOrdersPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-505 uppercase">Order Status</th>
+                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Status</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fulfillment</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Days Outstanding</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/adminAuth'
 
 export async function GET(request: NextRequest) {
   try {
+    const authCheck = await requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
+    }
+
     const badges = await getPrisma().vendorTrustBadge.findMany({
       include: {
         store: {
@@ -27,6 +33,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
+    }
+
     const { vendorId, badgeType, expiresAt } = await request.json()
 
     if (!vendorId || !badgeType) {

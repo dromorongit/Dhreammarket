@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
-import { Badge } from '@/components/Badge'
 import { Skeleton } from '@/components/Skeleton'
 
 export default function CreateAdminPage() {

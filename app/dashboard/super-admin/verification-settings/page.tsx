@@ -58,6 +58,7 @@ export default function SuperAdminVerificationSettings() {
       if (response.ok) {
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
+        fetchSettings()
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to save settings')

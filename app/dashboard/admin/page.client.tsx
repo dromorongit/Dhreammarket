@@ -434,9 +434,9 @@ export default function AdminDashboard() {
                    </p>
                  </div>
                  <div className="flex gap-3">
-                   <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
-                     Export Report
-                   </Button>
+                    <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" disabled title="Coming soon">
+                      Export Report
+                    </Button>
                    <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" onClick={fetchStats}>
                      Refresh
                    </Button>

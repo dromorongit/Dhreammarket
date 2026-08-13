@@ -71,43 +71,43 @@ export default function SuperAdminMarketplaceIntelligence() {
         {activeTab === 'kpis' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
-              <Card.Header>
+              <CardHeader>
                 <h3 className="font-semibold text-deep-navy">GMV</h3>
-              </Card.Header>
-              <Card.Content>
+              </CardHeader>
+              <CardContent>
                 <p className="text-2xl font-bold text-royal-blue">$0.00</p>
                 <p className="text-sm text-gray-500">Gross Merchandise Value</p>
-              </Card.Content>
+              </CardContent>
             </Card>
 
             <Card>
-              <Card.Header>
+              <CardHeader>
                 <h3 className="font-semibold text-deep-navy">Orders</h3>
-              </Card.Header>
-              <Card.Content>
+              </CardHeader>
+              <CardContent>
                 <p className="text-2xl font-bold text-deep-navy">0</p>
                 <p className="text-sm text-gray-500">This month</p>
-              </Card.Content>
+              </CardContent>
             </Card>
 
             <Card>
-              <Card.Header>
+              <CardHeader>
                 <h3 className="font-semibold text-deep-navy">Bookings</h3>
-              </Card.Header>
-              <Card.Content>
+              </CardHeader>
+              <CardContent>
                 <p className="text-2xl font-bold text-deep-navy">0</p>
                 <p className="text-sm text-gray-500">This month</p>
-              </Card.Content>
+              </CardContent>
             </Card>
 
             <Card>
-              <Card.Header>
+              <CardHeader>
                 <h3 className="font-semibold text-deep-navy">Conversion Rate</h3>
-              </Card.Header>
-              <Card.Content>
+              </CardHeader>
+              <CardContent>
                 <p className="text-2xl font-bold text-royal-blue">0%</p>
                 <p className="text-sm text-gray-500">Views to purchases</p>
-              </Card.Content>
+              </CardContent>
             </Card>
           </div>
         )}
