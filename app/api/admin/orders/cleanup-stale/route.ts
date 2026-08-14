@@ -29,21 +29,21 @@ export async function POST(request: NextRequest) {
       select: { id: true, userId: true },
     })
 
-    let stockReleased = 0
-    let stockReleaseFailed = 0
+    const successfulOrderIds: string[] = []
+    const failedOrderIds: string[] = []
 
     for (const order of staleOrders) {
       const result = await releaseStock(order.id, adminUser.userId)
       if (result.success) {
-        stockReleased++
+        successfulOrderIds.push(order.id)
       } else {
-        stockReleaseFailed++
+        failedOrderIds.push(order.id)
       }
     }
 
     const updateResult = await prisma.order.updateMany({
       where: {
-        id: { in: staleOrders.map((o) => o.id) },
+        id: { in: successfulOrderIds },
         status: 'PENDING',
         paymentStatus: 'PENDING',
       },
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Stale order cleanup completed',
       cleanedOrders: updateResult.count,
-      stockReleased,
-      stockReleaseFailed,
+      stockReleaseSkipped: failedOrderIds.length,
+      failedOrderIds,
     })
   } catch (error) {
     console.error('Cleanup stale orders error:', error)
