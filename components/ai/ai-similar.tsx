@@ -27,6 +27,7 @@ interface AISimilarItem {
   type: string
   score: number
   stock?: number | null
+  reservedQuantity?: number | null
   availabilityType?: string | null
 }
 
@@ -90,7 +91,7 @@ function AISimilarCard({ item }: { item: AISimilarItem }) {
           </Link>
         </div>
         {isProduct && (
-          <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
+          <ProductStockIndicator stock={item.stock} reservedQuantity={item.reservedQuantity} availabilityType={item.availabilityType} />
         )}
       </div>
     </Card>

@@ -50,6 +50,9 @@ export async function GET(request: NextRequest) {
             { description: { contains: query, mode: 'insensitive' } },
             { brand: { contains: query, mode: 'insensitive' } },
           ],
+          AND: [
+            { OR: [{ stock: { gt: 0 } }, { availabilityType: 'PREORDER' }, { availabilityType: 'BACKORDER' }] },
+          ],
         },
         include: {
           images: { take: 1 },
@@ -88,6 +91,7 @@ export async function GET(request: NextRequest) {
           salesPrice: p.salesPrice,
           dealsPrice: p.dealsPrice,
           stock: p.stock,
+          reservedQuantity: p.reservedQuantity,
           image: p.images?.[0]?.url || null,
           store: p.store,
           category: p.category,

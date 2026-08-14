@@ -29,6 +29,7 @@ interface SearchProduct {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
+  reservedQuantity?: number | null
   image: string | null
   store: { id: string; name: string; isVerified: boolean; badgeTier: string | null } | null
   category: { id: string; name: string } | null
@@ -588,6 +589,7 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
     salesPrice: product.salesPrice,
     dealsPrice: product.dealsPrice,
     stock: product.stock,
+    reservedQuantity: product.reservedQuantity,
     availabilityType: product.availabilityType,
     expectedArrivalDate: (product as any).expectedArrivalDate ?? null,
     expectedRestockDate: (product as any).expectedRestockDate ?? null,
@@ -659,7 +661,7 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
                 })()}
               </div>
             )}
-            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+             <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
           </div>
         </Card>
       </Link>

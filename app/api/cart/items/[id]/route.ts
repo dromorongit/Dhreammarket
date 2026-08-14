@@ -40,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     // Check stock (variant stock takes precedence)
-    const stockToCheck = cartItem.productVariant?.stock ?? cartItem.product.stock
+    const stockToCheck = (cartItem.productVariant?.stock ?? cartItem.product.stock) - (cartItem.productVariant?.reservedQuantity ?? cartItem.product.reservedQuantity ?? 0)
     const isPreorderOrBackorder = cartItem.product.availabilityType === 'PREORDER' || 
                                   cartItem.product.availabilityType === 'BACKORDER'
     // Skip stock validation for preorder/backorder items
@@ -66,6 +66,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 name: true,
                 price: true,
                 stock: true,
+                reservedQuantity: true,
                 availabilityType: true,
                 expectedArrivalDate: true,
                 estimatedFulfillmentDays: true,
@@ -143,6 +144,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
                 name: true,
                 price: true,
                 stock: true,
+                reservedQuantity: true,
                 availabilityType: true,
                 expectedArrivalDate: true,
                 estimatedFulfillmentDays: true,

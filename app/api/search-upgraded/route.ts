@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { getActiveSponsoredPlacements } from '@/lib/advertising/service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
             { description: { contains: query, mode: 'insensitive' } },
             { brand: { contains: query, mode: 'insensitive' } },
           ],
+          AND: [
+            { OR: [{ stock: { gt: 0 } }, { availabilityType: 'PREORDER' }, { availabilityType: 'BACKORDER' }] },
+          ],
         },
         include: {
           images: { take: 1 },
@@ -50,12 +54,29 @@ export async function GET(request: NextRequest) {
         salesPrice: p.salesPrice,
         dealsPrice: p.dealsPrice,
         stock: p.stock,
+        reservedQuantity: p.reservedQuantity,
         image: p.images?.[0]?.url || null,
         store: p.store,
         category: p.category,
         type: 'product',
         availabilityType: p.availabilityType,
       }))
+
+      let sponsoredProductIds: string[] = []
+      try {
+        const sponsoredPlacements = await getActiveSponsoredPlacements('Sponsored')
+        sponsoredProductIds = sponsoredPlacements
+          .filter((p) => p.type === 'PRODUCT')
+          .map((p) => p.entityId)
+      } catch (e) {
+        console.error('[Search-Upgraded] Sponsored placements fetch failed:', e)
+      }
+
+      if (sponsoredProductIds.length > 0 && results.products.length > 0) {
+        const sponsoredProducts = results.products.filter((p: any) => sponsoredProductIds.includes(p.id))
+        const nonSponsoredProducts = results.products.filter((p: any) => !sponsoredProductIds.includes(p.id))
+        results.products = [...sponsoredProducts.map((p: any) => ({ ...p, isSponsored: true, badge: 'Sponsored' })), ...nonSponsoredProducts]
+      }
     } catch (error) {
       console.error('Search products error:', error)
     }

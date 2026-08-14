@@ -37,6 +37,7 @@ interface ProductVariant {
   age: string | null
   sku: string | null
   stock: number
+  reservedQuantity: number
   active: boolean
 }
 
@@ -203,6 +204,7 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
   const [addingToCart, setAddingToCart] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string | null>>({})
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
   const [showFullDescription, setShowFullDescription] = useState(false)
@@ -324,9 +326,8 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
   }
 
   const handleQuantityChange = (newQuantity: number) => {
-    const maxStock = selectedVariant ? selectedVariant.stock : product?.stock ?? 0
-    const availableStock = product ? product.stock - product.reservedQuantity : 0
-    const actualMax = selectedVariant ? selectedVariant.stock : availableStock
+    const availableStock = product ? product.stock - (product.reservedQuantity || 0) : 0
+    const actualMax = selectedVariant ? selectedVariant.stock - (selectedVariant.reservedQuantity || 0) : availableStock
     const minQty = 1
     const maxQty = Math.max(minQty, actualMax)
     setQuantity(Math.min(Math.max(minQty, newQuantity), maxQty))
@@ -384,8 +385,8 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
     )
   }
 
-  const availableStock = product.stock - product.reservedQuantity
-  const variantStock = selectedVariant?.stock ?? availableStock
+  const availableStock = product.stock - (product.reservedQuantity || 0)
+  const variantStock = selectedVariant ? selectedVariant.stock - (selectedVariant.reservedQuantity || 0) : availableStock
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
   const hasDeal = !!product.dealsPrice && product.dealsPrice < product.price
   const hasSale = !!product.salesPrice && product.salesPrice < product.price && !hasDeal
@@ -568,6 +569,87 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
                   </button>
                 )}
               </div>
+
+              {product.variants && product.variants.length > 1 && (() => {
+                const activeVariants = product.variants.filter((v: ProductVariant) => v.active)
+                const attributeTypes = ['color', 'size', 'age'] as const
+                const presentAttributes = attributeTypes.filter(attr =>
+                  activeVariants.some((v: ProductVariant) => v[attr] !== null && v[attr] !== undefined && v[attr] !== '')
+                )
+
+                const getAttributeOptions = (attr: string) => {
+                  const values = Array.from(new Set(activeVariants.map((v: ProductVariant) => v[attr as keyof ProductVariant] as string | null).filter(Boolean)))
+                  return values as string[]
+                }
+
+                const findMatchingVariant = (): ProductVariant | null => {
+                  if (presentAttributes.length === 0) return selectedVariant
+                  const match = activeVariants.find((v: ProductVariant) =>
+                    presentAttributes.every(attr => {
+                      const val = selectedAttributes[attr]
+                      return val === null || val === undefined || v[attr as keyof ProductVariant] === val
+                    })
+                  )
+                  return match ?? null
+                }
+
+                const handleAttributeSelect = (attr: string, value: string) => {
+                  setSelectedAttributes(prev => {
+                    const next = { ...prev, [attr]: prev[attr] === value ? null : value }
+                    const match = activeVariants.find((v: ProductVariant) =>
+                      presentAttributes.every(a => {
+                        const val = next[a]
+                        return val === null || val === undefined || v[a as keyof ProductVariant] === val
+                      })
+                    )
+                    if (match) setSelectedVariant(match)
+                    return next
+                  })
+                }
+
+                const matchingVariant = findMatchingVariant()
+
+                return (
+                  <div className="mb-6 space-y-3">
+                    {presentAttributes.map(attr => {
+                      const options = getAttributeOptions(attr)
+                      if (options.length === 0) return null
+                      const label = attr.charAt(0).toUpperCase() + attr.slice(1)
+                      return (
+                        <div key={attr}>
+                          <label className="block text-sm font-medium text-[#0F1F3D] mb-2">{label}</label>
+                          <div className="flex flex-wrap gap-2">
+                            {options.map(option => {
+                              const isSelected = selectedAttributes[attr] === option
+                              const variantForOption = activeVariants.find((v: ProductVariant) => v[attr as keyof ProductVariant] === option)
+                              const isAvailable = variantForOption ? (variantForOption.stock - (variantForOption.reservedQuantity || 0)) > 0 : true
+                              return (
+                                <button
+                                  key={option}
+                                  onClick={() => handleAttributeSelect(attr, option)}
+                                  disabled={!isAvailable}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                                    isSelected
+                                      ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                      : isAvailable
+                                        ? 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                                        : 'bg-gray-100 text-gray-400 border-gray-200 line-through decoration-gray-400 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {attr === 'color' ? (
+                                    <span className="inline-block w-3 h-3 rounded-full mr-1.5 border border-gray-200" style={{ backgroundColor: option.toLowerCase() }} />
+                                  ) : null}
+                                  {option}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-[#0F1F3D] mb-2">Quantity</label>

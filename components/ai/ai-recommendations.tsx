@@ -27,6 +27,7 @@ interface AIRecommendationItem {
   type: string
   score: number
   stock?: number | null
+  reservedQuantity?: number | null
   availabilityType?: string | null
 }
 
@@ -94,7 +95,7 @@ function AIRecommendationCard({ item }: { item: AIRecommendationItem }) {
           </Link>
         </div>
         {isProduct && (
-          <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
+          <ProductStockIndicator stock={item.stock} reservedQuantity={item.reservedQuantity} availabilityType={item.availabilityType} />
         )}
       </div>
     </Card>

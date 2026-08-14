@@ -35,6 +35,8 @@ interface Product {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
+  reservedQuantity?: number | null
+  isSponsored?: boolean
   brand?: string | null
   brandId?: string | null
   brandRelation?: {
@@ -194,9 +196,11 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
             salesPrice: product.salesPrice,
             dealsPrice: product.dealsPrice,
             stock: product.stock,
+            reservedQuantity: product.reservedQuantity,
             availabilityType: product.availabilityType,
             expectedArrivalDate: product.expectedArrivalDate,
             expectedRestockDate: product.expectedRestockDate,
+            isSponsored: (product as any).isSponsored,
           })} />
         </div>
       </Link>
@@ -240,7 +244,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
           <Button
             size="sm"
             className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-            disabled={product.stock === 0 && product.availabilityType === 'IN_STOCK' || isAdding}
+            disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
             onClick={() => onAddToCart(product.id, product.name, product.price)}
           >
             {isAdding
@@ -259,7 +263,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
             </Button>
           </Link>
         </div>
-        <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+          <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
       </div>
     </Card>
   )
@@ -459,6 +463,29 @@ function MarketplaceContent() {
   const services = (servicesData?.services ?? []) as Service[]
   const totalServiceCount = servicesCountData ?? servicesData?.pagination?.total ?? 0
   const serviceCategories = (serviceCategoriesData?.categories ?? []) as ServiceCategory[]
+
+  const { data: sponsoredPlacementsData } = useQuery({
+    queryKey: ['sponsored', 'marketplace'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/sponsored/placements')
+        if (!response.ok) return []
+        const data = await response.json()
+        return data.productIds ?? []
+      } catch (e) {
+        console.error('[Marketplace] Sponsored placements fetch failed:', e)
+        return []
+      }
+    },
+  })
+
+  const sponsoredProductIds = new Set(sponsoredPlacementsData ?? [])
+  const sortedProducts = useMemo(() => {
+    if (sponsoredProductIds.size === 0) return products
+    const sponsored = products.filter(p => sponsoredProductIds.has(p.id))
+    const nonSponsored = products.filter(p => !sponsoredProductIds.has(p.id))
+    return [...sponsored, ...nonSponsored]
+  }, [products, sponsoredProductIds])
   const countAllCategories = (cats: Category[]): number => {
     return cats.reduce((sum: number, cat: Category) => {
       return sum + 1 + (cat.children ? countAllCategories(cat.children) : 0)
@@ -652,7 +679,7 @@ function MarketplaceContent() {
     ))
   }
 
-  const filteredProducts = useMemo(() => products.filter(product => {
+  const filteredProducts = useMemo(() => sortedProducts.filter(product => {
     if (selectedBrand) {
       const filter = decodeURIComponent(selectedBrand).toLowerCase()
       const brandSlug = product.brandRelation?.slug?.toLowerCase()
@@ -668,7 +695,7 @@ function MarketplaceContent() {
       }
     }
     return true
-  }), [products, selectedBrand, selectedCategory, getCategoryFilterIds])
+  }), [sortedProducts, selectedBrand, selectedCategory, getCategoryFilterIds])
 
   const filteredVendors = vendors
 

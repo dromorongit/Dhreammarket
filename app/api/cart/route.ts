@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
                   name: true,
                   price: true,
                   stock: true,
+                  reservedQuantity: true,
                   availabilityType: true,
                   expectedArrivalDate: true,
                   estimatedFulfillmentDays: true,
@@ -127,7 +128,14 @@ export async function POST(request: NextRequest) {
       product = await getPrisma().product.findUnique({
         where: { id: productId },
         include: {
-          variants: true,
+          variants: {
+            select: {
+              id: true,
+              stock: true,
+              reservedQuantity: true,
+              active: true,
+            },
+          },
         },
       })
     } catch (e) {
@@ -140,14 +148,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    // Determine stock to check (variant stock or product stock)
-    let availableStock = product.stock
+    let availableStock = product.stock - (product.reservedQuantity || 0)
     const isPreorderOrBackorder = product.availabilityType === 'PREORDER' || 
                                     product.availabilityType === 'BACKORDER'
     if (productVariantId) {
       const variant = product.variants?.find((v: any) => v.id === productVariantId)
       if (variant) {
-        availableStock = variant.stock
+        availableStock = variant.stock - (variant.reservedQuantity || 0)
       }
     }
 
@@ -257,6 +264,7 @@ export async function POST(request: NextRequest) {
                   name: true,
                   price: true,
                   stock: true,
+                  reservedQuantity: true,
                   availabilityType: true,
                   expectedArrivalDate: true,
                   estimatedFulfillmentDays: true,

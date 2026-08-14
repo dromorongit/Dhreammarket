@@ -50,6 +50,8 @@ export interface RecommendationResult {
   reason: string
   type: EntityType
   score: number
+  stock?: number | null
+  reservedQuantity?: number | null
 }
 
 export interface TrendingInput {
@@ -75,6 +77,8 @@ export interface TrendingResult {
   trendScore: number
   trendDirection: 'rising' | 'falling' | 'stable'
   type: EntityType
+  stock?: number | null
+  reservedQuantity?: number | null
 }
 
 export interface SimilarInput {
@@ -99,6 +103,8 @@ export interface SimilarResult {
   reason: string
   type: EntityType
   score: number
+  stock?: number | null
+  reservedQuantity?: number | null
 }
 
 export interface CrossSellInput {
@@ -123,6 +129,8 @@ export interface CrossSellResult {
   reason: string
   type: EntityType
   score: number
+  stock?: number | null
+  reservedQuantity?: number | null
 }
 
 export interface CustomerInsightsInput {

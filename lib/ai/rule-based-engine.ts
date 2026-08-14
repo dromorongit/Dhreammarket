@@ -38,6 +38,8 @@ function buildProductResult(p: any, reason: string, score: number): Recommendati
     reason,
     type: 'PRODUCT',
     score,
+    stock: p.stock,
+    reservedQuantity: p.reservedQuantity,
   }
 }
 
@@ -122,7 +124,17 @@ export class RuleBasedEngine implements AIEngine {
             { availabilityType: 'BACKORDER' },
           ],
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          price: true,
+          salesPrice: true,
+          dealsPrice: true,
+          stock: true,
+          reservedQuantity: true,
+          averageRating: true,
+          salesCount: true,
           images: { take: 1 },
           category: { select: { name: true } },
           store: { select: { name: true, slug: true } },
@@ -241,7 +253,17 @@ export class RuleBasedEngine implements AIEngine {
             id: { notIn: [...Array.from(excludeIds), entityId] },
             stock: { gt: 0 },
           },
-          include: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            salesPrice: true,
+            dealsPrice: true,
+            stock: true,
+            reservedQuantity: true,
+            averageRating: true,
+            salesCount: true,
             images: { take: 1 },
             store: { select: { name: true, slug: true } },
             category: { select: { name: true } },
@@ -359,7 +381,15 @@ export class RuleBasedEngine implements AIEngine {
 
         const products = await this.prisma.product.findMany({
           where: { id: { in: topProducts } },
-          include: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            price: true,
+            salesPrice: true,
+            dealsPrice: true,
+            stock: true,
+            reservedQuantity: true,
             images: { take: 1 },
             store: { select: { name: true, slug: true } },
             category: { select: { name: true } },
@@ -791,7 +821,15 @@ export class RuleBasedEngine implements AIEngine {
           categoryId: { in: [...Array.from(viewedProductCategoryIds)] },
           stock: { gt: 0 },
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          price: true,
+          salesPrice: true,
+          dealsPrice: true,
+          stock: true,
+          reservedQuantity: true,
           images: { take: 1 },
           store: { select: { name: true, slug: true } },
           category: { select: { name: true } },
@@ -824,7 +862,15 @@ export class RuleBasedEngine implements AIEngine {
           id: { in: [...Array.from(purchasedProductIds)], notIn: [...Array.from(excludeIds), ...viewedProductIds] },
           categoryId: { in: [...Array.from(viewedProductCategoryIds)] },
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          price: true,
+          salesPrice: true,
+          dealsPrice: true,
+          stock: true,
+          reservedQuantity: true,
           images: { take: 1 },
           store: { select: { name: true, slug: true } },
           category: { select: { name: true } },
@@ -851,7 +897,15 @@ export class RuleBasedEngine implements AIEngine {
           id: { notIn: [...Array.from(excludeIds), ...viewedProductIds] },
           stock: { gt: 0 },
         },
-        include: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          price: true,
+          salesPrice: true,
+          dealsPrice: true,
+          stock: true,
+          reservedQuantity: true,
           images: { take: 1 },
           store: { select: { name: true, slug: true } },
           category: { select: { name: true } },
@@ -895,6 +949,8 @@ export class RuleBasedEngine implements AIEngine {
       reason: 'Trending now',
       type: 'PRODUCT' as const,
       score: t.trendScore,
+      stock: t.stock,
+      reservedQuantity: t.reservedQuantity,
     }))
   }
 }
