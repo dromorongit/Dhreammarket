@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Verification application not found. Please start the application process.' }, { status: 404 })
     }
 
-    // Handle KYC submission - only allowed for PAID_PENDING_KYC status
+    // Handle KYC submission - only allowed for PAID_PENDING_KYC or CHANGES_REQUESTED status
     if (action === 'submit_kyc') {
-      // Verify payment has been made
-      if (application.status !== 'PAID_PENDING_KYC') {
+      // Verify payment has been made or changes were requested
+      if (application.status !== 'PAID_PENDING_KYC' && application.status !== 'CHANGES_REQUESTED') {
         return NextResponse.json({
-          error: 'KYC can only be submitted after payment is completed'
+          error: 'KYC can only be submitted after payment is completed or when changes are requested'
         }, { status: 400 })
       }
 

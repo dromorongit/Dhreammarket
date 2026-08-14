@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
     }
 
     const payload = await verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!payload || (payload.role !== 'VENDOR' && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const settings = await getPrisma().vendorSettings.findUnique({

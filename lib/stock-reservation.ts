@@ -129,7 +129,8 @@ export async function reserveStock(
 
 export async function releaseStock(
   orderId: string,
-  createdBy?: string
+  createdBy?: string,
+  productIds?: string[]
 ): Promise<ReleaseResult> {
   const prisma = getPrisma()
 
@@ -154,6 +155,10 @@ export async function releaseStock(
 
     await prisma.$transaction(async (tx) => {
       for (const item of order.items) {
+        if (productIds && !productIds.includes(item.productId)) {
+          continue
+        }
+
         const availabilityType = item.availabilityType || 'IN_STOCK'
         if (availabilityType !== 'IN_STOCK') {
           continue

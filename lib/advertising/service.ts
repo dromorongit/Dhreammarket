@@ -121,9 +121,14 @@ export async function updateCampaignStatus(
   status: AdvertisementCampaignStatus,
   performedBy: string,
   performedByRole: string,
-  details?: Record<string, any>
+  details?: Record<string, any>,
+  vendorId?: string
 ) {
   const prisma = getPrisma()
+  const where: any = { id: campaignId }
+  if (vendorId) {
+    where.vendorId = vendorId
+  }
   const updateData: any = { campaignStatus: status, updatedAt: new Date() }
 
   if (status === 'APPROVED') updateData.approvedAt = new Date()
@@ -136,7 +141,7 @@ export async function updateCampaignStatus(
   }
 
   const campaign = await prisma.advertisementCampaign.update({
-    where: { id: campaignId },
+    where,
     data: updateData,
   })
 
@@ -634,10 +639,14 @@ export async function expireOldCampaigns() {
   return expiredCampaigns.length
 }
 
-export async function getCampaignById(id: string) {
+export async function getCampaignById(id: string, vendorId?: string): Promise<AdvertisementCampaignWithDetails | null> {
   const prisma = getPrisma()
-  return prisma.advertisementCampaign.findUnique({
-    where: { id },
+  const where: any = { id }
+  if (vendorId) {
+    where.vendorId = vendorId
+  }
+  const campaign = await prisma.advertisementCampaign.findUnique({
+    where,
     include: {
       vendor: { select: { id: true, email: true } },
       product: true,
@@ -649,4 +658,5 @@ export async function getCampaignById(id: string) {
       history: true,
     },
   })
+  return campaign as AdvertisementCampaignWithDetails | null
 }

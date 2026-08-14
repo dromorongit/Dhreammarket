@@ -35,7 +35,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const vendorId = payload.role === 'VENDOR' ? payload.userId : searchParams.get('vendorId')
+    let vendorId: string | null
+    if (payload.role === 'VENDOR') {
+      vendorId = payload.userId
+    } else if (payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN') {
+      vendorId = searchParams.get('vendorId')
+    } else {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     if (!vendorId) {
       return NextResponse.json({ error: 'Vendor ID required' }, { status: 400 })

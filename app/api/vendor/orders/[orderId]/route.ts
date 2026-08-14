@@ -197,7 +197,7 @@ export async function PATCH(
     }
 
     const updateData: any = {}
-    
+
     // Handle acceptance/rejection action
     if (action !== undefined) {
       if (!VENDOR_ACCEPTANCE_ACTIONS.includes(action)) {
@@ -241,7 +241,7 @@ export async function PATCH(
         }
 
         if (existingOrder.orderType === 'NORMAL') {
-          const stockReleaseResult = await releaseStock(orderId, payload.userId)
+          const stockReleaseResult = await releaseStock(orderId, payload.userId, productIds)
           if (!stockReleaseResult.success) {
             return NextResponse.json(
               { error: `Failed to release stock for rejected order: ${stockReleaseResult.error}` },
@@ -249,6 +249,48 @@ export async function PATCH(
             )
           }
         }
+
+        const updatedOrder = await getPrisma().order.update({
+          where: { id: orderId },
+          data: updateData,
+        })
+
+        const orderWithUser = await getPrisma().order.findUnique({
+          where: { id: orderId },
+          include: {
+            user: {
+              select: { email: true, profile: true },
+            },
+          },
+        })
+
+        if (orderWithUser?.user) {
+          const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
+          createNotification(
+            orderWithUser.userId,
+            'ORDER_STATUS_UPDATED',
+            'Order Rejected by Vendor',
+            `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund is being processed.' : ''}`
+          ).catch(err => console.error('Failed to create rejection notification:', err))
+
+          if (await canSendCustomerEmail(orderWithUser.userId)) {
+            sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, 'CANCELLED').catch(err => {
+              console.error('Failed to send rejection email:', err)
+            })
+          }
+        }
+
+        return NextResponse.json({
+          order: {
+            id: updatedOrder.id,
+            status: updatedOrder.status,
+            fulfillmentStatus: updatedOrder.fulfillmentStatus,
+            vendorAccepted: updatedOrder.vendorAccepted,
+            vendorRejected: updatedOrder.vendorRejected,
+            vendorRejectionReason: updatedOrder.vendorRejectionReason,
+            updatedAt: updatedOrder.updatedAt,
+          },
+        })
       }
     }
 
@@ -324,7 +366,7 @@ export async function PATCH(
       PROCESSING: 'PROCESSING',
       SHIPPED: 'SHIPPED',
       DELIVERED: 'DELIVERED',
-      CANCELLED: 'CANCELLED',
+      COMPLETED: 'DELIVERED',
     }
 
     const eventMapForStatus: Record<string, FulfillmentEventType> = {

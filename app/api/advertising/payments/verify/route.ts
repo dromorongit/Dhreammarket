@@ -42,13 +42,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment verification failed', details: verification }, { status: 400 })
     }
 
-    const campaign = await getCampaignById(campaignId)
+    const campaign = await getCampaignById(campaignId, payload.role === 'SUPER_ADMIN' ? undefined : payload.userId)
     if (!campaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
-    }
-
-    if (campaign.vendorId !== payload.userId && payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const finalPaymentCheck = await getPrisma().advertisementPayment.findFirst({

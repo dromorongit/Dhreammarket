@@ -14,6 +14,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = await verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { reference } = await request.json()
     console.log('[Verification Payment Verify API] Reference received:', reference)
 
@@ -21,7 +31,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment reference is required' }, { status: 400 })
     }
 
-    // Find the verification payment record
     const payment = await getPrisma().verificationPayment.findUnique({
       where: { reference },
       include: {
@@ -32,6 +41,11 @@ export async function POST(request: NextRequest) {
     if (!payment) {
       console.log('[Verification Payment Verify API] Payment not found for reference:', reference)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+    }
+
+    const isAdmin = payload.role === 'ADMIN' || payload.role === 'SUPER_ADMIN'
+    if (!isAdmin && payment.application.vendorId !== payload.userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Already verified - idempotency protection

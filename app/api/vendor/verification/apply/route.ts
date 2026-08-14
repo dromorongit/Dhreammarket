@@ -106,6 +106,30 @@ export async function POST(request: NextRequest) {
           action: 'VENDOR_RESUBMITTED',
         },
       })
+    } else if (application.status === 'CHANGES_REQUESTED') {
+      // CHANGES_REQUESTED means payment was made and admin wants KYC changes
+      // Reset to PAID_PENDING_KYC so vendor can update and resubmit KYC without new payment
+      application = await getPrisma().vendorVerificationApplication.update({
+        where: { id: application.id },
+        data: {
+          status: 'PAID_PENDING_KYC',
+        },
+      })
+
+      // Clear existing KYC and documents so vendor can re-submit fresh
+      await getPrisma().vendorVerificationKYC.deleteMany({
+        where: { applicationId: application.id },
+      })
+      await getPrisma().verificationDocument.deleteMany({
+        where: { applicationId: application.id },
+      })
+
+      await getPrisma().verificationAuditLog.create({
+        data: {
+          applicationId: application.id,
+          action: 'VENDOR_RESUBMITTED',
+        },
+      })
     }
 
     return NextResponse.json({

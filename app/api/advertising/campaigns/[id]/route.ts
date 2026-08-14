@@ -40,13 +40,10 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const campaign = await getCampaignById(id)
+    const vendorId = payload.role === 'SUPER_ADMIN' ? undefined : payload.userId
+    const campaign = await getCampaignById(id, vendorId)
     if (!campaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
-    }
-
-    if (payload.role !== 'SUPER_ADMIN' && campaign.vendorId !== payload.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     return NextResponse.json({ campaign })

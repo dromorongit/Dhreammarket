@@ -6,15 +6,15 @@ import Link from 'next/link'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
-const CollectionsGrid = dynamic(() => import('@/components/CollectionsGrid').then((m) => m.CollectionsGrid), { ssr: false })
-const RecentlyViewed = dynamic(() => import('@/components/RecentlyViewed').then((m) => m.RecentlyViewed), { ssr: false })
+import dynamic from 'next/dynamic'
 import { RecommendationCard } from '@/components/RecommendationCard'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
 import { StarRating } from '@/components/StarRating'
 import { Suspense } from 'react'
-import dynamic from 'next/dynamic'
 
+const CollectionsGrid = dynamic(() => import('@/components/CollectionsGrid').then((m) => m.CollectionsGrid), { ssr: false })
+const RecentlyViewed = dynamic(() => import('@/components/RecentlyViewed').then((m) => m.RecentlyViewed), { ssr: false })
 const AICustomerInsights = dynamic(() => import('@/components/ai').then((m) => m.AICustomerInsights), { ssr: false })
 const AIRecommendations = dynamic(() => import('@/components/ai').then((m) => m.AIRecommendations), { ssr: false })
 

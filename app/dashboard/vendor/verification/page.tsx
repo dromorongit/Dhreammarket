@@ -264,9 +264,33 @@ function VendorVerificationContent() {
     }
   }
 
+  const handleResubmitChanges = async () => {
+    setSubmitting(true)
+    try {
+      const appResponse = await fetch('/api/vendor/verification/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!appResponse.ok) {
+        const error = await appResponse.json()
+        alert(error.error || 'Failed to resubmit application')
+        return
+      }
+
+      await fetchData()
+      alert('Application reset. Please update and submit your KYC information.')
+    } catch (error) {
+      console.error('Error resubmitting application:', error)
+      alert('Failed to resubmit application')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const handleKYCSubmit = async () => {
-    if (!application || application.status !== 'PAID_PENDING_KYC') {
-      alert('KYC can only be submitted after payment is completed')
+    if (!application || (application.status !== 'PAID_PENDING_KYC' && application.status !== 'CHANGES_REQUESTED')) {
+      alert('KYC can only be submitted after payment is completed or when changes are requested')
       return
     }
 
@@ -325,7 +349,7 @@ function VendorVerificationContent() {
     return statusSteps.indexOf(application.status)
   }
 
-  const canResubmit = application?.status === 'REJECTED' && settings?.allowResubmissionAfterRejection
+  const canResubmit = (application?.status === 'REJECTED' && settings?.allowResubmissionAfterRejection) || application?.status === 'CHANGES_REQUESTED'
 
   if (loading) {
     return (
@@ -419,6 +443,9 @@ function VendorVerificationContent() {
             <CardContent className="text-center py-12">
               <Badge variant="warning" size="lg" className="mb-4">Changes Requested</Badge>
               <p className="text-gray-600 mb-4">Admin has requested changes to your application. Please update your KYC information.</p>
+              <Button onClick={handleResubmitChanges} disabled={submitting}>
+                {submitting ? 'Processing...' : 'Update and Resubmit KYC'}
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -450,7 +477,7 @@ function VendorVerificationContent() {
           </Card>
         )}
 
-        {application?.status === 'PAID_PENDING_KYC' && (
+        {(application?.status === 'PAID_PENDING_KYC' || application?.status === 'CHANGES_REQUESTED') && (
           <Card variant="elevated" className="mb-8">
             <CardHeader>
               <h2 className="text-lg font-semibold">Step 2: KYC Information</h2>

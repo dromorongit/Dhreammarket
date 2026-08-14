@@ -23,13 +23,9 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const campaign = await getCampaignById(id)
+    const campaign = await getCampaignById(id, payload.userId)
     if (!campaign) {
       return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
-    }
-
-    if (campaign.vendorId !== payload.userId) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     if (campaign.campaignStatus !== 'PENDING_PAYMENT') {
