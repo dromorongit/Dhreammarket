@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sendEmail } from '@/lib/email'
+import { createNotification } from '@/lib/notifications'
 
 export const dynamic = 'force-dynamic'
 
@@ -179,6 +180,22 @@ export async function POST(request: NextRequest) {
         })
       } catch (emailError) {
         console.error('Failed to send admin email:', emailError)
+      }
+
+      const adminUsers = await getPrisma().user.findMany({
+        where: {
+          role: { in: ['ADMIN', 'SUPER_ADMIN'] }
+        },
+        select: { id: true }
+      })
+
+      for (const admin of adminUsers) {
+        await createNotification(
+          admin.id,
+          'VERIFICATION_SUBMITTED',
+          'New Vendor Verification',
+          `A new vendor verification request has been submitted: ${store?.name || 'Unknown Store'}`
+        )
       }
 
       return NextResponse.json({ application: updatedApplication })

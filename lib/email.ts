@@ -369,6 +369,100 @@ export async function sendPasswordResetEmail(
   })
  }
 
+// Payment failed notification email
+export async function sendPaymentFailedEmail(
+  customerEmail: string,
+  customerName: string,
+  orderId: string
+) {
+  const subject = `Payment Failed - Order #${orderId.slice(0, 8)}`
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Payment Could Not Be Completed</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">Your payment could not be completed and your order was not placed. If you were charged, please contact our support team for assistance.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+      <tr>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Order Reference</td>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">#${orderId.slice(0, 8)}</td>
+      </tr>
+    </table>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">If you have any questions, contact us at support@dhreamarket.com</p>
+  `
+  const htmlContent = getEmailTemplate(content, 'Questions? Contact us at support@dhreamarket.com')
+
+  return sendEmail({
+    to: customerEmail,
+    subject,
+    htmlContent,
+    textContent: `Your payment for order #${orderId.slice(0, 8)} could not be completed. If you were charged, contact support@dhreamarket.com`
+  })
+}
+
+// Verification status email
+export async function sendVerificationStatusEmail(
+  customerEmail: string,
+  customerName: string,
+  status: string,
+  storeName: string
+) {
+  const statusConfig: Record<string, { subject: string; message: string; color: string; bg: string }> = {
+    APPROVED: {
+      subject: 'Verification Approved',
+      message: 'Congratulations! Your verification application has been approved. Your store is now verified on Dhream Market.',
+      color: '#16a34a',
+      bg: '#dcfce7'
+    },
+    REJECTED: {
+      subject: 'Verification Rejected',
+      message: 'Your verification application has been rejected. Please review the feedback in your dashboard and submit a new application if needed.',
+      color: '#dc2626',
+      bg: '#fee2e2'
+    },
+    CHANGES_REQUESTED: {
+      subject: 'Changes Requested for Verification',
+      message: 'Our team has reviewed your verification application and requested some changes. Please log in to your dashboard to see the details and update your application.',
+      color: '#d97706',
+      bg: '#fef3c7'
+    },
+    REVOKED: {
+      subject: 'Verification Revoked',
+      message: 'Your store verification has been revoked. Please contact our support team if you believe this is an error or to discuss reinstatement.',
+      color: '#dc2626',
+      bg: '#fee2e2'
+    }
+  }
+
+  const config = statusConfig[status] || statusConfig['REJECTED']
+  const subject = `${config.subject} - ${storeName}`
+
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">${config.subject}</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">${config.message}</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+      <tr>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Store Name</td>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${storeName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Status</td>
+        <td style="padding: 12px; border: 1px solid #e5e7eb;">
+          <span style="background-color: ${config.bg}; color: ${config.color}; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${status}</span>
+        </td>
+      </tr>
+    </table>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">You can view your verification status in your vendor dashboard.</p>
+  `
+  const htmlContent = getEmailTemplate(content, 'Questions? Contact us at support@dhreamarket.com')
+
+  return sendEmail({
+    to: customerEmail,
+    subject,
+    htmlContent,
+    textContent: `${config.message} Store: ${storeName}. Status: ${status}.`
+  })
+}
+
 // Password changed notification email
 export async function sendPasswordChangedEmail(
   customerEmail: string,

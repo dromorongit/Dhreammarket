@@ -1,4 +1,5 @@
 import { getPrisma } from '@/lib/prisma'
+import { createNotification } from '@/lib/notifications'
 import { logInfo, logError } from '@/lib/logger'
 import { getFeatureRestrictions } from '@/lib/subscription/types'
 import {
@@ -183,6 +184,24 @@ export async function updateCampaignStatus(
       where: { campaignId },
       data: { isSponsored: false },
     })
+  }
+
+  if (status === 'PENDING_APPROVAL') {
+    const adminUsers = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      select: { id: true },
+    })
+
+    for (const admin of adminUsers) {
+      await createNotification(
+        admin.id,
+        'CAMPAIGN_SUBMITTED',
+        'Campaign Pending Approval',
+        `A new campaign "${campaign.title}" requires your approval.`
+      ).catch(err => {
+        console.error('Failed to create campaign pending approval notification:', err)
+      })
+    }
   }
 
   logInfo(`Campaign ${campaignId} status updated to ${status} by ${performedBy}`)

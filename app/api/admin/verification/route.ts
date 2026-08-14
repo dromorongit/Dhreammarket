@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { createAuditLog } from '@/lib/audit-log'
+import { createNotification } from '@/lib/notifications'
+import { sendVerificationStatusEmail } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
@@ -211,6 +213,56 @@ export async function PATCH(request: NextRequest) {
         note,
       }
     })
+
+    const vendorId = application.vendorId
+    const vendorEmail = updatedApplication.vendor?.email
+    const vendorName = `${updatedApplication.vendor?.profile?.firstName || ''} ${updatedApplication.vendor?.profile?.lastName || ''}`.trim() || 'Vendor'
+    const storeName = updatedApplication.store?.name || 'Your Store'
+
+    const notificationTypeMap: Record<string, string> = {
+      APPROVED: 'VERIFICATION_APPROVED',
+      REJECTED: 'VERIFICATION_REJECTED',
+      CHANGES_REQUESTED: 'VERIFICATION_CHANGES_REQUESTED',
+    }
+
+    const notificationTitleMap: Record<string, string> = {
+      APPROVED: 'Verification Approved',
+      REJECTED: 'Verification Rejected',
+      CHANGES_REQUESTED: 'Changes Requested',
+    }
+
+    const notificationMessageMap: Record<string, string> = {
+      APPROVED: `Your verification for "${storeName}" has been approved.`,
+      REJECTED: `Your verification for "${storeName}" has been rejected.`,
+      CHANGES_REQUESTED: `Changes have been requested for your verification for "${storeName}".`,
+    }
+
+    if (action === 'revoke') {
+      await createNotification(
+        vendorId,
+        'VERIFICATION_REVOKED',
+        'Verification Revoked',
+        `Your store verification for "${storeName}" has been revoked.`
+      )
+      if (vendorEmail) {
+        sendVerificationStatusEmail(vendorEmail, vendorName, 'REVOKED', storeName).catch(err => {
+          console.error('Failed to send verification revoked email:', err)
+        })
+      }
+    } else {
+      const notificationType = notificationTypeMap[newStatus]
+      const notificationTitle = notificationTitleMap[newStatus]
+      const notificationMessage = notificationMessageMap[newStatus]
+
+      if (notificationType) {
+        await createNotification(vendorId, notificationType as any, notificationTitle, notificationMessage)
+      }
+      if (vendorEmail) {
+        sendVerificationStatusEmail(vendorEmail, vendorName, newStatus, storeName).catch(err => {
+          console.error('Failed to send verification status email:', err)
+        })
+      }
+    }
 
     return NextResponse.json({ application: updatedApplication })
   } catch (error) {

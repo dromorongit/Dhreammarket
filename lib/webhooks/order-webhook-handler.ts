@@ -5,6 +5,8 @@ import { calculateFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { createAuditLog } from '@/lib/audit-log'
+import { createNotification } from '@/lib/notifications'
+import { sendPaymentFailedEmail } from '@/lib/email'
 import crypto from 'crypto'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
@@ -100,6 +102,29 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         releaseStock(payment.orderId).catch(err => {
           console.error('Failed to release stock for failed payment:', err)
         })
+      }
+
+      const customer = await getPrisma().user.findUnique({
+        where: { id: payment.userId },
+        select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } },
+      })
+
+      if (customer) {
+        const customerName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || 'Customer'
+        createNotification(
+          customer.id,
+          'PAYMENT_FAILED',
+          'Payment Failed',
+          'Your payment could not be completed and your order was not placed. If you were charged, contact support.'
+        ).catch(err => {
+          console.error('Failed to create payment failed notification:', err)
+        })
+
+        if (customer.email) {
+          sendPaymentFailedEmail(customer.email, customerName, payment.orderId).catch(err => {
+            console.error('Failed to send payment failed email:', err)
+          })
+        }
       }
 
       return NextResponse.json({ received: true })

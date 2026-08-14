@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sanitizeUserContent } from '@/lib/sanitize'
+import { createNotification } from '@/lib/notifications'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
   try {
@@ -48,6 +49,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         comment: sanitizedComment,
       },
     })
+
+    const adminUsers = await getPrisma().user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      select: { id: true },
+    })
+
+    for (const admin of adminUsers) {
+      await createNotification(
+        admin.id,
+        'REVIEW_REPORTED',
+        'Review Reported',
+        `A review has been flagged for moderation. Reason: ${reason}`
+      )
+    }
 
     return NextResponse.json({ report }, { status: 201 })
   } catch (error) {
