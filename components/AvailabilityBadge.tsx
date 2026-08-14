@@ -20,7 +20,7 @@ export function AvailabilityBadge({ availabilityType, stock, expectedArrivalDate
           PREORDER
         </Badge>
         {showDate && expectedArrivalDate && (
-          <div className="absolute top-8 right-2 bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-full z-10 max-w-[120px] truncate">
+          <div className="absolute top-10 right-2 bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-full z-10 max-w-[120px] truncate">
             Arrives {new Date(expectedArrivalDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </div>
         )}
@@ -35,7 +35,7 @@ export function AvailabilityBadge({ availabilityType, stock, expectedArrivalDate
           BACKORDER
         </Badge>
         {showDate && expectedRestockDate && (
-          <div className="absolute top-8 right-2 bg-orange-100 text-orange-800 text-[10px] px-1.5 py-0.5 rounded-full z-10 max-w-[120px] truncate">
+          <div className="absolute top-10 right-2 bg-orange-100 text-orange-800 text-[10px] px-1.5 py-0.5 rounded-full z-10 max-w-[120px] truncate">
             Restocks {new Date(expectedRestockDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </div>
         )}

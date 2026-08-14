@@ -753,7 +753,7 @@ export function EnterpriseGadgetDisplaySection({
     const effectivePrice = getEffectivePrice(product)
     const discountedPrice = getDiscountedPrice(product)
     const hasDiscount = discountedPrice !== null && discountedPrice < product.price
-    const widthClass = 'snap-start flex-shrink-0 w-[310px] sm:w-[330px] md:w-[390px] lg:w-[480px]'
+    const widthClass = 'snap-start flex-shrink-0 w-[280px] sm:w-[330px] md:w-[390px] lg:w-[480px]'
 
     return (
       <Link key={product.id} href={`/marketplace/product/${product.slug ?? product.id}`} className={widthClass}>

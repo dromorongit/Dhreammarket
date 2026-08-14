@@ -357,7 +357,7 @@ export default function AdminPayoutsPage() {
         {/* Create Payout Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card variant="elevated" className="w-full max-w-md">
+            <Card variant="elevated" className="w-full max-w-md max-h-[90vh] overflow-y-auto">
               <CardHeader>
                 <h2 className="text-xl font-bold text-deep-navy">Create New Payout</h2>
               </CardHeader>

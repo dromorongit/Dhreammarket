@@ -447,7 +447,7 @@ export default function AdminVendorsPage() {
                            {formatPrice(vendor.outstandingBalance || 0)}
                          </span>
                        </div>
-<div className="flex flex-wrap gap-2 pt-2">
+                      <div className="flex flex-wrap gap-2 pt-2">
                         {vendor.isVerified ? (
                           <button
                             onClick={() => handleVerify(vendor.id, false)}
@@ -469,6 +469,43 @@ export default function AdminVendorsPage() {
                         >
                           Disable
                         </button>
+                        <button
+                          onClick={() => handleEnable(vendor.id)}
+                          className="px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 min-h-[44px]"
+                        >
+                          Enable
+                        </button>
+                        <button
+                          onClick={() => handleFeatureWithDuration(vendor.id, !vendor.isFeatured)}
+                          className={`px-3 py-1.5 text-xs rounded hover:bg-gray-100 min-h-[44px] ${vendor.isFeatured ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}
+                        >
+                          {vendor.isFeatured ? 'Unfeature' : 'Feature'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVendor(vendor.id, vendor.name)}
+                          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                        >
+                          Delete
+                        </button>
+                        {isSuperAdmin && (
+                          <div className="flex flex-wrap gap-1">
+                            {BADGE_TIERS.map((tier) => (
+                              <button
+                                key={tier.value}
+                                onClick={() => handleBadgeAction(vendor.id, tier.value)}
+                                disabled={badgeActionLoading === vendor.id}
+                                className={`text-[10px] px-2 py-1 rounded-full border transition-colors ${
+                                  vendor.badgeTier === tier.value
+                                    ? 'bg-slate-200 border-slate-300 text-slate-700 cursor-default'
+                                    : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                                }`}
+                                title={`Assign ${tier.label} badge`}
+                              >
+                                {tier.label.split(' ')[0]}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

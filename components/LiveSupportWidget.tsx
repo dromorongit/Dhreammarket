@@ -267,7 +267,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
   }
 
   return (
-    <div className="fixed bottom-20 right-5 z-50">
+    <div className="fixed bottom-24 right-5 z-[55]">
       {isOpen && (
         <div className="mb-4 w-[360px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col max-h-[500px]">
           <div className="bg-gradient-to-r from-deep-navy to-royal-blue text-white p-4 rounded-t-2xl flex items-center justify-between">

@@ -19,6 +19,26 @@ export default function StaticBannerRail() {
   const isProgrammaticRef = useRef(false)
   const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const slideStepRef = useRef(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const startAutoplay = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => {
+      if (isUserInteracting.current) return
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % BANNERS.length
+        scrollToIndex(next)
+        return next
+      })
+    }, 5000)
+  }
+
+  const stopAutoplay = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
 
   const checkScroll = useCallback(() => {
     const container = scrollRef.current
@@ -52,14 +72,16 @@ export default function StaticBannerRail() {
   }
 
   const handleArrowScroll = (direction: 'left' | 'right') => {
-    const container = scrollRef.current
-    if (!container) return
+    stopAutoplay()
     isUserInteracting.current = true
     if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current)
     resumeTimeoutRef.current = setTimeout(() => {
       isUserInteracting.current = false
+      startAutoplay()
     }, 4000)
 
+    const container = scrollRef.current
+    if (!container) return
     const distance = container.clientWidth
     container.scrollBy({ left: direction === 'left' ? -distance : distance, behavior: 'smooth' })
     setTimeout(checkScroll, 500)
@@ -68,32 +90,28 @@ export default function StaticBannerRail() {
   useEffect(() => {
     measureStep()
     checkScroll()
+    startAutoplay()
     const onResize = () => {
       slideStepRef.current = 0
       measureStep()
       checkScroll()
     }
     window.addEventListener('resize', onResize)
-    const interval = setInterval(() => {
-      if (isUserInteracting.current) return
-      setActiveIndex((prev) => {
-        const next = (prev + 1) % BANNERS.length
-        scrollToIndex(next)
-        return next
-      })
-    }, 2000)
     return () => {
-      clearInterval(interval)
+      stopAutoplay()
+      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current)
       window.removeEventListener('resize', onResize)
     }
   }, [checkScroll])
 
   const handleUserScroll = () => {
     if (isProgrammaticRef.current) return
+    stopAutoplay()
     isUserInteracting.current = true
     if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current)
     resumeTimeoutRef.current = setTimeout(() => {
       isUserInteracting.current = false
+      startAutoplay()
     }, 4000)
 
     const container = scrollRef.current
@@ -105,11 +123,24 @@ export default function StaticBannerRail() {
     checkScroll()
   }
 
+  const handlePointerDown = () => {
+    stopAutoplay()
+    isUserInteracting.current = true
+  }
+
+  const handlePointerUp = () => {
+    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current)
+    isUserInteracting.current = false
+    startAutoplay()
+  }
+
   return (
     <div className='w-full relative'>
       <div
         ref={scrollRef}
         onScroll={handleUserScroll}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
          className='flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-0 w-full'
         style={{ scrollBehavior: 'smooth' }}
       >
@@ -123,7 +154,7 @@ export default function StaticBannerRail() {
         type="button"
         onClick={() => handleArrowScroll('left')}
         disabled={!canScrollLeft}
-        className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
+         className="flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
         aria-label="Previous banner"
       >
         <FiChevronLeft className="w-5 h-5" />
@@ -132,7 +163,7 @@ export default function StaticBannerRail() {
         type="button"
         onClick={() => handleArrowScroll('right')}
         disabled={!canScrollRight}
-        className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
+         className="flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
         aria-label="Next banner"
       >
         <FiChevronRight className="w-5 h-5" />

@@ -601,7 +601,7 @@ const availableRegions = useMemo(() => getAvailableRegions(), [])
             <div className="flex items-center justify-between min-w-max px-4 py-3 gap-1 max-w-2xl">
               {CHECKOUT_STEPS.map((step, index) => (
                 <div key={step.id} className="flex items-center flex-shrink-0">
-                  <div className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold
+                  <div className={`flex items-center justify-center w-11 h-11 rounded-full text-xs font-bold
                     ${step.completed ? 'bg-emerald-500 text-white' : step.active ? 'bg-royal-blue text-white' : 'bg-slate-200 text-slate-500'}`}>
                     {step.completed ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -280,7 +280,7 @@ export default function VendorSubscriptionPage() {
           </div>
         )}
 
-        <div className="flex gap-2 mb-8 border-b border-gray-200">
+        <div className="flex gap-2 mb-8 border-b border-gray-200 overflow-x-auto">
           {['overview', 'billing', 'usage', 'plans'].map((tab) => (
             <button
               key={tab}
@@ -478,8 +478,8 @@ export default function VendorSubscriptionPage() {
 
         {showUpgradeModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Upgrade Plan</h3>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Upgrade Plan</h3>
               <p className="text-gray-500 mb-4">Select a plan to upgrade to:</p>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {subscription.plans.filter((p) => p.name !== subscription.currentPlan).map((plan) => (
@@ -500,8 +500,8 @@ export default function VendorSubscriptionPage() {
 
         {showCancelConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Cancel Subscription</h3>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Cancel Subscription</h3>
               <p className="text-gray-500 mb-4">
                 Are you sure you want to cancel your subscription? Your current plan will remain active until the end of your billing period ({subscription.endDate ? new Date(subscription.endDate).toLocaleDateString() : 'N/A'}). After that, you will lose access to premium features.
               </p>

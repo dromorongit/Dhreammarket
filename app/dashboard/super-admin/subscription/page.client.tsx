@@ -268,28 +268,28 @@ export default function SuperAdminSubscriptionPage() {
                         placeholder="e.g., Premium"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-deep-navy mb-1">Monthly Price (GHS)</label>
-                        <input
-                          type="number"
-                          value={newPlan.priceMonthly}
-                          onChange={(e) => setNewPlan((prev) => ({ ...prev, priceMonthly: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
-                          placeholder="0 for free"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-deep-navy mb-1">Yearly Price (GHS)</label>
-                        <input
-                          type="number"
-                          value={newPlan.priceYearly}
-                          onChange={(e) => setNewPlan((prev) => ({ ...prev, priceYearly: e.target.value }))}
-                          className="w-full border rounded-lg px-3 py-2"
-                          placeholder="0 for free"
-                        />
-                      </div>
-                    </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       <div>
+                         <label className="block text-sm font-medium text-deep-navy mb-1">Monthly Price (GHS)</label>
+                         <input
+                           type="number"
+                           value={newPlan.priceMonthly}
+                           onChange={(e) => setNewPlan((prev) => ({ ...prev, priceMonthly: e.target.value }))}
+                           className="w-full border rounded-lg px-3 py-2"
+                           placeholder="0 for free"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-sm font-medium text-deep-navy mb-1">Yearly Price (GHS)</label>
+                         <input
+                           type="number"
+                           value={newPlan.priceYearly}
+                           onChange={(e) => setNewPlan((prev) => ({ ...prev, priceYearly: e.target.value }))}
+                           className="w-full border rounded-lg px-3 py-2"
+                           placeholder="0 for free"
+                         />
+                       </div>
+                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-deep-navy mb-1">Products Limit</label>

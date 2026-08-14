@@ -525,7 +525,7 @@ function VendorVerificationContent() {
                     placeholder="Business address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Region *</label>
                     <Input
@@ -553,7 +553,7 @@ function VendorVerificationContent() {
                     placeholder="Tax Identification Number"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
                     <Input
@@ -583,7 +583,7 @@ function VendorVerificationContent() {
                     placeholder="Email address"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">National ID Type *</label>
                     <select
