@@ -1,17 +1,24 @@
 import { getPrisma } from '@/lib/prisma'
 import { getFeatureRestrictions, SubscriptionPlanName } from './types'
+import { ensureFreeSubscription } from './subscription-service'
 
 export async function canCreateProduct(vendorId: string): Promise<{ allowed: boolean; current: number; limit: number | null; reason?: string }> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
+
   if (!subscription) {
-    return { allowed: false, current: 0, limit: 0, reason: 'No active subscription' }
+    try {
+      subscription = await ensureFreeSubscription(vendorId)
+    } catch {
+      return { allowed: false, current: 0, limit: 0, reason: 'No active subscription' }
+    }
   }
-  if (subscription.status !== 'ACTIVE') {
-    return { allowed: false, current: 0, limit: 0, reason: `Subscription status is ${subscription.status}` }
+
+  if (!subscription || subscription.status !== 'ACTIVE') {
+    return { allowed: false, current: 0, limit: 0, reason: `Subscription status is ${subscription?.status ?? 'none'}` }
   }
 
   const plan = subscription.plan
@@ -34,15 +41,21 @@ export async function canCreateProduct(vendorId: string): Promise<{ allowed: boo
 
 export async function canCreateService(vendorId: string): Promise<{ allowed: boolean; current: number; limit: number | null; reason?: string }> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
+
   if (!subscription) {
-    return { allowed: false, current: 0, limit: 0, reason: 'No active subscription' }
+    try {
+      subscription = await ensureFreeSubscription(vendorId)
+    } catch {
+      return { allowed: false, current: 0, limit: 0, reason: 'No active subscription' }
+    }
   }
-  if (subscription.status !== 'ACTIVE') {
-    return { allowed: false, current: 0, limit: 0, reason: `Subscription status is ${subscription.status}` }
+
+  if (!subscription || subscription.status !== 'ACTIVE') {
+    return { allowed: false, current: 0, limit: 0, reason: `Subscription status is ${subscription?.status ?? 'none'}` }
   }
 
   const plan = subscription.plan

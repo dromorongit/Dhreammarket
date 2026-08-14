@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        let storeData: { id: string; slug: string } | undefined
+         let storeData: { id: string; slug: string } | undefined
         if (role === 'VENDOR') {
           storeData = await tx.store.create({
             data: {
@@ -153,6 +154,12 @@ export async function POST(request: NextRequest) {
             },
             select: { id: true, slug: true },
           })
+
+          try {
+            await ensureFreeSubscription(createdUser.id, tx)
+          } catch (subscriptionErr) {
+            console.error('Failed to create free subscription for new vendor:', subscriptionErr)
+          }
         }
 
         return {

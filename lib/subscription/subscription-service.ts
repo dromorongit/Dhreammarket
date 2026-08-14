@@ -114,6 +114,57 @@ export async function createSubscription(vendorId: string, planName: string, bil
   return subscription
 }
 
+export async function ensureFreeSubscription(vendorId: string, prismaClient?: any) {
+  const prisma = prismaClient ?? getPrisma()
+
+  const existing = await prisma.vendorSubscription.findUnique({
+    where: { vendorId },
+    include: { plan: true },
+  })
+  if (existing) {
+    return existing
+  }
+
+  const freePlan = await prisma.subscriptionPlan.findUnique({
+    where: { name: 'Free' },
+  })
+  if (!freePlan) {
+    throw new Error('Free plan is not available')
+  }
+
+  const now = new Date()
+  const periodEnd = new Date(now)
+  periodEnd.setMonth(periodEnd.getMonth() + 1)
+
+  const subscription = await prisma.vendorSubscription.create({
+    data: {
+      vendorId,
+      planId: freePlan.id,
+      status: 'ACTIVE',
+      billingCycle: 'MONTHLY',
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+      nextRenewalAt: periodEnd,
+      autoRenew: false,
+      totalPaid: 0,
+    },
+    include: { plan: true },
+  })
+
+  await prisma.subscriptionHistory.create({
+    data: {
+      subscriptionId: subscription.id,
+      action: 'SUBSCRIBED',
+      toPlanId: freePlan.id,
+      billingCycle: 'MONTHLY',
+      notes: 'Free baseline subscription created on vendor account creation',
+    },
+  })
+
+  logInfo(`Free baseline subscription created: vendor=${vendorId}, subscription=${subscription.id}`)
+  return subscription
+}
+
 export async function renewSubscription(subscriptionId: string) {
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({

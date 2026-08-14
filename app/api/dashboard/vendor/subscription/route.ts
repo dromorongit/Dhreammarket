@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { getFeatureRestrictions } from '@/lib/subscription/types'
+import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 import { SubscriptionDashboardData } from '@/lib/subscription/types'
 
 export async function GET(request: NextRequest) {
@@ -17,10 +18,18 @@ export async function GET(request: NextRequest) {
     }
 
     const prisma = getPrisma()
-    const subscription = await prisma.vendorSubscription.findUnique({
+    let subscription = await prisma.vendorSubscription.findUnique({
       where: { vendorId: payload.userId },
       include: { plan: true },
     })
+
+    if (!subscription) {
+      try {
+        subscription = await ensureFreeSubscription(payload.userId)
+      } catch (err) {
+        console.error('Failed to create free subscription for vendor:', err)
+      }
+    }
 
     const dbPlans = await prisma.subscriptionPlan.findMany({
       where: { isActive: true },

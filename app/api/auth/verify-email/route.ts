@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { generateToken } from '@/lib/auth'
 import { generateSlug } from '@/lib/slug'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 import { rateLimit } from '@/lib/rate-limit'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
 import { randomBytes } from 'crypto'
@@ -109,6 +110,12 @@ export async function POST(request: NextRequest) {
             },
             select: { id: true, slug: true },
           })
+
+          try {
+            await ensureFreeSubscription(createdUser.id, tx)
+          } catch (subscriptionErr) {
+            console.error('Failed to create free subscription for new vendor:', subscriptionErr)
+          }
         }
 
         return {
