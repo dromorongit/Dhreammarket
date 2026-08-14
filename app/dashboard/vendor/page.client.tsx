@@ -163,78 +163,11 @@ export default function VendorDashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-3xl font-bold text-deep-navy mb-8">Vendor Dashboard</h1>
 
-        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-0 sm:px-0 mb-8 pb-2">
-          <div className="flex gap-2 whitespace-nowrap flex-nowrap touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {['overview', 'analytics', 'products', 'services', 'coupons', 'followers'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${
-                  activeTab === tab
-                    ? 'border-royal-blue text-royal-blue'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-              </button>
-            ))}
-            <Link href="/dashboard/vendor/advertising" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0">
-              Advertising
-            </Link>
-          </div>
-        </div>
-
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <Card.Header>
-                <h3 className="font-semibold text-deep-navy">Revenue</h3>
-              </Card.Header>
-              <Card.Content>
-                <p className="text-2xl font-bold text-royal-blue">
-                  {loading ? 'GH₵ 0.00' : formatCurrency(stats?.revenue?.gross ?? 0)}
-                </p>
-                <p className="text-sm text-gray-500">This month</p>
-              </Card.Content>
-            </Card>
-
-            <Card>
-              <Card.Header>
-                <h3 className="font-semibold text-deep-navy">Orders</h3>
-              </Card.Header>
-              <Card.Content>
-                <p className="text-2xl font-bold text-deep-navy">{loading ? '0' : (stats?.revenue?.orderCount ?? 0)}</p>
-                <p className="text-sm text-gray-500">This month</p>
-              </Card.Content>
-            </Card>
-
-            <Card>
-              <Card.Header>
-                <h3 className="font-semibold text-deep-navy">Followers</h3>
-              </Card.Header>
-              <Card.Content>
-                <p className="text-2xl font-bold text-deep-navy">{loading ? '0' : (stats?.followerCount ?? 0)}</p>
-                <p className="text-sm text-gray-500">Total followers</p>
-              </Card.Content>
-            </Card>
-
-            <Card>
-              <Card.Header>
-                <h3 className="font-semibold text-deep-navy">Conversion Rate</h3>
-              </Card.Header>
-              <Card.Content>
-                <p className="text-2xl font-bold text-royal-blue">0%</p>
-                <p className="text-sm text-gray-500">Views to purchases</p>
-              </Card.Content>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <Card variant="elevated" className="mb-8">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-deep-navy mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+         {/* Quick Actions */}
+         <Card variant="elevated" className="mb-8">
+           <CardContent className="p-6">
+             <h3 className="text-lg font-semibold text-deep-navy mb-4">Quick Actions</h3>
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
                   <Link href="/dashboard/vendor/products">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -305,9 +238,76 @@ export default function VendorDashboardPage() {
                     <span className="text-sm font-medium text-slate-700">Subscription</span>
                   </Link>
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+             </div>
+           </CardContent>
+         </Card>
+
+        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-0 sm:px-0 mb-8 pb-2">
+          <div className="flex gap-2 whitespace-nowrap flex-nowrap touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {['overview', 'analytics', 'products', 'services', 'coupons', 'followers'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${
+                  activeTab === tab
+                    ? 'border-royal-blue text-royal-blue'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+              </button>
+            ))}
+            <Link href="/dashboard/vendor/advertising" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0">
+              Advertising
+            </Link>
+          </div>
+        </div>
+
+        {activeTab === 'overview' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <Card.Header>
+                <h3 className="font-semibold text-deep-navy">Revenue</h3>
+              </Card.Header>
+              <Card.Content>
+                <p className="text-2xl font-bold text-royal-blue">
+                  {loading ? 'GH₵ 0.00' : formatCurrency(stats?.revenue?.gross ?? 0)}
+                </p>
+                <p className="text-sm text-gray-500">This month</p>
+              </Card.Content>
+            </Card>
+
+            <Card>
+              <Card.Header>
+                <h3 className="font-semibold text-deep-navy">Orders</h3>
+              </Card.Header>
+              <Card.Content>
+                <p className="text-2xl font-bold text-deep-navy">{loading ? '0' : (stats?.revenue?.orderCount ?? 0)}</p>
+                <p className="text-sm text-gray-500">This month</p>
+              </Card.Content>
+            </Card>
+
+            <Card>
+              <Card.Header>
+                <h3 className="font-semibold text-deep-navy">Followers</h3>
+              </Card.Header>
+              <Card.Content>
+                <p className="text-2xl font-bold text-deep-navy">{loading ? '0' : (stats?.followerCount ?? 0)}</p>
+                <p className="text-sm text-gray-500">Total followers</p>
+              </Card.Content>
+            </Card>
+
+            <Card>
+              <Card.Header>
+                <h3 className="font-semibold text-deep-navy">Conversion Rate</h3>
+              </Card.Header>
+              <Card.Content>
+                <p className="text-2xl font-bold text-royal-blue">0%</p>
+                <p className="text-sm text-gray-500">Views to purchases</p>
+              </Card.Content>
+            </Card>
+          </div>
 
             <AIVendorInsights vendorId="" userId="" />
           </div>
