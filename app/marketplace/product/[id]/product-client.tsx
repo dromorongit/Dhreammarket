@@ -238,8 +238,17 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
       setSelectedImage(null)
     }
     if (product?.variants?.length > 0) {
-      const activeVariant = product.variants.find((v: ProductVariant) => v.active)
-      setSelectedVariant(activeVariant ?? null)
+      const activeVariants = product.variants.filter((v: ProductVariant) => v.active)
+      const inStockVariant = activeVariants.find((v: ProductVariant) => (v.stock - (v.reservedQuantity || 0)) > 0)
+      const selected = inStockVariant ?? activeVariants[0] ?? null
+      setSelectedVariant(selected)
+      if (selected) {
+        setSelectedAttributes({
+          color: selected.color,
+          size: selected.size,
+          age: selected.age,
+        })
+      }
     } else {
       setSelectedVariant(null)
     }
