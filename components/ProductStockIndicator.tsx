@@ -1,11 +1,12 @@
 interface ProductStockIndicatorProps {
   stock: number | null | undefined
+  reservedQuantity?: number | null | undefined
   availabilityType?: string | null
 }
 
 const STOCK_REFERENCE = 20
 
-export function ProductStockIndicator({ stock, availabilityType }: ProductStockIndicatorProps) {
+export function ProductStockIndicator({ stock, reservedQuantity, availabilityType }: ProductStockIndicatorProps) {
   if (availabilityType === 'PREORDER' || availabilityType === 'BACKORDER') {
     return null
   }
@@ -14,19 +15,20 @@ export function ProductStockIndicator({ stock, availabilityType }: ProductStockI
     return null
   }
 
-  const isOutOfStock = stock <= 0
+  const availableStock = stock - (reservedQuantity || 0)
+  const isOutOfStock = availableStock <= 0
 
   let barColor = 'bg-emerald-400'
   if (isOutOfStock) {
     barColor = 'bg-red-400'
-  } else if (stock <= 2) {
+  } else if (availableStock <= 2) {
     barColor = 'bg-red-400'
-  } else if (stock <= 10) {
+  } else if (availableStock <= 10) {
     barColor = 'bg-amber-400'
   }
 
-  const barWidth = isOutOfStock ? 0 : Math.min((stock / STOCK_REFERENCE) * 100, 100)
-  const text = isOutOfStock ? 'Out of Stock' : `${stock} left`
+  const barWidth = isOutOfStock ? 0 : Math.min((availableStock / STOCK_REFERENCE) * 100, 100)
+  const text = isOutOfStock ? 'Out of Stock' : `${availableStock} left`
 
   return (
     <div className="flex flex-col gap-0.5 w-full">

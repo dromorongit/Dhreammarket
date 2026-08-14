@@ -1079,6 +1079,8 @@ interface Product {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock: number
+  reservedQuantity?: number | null
+  availableQuantity?: number | null
   availabilityType?: string
   expectedArrivalDate?: string | null
   expectedRestockDate?: string | null
@@ -1114,7 +1116,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
   const allProducts = data?.products ?? []
   const products = useMemo(() => {
     return allProducts
-      .filter((p: Product) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+      .filter((p: Product) => ((p.availableQuantity ?? p.stock) > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
       .slice(0, 20)
   }, [allProducts, excludeIds])
   const loading = isLoading
@@ -1216,6 +1218,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                      salesPrice: product.salesPrice,
                      dealsPrice: product.dealsPrice,
                      stock: product.stock,
+                     reservedQuantity: product.reservedQuantity,
                      availabilityType: product.availabilityType,
                      expectedArrivalDate: product.expectedArrivalDate,
                      expectedRestockDate: product.expectedRestockDate,
@@ -1277,7 +1280,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                       </Button>
                     </Link>
                   </div>
-                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+                  <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
                 </div>
               </Card>
             )
@@ -1381,7 +1384,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                       </Button>
                     </Link>
                   </div>
-                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+                  <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
                 </div>
               </Card>
             )
@@ -1485,7 +1488,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                       </Button>
                     </Link>
                   </div>
-                  <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+                  <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
                 </div>
               </Card>
             )

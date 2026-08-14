@@ -79,6 +79,7 @@ interface HomepageSectionProps {
     salesPrice: product.salesPrice,
     dealsPrice: product.dealsPrice,
     stock: product.stock,
+    reservedQuantity: product.reservedQuantity,
     availabilityType: product.availabilityType,
     expectedArrivalDate: product.expectedArrivalDate,
     expectedRestockDate: product.expectedRestockDate,
@@ -157,7 +158,7 @@ return (
                 })()}
               </div>
             )}
-            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+            <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
                               </div>
                              </div>
                            </Card>
@@ -558,7 +559,7 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
               <span className="text-lg font-bold text-royal-blue">{formatPrice(effectivePrice)}</span>
             </div>
             <Button variant="gradient" size="sm" className="w-full rounded-full font-semibold mt-auto">View Deal</Button>
-            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+            <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
           </div>
       </Link>
     )

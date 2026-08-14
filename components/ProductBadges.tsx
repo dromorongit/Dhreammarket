@@ -183,6 +183,7 @@ export function calculateProductBadges(product: {
   salesPrice?: number | null
   dealsPrice?: number | null
   stock?: number
+  reservedQuantity?: number | null
   availabilityType?: string | null
   expectedArrivalDate?: string | null
   expectedRestockDate?: string | null
@@ -195,6 +196,7 @@ export function calculateProductBadges(product: {
     ? Math.round(((product.price - effectivePrice) / product.price) * 100)
     : 0
   const isFlashSale = !!(product.flashSalePrice && product.flashSalePrice < product.price)
+  const availableStock = (product.stock ?? 0) - (product.reservedQuantity ?? 0)
 
   return {
     discountPercentage,
@@ -204,6 +206,6 @@ export function calculateProductBadges(product: {
     availabilityType: product.availabilityType,
     expectedArrivalDate: product.expectedArrivalDate && product.expectedArrivalDate.trim() !== '' ? product.expectedArrivalDate : null,
     expectedRestockDate: product.expectedRestockDate && product.expectedRestockDate.trim() !== '' ? product.expectedRestockDate : null,
-    stock: product.stock ?? 0,
+    stock: availableStock,
   }
 }

@@ -11,6 +11,7 @@ const productSelect = {
   salesPrice: true,
   dealsPrice: true,
   stock: true,
+  reservedQuantity: true,
   salesCount: true,
   isSponsored: true,
   brand: true,
@@ -90,6 +91,7 @@ export async function getTopSellingProducts(prisma: PrismaClient, limit = 20) {
         const stats = salesByProductId.get(id)
         return {
           ...product,
+          availableQuantity: product.stock - (product.reservedQuantity || 0),
           salesCount: stats?.quantitySold ?? 0,
           orderFrequency: stats?.orderCount ?? 0,
         }

@@ -69,10 +69,8 @@ async function getAutoRankedProducts(prisma: ReturnType<typeof getPrisma>, setti
         { availabilityType: 'BACKORDER' },
       ],
     },
-    include: {
-      images: { take: 1 },
-      category: { select: { id: true, name: true, slug: true } },
-      store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
+    select: {
+      ...productSelect,
       _count: {
         select: {
           productReviews: true,
@@ -102,6 +100,7 @@ async function getAutoRankedProducts(prisma: ReturnType<typeof getPrisma>, setti
 
   return products
     .map((product) => {
+      const availableQuantity = product.stock - (product.reservedQuantity || 0)
       const salesScore = (product._count?.orderItems ?? 0) * (settings.weights?.recentSales || DEFAULT_WEIGHTS.recentSales)
       const reviewScore = (product.averageRating ?? 0) * (settings.weights?.averageRating || DEFAULT_WEIGHTS.averageRating)
       const reviewCountScore = (product._count?.productReviews ?? 0) * (settings.weights?.recentReviews || DEFAULT_WEIGHTS.recentReviews) * 0.1
@@ -109,6 +108,7 @@ async function getAutoRankedProducts(prisma: ReturnType<typeof getPrisma>, setti
       if (expiredIds.has(product.id) && product.availabilityType === 'PREORDER') {
         return {
           ...product,
+          availableQuantity,
           trendingScore: salesScore + reviewScore + reviewCountScore,
           availabilityType: 'IN_STOCK',
           expectedArrivalDate: null,
@@ -117,6 +117,7 @@ async function getAutoRankedProducts(prisma: ReturnType<typeof getPrisma>, setti
 
       return {
         ...product,
+        availableQuantity,
         trendingScore: salesScore + reviewScore + reviewCountScore,
       }
     })
@@ -315,16 +316,15 @@ async function getNewArrivalProducts(prisma: ReturnType<typeof getPrisma>, maxPr
         { availabilityType: 'BACKORDER' },
       ],
     },
-    include: {
-      images: { take: 1 },
-      category: { select: { id: true, name: true, slug: true } },
-      store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
-    },
+    select: productSelect,
     orderBy: { createdAt: 'desc' },
     take: maxProducts || 20,
   })
 
-  return products.map((p) => p)
+  return products.map((p) => ({
+    ...p,
+    availableQuantity: p.stock - (p.reservedQuantity || 0),
+  }))
 }
 
 async function getNewArrivalServices(prisma: ReturnType<typeof getPrisma>, maxServices: number): Promise<any[]> {
@@ -376,6 +376,7 @@ const productSelect = {
   salesPrice: true,
   dealsPrice: true,
   stock: true,
+  reservedQuantity: true,
   salesCount: true,
   isSponsored: true,
   brand: true,
@@ -385,6 +386,8 @@ const productSelect = {
   preOrderNotes: true,
   expectedRestockDate: true,
   backOrderNotes: true,
+  averageRating: true,
+  reviewCount: true,
   images: { select: { id: true, url: true, alt: true } },
   category: { select: { id: true, name: true, slug: true } },
   store: {
@@ -552,8 +555,8 @@ export async function GET(_request: NextRequest) {
         )
       } else if (contentSource === 'MANUAL') {
         sortedProducts = (section.products || [])
-          .map((sp: any) => ({ ...sp.product, dealEndsAt: sp.dealEndsAt ?? null }))
-          .filter((p: any) => p && (!settings.excludeOutOfStock || p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER'))
+          .map((sp: any) => ({ ...sp.product, dealEndsAt: sp.dealEndsAt ?? null, availableQuantity: (sp.product?.stock ?? 0) - (sp.product?.reservedQuantity ?? 0) }))
+          .filter((p: any) => p && (!settings.excludeOutOfStock || (p.availableQuantity > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER')))
         sortedServices = await safeResolve(
           () => resolveManualServices(settings, maxServices),
           [],

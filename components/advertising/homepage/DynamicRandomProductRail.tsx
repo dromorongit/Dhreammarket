@@ -87,7 +87,7 @@ export default function DynamicRandomProductRail() {
 
       const availableProducts = allProducts.filter(
         (p: EnterpriseProduct) =>
-          p.stock > 0 ||
+          (p as any).availableQuantity > 0 ||
           p.availabilityType === 'PREORDER' ||
           p.availabilityType === 'BACKORDER'
       )

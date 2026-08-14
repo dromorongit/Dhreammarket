@@ -20,6 +20,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
     salesPrice: product.salesPrice,
     dealsPrice: product.dealsPrice,
     stock: product.stock,
+    reservedQuantity: product.reservedQuantity,
     availabilityType: product.availabilityType,
     expectedArrivalDate: product.expectedArrivalDate,
     expectedRestockDate: product.expectedRestockDate,
@@ -95,7 +96,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
                 })()}
               </div>
             )}
-            <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+            <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
           </div>
         </Card>
       </Link>

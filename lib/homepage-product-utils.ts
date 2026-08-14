@@ -10,6 +10,8 @@ export interface EnterpriseProduct {
   dealsPrice?: number | null
   dealEndsAt?: string | null
   stock: number
+  reservedQuantity?: number | null
+  availableQuantity?: number | null
   salesCount?: number
   isSponsored?: boolean
   brand?: string | null

@@ -319,7 +319,7 @@ function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterprisePr
                  })()}
                 </div>
               )}
-              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -401,7 +401,7 @@ function SponsoredCard({ product, initialIsWishlisted }: { product: EnterprisePr
                  })()}
                 </div>
               )}
-              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -442,6 +442,7 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                   salesPrice: product.salesPrice,
                   dealsPrice: product.dealsPrice,
                   stock: product.stock,
+                  reservedQuantity: (product as any).reservedQuantity,
                   availabilityType: product.availabilityType,
                   expectedArrivalDate: product.expectedArrivalDate,
                   expectedRestockDate: product.expectedRestockDate,
@@ -483,7 +484,7 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                  })()}
                 </div>
               )}
-              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -570,7 +571,7 @@ function StandardCard({
                  })()}
                 </div>
               )}
-              <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
             </div>
           </Card>
         </Link>
@@ -1647,7 +1648,7 @@ export function NewArrivalsSection({ excludeIds }: { excludeIds?: Set<string> })
   const allProducts = data?.products ?? []
   const products = useMemo(() => {
     return allProducts
-      .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+      .filter((p: EnterpriseProduct) => ((p.availableQuantity ?? p.stock) > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
       .slice(0, 20)
   }, [allProducts, excludeIds])
   const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())
@@ -1719,7 +1720,7 @@ export function NewThisWeekSection({ excludeIds }: { excludeIds?: Set<string> })
   const allProducts = data?.products ?? []
   const products = useMemo(() => {
     return allProducts
-      .filter((p: EnterpriseProduct) => (p.stock > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
+      .filter((p: EnterpriseProduct) => ((p.availableQuantity ?? p.stock) > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER') && !excludeIds?.has(p.id))
       .slice(0, 20)
   }, [allProducts, excludeIds])
   const [wishlistedProductIds, setWishlistedProductIds] = useState<Set<string>>(new Set())

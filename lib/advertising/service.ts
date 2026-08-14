@@ -1,5 +1,6 @@
 import { getPrisma } from '@/lib/prisma'
 import { logInfo, logError } from '@/lib/logger'
+import { getFeatureRestrictions } from '@/lib/subscription/types'
 import {
   AdvertisementCampaignData,
   AdvertisementCampaignType,
@@ -500,22 +501,42 @@ export async function getActiveSponsoredPlacements(sectionSlug: string): Promise
       },
     },
     include: {
-      campaign: { select: { id: true, title: true } },
+      campaign: { select: { id: true, title: true, vendorId: true } },
     },
     orderBy: { displayOrder: 'asc' },
   })
 
-  return placements.map((p) => ({
-    id: p.id,
-    type: p.productId ? 'PRODUCT' : p.serviceId ? 'SERVICE' : 'VENDOR',
-    entityId: p.productId || p.serviceId || '',
-    campaignId: p.campaignId,
-    campaignTitle: p.campaign.title,
-    sectionSlug: p.sectionSlug,
-    displayOrder: p.displayOrder,
-    isSponsored: true,
-    badge: 'Sponsored' as const,
-  }))
+  const vendorIds = Array.from(new Set(placements.map((p) => p.campaign.vendorId).filter(Boolean)))
+
+  const subscriptions = vendorIds.length > 0
+    ? await prisma.vendorSubscription.findMany({
+        where: { vendorId: { in: vendorIds }, status: 'ACTIVE' },
+        include: { plan: true },
+      })
+    : []
+
+  const eligibleVendorIds = new Set<string>()
+  for (const s of subscriptions) {
+    if (!s.plan) continue
+    const restrictions = await getFeatureRestrictions(s.plan.name)
+    if (restrictions.sponsoredProducts || restrictions.sponsoredServices) {
+      eligibleVendorIds.add(s.vendorId)
+    }
+  }
+
+  return placements
+    .filter((p) => eligibleVendorIds.has(p.campaign.vendorId))
+    .map((p) => ({
+      id: p.id,
+      type: p.productId ? 'PRODUCT' : p.serviceId ? 'SERVICE' : 'VENDOR',
+      entityId: p.productId || p.serviceId || '',
+      campaignId: p.campaignId,
+      campaignTitle: p.campaign.title,
+      sectionSlug: p.sectionSlug,
+      displayOrder: p.displayOrder,
+      isSponsored: true,
+      badge: 'Sponsored' as const,
+    }))
 }
 
 export async function getHomepageRenderContext(sectionSlug: string, sectionType: string, maxSlots: number): Promise<HomepageRenderContext> {
