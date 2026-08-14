@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
-    const supplier = await getSupplierById(params.id)
+    const supplier = await getSupplierById(params.id, payload.userId)
 
     if (!supplier) {
       return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
@@ -79,16 +79,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { action, ...data } = body
 
     if (action === 'disable' || action === 'enable') {
-      const result = await disableSupplier(params.id, action === 'disable')
+      const result = await disableSupplier(params.id, action === 'disable', payload.userId)
       if (!result.success) {
-        return NextResponse.json({ error: result.error }, { status: 400 })
+        return NextResponse.json({ error: result.error }, { status: result.error?.includes('Forbidden') ? 403 : 400 })
       }
       return NextResponse.json({ success: true })
     }
 
-    const result = await updateSupplier(params.id, data)
+    const result = await updateSupplier(params.id, data, payload.userId)
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
+      return NextResponse.json({ error: result.error }, { status: result.error?.includes('Forbidden') ? 403 : 400 })
     }
 
     return NextResponse.json({

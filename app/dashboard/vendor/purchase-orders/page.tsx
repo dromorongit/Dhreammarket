@@ -113,7 +113,7 @@ export default function VendorPurchaseOrdersPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/vendor/products')
+      const response = await fetch('/api/products')
       if (response.ok) {
         const data = await response.json()
         setProducts(data.products?.map((p: any) => ({ id: p.id, name: p.name, stock: p.stock })) || [])

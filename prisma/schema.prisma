@@ -1048,6 +1048,7 @@ model Supplier {
   country        String?
   notes          String?
   status         SupplierStatus     @default(ACTIVE)
+  vendorId       String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   purchaseOrders PurchaseOrder[]

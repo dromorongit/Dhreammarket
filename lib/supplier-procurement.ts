@@ -72,7 +72,7 @@ export interface PurchaseOrderItem {
 }
 
 export async function createSupplier(
-  data: SupplierData
+  data: SupplierData & { vendorId?: string }
 ): Promise<{ success: boolean; supplier?: any; error?: string }> {
   const prisma = getPrisma()
   try {
@@ -86,6 +86,7 @@ export async function createSupplier(
         country: data.country,
         notes: data.notes,
         status: data.status || 'ACTIVE',
+        vendorId: data.vendorId,
       },
     })
     return { success: true, supplier }
@@ -97,10 +98,21 @@ export async function createSupplier(
 
 export async function updateSupplier(
   supplierId: string,
-  data: Partial<SupplierData>
+  data: Partial<SupplierData>,
+  vendorId?: string
 ): Promise<{ success: boolean; supplier?: any; error?: string }> {
   const prisma = getPrisma()
   try {
+    if (vendorId) {
+      const supplier = await (prisma as any).supplier.findUnique({
+        where: { id: supplierId },
+        select: { vendorId: true },
+      })
+      if (!supplier || supplier.vendorId !== vendorId) {
+        return { success: false, error: 'Forbidden: Not your supplier' }
+      }
+    }
+
     const supplier = await (prisma as any).supplier.update({
       where: { id: supplierId },
       data: {
@@ -123,10 +135,21 @@ export async function updateSupplier(
 
 export async function disableSupplier(
   supplierId: string,
-  disabled: boolean = true
+  disabled: boolean = true,
+  vendorId?: string
 ): Promise<{ success: boolean; error?: string }> {
   const prisma = getPrisma()
   try {
+    if (vendorId) {
+      const supplier = await (prisma as any).supplier.findUnique({
+        where: { id: supplierId },
+        select: { vendorId: true },
+      })
+      if (!supplier || supplier.vendorId !== vendorId) {
+        return { success: false, error: 'Forbidden: Not your supplier' }
+      }
+    }
+
     await (prisma as any).supplier.update({
       where: { id: supplierId },
       data: { status: disabled ? 'DISABLED' : 'ACTIVE' },
@@ -138,10 +161,13 @@ export async function disableSupplier(
   }
 }
 
-export async function getSuppliers(includeDisabled: boolean): Promise<SupplierListItem[]> {
+export async function getSuppliers(vendorId: string, includeDisabled: boolean): Promise<SupplierListItem[]> {
   const prisma = getPrisma()
   const suppliers = await (prisma as any).supplier.findMany({
-    where: includeDisabled ? {} : { status: { not: 'DISABLED' } },
+    where: {
+      vendorId,
+      ...(includeDisabled ? {} : { status: { not: 'DISABLED' } }),
+    },
     orderBy: { createdAt: 'desc' },
   })
   return suppliers.map((s: any) => ({
@@ -159,10 +185,13 @@ export async function getSuppliers(includeDisabled: boolean): Promise<SupplierLi
   }))
 }
 
-export async function getSupplierById(supplierId: string) {
+export async function getSupplierById(supplierId: string, vendorId?: string) {
   const prisma = getPrisma()
-  return (prisma as any).supplier.findUnique({
-    where: { id: supplierId },
+  const supplier = await (prisma as any).supplier.findUnique({
+    where: {
+      id: supplierId,
+      ...(vendorId ? { vendorId } : {}),
+    },
     include: {
       purchaseOrders: {
         orderBy: { createdAt: 'desc' },
@@ -171,6 +200,7 @@ export async function getSupplierById(supplierId: string) {
       documents: true,
     },
   })
+  return supplier
 }
 
 export async function calculateSupplierPerformance(
@@ -495,7 +525,7 @@ export async function getVendorProcurementDashboard(
       _sum: { totalCost: true },
     }),
     (prisma as any).supplier.findMany({
-      where: { purchaseOrders: { some: { vendorId } } },
+      where: { vendorId },
       select: { id: true, companyName: true },
     }),
   ])

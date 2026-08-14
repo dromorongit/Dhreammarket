@@ -38,7 +38,11 @@ export function NotificationBell() {
 
   const markAsRead = async (id: string) => {
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'PATCH' })
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id }),
+      })
       setUnreadCount((prev) => Math.max(0, prev - 1))
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true } : n))
     } catch (error) {

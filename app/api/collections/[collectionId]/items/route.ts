@@ -99,6 +99,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { colle
       select: { userId: true },
     })
 
+    if (!collection || collection.userId !== payload.userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     await getPrisma().collectionItem.delete({ where: { id: itemId } })
 
     return NextResponse.json({ success: true })

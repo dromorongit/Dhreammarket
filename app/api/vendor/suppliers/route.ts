@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const includeDisabled = searchParams.get('includeDisabled') === 'true'
 
-    const suppliers = await getSuppliers(includeDisabled)
+    const suppliers = await getSuppliers(payload.userId, includeDisabled)
 
     const suppliersWithPerformance = await Promise.all(
       suppliers.map(async s => ({
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       country,
       notes,
       status,
+      vendorId: payload.userId,
     })
 
     if (!result.success) {

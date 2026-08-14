@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { verifyToken } from '@/lib/auth-middleware'
+
+const ALLOWED_ENTITY_TYPES = new Set(['PRODUCT', 'SERVICE'])
+const ALLOWED_PERIODS = new Set(['today', 'week', 'month'])
 
 export async function GET(request: NextRequest) {
   try {
@@ -75,24 +79,44 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { entityType, entityId, quantity, period } = await request.json()
-
-    if (!entityType || !entityId) {
-      return NextResponse.json({ error: 'entityType and entityId are required' }, { status: 400 })
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const now = new Date()
+    const payload = await verifyToken(token)
+    if (!payload || (payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { entityType, entityId, quantity, period } = await request.json()
+
+    if (!entityType || !ALLOWED_ENTITY_TYPES.has(entityType.toUpperCase())) {
+      return NextResponse.json({ error: 'Invalid entityType. Allowed: PRODUCT, SERVICE' }, { status: 400 })
+    }
+
+    if (!entityId || typeof entityId !== 'string') {
+      return NextResponse.json({ error: 'entityId is required' }, { status: 400 })
+    }
+
+    const qty = typeof quantity === 'number' ? quantity : parseInt(quantity, 10)
+    if (isNaN(qty) || qty < 1 || qty > 10000) {
+      return NextResponse.json({ error: 'quantity must be a number between 1 and 10000' }, { status: 400 })
+    }
+
+    const normalizedEntityType = entityType.toUpperCase()
     let recordPeriod = period
-    if (!recordPeriod) {
+    if (!recordPeriod || !ALLOWED_PERIODS.has(recordPeriod)) {
+      const now = new Date()
       const hour = now.getHours()
       recordPeriod = hour >= 6 ? 'today' : 'yesterday'
     }
 
     await getPrisma().recentlySold.create({
       data: {
-        entityType,
+        entityType: normalizedEntityType,
         entityId,
-        quantity: quantity || 1,
+        quantity: qty,
         period: recordPeriod,
       },
     })
