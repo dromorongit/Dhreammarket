@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, Suspense, memo, useMemo, useCallback } from 'react'
+import { useState, useEffect, Suspense, memo, useMemo, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
@@ -275,6 +275,10 @@ function MarketplaceContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedVendorCategory, setSelectedVendorCategory] = useState<string>('')
   const [selectedBrand, setSelectedBrand] = useState<string>('')
+  const [productSortBy, setProductSortBy] = useState('newest')
+  const [productMinPrice, setProductMinPrice] = useState('')
+  const [productMaxPrice, setProductMaxPrice] = useState('')
+  const [productAvailabilityType, setProductAvailabilityType] = useState('')
   const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'products' | 'services' | 'vendors'>('products')
   const [productPagination, setProductPagination] = useState({ page: 1, limit: 50, totalPages: 0 })
@@ -298,10 +302,20 @@ function MarketplaceContent() {
   }, [viewMode])
 
   const { data: productsData, isPending: productsPending } = useQuery({
-    queryKey: ['products', 'marketplace', productPagination.page, productPagination.limit],
+    queryKey: ['products', 'marketplace', productPagination.page, productPagination.limit, selectedCategory, selectedBrand, productSortBy, productMinPrice, productMaxPrice, productAvailabilityType],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/products?page=${productPagination.page}&limit=${productPagination.limit}`)
+        const params = new URLSearchParams()
+        params.set('page', String(productPagination.page))
+        params.set('limit', String(productPagination.limit))
+        params.set('sortBy', productSortBy === 'newest' ? 'createdAt' : productSortBy === 'price-low' ? 'price' : productSortBy === 'price-high' ? 'price' : productSortBy === 'best-selling' ? 'salesCount' : productSortBy === 'top-rated' ? 'averageRating' : 'createdAt')
+        params.set('sortOrder', productSortBy === 'price-high' || productSortBy === 'price-low' ? 'asc' : 'desc')
+        if (selectedCategory) params.set('categoryId', selectedCategory)
+        if (selectedBrand) params.set('brandSlug', decodeURIComponent(selectedBrand))
+        if (productMinPrice) params.set('minPrice', productMinPrice)
+        if (productMaxPrice) params.set('maxPrice', productMaxPrice)
+        if (productAvailabilityType) params.set('availabilityType', productAvailabilityType)
+        const response = await fetch(`/api/products?${params.toString()}`)
         if (!response.ok) throw new Error('Failed to fetch products')
         return response.json()
       } catch (error) {
@@ -399,15 +413,21 @@ function MarketplaceContent() {
   })
 
   const { data: productsCountData } = useQuery({
-    queryKey: ['products', 'count'],
+    queryKey: ['products', 'count', selectedCategory, selectedBrand, productMinPrice, productMaxPrice, productAvailabilityType],
     queryFn: async () => {
       try {
-        const countResponse = await fetch('/api/products/count')
+        const params = new URLSearchParams()
+        if (selectedCategory) params.set('categoryId', selectedCategory)
+        if (selectedBrand) params.set('brandSlug', decodeURIComponent(selectedBrand))
+        if (productMinPrice) params.set('minPrice', productMinPrice)
+        if (productMaxPrice) params.set('maxPrice', productMaxPrice)
+        if (productAvailabilityType) params.set('availabilityType', productAvailabilityType)
+        const countResponse = await fetch(`/api/products/count?${params.toString()}`)
         if (countResponse.ok) {
           const countData = await countResponse.json()
           return countData.count ?? 0
         }
-        const productsResponse = await fetch('/api/products?limit=1')
+        const productsResponse = await fetch(`/api/products?limit=1&${params.toString()}`)
         if (productsResponse.ok) {
           const productsData = await productsResponse.json()
           return productsData.pagination?.total ?? 0
@@ -503,7 +523,7 @@ function MarketplaceContent() {
 
   useEffect(() => {
     setProductPagination({ page: 1, limit: 50, totalPages: productPagination.totalPages })
-  }, [selectedCategory])
+  }, [selectedCategory, selectedBrand, productSortBy, productMinPrice, productMaxPrice, productAvailabilityType])
 
   useEffect(() => {
     setServicePagination({ page: 1, limit: 12, totalPages: servicePagination.totalPages })
@@ -521,12 +541,22 @@ function MarketplaceContent() {
     setServicePagination(prev => ({ ...prev, totalPages: totalServiceCount > 0 ? Math.ceil(totalServiceCount / prev.limit) : 0 }))
   }, [totalServiceCount])
 
+  const isInternalNavigation = useRef(false)
+
   useEffect(() => {
+    if (isInternalNavigation.current) {
+      isInternalNavigation.current = false
+      return
+    }
     const categoryParam = searchParams?.get('category') ?? ''
     const vendorCategoryParam = searchParams?.get('vendorCategory') ?? ''
     const brandParam = searchParams?.get('brand') ?? ''
     const viewModeParam = searchParams?.get('viewMode') ?? ''
     const serviceCategoryParam = searchParams?.get('serviceCategory') ?? ''
+    const productSortParam = searchParams?.get('sort') ?? ''
+    const productMinPriceParam = searchParams?.get('minPrice') ?? ''
+    const productMaxPriceParam = searchParams?.get('maxPrice') ?? ''
+    const productAvailabilityParam = searchParams?.get('availability') ?? ''
     setSelectedCategory(categoryParam)
     setSelectedBrand(brandParam)
     setSelectedVendorCategory(vendorCategoryParam)
@@ -535,6 +565,18 @@ function MarketplaceContent() {
     }
     if (serviceCategoryParam) {
       setSelectedServiceCategory(serviceCategoryParam)
+    }
+    if (productSortParam) {
+      setProductSortBy(productSortParam)
+    }
+    if (productMinPriceParam) {
+      setProductMinPrice(productMinPriceParam)
+    }
+    if (productMaxPriceParam) {
+      setProductMaxPrice(productMaxPriceParam)
+    }
+    if (productAvailabilityParam) {
+      setProductAvailabilityType(productAvailabilityParam)
     }
   }, [searchParams])
 
@@ -579,6 +621,17 @@ function MarketplaceContent() {
       })
     }
   }, [])
+
+  const syncFilterToUrl = useCallback((key: string, value: string) => {
+    isInternalNavigation.current = true
+    const params = new URLSearchParams(searchParams?.toString() ?? '')
+    if (value) {
+      params.set(key, value)
+    } else {
+      params.delete(key)
+    }
+    router.replace(`/marketplace?${params.toString()}`)
+  }, [router, searchParams])
 
   const getAllDescendantIds = (cats: Category[], parentId: string | null = null): string[] => {
     const result: string[] = []
@@ -634,7 +687,7 @@ function MarketplaceContent() {
           variant={selectedCategory === cat.id ? 'primary' : 'ghost'}
           size="sm"
           className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
-          onClick={() => setSelectedCategory(cat.id)}
+          onClick={() => { setSelectedCategory(cat.id); syncFilterToUrl('category', cat.id) }}
         >
           {cat.name}
           <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
@@ -652,7 +705,7 @@ function MarketplaceContent() {
         variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
         size="sm"
         className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
-        onClick={() => setSelectedVendorCategory(vc.id)}
+        onClick={() => { setSelectedVendorCategory(vc.id); syncFilterToUrl('vendorCategory', vc.id) }}
       >
         {vc.name}
         <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
@@ -669,7 +722,7 @@ function MarketplaceContent() {
         variant={selectedServiceCategory === cat.id ? 'primary' : 'ghost'}
         size="sm"
         className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedServiceCategory === cat.id ? '' : 'text-slate-700'}`}
-        onClick={() => setSelectedServiceCategory(cat.id)}
+        onClick={() => { setSelectedServiceCategory(cat.id); syncFilterToUrl('serviceCategory', cat.id) }}
       >
         {cat.name}
         <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
@@ -678,24 +731,6 @@ function MarketplaceContent() {
       </Button>
     ))
   }
-
-  const filteredProducts = useMemo(() => sortedProducts.filter(product => {
-    if (selectedBrand) {
-      const filter = decodeURIComponent(selectedBrand).toLowerCase()
-      const brandSlug = product.brandRelation?.slug?.toLowerCase()
-      const brandName = product.brand?.toLowerCase()
-      if (brandSlug !== filter && brandName !== filter) {
-        return false
-      }
-    }
-    if (selectedCategory) {
-      const matchingIds = getCategoryFilterIds(selectedCategory)
-      if (!matchingIds.includes(product.category?.id ?? '')) {
-        return false
-      }
-    }
-    return true
-  }), [sortedProducts, selectedBrand, selectedCategory, getCategoryFilterIds])
 
   const filteredVendors = vendors
 
@@ -825,20 +860,59 @@ function MarketplaceContent() {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {viewMode === 'products' && (
-              <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
-                <Button
-                  variant={selectedCategory === '' ? 'primary' : 'ghost'}
-                  size="sm"
-                  className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === '' ? '' : 'text-slate-700'}`}
-                  onClick={() => setSelectedCategory('')}
-                >
-                  All Categories
-                  <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                    {totalProductCategoryCount}
-                  </span>
-                </Button>
-                {renderProductCategoryButtons(categories)}
-              </div>
+              <>
+                <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                  <Button
+                    variant={selectedCategory === '' ? 'primary' : 'ghost'}
+                    size="sm"
+                    className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === '' ? '' : 'text-slate-700'}`}
+                    onClick={() => { setSelectedCategory(''); syncFilterToUrl('category', '') }}
+                  >
+                    All Categories
+                    <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                      {totalProductCategoryCount}
+                    </span>
+                  </Button>
+                  {renderProductCategoryButtons(categories)}
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <select
+                    value={productSortBy}
+                    onChange={(e) => { setProductSortBy(e.target.value); syncFilterToUrl('sort', e.target.value) }}
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50 bg-white"
+                  >
+                    <option value="newest">Newest</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="best-selling">Best Selling</option>
+                    <option value="top-rated">Top Rated</option>
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Min price"
+                    value={productMinPrice}
+                    onChange={(e) => { setProductMinPrice(e.target.value); syncFilterToUrl('minPrice', e.target.value) }}
+                    className="w-28 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max price"
+                    value={productMaxPrice}
+                    onChange={(e) => { setProductMaxPrice(e.target.value); syncFilterToUrl('maxPrice', e.target.value) }}
+                    className="w-28 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
+                  />
+                  <select
+                    value={productAvailabilityType}
+                    onChange={(e) => { setProductAvailabilityType(e.target.value); syncFilterToUrl('availability', e.target.value) }}
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50 bg-white"
+                  >
+                    <option value="">All Availability</option>
+                    <option value="IN_STOCK">In Stock</option>
+                    <option value="PREORDER">Pre-order</option>
+                    <option value="BACKORDER">Backorder</option>
+                  </select>
+                </div>
+              </>
             )}
 
             {viewMode === 'vendors' && vendorCategories.length > 0 && (
@@ -848,7 +922,7 @@ function MarketplaceContent() {
                   variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
                   size="sm"
                   className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
-                  onClick={() => setSelectedVendorCategory('')}
+                  onClick={() => { setSelectedVendorCategory(''); syncFilterToUrl('vendorCategory', '') }}
                 >
                   All
                   <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
@@ -865,7 +939,7 @@ function MarketplaceContent() {
                   variant={selectedServiceCategory === '' ? 'primary' : 'ghost'}
                   size="sm"
                   className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedServiceCategory === '' ? '' : 'text-slate-700'}`}
-                  onClick={() => setSelectedServiceCategory('')}
+                  onClick={() => { setSelectedServiceCategory(''); syncFilterToUrl('serviceCategory', '') }}
                 >
                   All Categories
                   <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
@@ -878,9 +952,9 @@ function MarketplaceContent() {
           </div>
 
           <div className="flex items-center gap-2 text-sm text-slate-600">
-            {viewMode === 'products' ? (
-              <>
-                <span>{filteredProducts.length} products</span>
+          {viewMode === 'products' ? (
+            <>
+              <span>{sortedProducts.length} products</span>
                 <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
                 <span>Verified sellers</span>
               </>
@@ -900,7 +974,7 @@ function MarketplaceContent() {
           </div>
 
           {viewMode === 'products' ? (
-            filteredProducts.length === 0 ? (
+            sortedProducts.length === 0 ? (
               <EmptyState
                 icon={
                   <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -910,11 +984,11 @@ function MarketplaceContent() {
                 title={selectedCategory ? 'No products in this category' : 'No products available'}
                 description={selectedCategory ? 'Try selecting a different category or check back later.' : 'Check back later for new products from our vendors.'}
                 actionLabel="Browse All Products"
-                onAction={() => setSelectedCategory('')}
+                onAction={() => { setSelectedCategory(''); syncFilterToUrl('category', '') }}
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {filteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                   <MarketplaceProductCard
                     key={product.id}
                     product={product}
@@ -1023,10 +1097,10 @@ function MarketplaceContent() {
                   type="text"
                   placeholder="Search services..."
                   value={serviceSearchQuery}
-                  onChange={(e) => setServiceSearchQuery(e.target.value)}
+                  onChange={(e) => { setServiceSearchQuery(e.target.value); syncFilterToUrl('search', e.target.value) }}
                   className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
                 />
-                 <select value={serviceSortBy} onChange={(e) => setServiceSortBy(e.target.value)} className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50">
+                 <select value={serviceSortBy} onChange={(e) => { setServiceSortBy(e.target.value); syncFilterToUrl('serviceSort', e.target.value) }} className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50">
                    <option value="newest">Newest</option>
                    <option value="price-low">Price: Low to High</option>
                    <option value="price-high">Price: High to Low</option>
@@ -1051,8 +1125,8 @@ function MarketplaceContent() {
                      }
                      title="No services found"
                      description="Try adjusting your filters or search query."
-                     actionLabel="Clear Filters"
-                     onAction={() => { setSelectedServiceCategory(''); setServiceSearchQuery(''); setServiceMinPrice(''); setServiceMaxPrice(''); setServiceSortBy('newest'); }}
+                      actionLabel="Clear Filters"
+                      onAction={() => { setSelectedServiceCategory(''); setServiceSearchQuery(''); setServiceMinPrice(''); setServiceMaxPrice(''); setServiceSortBy('newest'); syncFilterToUrl('serviceCategory', ''); syncFilterToUrl('search', ''); syncFilterToUrl('serviceSort', 'newest'); }}
                    />
                  </div>
                ) : (

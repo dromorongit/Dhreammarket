@@ -35,9 +35,22 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '24', 10), 1), 100)
     const skip = (page - 1) * limit
     const createdAtMin = url.searchParams.get('createdAtMin')
+    const categoryId = url.searchParams.get('categoryId')
+    const brandId = url.searchParams.get('brandId')
+    const vendorCategoryId = url.searchParams.get('vendorCategoryId')
+    const minPrice = url.searchParams.get('minPrice')
+    const maxPrice = url.searchParams.get('maxPrice')
+    const availabilityType = url.searchParams.get('availabilityType')
 
     if (createdAtMin && isNaN(new Date(createdAtMin).getTime())) {
       return NextResponse.json({ error: 'Invalid createdAtMin date format' }, { status: 400 })
+    }
+
+    if (minPrice !== null && (isNaN(parseFloat(minPrice)) || parseFloat(minPrice) < 0)) {
+      return NextResponse.json({ error: 'Invalid minPrice' }, { status: 400 })
+    }
+    if (maxPrice !== null && (isNaN(parseFloat(maxPrice)) || parseFloat(maxPrice) < 0)) {
+      return NextResponse.json({ error: 'Invalid maxPrice' }, { status: 400 })
     }
 
     const isVendorView = payload && payload.role === 'VENDOR'
@@ -109,6 +122,27 @@ export async function GET(request: NextRequest) {
     }
     if (createdAtMin) {
       whereClause.createdAt = { gte: new Date(createdAtMin) }
+    }
+    if (categoryId) {
+      whereClause.OR = [
+        { categoryId },
+        { categoryAssignments: { some: { productCategoryId: categoryId } } },
+      ]
+    }
+    if (brandId) {
+      whereClause.brandId = brandId
+    }
+    if (vendorCategoryId) {
+      whereClause.store = { categoryId: vendorCategoryId }
+    }
+    if (minPrice !== null) {
+      whereClause.price = { ...(whereClause.price ?? {}), gte: parseFloat(minPrice) }
+    }
+    if (maxPrice !== null) {
+      whereClause.price = { ...(whereClause.price ?? {}), lte: parseFloat(maxPrice) }
+    }
+    if (availabilityType) {
+      whereClause.availabilityType = availabilityType
     }
 
     // Get total count for pagination
