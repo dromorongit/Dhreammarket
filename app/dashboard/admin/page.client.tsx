@@ -641,7 +641,7 @@ export default function AdminDashboard() {
                      <div className="w-2 h-2 bg-royal-blue rounded-full mr-3"></div>
                      <span className="text-slate-700 font-medium">Platform Version</span>
                    </div>
-                    <span className="text-royal-blue text-sm font-semibold">Dhream Market v1</span>
+                     <span className="text-royal-blue text-sm font-semibold">Dhream Market v1.5</span>
                  </div>
                </div>
              </CardContent>
