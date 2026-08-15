@@ -105,7 +105,7 @@ export default function TrustStatsStrip() {
   ]
 
   return (
-    <section className="relative w-full px-4 sm:px-6 lg:px-8">
+    <section className="relative w-full px-4 sm:px-6 lg:px-8 mt-4">
       <div
         ref={ref}
         className="max-w-7xl mx-auto rounded-2xl bg-gradient-to-r from-deep-navy via-royal-blue to-deep-navy border border-gold/20 py-4 md:py-5"

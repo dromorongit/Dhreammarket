@@ -135,7 +135,7 @@ export default function StaticBannerRail() {
   }
 
   return (
-    <div className='w-full max-w-4xl mx-auto relative px-4 sm:px-0'>
+    <div className='w-full relative'>
       <div
         ref={scrollRef}
         onScroll={handleUserScroll}
