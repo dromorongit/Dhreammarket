@@ -138,41 +138,43 @@ export default function InfiniteBannerRail() {
   }
 
   return (
-    <div className='w-full max-w-4xl mx-auto relative px-4 sm:px-0'>
-      <div
-        ref={scrollRef}
-        onScroll={handleUserScroll}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        className='flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-0 w-full'
-        style={{ scrollBehavior: 'smooth' }}
-      >
-        {BANNERS.map((banner, i) => (
-          <div key={banner.id} className='flex-shrink-0 w-full snap-center relative aspect-[4/3] bg-white'>
-            <Link href={banner.href} className="block w-full h-full" aria-label={banner.alt}>
-              <Image src={banner.src} alt={banner.alt} fill priority={i === 0} className='object-contain' />
-            </Link>
-          </div>
-        ))}
+    <section className="relative py-2" aria-label="Promotional banners">
+      <div className='w-full max-w-4xl mx-auto relative px-4 sm:px-0'>
+        <div
+          ref={scrollRef}
+          onScroll={handleUserScroll}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          className='flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-0 w-full'
+          style={{ scrollBehavior: 'smooth' }}
+        >
+          {BANNERS.map((banner, i) => (
+            <div key={banner.id} className='flex-shrink-0 w-full snap-center relative aspect-[4/3] bg-white'>
+              <Link href={banner.href} className="block w-full h-full" aria-label={banner.alt}>
+                <Image src={banner.src} alt={banner.alt} fill priority={i === 0} className='object-contain' />
+              </Link>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => handleArrowScroll('left')}
+          disabled={!canScrollLeft}
+          className="flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
+          aria-label="Previous banner"
+        >
+          <FiChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => handleArrowScroll('right')}
+          disabled={!canScrollRight}
+          className="flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
+          aria-label="Next banner"
+        >
+          <FiChevronRight className="w-5 h-5" />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => handleArrowScroll('left')}
-        disabled={!canScrollLeft}
-        className="flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
-        aria-label="Previous banner"
-      >
-        <FiChevronLeft className="w-5 h-5" />
-      </button>
-      <button
-        type="button"
-        onClick={() => handleArrowScroll('right')}
-        disabled={!canScrollRight}
-        className="flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/90 shadow-lg hover:shadow-xl items-center justify-center border border-gray-100 text-gray-700 disabled:opacity-0 transition-opacity"
-        aria-label="Next banner"
-      >
-        <FiChevronRight className="w-5 h-5" />
-      </button>
-    </div>
+    </section>
   )
 }
