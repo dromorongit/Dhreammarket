@@ -41,7 +41,6 @@ import {
   HomeTheatreSection,
   TopExpressOffersSection,
   QuickLinksSection,
-  QuickLinksContactBar,
   NewArrivalsSection,
   NewThisWeekSection,
   ElectronicsShowcaseSection,
@@ -51,6 +50,7 @@ import {
   PetShowcaseSection,
   HomeDecorShowcaseSection,
 } from '@/components/homepage-enterprise-sections'
+import QuickLinksContactBar from '@/components/QuickLinksContactBar'
 import { TrendingNowSection } from '@/components/TrendingNowSection'
 import { useManagedHomepageData } from '@/components/homepage-managed-data'
 import InfiniteBannerRail from '@/components/InfiniteBannerRail'
