@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { validateSession, getUserStatus } from '@/lib/auth-db'
 
 export default async function VendorServiceRequestsValidation({
   children,

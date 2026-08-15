@@ -41,7 +41,6 @@ export default function StoreManagement() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
-  const [isNewStore, setIsNewStore] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -67,28 +66,26 @@ export default function StoreManagement() {
       const response = await fetch('/api/store')
       if (response.ok) {
         const data = await response.json()
-if (data.store) {
-           setStore(data.store)
-           setIsNewStore(false)
-           setFormData({
-             name: data.store.name,
-             description: data.store.description || '',
-             categoryId: data.store.categoryId || '',
-             logo: data.store.logo || '',
-             banner: data.store.banner || '',
-             mainPhoneNumber: data.store.mainPhoneNumber || '',
-             alternativePhoneNumber: data.store.alternativePhoneNumber || '',
-             whatsappNumber: data.store.whatsappNumber || '',
-             location: data.store.location || '',
-             acceptsPreOrders: data.store.acceptsPreOrders || false,
-             acceptsBackOrders: data.store.acceptsBackOrders || false,
-           })
-        } else {
-          // Store doesn't exist yet
-          setStore(null)
-          setIsNewStore(true)
-        }
-      }
+ if (data.store) {
+            setStore(data.store)
+            setFormData({
+              name: data.store.name,
+              description: data.store.description || '',
+              categoryId: data.store.categoryId || '',
+              logo: data.store.logo || '',
+              banner: data.store.banner || '',
+              mainPhoneNumber: data.store.mainPhoneNumber || '',
+              alternativePhoneNumber: data.store.alternativePhoneNumber || '',
+              whatsappNumber: data.store.whatsappNumber || '',
+              location: data.store.location || '',
+              acceptsPreOrders: data.store.acceptsPreOrders || false,
+              acceptsBackOrders: data.store.acceptsBackOrders || false,
+            })
+         } else {
+           // Store doesn't exist yet
+           setStore(null)
+         }
+       }
     } catch (error) {
       console.error('Error fetching store:', error)
     } finally {
@@ -282,6 +279,7 @@ if (data.store) {
                   placeholder="Describe your store and what you offer"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
+                {errors.description && <div className="text-red-600 text-sm mt-1">{errors.description}</div>}
               </div>
 
               {/* Contact Phone Numbers Section */}

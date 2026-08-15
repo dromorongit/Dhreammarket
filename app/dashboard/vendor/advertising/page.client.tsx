@@ -197,6 +197,12 @@ export default function VendorAdvertisingClient() {
         return
       }
 
+      if (!formData.price || formData.price <= 0) {
+        alert('Budget must be greater than 0')
+        setSubmitting(false)
+        return
+      }
+
       const payload = {
         ...formData,
         duration,
@@ -470,17 +476,30 @@ export default function VendorAdvertisingClient() {
                     max={30}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Budget (GHS)</label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                    className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
-                    min={0}
-                    step={0.01}
-                  />
-                </div>
+                 <div>
+                   <label className="block text-sm font-medium text-slate-700 mb-2">Budget (GHS)</label>
+                   <input
+                     type="number"
+                     value={formData.price}
+                     onChange={(e) => {
+                       const raw = parseFloat(e.target.value)
+                       if (e.target.value === '' || isNaN(raw) || raw < 0) {
+                         setFormData({ ...formData, price: 0 })
+                       } else if (raw === 0) {
+                         setFormData({ ...formData, price: 0 })
+                       } else {
+                         setFormData({ ...formData, price: raw })
+                       }
+                     }}
+                     className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue"
+                     min={0.01}
+                     step={0.01}
+                     required
+                   />
+                   {formData.price <= 0 && (
+                     <p className="text-xs text-red-600 mt-1">Budget must be greater than 0</p>
+                   )}
+                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Slots</label>
                   <input

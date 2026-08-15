@@ -8,7 +8,6 @@ import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
 import { Textarea } from '@/components/Textarea'
 import NeedHelpButton from '@/components/NeedHelpButton'
-import { Badge } from '@/components/Badge'
 
 interface OrderItem {
   id: string
@@ -173,46 +172,6 @@ export default function VendorOrderDetailPage() {
       console.error('Error fetching messages:', err)
     } finally {
       setLoadingMessages(false)
-    }
-  }
-
-  const handleStatusUpdate = async (newStatus: string, type: 'order' | 'fulfillment' = 'order') => {
-    if (!order) return
-    
-    setUpdatingStatus(true)
-    try {
-      const body: any = {}
-      if (type === 'order') {
-        body.status = newStatus
-      } else {
-        body.fulfillmentStatus = newStatus
-      }
-      
-      const response = await fetch(`/api/vendor/orders/${order.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        alert(errorData.error || 'Failed to update status')
-        return
-      }
-
-      const data = await response.json()
-      if (type === 'order') {
-        setOrder((prev) => prev ? { ...prev, status: data.order.status, updatedAt: data.order.updatedAt } : null)
-      } else {
-        setOrder((prev) => prev ? { ...prev, fulfillmentStatus: data.order.fulfillmentStatus, updatedAt: data.order.updatedAt } : null)
-      }
-    } catch (err) {
-      console.error('Error updating order status:', err)
-      alert('Failed to update order status')
-    } finally {
-      setUpdatingStatus(false)
     }
   }
 

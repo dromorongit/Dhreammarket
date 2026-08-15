@@ -66,6 +66,8 @@ export default function NewProduct() {
     backOrderNotes: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [canCreateProduct, setCanCreateProduct] = useState<boolean | null>(null)
+  const [limitMessage, setLimitMessage] = useState<string | null>(null)
 
   const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL']
   const AGE_OPTIONS = ['0-3 Months', '3-6 Months', '6-9 Months', '9-12 Months', '1-2 Years', '2-3 Years', '3-4 Years', '4-5 Years', '5-7 Years', '7-9 Years', '9-11 Years', '11-13 Years', '13-15 Years', '15-17 Years', '18+']
@@ -75,7 +77,8 @@ export default function NewProduct() {
       await Promise.all([
         checkOnboardingStatus(),
         fetchCategories(),
-        fetchBrands()
+        fetchBrands(),
+        checkProductLimit(),
       ])
       setLoading(false)
     }
@@ -124,6 +127,24 @@ export default function NewProduct() {
       }
     } catch (error) {
       console.error('Error fetching brands:', error)
+    }
+  }
+
+  const checkProductLimit = async () => {
+    try {
+      const response = await fetch('/api/dashboard/vendor')
+      if (response.ok) {
+        const data = await response.json()
+        const remaining = data.productsRemaining
+        if (remaining !== undefined && remaining !== -1 && remaining <= 0) {
+          setCanCreateProduct(false)
+          setLimitMessage('You have reached your plan\'s product limit. Upgrade your plan to add more products.')
+        } else {
+          setCanCreateProduct(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking product limit:', error)
     }
   }
 
@@ -258,6 +279,31 @@ export default function NewProduct() {
               </p>
               <Button asChild>
                 <Link href="/dashboard/vendor/store">Complete Store Setup</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (canCreateProduct === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card>
+            <CardContent className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Product Limit Reached</h3>
+              <p className="text-gray-600 mb-6">
+                {limitMessage}
+              </p>
+              <Button asChild>
+                <Link href="/dashboard/vendor/subscription">Upgrade Plan</Link>
               </Button>
             </CardContent>
           </Card>

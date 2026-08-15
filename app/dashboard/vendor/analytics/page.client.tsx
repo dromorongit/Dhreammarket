@@ -112,7 +112,7 @@ export default function VendorAnalytics() {
       const res = await fetch(apiUrl)
       const json = await res.json()
       const csvData = json.data
-      if (!csvData || csvData.length === 0) return
+      if (!csvData || !Array.isArray(csvData) || csvData.length === 0) return
 
       const headers = Object.keys(csvData[0])
       const csv = [
@@ -304,17 +304,7 @@ export default function VendorAnalytics() {
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title="Customer Growth Chart" icon="👥">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={charts?.revenueTrend ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} tickFormatter={(d) => new Date(d).toLocaleDateString()} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2} dot={{ fill: '#2563EB' }} name="Revenue Trend" />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartCard>
+          {/* Removed duplicate Revenue Trend chart previously mislabeled as "Customer Growth Chart" — no customer-growth data exists in the analytics response */}
         </div>
 
         {/* Rankings */}

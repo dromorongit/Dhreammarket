@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = await verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    if (!payload || payload.role !== 'VENDOR') {
+      return NextResponse.json({ error: 'Forbidden - Vendors only' }, { status: 403 })
     }
 
     const body = await request.json()

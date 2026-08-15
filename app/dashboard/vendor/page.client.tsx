@@ -244,7 +244,7 @@ export default function VendorDashboardPage() {
 
         <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-0 sm:px-0 mb-8 pb-2">
           <div className="flex gap-2 whitespace-nowrap flex-nowrap touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {['overview', 'analytics', 'products', 'services', 'coupons', 'followers'].map((tab) => (
+            {['overview', 'analytics', 'products', 'services', 'coupons', 'followers', 'advertising'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -254,12 +254,9 @@ export default function VendorDashboardPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                {tab === 'advertising' ? 'Advertising' : tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
               </button>
             ))}
-            <Link href="/dashboard/vendor/advertising" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0">
-              Advertising
-            </Link>
           </div>
         </div>
 
@@ -471,6 +468,13 @@ export default function VendorDashboardPage() {
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Followers</h2>
             <p className="text-gray-500">Your follower list will appear here</p>
+          </div>
+        )}
+
+        {activeTab === 'advertising' && (
+          <div>
+            <h2 className="text-xl font-bold text-deep-navy mb-6">Advertising</h2>
+            <p className="text-gray-500">Manage your advertising campaigns</p>
           </div>
         )}
       </div>

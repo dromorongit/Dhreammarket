@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader } from '@/components/Card'
+import { Card, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
@@ -44,6 +44,7 @@ interface Payout {
 export default function VendorEarningsPage() {
   const [earnings, setEarnings] = useState<OrderItemEarnings[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
+  const [payoutSummary, setPayoutSummary] = useState<{ totalPaid: number; totalPending: number; totalProcessing: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'earnings' | 'payouts'>('earnings')
@@ -54,9 +55,12 @@ export default function VendorEarningsPage() {
       if (response.ok) {
         const data = await response.json()
         setEarnings(data.earnings || [])
+      } else {
+        setError('Failed to load earnings')
       }
     } catch (err) {
       console.error('Error fetching earnings:', err)
+      setError('Failed to load earnings')
     }
   }, [])
 
@@ -66,9 +70,13 @@ export default function VendorEarningsPage() {
       if (response.ok) {
         const data = await response.json()
         setPayouts(data.payouts || [])
+        setPayoutSummary(data.summary || null)
+      } else {
+        setError('Failed to load payouts')
       }
     } catch (err) {
       console.error('Error fetching payouts:', err)
+      setError('Failed to load payouts')
     }
   }, [])
 
@@ -104,8 +112,8 @@ export default function VendorEarningsPage() {
   const totalGross = earnings.reduce((sum, item) => sum + item.grossAmount, 0)
   const totalCommission = earnings.reduce((sum, item) => sum + item.platformCommission, 0)
   const totalEarnings = earnings.reduce((sum, item) => sum + item.vendorEarnings, 0)
-  const totalPaid = payouts.filter(p => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0)
-  const totalPending = payouts.filter(p => p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0)
+  const totalPaid = payoutSummary?.totalPaid ?? 0
+  const totalPending = payoutSummary?.totalPending ?? 0
 
   if (loading) {
     return (

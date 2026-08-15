@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
           action: 'APPLICATION_CREATED',
         }
       })
-    } else if (application.status === 'APPROVED' || application.status === 'REJECTED') {
-      // If application exists in a terminal state (APPROVED/REJECTED), allow resubmission
+    } else if (application.status === 'APPROVED') {
+      // If application is APPROVED, allow resubmission (e.g. re-verification)
       application = await getPrisma().vendorVerificationApplication.update({
         where: { id: application.id },
         data: {
@@ -89,15 +89,27 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // Clear existing KYC, documents, and payment for resubmission
-      await getPrisma().vendorVerificationKYC.deleteMany({
-        where: { applicationId: application.id },
+      await getPrisma().verificationAuditLog.create({
+        data: {
+          applicationId: application.id,
+          action: 'VENDOR_RESUBMITTED',
+        },
       })
-      await getPrisma().verificationDocument.deleteMany({
-        where: { applicationId: application.id },
-      })
-      await getPrisma().verificationPayment.deleteMany({
-        where: { applicationId: application.id },
+    } else if (application.status === 'REJECTED') {
+      if (!settings.allowResubmissionAfterRejection) {
+        return NextResponse.json({ error: 'Resubmission after rejection is not allowed' }, { status: 403 })
+      }
+
+      application = await getPrisma().vendorVerificationApplication.update({
+        where: { id: application.id },
+        data: {
+          status: 'UNPAID',
+          paymentStatus: 'UNPAID',
+          paymentAmount: settings.verificationFee,
+          paymentReference: null,
+          paymentCompletedAt: null,
+          paystackRef: null,
+        },
       })
 
       await getPrisma().verificationAuditLog.create({

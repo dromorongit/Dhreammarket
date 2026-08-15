@@ -50,10 +50,12 @@ export default function VendorServices() {
   const [availabilityFilter, setAvailabilityFilter] = useState('')
   const [sortBy, setSortBy] = useState('createdAt')
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+  const [canCreateService, setCanCreateService] = useState<boolean | null>(null)
 
   useEffect(() => {
     checkOnboardingStatus()
     fetchCategories()
+    checkServiceLimit()
   }, [])
 
   useEffect(() => {
@@ -86,6 +88,23 @@ export default function VendorServices() {
       }
     } catch (error) {
       console.error('Error fetching service categories:', error)
+    }
+  }
+
+  const checkServiceLimit = async () => {
+    try {
+      const response = await fetch('/api/dashboard/vendor')
+      if (response.ok) {
+        const data = await response.json()
+        const remaining = data.servicesRemaining
+        if (remaining !== undefined && remaining !== -1 && remaining <= 0) {
+          setCanCreateService(false)
+        } else {
+          setCanCreateService(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking service limit:', error)
     }
   }
 
@@ -228,7 +247,7 @@ export default function VendorServices() {
               size="sm"
               category="VENDOR"
             />
-            <Button asChild>
+            <Button asChild disabled={canCreateService === false}>
               <Link href="/dashboard/vendor/services/new">+ Add New Service</Link>
             </Button>
           </div>

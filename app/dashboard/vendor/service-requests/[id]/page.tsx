@@ -290,7 +290,7 @@ export default function VendorServiceRequestDetail({ params }: { params: { id: s
               </CardContent>
             </Card>
 
-            {request.status === 'PENDING' || request.status === 'UNDER_REVIEW' ? (
+            {(request.status === 'PENDING' || request.status === 'UNDER_REVIEW') ? (
               showQuotationForm ? (
                 <Card>
                   <CardHeader>
@@ -350,12 +350,14 @@ export default function VendorServiceRequestDetail({ params }: { params: { id: s
                   >
                     Send Quotation
                   </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => handleUpdateStatus('DECLINED')}
-                  >
-                    Decline
-                  </Button>
+                  {(request.status as string) === 'UNDER_REVIEW' || (request.status as string) === 'QUOTED' ? (
+                    <Button
+                      variant="danger"
+                      onClick={() => handleUpdateStatus('DECLINED')}
+                    >
+                      Decline
+                    </Button>
+                  ) : null}
                 </div>
               )
             ) : null}

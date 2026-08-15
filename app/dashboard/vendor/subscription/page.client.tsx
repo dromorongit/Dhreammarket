@@ -427,7 +427,30 @@ export default function VendorSubscriptionPage() {
             <h2 className="text-xl font-bold text-deep-navy mb-6">Usage Details</h2>
             <Card>
               <CardContent className="p-4">
-                <p className="text-gray-500">Detailed usage metrics will appear here.</p>
+                {subscription.usage.length === 0 ? (
+                  <p className="text-gray-500">No usage data available.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {subscription.usage.map((u) => (
+                      <div key={u.metric} className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-deep-navy">
+                            {u.metric.replace(/_/g, ' ')}
+                          </p>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div
+                              className="bg-royal-blue h-2 rounded-full"
+                              style={{ width: `${Math.min(u.percentage, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {u.currentValue} / {u.limit ?? 'Unlimited'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -450,17 +473,40 @@ export default function VendorSubscriptionPage() {
                     )}
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2 mb-4">
-                      {plan.benefits.map((benefit, i) => (
-                        <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
-                          <span className="text-green-500">✓</span> {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="text-sm text-gray-500 mb-4">
-                      <p>Products: {plan.productsLimit === -1 ? 'Unlimited' : plan.productsLimit}</p>
-                      <p>Services: {plan.servicesLimit === -1 ? 'Unlimited' : plan.servicesLimit}</p>
-                    </div>
+                     <ul className="space-y-2 mb-4">
+                       {plan.benefits.map((benefit, i) => (
+                         <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                           <span className="text-green-500">✓</span> {benefit}
+                         </li>
+                       ))}
+                     </ul>
+                     <div className="text-sm text-gray-500 mb-4">
+                       <p>Products: {plan.productsLimit === -1 ? 'Unlimited' : plan.productsLimit}</p>
+                       <p>Services: {plan.servicesLimit === -1 ? 'Unlimited' : plan.servicesLimit}</p>
+                     </div>
+                     {plan.restrictions && (
+                       <div className="text-sm text-gray-500 mb-4">
+                         <p className="font-medium text-gray-700 mb-1">Restrictions</p>
+                         <ul className="space-y-1">
+                           {plan.restrictions.productLimits && <li>• Product limits enforced</li>}
+                           {plan.restrictions.serviceLimits && <li>• Service limits enforced</li>}
+                           {plan.restrictions.homepagePromotions && <li>• Homepage promotions enabled</li>}
+                           {plan.restrictions.sponsoredProducts && <li>• Sponsored products enabled</li>}
+                           {plan.restrictions.sponsoredServices && <li>• Sponsored services enabled</li>}
+                           {plan.restrictions.premiumAnalytics && <li>• Premium analytics enabled</li>}
+                           {plan.restrictions.advancedAI && <li>• Advanced AI enabled</li>}
+                           {plan.restrictions.cashbackCampaigns && <li>• Cashback campaigns enabled</li>}
+                           {plan.restrictions.rewardCampaigns && <li>• Reward campaigns enabled</li>}
+                           {plan.restrictions.vendorAdvertisements && <li>• Vendor advertisements enabled</li>}
+                           {plan.restrictions.campaignCreation && <li>• Campaign creation enabled</li>}
+                           {plan.restrictions.sponsoredSearchBoost && <li>• Sponsored search boost enabled</li>}
+                           {plan.restrictions.categoryBoosts && <li>• Category boosts enabled</li>}
+                           {plan.restrictions.vendorSpotlight && <li>• Vendor spotlight enabled</li>}
+                           {plan.restrictions.priorityApproval && <li>• Priority approval enabled</li>}
+                           {plan.restrictions.unlimitedCampaigns && <li>• Unlimited campaigns enabled</li>}
+                         </ul>
+                       </div>
+                     )}
                     {plan.name !== subscription.currentPlan && (
                       <Button onClick={() => handleUpgrade(plan.name)} className="w-full" disabled={actionLoading}>
                         {plan.name === 'Free' ? 'Select' : 'Upgrade'}
