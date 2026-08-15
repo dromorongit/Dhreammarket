@@ -2059,6 +2059,26 @@ model NotificationPreference {
   @@index([userId])
 }
 
+// ===== MODULE 17B: Email Retry Infrastructure =====
+
+model FailedEmail {
+  id             String    @id @default(cuid())
+  recipientEmail String    @db.VarChar(255)
+  emailType      String    @db.VarChar(255)
+  payload        Json       @default("{}")
+  errorMessage   String?
+  attemptCount   Int       @default(0)
+  status         String    @default("PENDING")
+  createdAt      DateTime  @default(now())
+  lastAttemptAt  DateTime?
+  resolvedAt     DateTime?
+
+  @@map("failed_emails")
+  @@index([status, createdAt])
+  @@index([emailType])
+  @@index([createdAt])
+}
+
 // ===== MODULE 18: Conversion Tracking =====
 
 model ExitIntent {

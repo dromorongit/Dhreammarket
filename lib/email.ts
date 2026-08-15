@@ -1,5 +1,4 @@
-// Email notification service using Brevo API
-// Refined professional templates for Dhream Market Phase 8
+import { getPrisma } from '@/lib/prisma'
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'support@dhreamarket.com'
@@ -19,9 +18,44 @@ interface EmailParams {
   htmlContent: string
   textContent?: string
   replyTo?: string
+  emailType?: string
+  retryPayload?: any
 }
 
-export async function sendEmail({ to, subject, htmlContent, textContent, replyTo }: EmailParams) {
+type FailedEmailStatus = 'PENDING' | 'RETRYING' | 'FAILED_PERMANENTLY' | 'RESOLVED'
+
+async function persistFailedEmail(
+  emailType: string,
+  params: EmailParams,
+  error: unknown
+): Promise<void> {
+  try {
+    const prisma = getPrisma()
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    await prisma.failedEmail.create({
+      data: {
+        recipientEmail: params.to,
+        emailType,
+        payload: params.retryPayload ?? {
+          to: params.to,
+          subject: params.subject,
+          htmlContent: params.htmlContent,
+          textContent: params.textContent,
+          replyTo: params.replyTo,
+        },
+        errorMessage,
+        status: 'PENDING',
+        attemptCount: 1,
+        lastAttemptAt: new Date(),
+      }
+    })
+  } catch (persistError) {
+    console.error('[Email] Failed to persist failed email record:', persistError)
+  }
+}
+
+export async function sendEmail({ to, subject, htmlContent, textContent, replyTo, emailType, retryPayload }: EmailParams) {
   if (!BREVO_API_KEY) {
     console.log(`[Email Mock] Would send to ${to}: ${subject}`)
     return { success: false, reason: 'Brevo API key not configured' }
@@ -55,11 +89,83 @@ export async function sendEmail({ to, subject, htmlContent, textContent, replyTo
     } else {
       const errorText = await response.text()
       console.error('Brevo API error:', errorText)
+      if (emailType) {
+        await persistFailedEmail(emailType, { to, subject, htmlContent, textContent, replyTo, emailType, retryPayload }, errorText)
+      }
       return { success: false, error: errorText }
     }
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('Error sending email:', error)
+    if (emailType) {
+      await persistFailedEmail(emailType, { to, subject, htmlContent, textContent, replyTo, emailType, retryPayload }, error)
+    }
     return { success: false, error }
+  }
+}
+
+export interface RetryResult {
+  success: boolean
+  error?: string
+}
+
+export async function retryFailedEmail(failedEmail: {
+  id: string
+  recipientEmail: string
+  emailType: string
+  payload: any
+  attemptCount: number
+  status: string
+}): Promise<RetryResult> {
+  const payload = failedEmail.payload
+  if (!payload || !payload.to || !payload.subject || !payload.htmlContent) {
+    return { success: false, error: 'Invalid payload for retry' }
+  }
+
+  try {
+    const result = await sendEmail({
+      to: payload.to,
+      subject: payload.subject,
+      htmlContent: payload.htmlContent,
+      textContent: payload.textContent,
+      replyTo: payload.replyTo,
+      emailType: failedEmail.emailType,
+    })
+
+    const prisma = getPrisma()
+    if (result.success) {
+      await prisma.failedEmail.update({
+        where: { id: failedEmail.id },
+        data: {
+          status: 'RESOLVED',
+          resolvedAt: new Date(),
+          attemptCount: failedEmail.attemptCount + 1,
+          lastAttemptAt: new Date(),
+        }
+      })
+      return { success: true }
+    } else {
+      await prisma.failedEmail.update({
+        where: { id: failedEmail.id },
+        data: {
+          status: 'PENDING',
+          attemptCount: failedEmail.attemptCount + 1,
+          lastAttemptAt: new Date(),
+        }
+      })
+      return { success: false, error: result.error ? String(result.error) : undefined }
+    }
+  } catch (error) {
+    const prisma = getPrisma()
+    await prisma.failedEmail.update({
+      where: { id: failedEmail.id },
+      data: {
+        status: 'PENDING',
+        attemptCount: failedEmail.attemptCount + 1,
+        lastAttemptAt: new Date(),
+      }
+    })
+    return { success: false, error: error instanceof Error ? error.message : String(error) }
   }
 }
 
@@ -146,7 +252,9 @@ export async function sendOrderConfirmationEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Dear ${customerName}, your order #${orderId.slice(0, 8)} has been confirmed. Total: ${currency} ${total.toFixed(2)}. Thank you for shopping with Dhream Market!`
+    textContent: `Dear ${customerName}, your order #${orderId.slice(0, 8)} has been confirmed. Total: ${currency} ${total.toFixed(2)}. Thank you for shopping with Dhream Market!`,
+    emailType: 'ORDER_CONFIRMATION',
+    retryPayload: { customerEmail, customerName, orderId, total, currency },
   })
 }
 
@@ -185,7 +293,9 @@ export async function sendPaymentConfirmationEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Payment of ${currency} ${amount.toFixed(2)} for order #${orderId.slice(0, 8)} has been confirmed. Thank you!`
+    textContent: `Payment of ${currency} ${amount.toFixed(2)} for order #${orderId.slice(0, 8)} has been confirmed. Thank you!`,
+    emailType: 'PAYMENT_CONFIRMATION',
+    retryPayload: { customerEmail, customerName, orderId, amount, currency },
   })
 }
 
@@ -245,7 +355,9 @@ export async function sendOrderStatusUpdateEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Your order #${orderId.slice(0, 8)} status is now: ${newStatus}. ${statusMessages[newStatus] || ''}`
+    textContent: `Your order #${orderId.slice(0, 8)} status is now: ${newStatus}. ${statusMessages[newStatus] || ''}`,
+    emailType: 'ORDER_STATUS_UPDATE',
+    retryPayload: { customerEmail, customerName, orderId, newStatus },
   })
 }
 
@@ -274,7 +386,9 @@ export async function sendReviewConfirmationEmail(
      to: customerEmail,
      subject,
      htmlContent,
-textContent: `Thank you for reviewing ${productName}! Your rating: ${rating} stars. Your feedback helps other customers!`
+     textContent: `Thank you for reviewing ${productName}! Your rating: ${rating} stars. Your feedback helps other customers!`,
+     emailType: 'REVIEW_CONFIRMATION',
+     retryPayload: { customerEmail, customerName, productName, rating },
     })
   }
 
@@ -317,7 +431,9 @@ export async function sendEmailVerificationEmail(
     to: userEmail,
     subject,
     htmlContent,
-    textContent: `Your Dhream Market verification code is: ${otp}. This code expires in ${expiryMinutes} minute(s).`
+    textContent: `Your Dhream Market verification code is: ${otp}. This code expires in ${expiryMinutes} minute(s).`,
+    emailType: 'EMAIL_VERIFICATION',
+    retryPayload: { userEmail, userName, otp, expiresAt },
   })
 }
 
@@ -365,7 +481,9 @@ export async function sendPasswordResetEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Reset your Dhream Market password by visiting: ${resetUrl}. This link expires in ${expiryHours} hour(s).`
+    textContent: `Reset your Dhream Market password by visiting: ${resetUrl}. This link expires in ${expiryHours} hour(s).`,
+    emailType: 'PASSWORD_RESET',
+    retryPayload: { customerEmail, customerName, selector, secretToken, expiresAt },
   })
  }
 
@@ -394,7 +512,9 @@ export async function sendPaymentFailedEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Your payment for order #${orderId.slice(0, 8)} could not be completed. If you were charged, contact support@dhreamarket.com`
+    textContent: `Your payment for order #${orderId.slice(0, 8)} could not be completed. If you were charged, contact support@dhreamarket.com`,
+    emailType: 'PAYMENT_FAILED',
+    retryPayload: { customerEmail, customerName, orderId },
   })
 }
 
@@ -459,7 +579,9 @@ export async function sendVerificationStatusEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `${config.message} Store: ${storeName}. Status: ${status}.`
+    textContent: `${config.message} Store: ${storeName}. Status: ${status}.`,
+    emailType: 'VERIFICATION_STATUS',
+    retryPayload: { customerEmail, customerName, status, storeName },
   })
 }
 
@@ -490,6 +612,8 @@ export async function sendPasswordChangedEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `Your Dhream Market password was changed successfully. If you did not make this change, please contact support immediately.`
+    textContent: `Your Dhream Market password was changed successfully. If you did not make this change, please contact support immediately.`,
+    emailType: 'PASSWORD_CHANGED',
+    retryPayload: { customerEmail, customerName },
   })
 }
