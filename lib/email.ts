@@ -24,6 +24,8 @@ interface EmailParams {
 
 type FailedEmailStatus = 'PENDING' | 'RETRYING' | 'FAILED_PERMANENTLY' | 'RESOLVED'
 
+const MAX_RETRY_ATTEMPTS = 5
+
 async function persistFailedEmail(
   emailType: string,
   params: EmailParams,
@@ -145,11 +147,13 @@ export async function retryFailedEmail(failedEmail: {
       })
       return { success: true }
     } else {
+      const newAttemptCount = failedEmail.attemptCount + 1
+      const isPermanent = newAttemptCount >= MAX_RETRY_ATTEMPTS
       await prisma.failedEmail.update({
         where: { id: failedEmail.id },
         data: {
-          status: 'PENDING',
-          attemptCount: failedEmail.attemptCount + 1,
+          status: isPermanent ? 'FAILED_PERMANENTLY' : 'PENDING',
+          attemptCount: newAttemptCount,
           lastAttemptAt: new Date(),
         }
       })
@@ -157,11 +161,13 @@ export async function retryFailedEmail(failedEmail: {
     }
   } catch (error) {
     const prisma = getPrisma()
+    const newAttemptCount = failedEmail.attemptCount + 1
+    const isPermanent = newAttemptCount >= MAX_RETRY_ATTEMPTS
     await prisma.failedEmail.update({
       where: { id: failedEmail.id },
       data: {
-        status: 'PENDING',
-        attemptCount: failedEmail.attemptCount + 1,
+        status: isPermanent ? 'FAILED_PERMANENTLY' : 'PENDING',
+        attemptCount: newAttemptCount,
         lastAttemptAt: new Date(),
       }
     })

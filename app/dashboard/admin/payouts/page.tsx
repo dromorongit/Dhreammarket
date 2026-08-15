@@ -283,49 +283,116 @@ export default function AdminPayoutsPage() {
                 description="No payouts match your current filters."
               />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vendor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {payouts.map((payout) => (
-                      <tr key={payout.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <p className="font-medium text-deep-navy">
-                              {payout.vendor.profile?.firstName || payout.vendor.email}
-                            </p>
-                            <p className="text-sm text-slate-500">{payout.store.name}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <p className="font-medium text-deep-navy">{formatCurrency(payout.amount)}</p>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={getStatusBadge(payout.status)}>
-                            {payout.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                          {formatDate(payout.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {payout.status === 'PENDING' && (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUpdateStatus(payout.id, 'PROCESSING')}
-                              >
-                                Process
-                              </Button>
+              <>
+                {/* Mobile Card View */}
+                <div className="block md:hidden divide-y divide-gray-200">
+                  {payouts.map((payout) => (
+                    <div key={payout.id} className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {payout.vendor.profile?.firstName || payout.vendor.email}
+                          </p>
+                          <p className="text-sm text-gray-500">{payout.store.name}</p>
+                        </div>
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(payout.status)}`}>
+                          {payout.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-500">Amount:</span>
+                          <span className="ml-1 font-medium">{formatCurrency(payout.amount)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Date:</span>
+                          <span className="ml-1">{formatDate(payout.createdAt)}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {payout.status === 'PENDING' && (
+                          <>
+                            <button
+                              onClick={() => handleUpdateStatus(payout.id, 'PROCESSING')}
+                              className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
+                            >
+                              Process
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(payout.id, 'PAID')}
+                              className="px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 min-h-[44px]"
+                            >
+                              Mark Paid
+                            </button>
+                          </>
+                        )}
+                        {payout.status === 'PROCESSING' && (
+                          <button
+                            onClick={() => handleUpdateStatus(payout.id, 'PAID')}
+                            className="px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 min-h-[44px]"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Vendor</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {payouts.map((payout) => (
+                        <tr key={payout.id} className="hover:bg-slate-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <p className="font-medium text-deep-navy">
+                                {payout.vendor.profile?.firstName || payout.vendor.email}
+                              </p>
+                              <p className="text-sm text-slate-500">{payout.store.name}</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <p className="font-medium text-deep-navy">{formatCurrency(payout.amount)}</p>
+                          </td>
+                           <td className="px-6 py-4 whitespace-nowrap">
+                             <Badge className={getStatusBadge(payout.status)}>
+                              {payout.status}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                            {formatDate(payout.createdAt)}
+                          </td>
+                           <td className="px-6 py-4 whitespace-nowrap">
+                             {payout.status === 'PENDING' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateStatus(payout.id, 'PROCESSING')}
+                                >
+                                  Process
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  onClick={() => handleUpdateStatus(payout.id, 'PAID')}
+                                >
+                                  Mark Paid
+                                </Button>
+                              </div>
+                            )}
+                            {payout.status === 'PROCESSING' && (
                               <Button
                                 size="sm"
                                 variant="primary"
@@ -333,26 +400,17 @@ export default function AdminPayoutsPage() {
                               >
                                 Mark Paid
                               </Button>
-                            </div>
-                          )}
-                          {payout.status === 'PROCESSING' && (
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => handleUpdateStatus(payout.id, 'PAID')}
-                            >
-                              Mark Paid
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
         {/* Create Payout Modal */}
         {showCreateModal && (

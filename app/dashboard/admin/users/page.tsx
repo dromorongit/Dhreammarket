@@ -273,7 +273,101 @@ export default function AdminUsersPage() {
             </CardContent>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="block md:hidden divide-y divide-gray-200">
+                {users.map((user) => (
+                  <div key={user.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{user.email}</p>
+                        {user.profile?.firstName && (
+                          <p className="text-sm text-gray-500">{user.profile.firstName} {user.profile.lastName}</p>
+                        )}
+                      </div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}>
+                        {user.role}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Status:</span>
+                        <span className={`ml-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(user.status)}`}>
+                          {user.status}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Joined:</span>
+                        <span className="ml-1">{new Date(user.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    {user.store && (
+                      <div className="text-sm">
+                        <span className="text-gray-500">Store:</span>
+                        <span className="ml-1 text-gray-900">{user.store.name}</span>
+                        <span className={`ml-2 inline-flex px-1.5 py-0.5 text-xs font-medium rounded-full ${user.store.isVerified ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {user.store.isVerified ? 'Verified' : 'Pending'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {actionLoading === user.id ? (
+                        <span className="text-sm text-gray-500">Processing...</span>
+                      ) : (
+                        <>
+                          {canPerformAction(user, 'ban') && user.status !== 'BANNED' && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'ban')}
+                              className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                              title="Ban user"
+                            >
+                              Ban
+                            </button>
+                          )}
+                          {canPerformAction(user, 'unban') && user.status === 'BANNED' && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'unban')}
+                              className="px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 min-h-[44px]"
+                              title="Unban user"
+                            >
+                              Unban
+                            </button>
+                          )}
+                          {canPerformAction(user, 'disable') && user.status !== 'DISABLED' && user.status !== 'BANNED' && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'disable')}
+                              className="px-3 py-1.5 text-xs bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100 min-h-[44px]"
+                              title="Disable user"
+                            >
+                              Disable
+                            </button>
+                          )}
+                          {canPerformAction(user, 'reactivate') && (user.status === 'DISABLED' || user.status === 'SUSPENDED') && (
+                            <button
+                              onClick={() => handleUserAction(user.id, 'reactivate')}
+                              className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
+                              title="Reactivate user"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                          {canPerformAction(user, 'delete') && (
+                            <button
+                              onClick={() => handleDeleteUser(user.id, user.email)}
+                              className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                              title="Delete user"
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>

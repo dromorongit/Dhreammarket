@@ -233,44 +233,79 @@ export default function VendorEarningsPage() {
                   description="Your earnings will appear here when you make sales."
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Order</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Product</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Gross</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Commission</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Your Earnings</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {earnings.map((item) => (
-                        <tr key={item.id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="font-medium text-deep-navy">#{item.orderId.slice(-8)}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-slate-700">{item.product.name}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-slate-700">{formatPrice(item.grossAmount)}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="text-royal-blue">{formatPrice(item.platformCommission)}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="font-medium text-emerald-600">{formatPrice(item.vendorEarnings)}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                            {formatDate(item.createdAt)}
-                          </td>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden divide-y divide-gray-200">
+                    {earnings.map((item) => (
+                      <div key={item.id} className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-gray-900">#{item.orderId.slice(-8)}</p>
+                            <p className="text-sm text-gray-500">{item.product.name}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Gross:</span>
+                            <span className="ml-1">{formatPrice(item.grossAmount)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Commission:</span>
+                            <span className="ml-1 text-royal-blue">{formatPrice(item.platformCommission)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Your Earnings:</span>
+                            <span className="ml-1 font-medium text-emerald-600">{formatPrice(item.vendorEarnings)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Date:</span>
+                            <span className="ml-1">{formatDate(item.createdAt)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Order</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Product</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Gross</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Commission</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Your Earnings</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {earnings.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="font-medium text-deep-navy">#{item.orderId.slice(-8)}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-slate-700">{item.product.name}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-slate-700">{formatPrice(item.grossAmount)}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="text-royal-blue">{formatPrice(item.platformCommission)}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="font-medium text-emerald-600">{formatPrice(item.vendorEarnings)}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                              {formatDate(item.createdAt)}
+                            </td>
+                          </tr>
+                        ))}
+                       </tbody>
+                     </table>
+                   </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -291,42 +326,77 @@ export default function VendorEarningsPage() {
                   description="Payouts will appear here when the platform processes your earnings."
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paid Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Note</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {payouts.map((payout) => (
-                        <tr key={payout.id} className="hover:bg-slate-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <p className="font-medium text-deep-navy">{formatPrice(payout.amount)}</p>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge className={getPayoutStatusBadge(payout.status)}>
-                              {payout.status}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                            {formatDate(payout.createdAt)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                            {payout.paidAt ? formatDate(payout.paidAt) : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                            {payout.note || '-'}
-                          </td>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="block md:hidden divide-y divide-gray-200">
+                    {payouts.map((payout) => (
+                      <div key={payout.id} className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium text-gray-900">{formatPrice(payout.amount)}</p>
+                          </div>
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getPayoutStatusBadge(payout.status)}`}>
+                            {payout.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">Date:</span>
+                            <span className="ml-1">{formatDate(payout.createdAt)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Paid:</span>
+                            <span className="ml-1">{payout.paidAt ? formatDate(payout.paidAt) : '-'}</span>
+                          </div>
+                        </div>
+                        {payout.note && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Note:</span>
+                            <span className="ml-1">{payout.note}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Paid Date</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Note</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {payouts.map((payout) => (
+                          <tr key={payout.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <p className="font-medium text-deep-navy">{formatPrice(payout.amount)}</p>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge className={getPayoutStatusBadge(payout.status)}>
+                                {payout.status}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                              {formatDate(payout.createdAt)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                              {payout.paidAt ? formatDate(payout.paidAt) : '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                              {payout.note || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

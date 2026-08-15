@@ -185,7 +185,49 @@ export default function AdminPaymentsPage() {
             </CardContent>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="block md:hidden divide-y divide-gray-200">
+                {payments.map((payment) => (
+                  <div key={payment.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{payment.reference.slice(0, 12)}...</p>
+                        {payment.paystackRef && (
+                          <p className="text-xs text-gray-500">PS: {payment.paystackRef.slice(0, 8)}...</p>
+                        )}
+                      </div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(payment.status)}`}>
+                        {payment.status}
+                      </span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Customer:</span>
+                      <span className="ml-1 text-gray-900">{payment.user.email}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Amount:</span>
+                      <span className="ml-1 font-medium text-gray-900">{formatCurrency(payment.amount)}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Order:</span>
+                      <Link 
+                        href={`/dashboard/admin/orders?id=${payment.order.id}`}
+                        className="ml-1 font-mono text-blue-600 hover:underline"
+                      >
+                        {payment.order.id.slice(0, 8)}...
+                      </Link>
+                      <span className="text-xs text-gray-500 block">{formatCurrency(payment.order.total)} · {payment.order.status}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="text-gray-500">Date:</span>
+                      <span className="ml-1">{new Date(payment.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>

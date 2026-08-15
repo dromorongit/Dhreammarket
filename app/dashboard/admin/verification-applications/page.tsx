@@ -339,103 +339,187 @@ export default function AdminVerificationApplicationsPage() {
               />
             </CardContent>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile Number</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification Fee Paid</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Reference</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submission Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4">
-                        <div className="text-sm font-medium text-gray-900">
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden divide-y divide-gray-200">
+                {applications.map((app) => (
+                  <div key={app.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">
                           {app.vendor.profile?.firstName && app.vendor.profile?.lastName
                             ? `${app.vendor.profile.firstName} ${app.vendor.profile.lastName}`
                             : 'N/A'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">{app.store?.name}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">{app.vendor.profile?.phone || '-'}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900">{app.vendor?.email}</div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {app.paymentAmount ? formatPrice(app.paymentAmount) : '-'}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="text-sm text-gray-900 font-mono">{app.paymentReference || '-'}</div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-500">
-                        {formatDate(app.createdAt)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge className={statusColors[app.status] || 'bg-gray-100 text-gray-800'}>
-                          {app.status.replace(/_/g, ' ')}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4">
-                        {actionLoading === app.id ? (
-                          <span className="text-sm text-gray-500">Processing...</span>
-                        ) : (
-                          <div className="flex gap-2 flex-wrap">
-                            <button
-                              onClick={() => setSelectedApp(app)}
-                              className="text-sm text-blue-600 hover:text-blue-800 min-h-[44px]"
-                              title="View Details"
-                            >
-                              View
-                            </button>
-                            {(app.status === 'PENDING_REVIEW' || app.status === 'CHANGES_REQUESTED') && (
-                              <>
-                                <button
-                                  onClick={() => handleAction(app.id, 'approve')}
-                                  className="text-sm text-green-600 hover:text-green-800 min-h-[44px]"
-                                  title="Approve"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleAction(app.id, 'reject')}
-                                  className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
-                                  title="Reject"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                            {app.status === 'APPROVED' && (
+                        </p>
+                        <p className="text-sm text-gray-500">{app.store?.name}</p>
+                      </div>
+                      <Badge className={statusColors[app.status] || 'bg-gray-100 text-gray-800'}>
+                        {app.status.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Mobile:</span>
+                        <span className="ml-1">{app.vendor.profile?.phone || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Fee Paid:</span>
+                        <span className="ml-1 font-medium">{app.paymentAmount ? formatPrice(app.paymentAmount) : '-'}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-gray-500">Reference:</span>
+                        <span className="ml-1 font-mono text-xs">{app.paymentReference || '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Submitted:</span>
+                        <span className="ml-1">{formatDate(app.createdAt)}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {actionLoading === app.id ? (
+                        <span className="text-sm text-gray-500">Processing...</span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setSelectedApp(app)}
+                            className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 min-h-[44px]"
+                            title="View Details"
+                          >
+                            View
+                          </button>
+                          {(app.status === 'PENDING_REVIEW' || app.status === 'CHANGES_REQUESTED') && (
+                            <>
                               <button
-                                onClick={() => handleAction(app.id, 'revoke')}
-                                className="text-sm text-orange-600 hover:text-orange-800 min-h-[44px]"
-                                title="Revoke Verification"
+                                onClick={() => handleAction(app.id, 'approve')}
+                                className="px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 min-h-[44px]"
+                                title="Approve"
                               >
-                                Revoke
+                                Approve
                               </button>
-                            )}
-                          </div>
-                        )}
-                      </td>
+                              <button
+                                onClick={() => handleAction(app.id, 'reject')}
+                                className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                                title="Reject"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {app.status === 'APPROVED' && (
+                            <button
+                              onClick={() => handleAction(app.id, 'revoke')}
+                              className="px-3 py-1.5 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 min-h-[44px]"
+                              title="Revoke Verification"
+                            >
+                              Revoke
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mobile Number</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verification Fee Paid</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Reference</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submission Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {applications.map((app) => (
+                      <tr key={app.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {app.vendor.profile?.firstName && app.vendor.profile?.lastName
+                              ? `${app.vendor.profile.firstName} ${app.vendor.profile.lastName}`
+                              : 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-900">{app.store?.name}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-900">{app.vendor.profile?.phone || '-'}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-900">{app.vendor?.email}</div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {app.paymentAmount ? formatPrice(app.paymentAmount) : '-'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-900 font-mono">{app.paymentReference || '-'}</div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-500">
+                          {formatDate(app.createdAt)}
+                        </td>
+                        <td className="px-4 py-4">
+                          <Badge className={statusColors[app.status] || 'bg-gray-100 text-gray-800'}>
+                            {app.status.replace(/_/g, ' ')}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-4">
+                          {actionLoading === app.id ? (
+                            <span className="text-sm text-gray-500">Processing...</span>
+                          ) : (
+                            <div className="flex gap-2 flex-wrap">
+                              <button
+                                onClick={() => setSelectedApp(app)}
+                                className="text-sm text-blue-600 hover:text-blue-800 min-h-[44px]"
+                                title="View Details"
+                              >
+                                View
+                              </button>
+                              {(app.status === 'PENDING_REVIEW' || app.status === 'CHANGES_REQUESTED') && (
+                                <>
+                                  <button
+                                    onClick={() => handleAction(app.id, 'approve')}
+                                    className="text-sm text-green-600 hover:text-green-800 min-h-[44px]"
+                                    title="Approve"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleAction(app.id, 'reject')}
+                                    className="text-sm text-red-600 hover:text-red-800 min-h-[44px]"
+                                    title="Reject"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              {app.status === 'APPROVED' && (
+                                <button
+                                  onClick={() => handleAction(app.id, 'revoke')}
+                                  className="text-sm text-orange-600 hover:text-orange-800 min-h-[44px]"
+                                  title="Revoke Verification"
+                                >
+                                  Revoke
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
 

@@ -188,7 +188,56 @@ export default function AdminProductsPage() {
             </CardContent>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="block md:hidden divide-y divide-gray-200">
+                {products.map((product) => (
+                  <div key={product.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-900">{product.name}</p>
+                        <p className="text-sm text-gray-500">{product.store.name}</p>
+                      </div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Price:</span>
+                        <span className="ml-1 font-medium">{formatCurrency(product.price)}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Stock:</span>
+                        <span className="ml-1">{product.stock}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Orders:</span>
+                        <span className="ml-1">{product._count.orderItems}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Reviews:</span>
+                        <span className="ml-1">{product._count.reviews}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {actionLoading === product.id ? (
+                        <span className="text-sm text-gray-500">Processing...</span>
+                      ) : (
+                        <button
+                          onClick={() => handleRemove(product.id, product.name)}
+                          className="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 min-h-[44px]"
+                          title="Remove product"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
