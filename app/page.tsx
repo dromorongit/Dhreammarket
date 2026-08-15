@@ -41,6 +41,7 @@ import {
   HomeTheatreSection,
   TopExpressOffersSection,
   QuickLinksSection,
+  QuickLinksContactBar,
   NewArrivalsSection,
   NewThisWeekSection,
   ElectronicsShowcaseSection,
@@ -285,6 +286,7 @@ export default function Home() {
                   return (
                     <>
                       <BagInfiniteBannerRail />
+                      <QuickLinksContactBar />
                       <QuickLinksSection key={section.id} />
                       <BeautyInfiniteBannerRail />
                       <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
