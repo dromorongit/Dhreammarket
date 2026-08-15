@@ -138,8 +138,8 @@ export default function InfiniteBannerRail() {
   }
 
   return (
-    <section className="relative py-2" aria-label="Promotional banners">
-      <div className='w-full max-w-4xl mx-auto relative px-4 sm:px-0'>
+    <section aria-label="Promotional banners">
+      <div className='w-full relative'>
         <div
           ref={scrollRef}
           onScroll={handleUserScroll}

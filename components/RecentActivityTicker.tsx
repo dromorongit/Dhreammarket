@@ -84,7 +84,7 @@ export function RecentActivityTicker() {
 
   if (isLoading) {
     return (
-      <section className="relative py-3 bg-white">
+      <section className="relative bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center gap-3">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -100,7 +100,7 @@ export function RecentActivityTicker() {
   }
 
   return (
-    <section className="relative py-3 bg-white" aria-live="polite" aria-atomic="true">
+    <section className="relative bg-white" aria-live="polite" aria-atomic="true">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center">
           <Card variant="outline" className="flex items-center gap-3 px-5 py-2.5 rounded-full border-slate-200 shadow-sm max-w-full">
