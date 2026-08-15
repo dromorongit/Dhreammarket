@@ -42,6 +42,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
   const [input, setInput] = useState('')
   const [subject, setSubject] = useState('')
   const [showSubject, setShowSubject] = useState(false)
+  const [subjectError, setSubjectError] = useState('')
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
@@ -179,6 +180,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
     onSuccess: (data) => {
       setConversationRef(data.conversationRef)
       setShowSubject(false)
+      setSubjectError('')
       queryClient.invalidateQueries({ queryKey: ['support-conversations'] })
     },
   })
@@ -197,7 +199,12 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
       }
       return res.json() as Promise<{ message: Message }>
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === data.message.id)
+        if (exists) return prev
+        return [...prev, data.message]
+      })
       refetchMessages()
       queryClient.invalidateQueries({ queryKey: ['support-conversations'] })
     },
@@ -208,14 +215,17 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
 
     if (!conversationRef && !showSubject) {
       setShowSubject(true)
+      setSubjectError('')
       return
     }
 
     if (!conversationRef && showSubject && !subject.trim()) {
+      setSubjectError('Please add a subject')
       return
     }
 
     if (!conversationRef && showSubject) {
+      setSubjectError('')
       createConversationMutation.mutate(
         { subject: subject.trim(), message: input.trim(), type: 'GENERAL' },
         {
@@ -325,9 +335,10 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
                   type="text"
                   placeholder="Brief subject"
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onChange={(e) => { setSubject(e.target.value); setSubjectError('') }}
                   className="text-sm"
                 />
+                {subjectError && <div className="text-red-600 text-sm">{subjectError}</div>}
               </div>
             ) : null}
             <div className="flex gap-2">

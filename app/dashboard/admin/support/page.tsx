@@ -208,8 +208,15 @@ export default function AdminSupportPage() {
       }
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       fetchTickets()
+      if (data?.ticket) {
+        setSelectedTicket(data.ticket as SupportTicket)
+        setNewStatus((data.ticket as SupportTicket).status)
+      }
+    },
+    onError: (error: Error) => {
+      setError(error.message)
     },
   })
 

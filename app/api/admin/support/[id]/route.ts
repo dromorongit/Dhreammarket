@@ -34,7 +34,7 @@ export async function PATCH(
       CLOSED: ['OPEN'],
     }
 
-    if (status) {
+    if (status && status !== existingTicket.status) {
       const allowed = validTransitions[existingTicket.status]
       if (!allowed || !allowed.includes(status)) {
         return NextResponse.json(

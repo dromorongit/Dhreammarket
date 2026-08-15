@@ -45,11 +45,8 @@ export async function getUserStatus(userId: string, role: string): Promise<UserS
 
     let isOnboarded = true
     if (role === 'VENDOR') {
-      const store = await prisma.store.findUnique({
-        where: { userId },
-        select: { categoryId: true },
-      })
-      isOnboarded = !!store && !!store.categoryId
+      const { isVendorOnboarded } = await import('@/lib/onboarding')
+      isOnboarded = await isVendorOnboarded(userId)
     }
 
     return {

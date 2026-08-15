@@ -6,19 +6,21 @@ import { randomBytes } from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
-async function getGuestToken(request: NextRequest): Promise<string | null> {
+async function getGuestToken(request: NextRequest): Promise<{ token: string | null; isNew: boolean }> {
   const guestToken = request.cookies.get('support_guest_token')?.value || null
-  if (guestToken) return guestToken
+  if (guestToken) return { token: guestToken, isNew: false }
   const newToken = randomBytes(32).toString('hex')
-  const response = NextResponse.next()
-  response.cookies.set('support_guest_token', newToken, {
+  return { token: newToken, isNew: true }
+}
+
+function setGuestTokenCookie(response: NextResponse, token: string) {
+  response.cookies.set('support_guest_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 365,
     path: '/',
   })
-  return newToken
 }
 
 async function getAuthenticatedUser(request: NextRequest): Promise<{ userId: string; role: string } | null> {
@@ -52,7 +54,7 @@ async function createConversationForTicket(ticketId: string, customerType: 'GUES
 export async function GET(request: NextRequest) {
   try {
     const authUser = await getAuthenticatedUser(request)
-    const guestToken = authUser ? null : await getGuestToken(request)
+    const { token: guestToken, isNew } = authUser ? { token: null, isNew: false } : await getGuestToken(request)
 
     const prisma = getPrisma()
     let conversations: any[] = []
@@ -86,7 +88,11 @@ export async function GET(request: NextRequest) {
       ticket: c.ticket,
     }))
 
-    return NextResponse.json({ conversations: result })
+    const response = NextResponse.json({ conversations: result })
+    if (!authUser && isNew && guestToken) {
+      setGuestTokenCookie(response, guestToken)
+    }
+    return response
   } catch (error) {
     console.error('Error fetching support conversations:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -102,7 +108,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const authUser = await getAuthenticatedUser(request)
-    const guestToken = authUser ? null : await getGuestToken(request)
+    const { token: guestToken, isNew } = authUser ? { token: null, isNew: false } : await getGuestToken(request)
 
     if (!authUser && !guestToken) {
       return NextResponse.json({ error: 'Unable to identify session' }, { status: 400 })
@@ -111,25 +117,41 @@ export async function POST(request: NextRequest) {
     const { message, subject, type } = await request.json()
 
     if (!message || !subject || !type) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Message, subject, and type are required' },
         { status: 400 }
       )
+      if (!authUser && isNew && guestToken) {
+        setGuestTokenCookie(response, guestToken)
+      }
+      return response
     }
 
     const sanitizedSubject = sanitizeUserContent(subject, { maxLength: 200 })
     const sanitizedMessage = sanitizeUserContent(message, { maxLength: 5000 })
 
     if (sanitizedSubject.length < 2) {
-      return NextResponse.json({ error: 'Subject must be at least 2 characters' }, { status: 400 })
+      const response = NextResponse.json({ error: 'Subject must be at least 2 characters' }, { status: 400 })
+      if (!authUser && isNew && guestToken) {
+        setGuestTokenCookie(response, guestToken)
+      }
+      return response
     }
     if (sanitizedMessage.length < 1) {
-      return NextResponse.json({ error: 'Message must not be empty' }, { status: 400 })
+      const response = NextResponse.json({ error: 'Message must not be empty' }, { status: 400 })
+      if (!authUser && isNew && guestToken) {
+        setGuestTokenCookie(response, guestToken)
+      }
+      return response
     }
 
     const validTypes = ['GENERAL', 'PAYMENT', 'ORDER', 'VENDOR', 'ACCOUNT', 'TECHNICAL', 'REPORT']
     if (!validTypes.includes(type)) {
-      return NextResponse.json({ error: 'Invalid ticket type' }, { status: 400 })
+      const response = NextResponse.json({ error: 'Invalid ticket type' }, { status: 400 })
+      if (!authUser && isNew && guestToken) {
+        setGuestTokenCookie(response, guestToken)
+      }
+      return response
     }
 
     const prisma = getPrisma()
@@ -164,7 +186,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingConversation) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           message: 'Conversation already in progress',
           ticket: existingConversation.ticket,
@@ -173,6 +195,10 @@ export async function POST(request: NextRequest) {
         },
         { status: 200 }
       )
+      if (!authUser && isNew && guestToken) {
+        setGuestTokenCookie(response, guestToken)
+      }
+      return response
     }
 
     const ticket = await prisma.supportTicket.create({
@@ -195,15 +221,7 @@ export async function POST(request: NextRequest) {
         { message: 'Conversation created successfully', ticket, conversationRef, customerType },
         { status: 201 }
       )
-      if (guestToken) {
-        response.cookies.set('support_guest_token', guestToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 60 * 60 * 24 * 365,
-          path: '/',
-        })
-      }
+      setGuestTokenCookie(response, guestToken!)
       return response
     }
 
