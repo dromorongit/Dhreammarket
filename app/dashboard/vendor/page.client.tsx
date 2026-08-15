@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -41,6 +42,7 @@ interface DashboardStats {
 const PAGE_SIZE = 10
 
 export default function VendorDashboardPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -244,19 +246,25 @@ export default function VendorDashboardPage() {
 
         <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-0 sm:px-0 mb-8 pb-2">
           <div className="flex gap-2 whitespace-nowrap flex-nowrap touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {['overview', 'analytics', 'products', 'services', 'coupons', 'followers', 'advertising'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${
-                  activeTab === tab
-                    ? 'border-royal-blue text-royal-blue'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab === 'advertising' ? 'Advertising' : tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-              </button>
-            ))}
+             {['overview', 'analytics', 'products', 'services', 'coupons', 'followers', 'advertising'].map((tab) => (
+               <button
+                 key={tab}
+                 onClick={() => {
+                   if (tab === 'advertising') {
+                     router.push('/dashboard/vendor/advertising')
+                   } else {
+                     setActiveTab(tab)
+                   }
+                 }}
+                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex-shrink-0 ${
+                   activeTab === tab
+                     ? 'border-royal-blue text-royal-blue'
+                     : 'border-transparent text-gray-500 hover:text-gray-700'
+                 }`}
+               >
+                 {tab === 'advertising' ? 'Advertising' : tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+               </button>
+             ))}
           </div>
         </div>
 
