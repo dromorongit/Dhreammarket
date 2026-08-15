@@ -1924,7 +1924,7 @@ export function ElectronicsShowcaseSection() {
 
   export function FeaturedCollectionsSection() {
   return (
-    <section className='relative py-10 lg:py-14 bg-white'>
+    <section className='relative py-6 lg:py-8 bg-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
          <div className='relative'>
           <div id='featured-collections-scroll' className='flex gap-1 sm:gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
