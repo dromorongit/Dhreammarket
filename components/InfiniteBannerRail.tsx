@@ -149,7 +149,7 @@ export default function InfiniteBannerRail() {
           style={{ scrollBehavior: 'smooth' }}
         >
           {BANNERS.map((banner, i) => (
-            <div key={banner.id} className='flex-shrink-0 w-full snap-center relative aspect-[4/3] bg-white'>
+            <div key={banner.id} className='flex-shrink-0 w-full snap-center relative aspect-[2/1]'>
               <Link href={banner.href} className="block w-full h-full" aria-label={banner.alt}>
                 <Image src={banner.src} alt={banner.alt} fill priority={i === 0} className='object-contain' />
               </Link>
