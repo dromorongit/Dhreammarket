@@ -180,7 +180,7 @@ function SectionHeader({
   countdown?: React.ReactNode;
 }) {
   return (
-    <div className='mb-6'>
+    <div className='mb-6 bg-premium-gold'>
       {badge && (
         <Badge variant={dark ? 'premium' : 'danger'} className='mb-3'>
           {badge}
@@ -188,14 +188,14 @@ function SectionHeader({
       )}
       <div className='flex items-center gap-3 flex-wrap'>
         <h2
-          className={`text-2xl sm:text-3xl lg:text-4xl font-bold ${dark ? 'text-white' : 'text-deep-navy'}`}
+          className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy`}
         >
           {title}
         </h2>
         {countdown}
       </div>
       {subtitle && (
-        <p className={`mt-2 ${dark ? 'text-slate-300' : 'text-slate-600'}`}>
+        <p className={`mt-2 text-deep-navy`}>
           {subtitle}
         </p>
       )}
