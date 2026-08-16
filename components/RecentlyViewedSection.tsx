@@ -58,11 +58,13 @@ export default function RecentlyViewedSection() {
   return (
     <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
-            Recently Viewed
-          </h2>
-          <p className="text-slate-600 mt-2">Pick up where you left off</p>
+        <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">
+              Recently Viewed
+            </h2>
+            <p className="mt-1 text-[11px] text-deep-navy">Pick up where you left off</p>
+          </div>
         </div>
         <ScrollableRow>
           {products.map((product) => {

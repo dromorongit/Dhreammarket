@@ -1484,12 +1484,14 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
     return (
       <section className='relative py-10 lg:py-14 bg-fuchsia-50/[0.05]'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='mb-6'>
-            <div className='flex items-center gap-3 mb-4'>
-              <SectionPill label='FEATURED BRANDS' icon={<TbSparkles />} gradientFrom='from-fuchsia-500' gradientVia='via-pink-500' gradientTo='to-pink-500' />
+          <div className='flex items-center gap-3 mb-4'>
+            <SectionPill label='FEATURED BRANDS' icon={<TbSparkles />} gradientFrom='from-fuchsia-500' gradientVia='via-pink-500' gradientTo='to-pink-500' />
+          </div>
+          <div className='bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8'>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>Featured Brands</h2>
+              <p className='mt-1 text-[11px] text-deep-navy'>Browse products from your favourite brands</p>
             </div>
-            <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>Featured Brands</h2>
-            <p className='text-gray-500 mt-2'>Browse products from your favourite brands</p>
           </div>
           <EmptyState icon={<svg className='w-12 h-12 text-slate-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' /></svg>} title='No brands yet' description='Check back soon for featured brands.' />
         </div>
@@ -1500,12 +1502,14 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
   return (
     <section className='relative py-10 lg:py-14 bg-fuchsia-50/[0.05]'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <SectionPill label="FEATURED BRANDS" icon={<TbSparkles />} gradientFrom="from-fuchsia-500" gradientVia="via-pink-500" gradientTo="to-pink-500" />
+        <div className="flex items-center gap-3 mb-4">
+          <SectionPill label="FEATURED BRANDS" icon={<TbSparkles />} gradientFrom="from-fuchsia-500" gradientVia="via-pink-500" gradientTo="to-pink-500" />
+        </div>
+        <div className='bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8'>
+          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy">Featured Brands</h2>
+            <p className="text-deep-navy mt-1 text-[11px]">Shop by your favourite brands</p>
           </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-deep-navy mb-2">Featured Brands</h2>
-          <p className="text-gray-500 mb-6">Shop by your favourite brands</p>
         </div>
 
         <div className='relative'>
@@ -1590,17 +1594,19 @@ const QUICK_LINKS: Array<{ name: string; href: string; image: string }> = [
 
 export function QuickLinksSection() {
    return (
-      <section className='relative py-10 lg:py-14 bg-gradient-to-b from-slate-50/50 to-white'>
-       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-         <div className='mb-6'>
-           <div className='flex items-center gap-3 mb-4'>
-             <SectionPill label='EXPLORE' icon={<TbCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
-           </div>
-           <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
-             Quick Links
-           </h2>
-           <p className='text-slate-600 mt-2'>Fast access to popular categories</p>
-         </div>
+       <section className='relative py-10 lg:py-14 bg-gradient-to-b from-slate-50/50 to-white'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='flex items-center gap-3 mb-4'>
+            <SectionPill label='EXPLORE' icon={<TbCompass />} gradientFrom='from-indigo-500' gradientVia='via-violet-500' gradientTo='to-violet-500' />
+          </div>
+          <div className='bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8'>
+            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+              <h2 className='text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy'>
+                Quick Links
+              </h2>
+              <p className='mt-1 text-[11px] text-deep-navy'>Fast access to popular categories</p>
+            </div>
+          </div>
           <div className='grid grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-5'>
             {QUICK_LINKS.map((link) => {
               const isInternalScroll = link.href.startsWith('/#');
