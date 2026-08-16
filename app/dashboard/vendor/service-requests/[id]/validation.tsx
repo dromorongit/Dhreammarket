@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { validateSession, getUserStatus } from '@/lib/auth-db'
 
-export default async function VendorDashboardValidation({
+export default async function VendorServiceRequestDetailValidation({
   children,
 }: {
   children: React.ReactNode
@@ -10,14 +10,14 @@ export default async function VendorDashboardValidation({
   const token = cookieStore.get('token')?.value
 
   if (!token) {
-    redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor'))
+    redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/service-requests'))
   }
 
   const { verifyTokenEdge } = await import('@/lib/auth-edge')
   const payload = await verifyTokenEdge(token)
 
   if (!payload) {
-    redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor'))
+    redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/service-requests'))
   }
 
   if (payload.role === 'VENDOR') {
@@ -25,7 +25,7 @@ export default async function VendorDashboardValidation({
     const result = await validateSession(payload.sessionId)
 
     if (!result.valid) {
-      redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor'))
+      redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/service-requests'))
     }
 
     const userStatus = await getUserStatus(payload.userId, payload.role)
