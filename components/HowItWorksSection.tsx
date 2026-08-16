@@ -20,7 +20,7 @@ const STEPS = [
 export default function HowItWorksSection() {
   return (
     <section className="w-full">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-1 md:mb-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 mb-1 md:mb-2">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-deep-navy via-royal-blue to-blue-800 px-4 py-3 md:px-6 md:py-4 shadow-lg shadow-blue-900/20 border border-white/10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.06),transparent_55%)]"></div>
 
