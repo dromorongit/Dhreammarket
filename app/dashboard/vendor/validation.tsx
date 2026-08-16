@@ -3,8 +3,10 @@ import { validateSession, getUserStatus } from '@/lib/auth-db'
 
 export default async function VendorDashboardValidation({
   children,
+  skipOnboardingCheck = false,
 }: {
   children: React.ReactNode
+  skipOnboardingCheck?: boolean
 }) {
   const cookieStore = (await import('next/headers')).cookies()
   const token = cookieStore.get('token')?.value
@@ -34,7 +36,7 @@ export default async function VendorDashboardValidation({
       redirect('/verify-email')
     }
 
-    if (!userStatus.isOnboarded) {
+    if (!skipOnboardingCheck && !userStatus.isOnboarded) {
       redirect('/dashboard/vendor/store')
     }
   }
