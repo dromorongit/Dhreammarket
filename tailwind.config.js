@@ -12,6 +12,7 @@ module.exports = {
         'royal-blue': '#2563EB',
         'gold': '#D4AF37',
         'premium-gold': '#C89B2B',
+        'cream': '#FFFDD0',
         'soft-background': '#F5F7FA',
         'dark-text': '#0F172A',
         'muted-text': '#64748B',

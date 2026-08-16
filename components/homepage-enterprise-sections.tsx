@@ -186,20 +186,22 @@ function SectionHeader({
           {badge}
         </Badge>
       )}
-      <div className='bg-premium-gold'>
-        <div className='flex items-center gap-3 flex-wrap'>
-          <h2
-            className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy`}
-          >
-            {title}
-          </h2>
-          {countdown}
+      <div className='bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='flex items-center gap-3 flex-wrap'>
+            <h2
+              className={`text-2xl sm:text-3xl lg:text-4xl font-bold text-deep-navy`}
+            >
+              {title}
+            </h2>
+            {countdown}
+          </div>
+          {subtitle && (
+            <p className={`mt-1 text-[11px] text-deep-navy`}>
+              {subtitle}
+            </p>
+          )}
         </div>
-        {subtitle && (
-          <p className={`mt-2 text-deep-navy`}>
-            {subtitle}
-          </p>
-        )}
       </div>
     </div>
   );

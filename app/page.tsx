@@ -388,13 +388,15 @@ export default function Home() {
             <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Featured Products</Badge>
             </div>
-            <div className="text-center mb-8 bg-premium-gold">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-                Explore Marketplace
-              </h2>
-              <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-                Discover premium products from our trusted vendors
-              </p>
+            <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                  Explore Marketplace
+                </h2>
+                <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                  Discover premium products from our trusted vendors
+                </p>
+              </div>
             </div>
             <FeaturedProductsSection excludeIds={excludeFromFeaturedIds} />
           </div>
@@ -438,13 +440,15 @@ export default function Home() {
             <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
             </div>
-            <div className="text-center mb-12 bg-premium-gold">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-                Shop by Vendor Type
-              </h2>
-              <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-                Discover trusted vendors across different categories
-              </p>
+            <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                  Shop by Vendor Type
+                </h2>
+                <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                  Discover trusted vendors across different categories
+                </p>
+              </div>
             </div>
             <VendorCategorySection />
           </div>
@@ -458,13 +462,15 @@ export default function Home() {
             <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Top Rated</Badge>
             </div>
-            <div className="text-center mb-8 bg-premium-gold">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-                Top Vendors
-              </h2>
-              <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-                Our highest-rated vendors with exceptional customer satisfaction
-              </p>
+            <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                  Top Vendors
+                </h2>
+                <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                  Our highest-rated vendors with exceptional customer satisfaction
+                </p>
+              </div>
             </div>
             <TopVendorsSection />
           </div>
@@ -480,13 +486,15 @@ export default function Home() {
             <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Just Joined</Badge>
             </div>
-            <div className="text-center mb-8 bg-premium-gold">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-                New Vendors
-              </h2>
-              <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-                Fresh faces on Dhream Market - check out the latest additions
-              </p>
+            <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                  New Vendors
+                </h2>
+                <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                  Fresh faces on Dhream Market - check out the latest additions
+                </p>
+              </div>
             </div>
             <NewVendorsSection />
           </div>
@@ -500,13 +508,15 @@ export default function Home() {
             <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Browse By</Badge>
             </div>
-            <div className="text-center mb-8 bg-premium-gold">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-                Popular Categories
-              </h2>
-              <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-                Explore products across our most popular categories
-              </p>
+            <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                  Popular Categories
+                </h2>
+                <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                  Explore products across our most popular categories
+                </p>
+              </div>
             </div>
             <PopularCategoriesSection />
           </div>
@@ -611,13 +621,15 @@ export default function Home() {
           <div className="text-center mb-4 animate-fade-in-up">
             <Badge variant="premium" className="mb-4">Our Promise</Badge>
           </div>
-          <div className="text-center mb-8 lg:mb-12 animate-fade-in-up bg-premium-gold">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-              Why Choose Dhream Market?
-            </h2>
-            <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-              Built for the future of digital commerce with trust, efficiency, and scalability at its core.
-            </p>
+          <div className="animate-fade-in-up bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                Why Choose Dhream Market?
+              </h2>
+              <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                Built for the future of digital commerce with trust, efficiency, and scalability at its core.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1557,14 +1569,16 @@ function FeaturedServicesSection() {
          <div className="text-center mb-4">
            <Badge variant="premium" className="mb-4">Featured Services</Badge>
          </div>
-         <div className="text-center mb-8 bg-premium-gold">
-           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-             Explore Services
-           </h2>
-           <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-             Discover premium services from our trusted vendors
-           </p>
-         </div>
+            <div className="bg-cream py-3 -mx-4 sm:-mx-6 lg:-mx-8">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-4">
+                  Explore Marketplace
+                </h2>
+                <p className="text-[11px] text-deep-navy max-w-2xl mx-auto">
+                  Discover premium products from our trusted vendors
+                </p>
+              </div>
+            </div>
         {loading ? (
           <div className="space-y-4">
             {renderSkeletonRail()}
