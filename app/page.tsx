@@ -385,8 +385,10 @@ export default function Home() {
       {!loadingManaged && (
         <section className="relative py-10 lg:py-14 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 bg-premium-gold">
+            <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Featured Products</Badge>
+            </div>
+            <div className="text-center mb-8 bg-premium-gold">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Explore Marketplace
               </h2>
@@ -433,8 +435,10 @@ export default function Home() {
       {!loadingManaged && (
         <section className="relative py-10 lg:py-14 bg-white">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 bg-premium-gold">
+            <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Browse Vendors</Badge>
+            </div>
+            <div className="text-center mb-12 bg-premium-gold">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Shop by Vendor Type
               </h2>
@@ -451,8 +455,10 @@ export default function Home() {
       {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-10 lg:py-14 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 bg-premium-gold">
+            <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Top Rated</Badge>
+            </div>
+            <div className="text-center mb-8 bg-premium-gold">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Top Vendors
               </h2>
@@ -471,8 +477,10 @@ export default function Home() {
       {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-10 lg:py-14 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 bg-premium-gold">
+            <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Just Joined</Badge>
+            </div>
+            <div className="text-center mb-8 bg-premium-gold">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 New Vendors
               </h2>
@@ -489,8 +497,10 @@ export default function Home() {
       {!loadingManaged && extraSections.length === 0 && (
         <section className="relative py-10 lg:py-14 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 bg-premium-gold">
+            <div className="text-center mb-4">
               <Badge variant="premium" className="mb-4">Browse By</Badge>
+            </div>
+            <div className="text-center mb-8 bg-premium-gold">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
                 Popular Categories
               </h2>
@@ -598,8 +608,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjZjVmN2ZhIiBvcGFjaXR5PSIwLjMiLz4KPHBhdGggZD0iTTQwIDJIMHY0MEg0MFoiIGZpbGw9IiNmMGY3ZmEiIG9wYWNpdHk9IjAuMSIvPgo8L3N2Zz4K')] opacity-50"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 lg:mb-12 animate-fade-in-up bg-premium-gold">
+          <div className="text-center mb-4 animate-fade-in-up">
             <Badge variant="premium" className="mb-4">Our Promise</Badge>
+          </div>
+          <div className="text-center mb-8 lg:mb-12 animate-fade-in-up bg-premium-gold">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
               Why Choose Dhream Market?
             </h2>
@@ -1542,15 +1554,17 @@ function FeaturedServicesSection() {
   return (
     <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8 bg-premium-gold">
-          <Badge variant="premium" className="mb-4">Featured Services</Badge>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
-            Explore Services
-          </h2>
-          <p className="text-lg text-deep-navy max-w-2xl mx-auto">
-            Discover premium services from our trusted vendors
-          </p>
-        </div>
+         <div className="text-center mb-4">
+           <Badge variant="premium" className="mb-4">Featured Services</Badge>
+         </div>
+         <div className="text-center mb-8 bg-premium-gold">
+           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-deep-navy mb-6">
+             Explore Services
+           </h2>
+           <p className="text-lg text-deep-navy max-w-2xl mx-auto">
+             Discover premium services from our trusted vendors
+           </p>
+         </div>
         {loading ? (
           <div className="space-y-4">
             {renderSkeletonRail()}
