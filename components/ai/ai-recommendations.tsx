@@ -133,7 +133,7 @@ function AIRecommendationsContent({ title, subtitle, recommendationType, entityI
   if (loading) {
     if (layout === 'horizontal') {
       return (
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide">
           {[...Array(limit ?? 4)].map((_, i) => (
             <div key={i} className="flex-shrink-0 w-64">
               <SkeletonCard />

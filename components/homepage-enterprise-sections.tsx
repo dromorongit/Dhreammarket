@@ -103,7 +103,7 @@ function ProductRail({
     <div>
       {topRowProducts.length > 0 && (
         <div className="relative">
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div className="flex gap-4">
               {topRowProducts.map((product) => renderCard(product))}
             </div>
@@ -134,7 +134,7 @@ function ProductRail({
       )}
       {bottomRowProducts.length > 0 && (
         <div className="relative">
-          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+          <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div className="flex gap-4">
               {bottomRowProducts.map((product) => renderCard(product))}
             </div>
@@ -1154,7 +1154,7 @@ export function TopClearanceSalesSection({
         <div className='lg:hidden'>
           {topRowProducts.length > 0 && (
             <div className='relative'>
-              <div id='home-theatre-top-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+              <div id='home-theatre-top-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4'>
                 <div className='flex gap-4'>
                   {topRowProducts.map((product) => (
                     <Link
@@ -1218,7 +1218,7 @@ export function TopClearanceSalesSection({
           )}
           {bottomRowProducts.length > 0 && (
             <div className='relative'>
-              <div id='home-theatre-bottom-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>
+              <div id='home-theatre-bottom-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4'>
                 <div className='flex gap-4'>
                   {bottomRowProducts.map((product) => (
                     <Link
@@ -1446,7 +1446,7 @@ function BrandCard({ brand }: { brand: EnterpriseBrand }) {
         </div>
 
         <div className='relative'>
-          <div id='brand-scroll-container' className='overflow-x-auto overflow-y-hidden scrollbar-hide pb-4'>
+          <div id='brand-scroll-container' className='overflow-x-auto overflow-y-hidden scrollbar-hide'>
             <div className='flex gap-4'>
               {displayBrands.map((brand) => {
                 const normalized = normalizeBrand(brand);
@@ -1870,7 +1870,7 @@ export function ElectronicsShowcaseSection() {
     <section className='relative py-6 lg:py-8 bg-white'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
          <div className='relative'>
-          <div id='featured-collections-scroll' className='flex gap-1 sm:gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
+          <div id='featured-collections-scroll' className='flex gap-1 sm:gap-2 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
               {FEATURED_COLLECTIONS.map((item) => (
                 <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[280px] sm:w-[360px] lg:w-[400px] block'>
                   <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>

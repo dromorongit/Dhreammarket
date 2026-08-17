@@ -51,7 +51,7 @@ export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo
                 ))}
               </div>
             </div>
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
+            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
               <div className="flex gap-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
@@ -1328,7 +1328,23 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-4">
           <SectionPill
-            label="PREMIUM"
+            label={
+              section.slug === 'mobile-phones'
+                ? 'SMARTPHONES'
+                : section.slug === 'fashion'
+                  ? 'WORLD FASHION'
+                : section.slug === 'fashion-steez'
+                  ? 'FASHION STYLE'
+                : section.slug === 'mens-sneakers'
+                  ? 'SNEAKERS'
+                : section.slug === 'beauty-perfumes'
+                  ? 'BEAUTY & SKINCARE'
+                : section.slug === 'kids-playnest'
+                  ? 'FOR KIDS'
+                : section.slug === 'shop-more-spend-less'
+                  ? 'PICKS FOR YOU'
+                  : 'PREMIUM'
+            }
             gradientFrom="from-amber-500"
             gradientVia="via-yellow-500"
             gradientTo="to-amber-400"
