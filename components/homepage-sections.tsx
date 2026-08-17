@@ -22,6 +22,7 @@ import { TrendingNowSection } from './TrendingNowSection'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WishlistButton from '@/components/WishlistButton'
 import ScrollableRow from './ScrollableRow'
+import { SponsoredCard } from './homepage-enterprise-sections'
 
 export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
   return (
@@ -1354,9 +1355,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
             <ScrollableRow>
               <div className="flex gap-4">
                 {topRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                  </div>
+                  <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
                 ))}
               </div>
             </ScrollableRow>
@@ -1365,9 +1364,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
             <ScrollableRow>
               <div className="flex gap-4">
                 {bottomRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                  </div>
+                  <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
                 ))}
               </div>
             </ScrollableRow>

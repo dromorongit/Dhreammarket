@@ -18,7 +18,7 @@ import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageDa
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import { TrendingNowSection } from './TrendingNowSection';
-import { SectionPill, CompactProductCard } from './homepage-sections';
+import { SectionPill } from './homepage-sections';
 import ScrollableRow from './ScrollableRow';
 import CountdownTimer from '@/components/CountdownTimer';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
@@ -249,7 +249,7 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
   );
 }
 
-function SponsoredCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
+export function SponsoredCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
 
     return (
@@ -564,30 +564,26 @@ export function FlashSalesSection({
           subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
           countdown={soonestDealEndsAt ? <CountdownTimer endDate={soonestDealEndsAt} /> : undefined}
         />
-        <div className='space-y-4'>
-          {topRowProducts.length > 0 && (
-            <ScrollableRow>
-              <div className='flex gap-4'>
-                {topRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                  </div>
-                ))}
-              </div>
-            </ScrollableRow>
-          )}
-          {bottomRowProducts.length > 0 && (
-            <ScrollableRow>
-              <div className='flex gap-4'>
-                {bottomRowProducts.map((product) => (
-                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                  </div>
-                ))}
-              </div>
-            </ScrollableRow>
-          )}
-        </div>
+         <div className='space-y-4'>
+           {topRowProducts.length > 0 && (
+             <ScrollableRow>
+               <div className='flex gap-4'>
+                 {topRowProducts.map((product) => (
+                   <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                 ))}
+               </div>
+             </ScrollableRow>
+           )}
+           {bottomRowProducts.length > 0 && (
+             <ScrollableRow>
+               <div className='flex gap-4'>
+                 {bottomRowProducts.map((product) => (
+                   <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                 ))}
+               </div>
+             </ScrollableRow>
+           )}
+         </div>
         <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
             <Button
