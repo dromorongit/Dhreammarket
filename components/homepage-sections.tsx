@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback, type ReactNode, memo, Fragment } from 'react'
+import { useState, useEffect, useCallback, type ReactNode, memo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -22,7 +22,6 @@ import { TrendingNowSection } from './TrendingNowSection'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WishlistButton from '@/components/WishlistButton'
 import ScrollableRow from './ScrollableRow'
-import TrendingProductCard from './TrendingProductCard'
 
 export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
   return (
@@ -71,7 +70,7 @@ interface HomepageSectionProps {
   loading?: boolean
 }
 
- const CompactProductCard = memo(function CompactProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
+ export const CompactProductCard = memo(function CompactProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
   const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
   const badgeData = calculateProductBadges({
     price: product.price,
@@ -1323,24 +1322,6 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
 
   if (displayProducts.length === 0) return null
 
-  const isFashionCategory = section.slug === 'fashion' || section.slug === 'mens-sneakers'
-
-  const renderCard = (product: EnterpriseProduct) => {
-    if (isFashionCategory) {
-      return (
-        <TrendingProductCard
-          product={product}
-          initialIsWishlisted={wishlistedProductIds.has(product.id)}
-        />
-      )
-    }
-    return (
-      <div className="rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/50 via-slate-300/20 to-slate-200/50 transition-all duration-300 h-full group border border-gold/20 hover:border-gold/50">
-        <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-      </div>
-    )
-  }
-
   return (
     <section className="relative py-10 lg:py-14 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1371,20 +1352,24 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
         <div className="space-y-4">
           {topRowProducts.length > 0 && (
             <ScrollableRow>
-              {topRowProducts.map((product) => (
-                <Fragment key={product.id}>
-                  {renderCard(product)}
-                </Fragment>
-              ))}
+              <div className="flex gap-4">
+                {topRowProducts.map((product) => (
+                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                  </div>
+                ))}
+              </div>
             </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
             <ScrollableRow>
-              {bottomRowProducts.map((product) => (
-                <Fragment key={product.id}>
-                  {renderCard(product)}
-                </Fragment>
-              ))}
+              <div className="flex gap-4">
+                {bottomRowProducts.map((product) => (
+                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                  </div>
+                ))}
+              </div>
             </ScrollableRow>
           )}
         </div>

@@ -18,7 +18,8 @@ import { type EnterpriseProduct, type EnterpriseBrand, type EnterpriseHomepageDa
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges';
 import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import { TrendingNowSection } from './TrendingNowSection';
-import { SectionPill } from './homepage-sections';
+import { SectionPill, CompactProductCard } from './homepage-sections';
+import ScrollableRow from './ScrollableRow';
 import CountdownTimer from '@/components/CountdownTimer';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -247,89 +248,6 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
     </section>
   );
 }
-
-function FlashSaleCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
-   const discountedPrice = getDiscountedPrice(product)
-   const salePrice = discountedPrice ?? product.price
-   const discount = getDiscountPercent(product.price, discountedPrice ?? undefined)
-
-    return (
-      <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
-        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='block'>
-          <Card
-            variant='elevated'
-             className='group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full border border-gold/20 hover:border-gold/50'
-          >
-            <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
-              <WishlistButton
-                productId={product.id}
-                initialIsWishlisted={initialIsWishlisted}
-                size="sm"
-                className="absolute top-2 right-2 z-10"
-              />
-               <ProductImage
-                 product={product}
-                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-               />
-                <div className='absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300'>
-                <Link href={`/marketplace/product/${product.slug ?? product.id}`} className='inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors'>
-                  Quick View
-                </Link>
-              </div>
-              <ProductBadges product={calculateProductBadges({
-                price: product.price,
-                flashSalePrice: product.flashSalePrice,
-                salesPrice: product.salesPrice,
-                dealsPrice: product.dealsPrice,
-                stock: product.stock,
-                availabilityType: product.availabilityType,
-                expectedArrivalDate: product.expectedArrivalDate,
-                expectedRestockDate: product.expectedRestockDate,
-              })} />
-            </div>
-            <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
-              <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
-                {product.name}
-              </h3>
-              <div className='flex items-center gap-1.5 flex-wrap'>
-                <span className='text-[11px] font-bold text-rose-600'>
-                  {formatPrice(salePrice)}
-                </span>
-                {discount > 0 && (
-                  <span className='text-[10px] text-slate-400 line-through'>
-                    {formatPrice(product.price)}
-                  </span>
-                )}
-              </div>
-              {product.store && (
-                <div className='flex items-center gap-1 min-w-0'>
-                  <p className='text-[10px] text-slate-500 truncate'>
-                    {product.store.name}
-                  </p>
-                {(() => {
-                   const badgeInfo = getVendorBadgeInfo((product.store as any).badgeTier)
-                   if (badgeInfo) {
-                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
-                     return (
-                       <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 ${iconColor}`} />
-                     )
-                   }
-                   if (product.store.isVerified) {
-                     return (
-                       <MdVerified className='w-3.5 h-3.5 text-sky-500 flex-shrink-0' />
-                     )
-                   }
-                   return null
-                 })()}
-                </div>
-              )}
-              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
-            </div>
-          </Card>
-        </Link>
-      </div>
-    )
-  }
 
 function SponsoredCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
@@ -632,6 +550,11 @@ export function FlashSalesSection({
     BRAND_GRID: 'Explore products from your favorite brands',
   };
 
+  const displayProducts = products.slice(0, 20)
+  const half = Math.ceil(displayProducts.length / 2)
+  const topRowProducts = displayProducts.slice(0, half)
+  const bottomRowProducts = displayProducts.slice(half)
+
   return (
     <section className='relative py-10 lg:py-14 bg-gradient-to-b from-rose-50 to-white overflow-hidden'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -641,12 +564,30 @@ export function FlashSalesSection({
           subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
           countdown={soonestDealEndsAt ? <CountdownTimer endDate={soonestDealEndsAt} /> : undefined}
         />
-        <ProductRail
-          products={products}
-          renderCard={(product) => (
-            <FlashSaleCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+        <div className='space-y-4'>
+          {topRowProducts.length > 0 && (
+            <ScrollableRow>
+              <div className='flex gap-4'>
+                {topRowProducts.map((product) => (
+                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                  </div>
+                ))}
+              </div>
+            </ScrollableRow>
           )}
-        />
+          {bottomRowProducts.length > 0 && (
+            <ScrollableRow>
+              <div className='flex gap-4'>
+                {bottomRowProducts.map((product) => (
+                  <div key={product.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
+                    <CompactProductCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                  </div>
+                ))}
+              </div>
+            </ScrollableRow>
+          )}
+        </div>
         <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
             <Button
