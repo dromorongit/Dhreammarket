@@ -96,7 +96,7 @@ export function TrendingNowSection({
             </div>
           </div>
 
-        <div className='space-y-4'>
+        <div>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
               {topRowProducts.map((product) => (
@@ -145,7 +145,7 @@ function TrendingNowSectionSkeleton() {
           <Skeleton className='h-6 w-20 rounded-full mb-3' />
           <Skeleton className='h-8 w-32 rounded' />
         </div>
-        <div className='space-y-4'>
+        <div>
           <div className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4'>
             <div className='flex gap-4'>
               {[...Array(5)].map((_, i) => (

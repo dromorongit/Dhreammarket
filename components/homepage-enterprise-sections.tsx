@@ -100,7 +100,7 @@ function ProductRail({
   const bottomRowProducts = products.slice(half);
 
   return (
-    <div className="space-y-4">
+    <div>
       {topRowProducts.length > 0 && (
         <div className="relative">
           <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pb-4">
@@ -564,7 +564,7 @@ export function FlashSalesSection({
           subtitle={section.subtitle ?? defaultSubtitles[section.type] ?? ''}
           countdown={soonestDealEndsAt ? <CountdownTimer endDate={soonestDealEndsAt} /> : undefined}
         />
-         <div className='space-y-4'>
+         <div>
            {topRowProducts.length > 0 && (
              <ScrollableRow>
                <div className='flex gap-4'>
@@ -1155,7 +1155,7 @@ export function TopClearanceSalesSection({
         </div>
 
         {/* Mobile & tablet horizontal scroll - Two independent rows */}
-        <div className='lg:hidden space-y-4'>
+        <div className='lg:hidden'>
           {topRowProducts.length > 0 && (
             <div className='relative'>
               <div id='home-theatre-top-scroll' className='overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 pb-4'>

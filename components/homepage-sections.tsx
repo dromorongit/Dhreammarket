@@ -233,7 +233,7 @@ return (
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
               {topRowProducts.map((product) => (
@@ -744,11 +744,11 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
                 <div className="flex gap-4">
-                 {topRowProducts.map((product) => {
+                  {topRowProducts.map((product) => {
                    const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice ?? product.price
                    const hasDiscount = (product.dealsPrice ?? product.salesPrice ?? product.flashSalePrice) != null && product.price > effectivePrice
                     const badgeData = calculateProductBadges({
@@ -1019,7 +1019,7 @@ export function TrendingServicesSection({ section }: HomepageSectionProps) {
               {section.subtitle && <p className="text-[11px] text-deep-navy mt-1">{section.subtitle}</p>}
             </div>
           </div>
-        <div className="space-y-4">
+        <div>
           {topRowServices.length > 0 && (
             <ScrollableRow>
               {topRowServices.map((service: any) => (
@@ -1083,7 +1083,7 @@ export function NewServicesSection({ section }: HomepageSectionProps) {
               {section.subtitle && <p className="text-[11px] text-deep-navy mt-1">{section.subtitle}</p>}
             </div>
           </div>
-        <div className="space-y-4">
+        <div>
           {topRowServices.length > 0 && (
             <ScrollableRow>
               {topRowServices.map((service: any) => (
@@ -1253,7 +1253,7 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
               {section.subtitle && <p className="text-[11px] text-deep-navy mt-1">{section.subtitle}</p>}
             </div>
           </div>
-        <div className="space-y-4">
+        <div>
           {topRowItems.length > 0 && (
             <ScrollableRow>
               <div className="flex gap-4">
@@ -1350,7 +1350,7 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
               <div className="flex gap-4">
