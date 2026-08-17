@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { hashPassword, generateOTP, hashOTP, generateToken } from '@/lib/auth'
-import { generateSlug } from '@/lib/slug'
 import { normalizeGhanaPhoneNumber } from '@/lib/phone'
 import { rateLimit } from '@/lib/rate-limit'
 import { sendEmailVerificationEmail } from '@/lib/email'
@@ -137,24 +136,7 @@ export async function POST(request: NextRequest) {
           },
         })
 
-         let storeData: { id: string; slug: string } | undefined
         if (role === 'VENDOR') {
-          storeData = await tx.store.create({
-            data: {
-              userId: createdUser.id,
-              name: name?.trim() || 'My Store',
-              slug: await generateSlug({
-                baseText: name?.trim() || 'My Store',
-                target: 'Store',
-                prismaClient: tx,
-              }),
-              isVerified: false,
-              canSellProducts: true,
-              canOfferServices: true,
-            },
-            select: { id: true, slug: true },
-          })
-
           try {
             await ensureFreeSubscription(createdUser.id, tx)
           } catch (subscriptionErr) {
@@ -166,7 +148,6 @@ export async function POST(request: NextRequest) {
           id: createdUser.id,
           email: createdUser.email,
           role: createdUser.role,
-          store: storeData,
         }
       })
 

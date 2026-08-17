@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { generateToken } from '@/lib/auth'
-import { generateSlug } from '@/lib/slug'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 import { rateLimit } from '@/lib/rate-limit'
@@ -93,24 +92,7 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        let storeData: { id: string; slug: string } | undefined
         if (pendingReg.role === 'VENDOR') {
-          storeData = await tx.store.create({
-            data: {
-              userId: createdUser.id,
-              name: pendingReg.name || 'My Store',
-              slug: await generateSlug({
-                baseText: pendingReg.name || 'My Store',
-                target: 'Store',
-                prismaClient: tx,
-              }),
-              isVerified: false,
-              canSellProducts: true,
-              canOfferServices: true,
-            },
-            select: { id: true, slug: true },
-          })
-
           try {
             await ensureFreeSubscription(createdUser.id, tx)
           } catch (subscriptionErr) {
@@ -122,7 +104,6 @@ export async function POST(request: NextRequest) {
           id: createdUser.id,
           email: createdUser.email,
           role: createdUser.role,
-          store: storeData,
         }
       })
 

@@ -24,6 +24,22 @@ export const MANAGED_SECTION_SLUGS = [
   'televisions',
   'appliances',
   'quick-links',
+  'deals-you-dont-want-to-miss',
+  'fridges-freezers',
+  'cooking-appliances',
+  'washers-dryers',
+  'small-appliances',
+  'mobile-phones',
+  'smart-accessories',
+  'fashion-steez',
+  'beauty-perfumes',
+  'falaa-deals',
+  'automotives-motorcycles',
+  'storage-accessories-section',
+  'sports-fitness',
+  'kids-playnest',
+  'black-friday-deals',
+  'shop-more-spend-less',
 ] as const
 
 export type ManagedSectionSlug = (typeof MANAGED_SECTION_SLUGS)[number]

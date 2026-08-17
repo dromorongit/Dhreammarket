@@ -6,6 +6,40 @@ import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 import { generateSlug } from '@/lib/slug'
 
+const GENERIC_STORE_NAMES = new Set([
+  'My Store',
+  'My Shop',
+  'Untitled Store',
+  'Untitled Shop',
+  'Store',
+  'Shop'
+])
+
+function isGenericStoreName(name: string | null | undefined): boolean {
+  if (!name) return true
+  return GENERIC_STORE_NAMES.has(name.trim())
+}
+
+function evaluateSetupComplete(data: {
+  name: string
+  description: string | null | undefined
+  categoryId: string | null | undefined
+  location: string | null | undefined
+  mainPhoneNumber: string | null | undefined
+}): boolean {
+  return !!data.name
+    && data.name.trim() !== ''
+    && !isGenericStoreName(data.name)
+    && !!data.description
+    && data.description.trim() !== ''
+    && !!data.categoryId
+    && data.categoryId.trim() !== ''
+    && !!data.location
+    && data.location.trim() !== ''
+    && !!data.mainPhoneNumber
+    && data.mainPhoneNumber.trim() !== ''
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
@@ -52,10 +86,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, location, acceptsPreOrders, acceptsBackOrders } = await request.json()
+    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, location, acceptsPreOrders, acceptsBackOrders } = await request.json()
     
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
+    }
+
+    if (isGenericStoreName(name)) {
+      return NextResponse.json({ error: 'Store name cannot be a generic default. Please choose a unique name for your store.' }, { status: 400 })
+    }
+    
+    if (!description || !description.trim()) {
+      return NextResponse.json({ error: 'Store description is required' }, { status: 400 })
     }
     
     // Validate main phone number is required
@@ -83,8 +125,8 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
     if (!vendorCategory || !vendorCategory.isActive) {
       return NextResponse.json({ error: 'Invalid or inactive vendor category' }, { status: 400 })
     }
-   
-// Check if store already exists
+  
+    // Check if store already exists
      const existingStore = await getPrisma().store.findUnique({
        where: { userId: payload.userId },
      })
@@ -92,20 +134,28 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
      if (existingStore) {
        return NextResponse.json({ error: 'Store already exists' }, { status: 400 })
      }
+     
+       const slug = await generateSlug({ baseText: name.trim(), target: 'Store' })
+     
+      // Debug: Log the data being saved
+     console.log('[Store API] Creating store with data:', {
+       userId: payload.userId,
+       name: name.trim(),
+       categoryId,
+       hasLogo: !!logo,
+       hasBanner: !!banner,
+       hasMainPhone: !!mainPhoneNumber,
+     })
     
-      const slug = await generateSlug({ baseText: name.trim(), target: 'Store' })
-    
-     // Debug: Log the data being saved
-    console.log('[Store API] Creating store with data:', {
-      userId: payload.userId,
+    const setupComplete = evaluateSetupComplete({
       name: name.trim(),
+      description: sanitizedDescription,
       categoryId,
-      hasLogo: !!logo,
-      hasBanner: !!banner,
-      hasMainPhone: !!mainPhoneNumber,
+      location: location.trim(),
+      mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
     })
-   
-const store = await getPrisma().store.create({
+
+  const store = await getPrisma().store.create({
           data: {
             userId: payload.userId,
             slug,
@@ -120,6 +170,7 @@ const store = await getPrisma().store.create({
            acceptsBackOrders: acceptsBackOrders || false,
            canSellProducts: true,
            canOfferServices: true,
+           setupComplete,
            ...(logo !== undefined && { logo }),
            ...(banner !== undefined && { banner }),
          },
@@ -127,14 +178,15 @@ const store = await getPrisma().store.create({
            vendor_categories: true,
          }
        })
-  
-    // Debug: Log the created store
-    console.log('[Store API] Store created successfully:', {
-      storeId: store.id,
-      categoryId: store.categoryId,
-    })
-  
-    return NextResponse.json({ store }, { status: 201 })
+   
+     // Debug: Log the created store
+     console.log('[Store API] Store created successfully:', {
+       storeId: store.id,
+       categoryId: store.categoryId,
+       setupComplete: store.setupComplete,
+     })
+   
+     return NextResponse.json({ store }, { status: 201 })
   } catch (error) {
     console.error('Error creating store:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -162,17 +214,25 @@ export async function PUT(request: NextRequest) {
       where: { userId: payload.userId },
     })
 
-const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, location, acceptsPreOrders, acceptsBackOrders } = await request.json()
-    
+    const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativePhoneNumber, whatsappNumber, location, acceptsPreOrders, acceptsBackOrders } = await request.json()
+     
      if (!name || !name.trim()) {
        return NextResponse.json({ error: 'Store name is required' }, { status: 400 })
      }
-    
+
+     if (isGenericStoreName(name)) {
+       return NextResponse.json({ error: 'Store name cannot be a generic default. Please choose a unique name for your store.' }, { status: 400 })
+     }
+     
+     if (!description || !description.trim()) {
+       return NextResponse.json({ error: 'Store description is required' }, { status: 400 })
+     }
+     
      // Validate main phone number is required
      if (!mainPhoneNumber || !mainPhoneNumber.trim()) {
        return NextResponse.json({ error: 'Main phone number is required' }, { status: 400 })
      }
-    
+     
      // Validate vendor category is provided and active
      // Check for both null/undefined AND empty string
      if (!categoryId || categoryId === '') {
@@ -202,7 +262,7 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
      if (name.trim() !== existingStore.name) {
        slug = await generateSlug({ baseText: name.trim(), target: 'Store', excludeId: existingStore.id })
      }
-   
+    
      // Debug: Log the data being updated
      console.log('[Store API] Updating store with data:', {
        userId: payload.userId,
@@ -212,63 +272,73 @@ const { name, description, categoryId, logo, banner, mainPhoneNumber, alternativ
        hasBanner: !!banner,
        hasMainPhone: !!mainPhoneNumber,
      })
-   
-const store = await getPrisma().store.update({
-           where: { userId: payload.userId },
-           data: {
-             slug,
-             name: name.trim(),
-             description: sanitizedDescription || null,
-             categoryId: categoryId,
-             location: location.trim(),
-             mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
-             alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
-             whatsappNumber: sanitizePhoneNumber(whatsappNumber),
-             acceptsPreOrders: acceptsPreOrders !== undefined ? acceptsPreOrders : false,
-             acceptsBackOrders: acceptsBackOrders !== undefined ? acceptsBackOrders : false,
-             ...(logo !== undefined && { logo }),
-             ...(banner !== undefined && { banner }),
-           },
-          include: {
-            vendor_categories: true,
-          }
-        })
-
-    // Create audit log for store profile update
-    if (existingStore) {
-      await createAuditLog({
-        userId: payload.userId,
-        userRole: payload.role,
-        action: 'STORE_PROFILE_UPDATED',
-        entityType: 'VENDOR',
-        entityId: existingStore.id,
-        beforeData: {
-          name: existingStore.name,
-          description: existingStore.description,
-          categoryId: existingStore.categoryId,
-          mainPhoneNumber: existingStore.mainPhoneNumber,
-          acceptsPreOrders: existingStore.acceptsPreOrders,
-          acceptsBackOrders: existingStore.acceptsBackOrders,
-        },
-        afterData: {
-          name: store.name,
-          description: store.description,
-          categoryId: store.categoryId,
-          mainPhoneNumber: store.mainPhoneNumber,
-          acceptsPreOrders: store.acceptsPreOrders,
-          acceptsBackOrders: store.acceptsBackOrders,
-        },
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-      })
-    }
-
-    // Debug: Log the updated store
-    console.log('[Store API] Store updated successfully:', {
-      storeId: store.id,
-      categoryId: store.categoryId,
+    
+    const setupComplete = evaluateSetupComplete({
+      name: name.trim(),
+      description: sanitizedDescription,
+      categoryId,
+      location: location.trim(),
+      mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
     })
 
-    return NextResponse.json({ store })
+  const store = await getPrisma().store.update({
+            where: { userId: payload.userId },
+            data: {
+              slug,
+              name: name.trim(),
+              description: sanitizedDescription || null,
+              categoryId: categoryId,
+              location: location.trim(),
+              mainPhoneNumber: sanitizePhoneNumber(mainPhoneNumber),
+              alternativePhoneNumber: sanitizePhoneNumber(alternativePhoneNumber),
+              whatsappNumber: sanitizePhoneNumber(whatsappNumber),
+              acceptsPreOrders: acceptsPreOrders !== undefined ? acceptsPreOrders : false,
+              acceptsBackOrders: acceptsBackOrders !== undefined ? acceptsBackOrders : false,
+              setupComplete,
+              ...(logo !== undefined && { logo }),
+              ...(banner !== undefined && { banner }),
+            },
+           include: {
+             vendor_categories: true,
+           }
+         })
+
+     // Create audit log for store profile update
+     if (existingStore) {
+       await createAuditLog({
+         userId: payload.userId,
+         userRole: payload.role,
+         action: 'STORE_PROFILE_UPDATED',
+         entityType: 'VENDOR',
+         entityId: existingStore.id,
+         beforeData: {
+           name: existingStore.name,
+           description: existingStore.description,
+           categoryId: existingStore.categoryId,
+           mainPhoneNumber: existingStore.mainPhoneNumber,
+           acceptsPreOrders: existingStore.acceptsPreOrders,
+           acceptsBackOrders: existingStore.acceptsBackOrders,
+         },
+         afterData: {
+           name: store.name,
+           description: store.description,
+           categoryId: store.categoryId,
+           mainPhoneNumber: store.mainPhoneNumber,
+           acceptsPreOrders: store.acceptsPreOrders,
+           acceptsBackOrders: store.acceptsBackOrders,
+         },
+         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
+       })
+     }
+
+     // Debug: Log the updated store
+     console.log('[Store API] Store updated successfully:', {
+       storeId: store.id,
+       categoryId: store.categoryId,
+       setupComplete: store.setupComplete,
+     })
+
+     return NextResponse.json({ store })
   } catch (error) {
     console.error('Error updating store:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -325,14 +395,28 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    const currentName = name !== undefined ? String(name).trim() : existingStore.name
+    const currentDescription = description !== undefined ? (description || null) : existingStore.description
+    const currentCategoryId = categoryId !== undefined ? (categoryId || null) : existingStore.categoryId
+    const currentLocation = location !== undefined ? (location?.trim() || null) : existingStore.location
+    const currentMainPhoneNumber = mainPhoneNumber !== undefined ? (mainPhoneNumber || null) : existingStore.mainPhoneNumber
+
+    const setupComplete = evaluateSetupComplete({
+      name: currentName,
+      description: currentDescription,
+      categoryId: currentCategoryId,
+      location: currentLocation,
+      mainPhoneNumber: currentMainPhoneNumber,
+    })
+
     const store = await getPrisma().store.update({
       where: { userId: payload.userId },
       data: {
-        ...(name !== undefined && { name: String(name).trim() }),
-        ...(description !== undefined && { description: description || null }),
-        ...(categoryId !== undefined && { categoryId: categoryId || null }),
-        ...(location !== undefined && { location: location?.trim() || null }),
-        ...(mainPhoneNumber !== undefined && { mainPhoneNumber: mainPhoneNumber || null }),
+        ...(name !== undefined && { name: currentName }),
+        ...(description !== undefined && { description: currentDescription }),
+        ...(categoryId !== undefined && { categoryId: currentCategoryId }),
+        ...(location !== undefined && { location: currentLocation }),
+        ...(mainPhoneNumber !== undefined && { mainPhoneNumber: currentMainPhoneNumber }),
         ...(alternativePhoneNumber !== undefined && { alternativePhoneNumber: alternativePhoneNumber || null }),
         ...(whatsappNumber !== undefined && { whatsappNumber: whatsappNumber || null }),
         ...(email !== undefined && { email: email || null }),
@@ -341,6 +425,7 @@ export async function PATCH(request: NextRequest) {
         ...(banner !== undefined && { banner }),
         ...(acceptsPreOrders !== undefined && { acceptsPreOrders: acceptsPreOrders || false }),
         ...(acceptsBackOrders !== undefined && { acceptsBackOrders: acceptsBackOrders || false }),
+        setupComplete,
       },
       include: { vendor_categories: true },
     })

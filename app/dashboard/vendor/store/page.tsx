@@ -34,6 +34,8 @@ interface Category {
   slug: string
 }
 
+const GENERIC_STORE_NAMES = ['My Store', 'My Shop', 'Untitled Store', 'Untitled Shop', 'Store', 'Shop']
+
 export default function StoreManagement() {
   const router = useRouter()
   const [store, setStore] = useState<Store | null>(null)
@@ -66,7 +68,7 @@ export default function StoreManagement() {
       const response = await fetch('/api/store')
       if (response.ok) {
         const data = await response.json()
- if (data.store) {
+  if (data.store) {
             setStore(data.store)
             setFormData({
               name: data.store.name,
@@ -82,7 +84,6 @@ export default function StoreManagement() {
               acceptsBackOrders: data.store.acceptsBackOrders || false,
             })
          } else {
-           // Store doesn't exist yet
            setStore(null)
          }
        }
@@ -105,28 +106,43 @@ export default function StoreManagement() {
     }
   }
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.name || !formData.name.trim()) {
+      newErrors.name = 'Store name is required'
+    } else if (GENERIC_STORE_NAMES.includes(formData.name.trim())) {
+      newErrors.name = 'Store name cannot be a generic default. Please choose a unique name for your store.'
+    }
+
+    if (!formData.description || !formData.description.trim()) {
+      newErrors.description = 'Store description is required'
+    }
+
+    if (!formData.categoryId || formData.categoryId === '') {
+      newErrors.categoryId = 'Vendor category is required'
+    }
+
+    if (!formData.mainPhoneNumber || !formData.mainPhoneNumber.trim()) {
+      newErrors.mainPhoneNumber = 'Main phone number is required'
+    }
+
+    if (!formData.location || !formData.location.trim()) {
+      newErrors.location = 'Location is required'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
     
-    // Validate main phone number is required
-    if (!formData.mainPhoneNumber || !formData.mainPhoneNumber.trim()) {
-      setErrors({ mainPhoneNumber: 'Main phone number is required' })
+    if (!validateForm()) {
       return
     }
     
-    // Validate category selection - check for both null/undefined AND empty string
-    if (!formData.categoryId || formData.categoryId === '') {
-      setErrors({ categoryId: 'Vendor category is required' })
-      return
-    }
-
-    // Validate location is required
-    if (!formData.location || !formData.location.trim()) {
-      setErrors({ location: 'Location is required' })
-      return
-    }
-
     setSaving(true)
     setSaveSuccess(false)
 
@@ -144,14 +160,11 @@ export default function StoreManagement() {
         setSaveSuccess(true)
         
         // Navigate to vendor dashboard after successful store creation
-        // Check if this was a new store (no store existed before) AND has a categoryId
         if (!store && data.store && data.store.categoryId) {
-          // New store created with category - redirect to dashboard
           setTimeout(() => {
             router.push('/dashboard/vendor')
           }, 1500)
         } else {
-          // Store updated or no category - just clear success message
           setTimeout(() => setSaveSuccess(false), 5000)
         }
       } else {
@@ -175,7 +188,6 @@ export default function StoreManagement() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
-    // Clear success message when user starts editing
     if (saveSuccess) {
       setSaveSuccess(false)
     }
@@ -240,6 +252,24 @@ export default function StoreManagement() {
                   onChange={handleChange}
                   placeholder="Enter your store name"
                 />
+                {errors.name && <div className="text-red-600 text-sm mt-1">{errors.name}</div>}
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  Description *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows={4}
+                  required
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Describe your store and what you offer"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+                {errors.description && <div className="text-red-600 text-sm mt-1">{errors.description}</div>}
               </div>
 
               <div>
@@ -264,22 +294,7 @@ export default function StoreManagement() {
                 <p className="text-xs text-gray-500 mt-1">
                   Choose the category that best describes your business type
                 </p>
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Describe your store and what you offer"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-                {errors.description && <div className="text-red-600 text-sm mt-1">{errors.description}</div>}
+                {errors.categoryId && <div className="text-red-600 text-sm mt-1">{errors.categoryId}</div>}
               </div>
 
               {/* Contact Phone Numbers Section */}
@@ -304,6 +319,7 @@ export default function StoreManagement() {
                     <p className="text-xs text-gray-500 mt-1">
                       Primary phone number for customers to contact your store
                     </p>
+                    {errors.mainPhoneNumber && <div className="text-red-600 text-sm mt-1">{errors.mainPhoneNumber}</div>}
                   </div>
 
                   <div>
@@ -325,175 +341,179 @@ export default function StoreManagement() {
                   </div>
 
 <div>
-                     <label htmlFor="whatsappNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                       WhatsApp Number
-                     </label>
-                     <Input
-                       id="whatsappNumber"
-                       name="whatsappNumber"
-                       type="tel"
-                       value={formData.whatsappNumber}
+                   <label htmlFor="whatsappNumber" className="block text-sm font-medium text-gray-700 mb-2">
+                     WhatsApp Number
+                   </label>
+                   <Input
+                     id="whatsappNumber"
+                     name="whatsappNumber"
+                     type="tel"
+                     value={formData.whatsappNumber}
+                     onChange={handleChange}
+                     placeholder="+233XXXXXXXXX"
+                     className="w-full"
+                   />
+                   <p className="text-xs text-gray-500 mt-1">
+                     WhatsApp contact number (optional)
+                   </p>
+                 </div>
+
+                 <div>
+                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                     Location *
+                   </label>
+                   <Input
+                     id="location"
+                     name="location"
+                     type="text"
+                     required
+                     value={formData.location}
+                     onChange={handleChange}
+                     placeholder="Enter your store location"
+                     className="w-full"
+                   />
+                   <p className="text-xs text-gray-500 mt-1">
+                     Physical location of your store (city, region, or address)
+                   </p>
+                   {errors.location && <div className="text-red-600 text-sm mt-1">{errors.location}</div>}
+                 </div>
+               </div>
+             </div>
+
+             {/* Pre-order and Backorder Settings Section */}
+             <div className="border-t pt-6">
+               <h3 className="text-lg font-medium text-gray-900 mb-4">Order Settings</h3>
+               
+               <div className="space-y-4">
+                 <div className="flex items-start">
+                   <div className="flex items-center h-5">
+                     <input
+                       id="acceptsPreOrders"
+                       name="acceptsPreOrders"
+                       type="checkbox"
+                       checked={formData.acceptsPreOrders}
                        onChange={handleChange}
-                       placeholder="+233XXXXXXXXX"
-                       className="w-full"
+                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                      />
+                   </div>
+                   <div className="ml-3">
+                     <label htmlFor="acceptsPreOrders" className="text-sm font-medium text-gray-700">
+                       Accept Pre-orders
+                     </label>
                      <p className="text-xs text-gray-500 mt-1">
-                       WhatsApp contact number (optional)
+                       Allow customers to place orders for products not yet in stock
                      </p>
                    </div>
+                 </div>
 
-                   <div>
-                     <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                       Location *
-                     </label>
-                     <Input
-                       id="location"
-                       name="location"
-                       type="text"
-                       required
-                       value={formData.location}
+                 <div className="flex items-start">
+                   <div className="flex items-center h-5">
+                     <input
+                       id="acceptsBackOrders"
+                       name="acceptsBackOrders"
+                       type="checkbox"
+                       checked={formData.acceptsBackOrders}
                        onChange={handleChange}
-                       placeholder="Enter your store location"
-                       className="w-full"
+                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                      />
+                   </div>
+                   <div className="ml-3">
+                     <label htmlFor="acceptsBackOrders" className="text-sm font-medium text-gray-700">
+                       Accept Backorders
+                     </label>
                      <p className="text-xs text-gray-500 mt-1">
-                       Physical location of your store (city, region, or address)
+                       Allow customers to place orders for out-of-stock products
                      </p>
                    </div>
                  </div>
                </div>
+             </div>
 
-              {/* Pre-order and Backorder Settings Section */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Order Settings</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="acceptsPreOrders"
-                        name="acceptsPreOrders"
-                        type="checkbox"
-                        checked={formData.acceptsPreOrders}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-                    <div className="ml-3">
-                      <label htmlFor="acceptsPreOrders" className="text-sm font-medium text-gray-700">
-                        Accept Pre-orders
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Allow customers to place orders for products not yet in stock
-                      </p>
-                    </div>
-                  </div>
+             <div>
+               <ImageUpload
+                 value={formData.logo ? [formData.logo] : []}
+                 onChange={(urls) => setFormData(prev => ({
+                   ...prev,
+                   logo: urls.length > 0 ? urls[0] : ''
+                 }))}
+                 folder="logos"
+                 maxFiles={1}
+                 maxSizeMB={2}
+                 label="Store Logo"
+                 hint="Upload your store logo (recommended: square format, max 2MB)"
+               />
+             </div>
 
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="acceptsBackOrders"
-                        name="acceptsBackOrders"
-                        type="checkbox"
-                        checked={formData.acceptsBackOrders}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-                    <div className="ml-3">
-                      <label htmlFor="acceptsBackOrders" className="text-sm font-medium text-gray-700">
-                        Accept Backorders
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Allow customers to place orders for out-of-stock products
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+             <div>
+               <ImageUpload
+                 value={formData.banner ? [formData.banner] : []}
+                 onChange={(urls) => setFormData(prev => ({
+                   ...prev,
+                   banner: urls.length > 0 ? urls[0] : ''
+                 }))}
+                 folder="banners"
+                 maxFiles={1}
+                 maxSizeMB={5}
+                 label="Store Banner"
+                 hint="Upload a banner image for your store page (recommended: 1200x400px, max 5MB)"
+               />
+             </div>
 
-              <div>
-                <ImageUpload
-                  value={formData.logo ? [formData.logo] : []}
-                  onChange={(urls) => setFormData(prev => ({
-                    ...prev,
-                    logo: urls.length > 0 ? urls[0] : ''
-                  }))}
-                  folder="logos"
-                  maxFiles={1}
-                  maxSizeMB={2}
-                  label="Store Logo"
-                  hint="Upload your store logo (recommended: square format, max 2MB)"
-                />
-              </div>
+             {saveSuccess && (
+               <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                 <div className="flex">
+                   <div className="flex-shrink-0">
+                     <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                     </svg>
+                   </div>
+                   <div className="ml-3">
+                     <p className="text-sm font-medium text-green-800">
+                       Store {store ? 'updated' : 'created'} successfully!
+                     </p>
+                     <p className="text-sm text-green-700 mt-1">
+                       {store 
+                         ? 'Your changes have been saved and will persist after page refresh.'
+                         : 'Redirecting to your dashboard...'
+                       }
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             )}
 
-              <div>
-                <ImageUpload
-                  value={formData.banner ? [formData.banner] : []}
-                  onChange={(urls) => setFormData(prev => ({
-                    ...prev,
-                    banner: urls.length > 0 ? urls[0] : ''
-                  }))}
-                  folder="banners"
-                  maxFiles={1}
-                  maxSizeMB={5}
-                  label="Store Banner"
-                  hint="Upload a banner image for your store page (recommended: 1200x400px, max 5MB)"
-                />
-              </div>
+             {errors.mainPhoneNumber && (
+               <div className="text-red-600 text-sm">{errors.mainPhoneNumber}</div>
+             )}
+             {errors.categoryId && (
+               <div className="text-red-600 text-sm">{errors.categoryId}</div>
+             )}
+             {errors.location && (
+               <div className="text-red-600 text-sm">{errors.location}</div>
+             )}
+             {errors.general && (
+               <div className="text-red-600 text-sm">{errors.general}</div>
+             )}
 
-              {saveSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-green-800">
-                        Store {store ? 'updated' : 'created'} successfully!
-                      </p>
-                      <p className="text-sm text-green-700 mt-1">
-                        {store 
-                          ? 'Your changes have been saved and will persist after page refresh.'
-                          : 'Redirecting to your dashboard...'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {errors.mainPhoneNumber && (
-                <div className="text-red-600 text-sm">{errors.mainPhoneNumber}</div>
-              )}
-              {errors.categoryId && (
-                <div className="text-red-600 text-sm">{errors.categoryId}</div>
-              )}
-              {errors.location && (
-                <div className="text-red-600 text-sm">{errors.location}</div>
-              )}
-              {errors.general && (
-                <div className="text-red-600 text-sm">{errors.general}</div>
-              )}
-
-              <div className="flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/dashboard/vendor')}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving || !formData.categoryId || formData.categoryId === '' || !formData.location || !formData.location.trim()}>
-                  {saving ? 'Saving...' : store ? 'Update Store' : 'Create Store'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+             <div className="flex justify-end space-x-4">
+               <Button
+                 type="button"
+                 variant="outline"
+                 onClick={() => router.push('/dashboard/vendor')}
+               >
+                 Cancel
+               </Button>
+               <Button 
+                 type="submit" 
+                 disabled={saving || !formData.categoryId || formData.categoryId === '' || !formData.location || !formData.location.trim()}
+               >
+                 {saving ? 'Saving...' : store ? 'Update Store' : 'Create Store'}
+               </Button>
+             </div>
+           </form>
+         </CardContent>
+       </Card>
+     </div>
+   </div>
+ )
 }

@@ -376,9 +376,41 @@ export default function Home() {
               return <PremiumCategorySection key={section.id} section={sectionProps} />
             if (section.slug === 'televisions')
               return <EnterpriseGadgetDisplaySection key={section.id} section={sectionProps} loading={loadingManaged} />
-            if (section.slug === 'appliances')
-              return <PremiumCategorySection key={section.id} section={sectionProps} />
-            return null
+             if (section.slug === 'appliances')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'deals-you-dont-want-to-miss')
+               return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+             if (section.slug === 'fridges-freezers')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'cooking-appliances')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'washers-dryers')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'small-appliances')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'mobile-phones')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'smart-accessories')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'fashion-steez')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'beauty-perfumes')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'falaa-deals')
+               return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+             if (section.slug === 'automotives-motorcycles')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'storage-accessories-section')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'sports-fitness')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'kids-playnest')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             if (section.slug === 'black-friday-deals')
+               return <FlashSalesSection key={section.id} section={sectionProps} loading={loadingManaged} />
+             if (section.slug === 'shop-more-spend-less')
+               return <PremiumCategorySection key={section.id} section={sectionProps} />
+             return null
          })}
 
       {/* ─── Featured Products (always shown) ─── */}

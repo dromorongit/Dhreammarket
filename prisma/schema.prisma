@@ -164,6 +164,7 @@ model Store {
   badgeTier                VendorBadgeTier?
   canSellProducts          Boolean                         @default(true)
   canOfferServices         Boolean                         @default(false)
+  setupComplete            Boolean                         @default(false)
   products                 Product[]
   services                 Service[]
   vendor_categories        VendorCategory?                 @relation(fields: [categoryId], references: [id])
@@ -1331,6 +1332,8 @@ enum HomepageSectionType {
   NEW_SERVICES
   TOP_SERVICES
   FEATURED_VENDORS
+  CATEGORY_PRODUCTS
+  RANDOM_PRODUCTS
 }
 
 enum VerificationStatus {

@@ -752,6 +752,52 @@ async function resolveAutomaticProducts(prisma: ReturnType<typeof getPrisma> | n
     case 'NEW_ARRIVALS': {
       return getNewArrivalProducts(prisma, maxProducts)
     }
+    case 'CATEGORY_PRODUCTS': {
+      const categoryIds = (section.settings?.categoryIds as string[]) || []
+      if (categoryIds.length === 0) return []
+
+      const products = await prisma.product.findMany({
+        where: {
+          categoryId: { in: categoryIds },
+          stock: { gt: 0 },
+          OR: [
+            { availabilityType: 'IN_STOCK' },
+            { availabilityType: 'PREORDER' },
+            { availabilityType: 'BACKORDER' },
+          ],
+        },
+        select: productSelect,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      })
+
+      return products.map((p) => ({
+        ...p,
+        availableQuantity: p.stock - (p.reservedQuantity || 0),
+      }))
+    }
+    case 'RANDOM_PRODUCTS': {
+      const products = await prisma.product.findMany({
+        where: {
+          stock: { gt: 0 },
+          OR: [
+            { availabilityType: 'IN_STOCK' },
+            { availabilityType: 'PREORDER' },
+            { availabilityType: 'BACKORDER' },
+          ],
+        },
+        select: productSelect,
+        take: 100,
+      })
+
+      const shuffled = products.sort(() => Math.random() - 0.5)
+      const selected = shuffled.slice(0, 20)
+
+      return selected.map((p) => ({
+        ...p,
+        availableQuantity: p.stock - (p.reservedQuantity || 0),
+      }))
+    }
     case 'TRENDING_SERVICES':
     case 'TOP_SERVICES':
     case 'SERVICE_GRID':
