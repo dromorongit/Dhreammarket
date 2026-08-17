@@ -249,7 +249,7 @@ function EnterpriseSectionSkeleton({ dark = false }: { dark?: boolean }) {
   );
 }
 
-export function SponsoredCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
+export function SponsoredCard({ product, initialIsWishlisted, isSponsored = false }: { product: EnterpriseProduct; initialIsWishlisted?: boolean; isSponsored?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
 
     return (
@@ -275,17 +275,17 @@ export function SponsoredCard({ product, initialIsWishlisted }: { product: Enter
                    Quick View
                  </Link>
                </div>
-               <ProductBadges product={calculateProductBadges({
-                 price: product.price,
-                 flashSalePrice: product.flashSalePrice,
-                 salesPrice: product.salesPrice,
-                 dealsPrice: product.dealsPrice,
-                 stock: product.stock,
-                 availabilityType: product.availabilityType,
-                 expectedArrivalDate: product.expectedArrivalDate,
-                 expectedRestockDate: product.expectedRestockDate,
-                 isSponsored: true,
-               })} />
+                 <ProductBadges product={calculateProductBadges({
+                  price: product.price,
+                  flashSalePrice: product.flashSalePrice,
+                  salesPrice: product.salesPrice,
+                  dealsPrice: product.dealsPrice,
+                  stock: product.stock,
+                  availabilityType: product.availabilityType,
+                  expectedArrivalDate: product.expectedArrivalDate,
+                  expectedRestockDate: product.expectedRestockDate,
+                  isSponsored: isSponsored ?? false,
+                })} />
              </div>
              <div className='p-2.5 space-y-1 flex-1 flex flex-col'>
                <h3 className='text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight'>
@@ -566,23 +566,19 @@ export function FlashSalesSection({
         />
          <div>
            {topRowProducts.length > 0 && (
-             <ScrollableRow>
-               <div className='flex gap-4'>
-                 {topRowProducts.map((product) => (
-                   <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                 ))}
-               </div>
-             </ScrollableRow>
-           )}
-           {bottomRowProducts.length > 0 && (
-             <ScrollableRow>
-               <div className='flex gap-4'>
-                 {bottomRowProducts.map((product) => (
-                   <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                 ))}
-               </div>
-             </ScrollableRow>
-           )}
+              <ScrollableRow>
+                {topRowProducts.map((product) => (
+                  <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                ))}
+              </ScrollableRow>
+            )}
+            {bottomRowProducts.length > 0 && (
+              <ScrollableRow>
+                {bottomRowProducts.map((product) => (
+                  <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+                ))}
+              </ScrollableRow>
+            )}
          </div>
         <div className='mt-4 text-center'>
           <Link href='/marketplace?sort=deals'>
@@ -655,7 +651,7 @@ export function FlashSalesSection({
         <ProductRail
           products={products}
           renderCard={(product) => (
-            <SponsoredCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+             <SponsoredCard product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} isSponsored={true} />
           )}
         />
         <div className='mt-4 text-center'>

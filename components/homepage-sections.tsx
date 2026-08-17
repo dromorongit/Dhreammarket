@@ -1353,20 +1353,16 @@ export function PremiumCategorySection({ section }: HomepageSectionProps) {
         <div>
           {topRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {topRowProducts.map((product) => (
-                  <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                ))}
-              </div>
+              {topRowProducts.map((product) => (
+                <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+              ))}
             </ScrollableRow>
           )}
           {bottomRowProducts.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
-                {bottomRowProducts.map((product) => (
-                  <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
-                ))}
-              </div>
+              {bottomRowProducts.map((product) => (
+                <SponsoredCard key={product.id} product={product} initialIsWishlisted={wishlistedProductIds.has(product.id)} />
+              ))}
             </ScrollableRow>
           )}
         </div>
