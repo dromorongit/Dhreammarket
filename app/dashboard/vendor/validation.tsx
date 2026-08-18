@@ -34,7 +34,10 @@ export default async function VendorDashboardValidation({
       redirect('/verify-email')
     }
 
-    if (!userStatus.isOnboarded) {
+    const headersList = await (await import('next/headers')).headers()
+    const invokePath = headersList.get('x-invoke-path')
+
+    if (!userStatus.isOnboarded && invokePath !== '/dashboard/vendor/store') {
       redirect('/dashboard/vendor/store')
     }
   }

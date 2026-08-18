@@ -21,8 +21,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route)
   )
 
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-invoke-path', pathname)
+
   if (!matchedRoute) {
-    return NextResponse.next()
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
   }
 
   const token = request.cookies.get('token')?.value
@@ -53,7 +60,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  return NextResponse.next()
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
 }
 
 export const config = {
