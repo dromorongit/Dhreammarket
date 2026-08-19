@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
 import WishlistButton from '@/components/WishlistButton'
@@ -52,7 +53,7 @@ function ServiceRailCard({ service }: { service: RelatedServiceRail }) {
       <Card variant="elevated" className="group flex flex-col overflow-hidden h-full border border-gold/20 hover:border-gold/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 p-0">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
           {service.thumbnail ? (
-            <Image src={service.thumbnail} alt={service.title} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+            <Image src={getOptimizedCloudinaryUrl(service.thumbnail, 400)} alt={service.title} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-100">
               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 
 interface OrderItem {
   id: string
@@ -418,12 +419,12 @@ export default function AdminOrderDetailPage() {
 <div key={item.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                       {item.productImage && (
                         <Image
-                          src={item.productImage}
+                          src={getOptimizedCloudinaryUrl(item.productImage, 400)}
                           alt={item.productName}
                           width={80}
                           height={80}
                           className="w-16 h-16 object-cover rounded-lg"
-                        />
+                         unoptimized />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{item.productName}{renderVariantInfo(item)}</p>

@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -390,7 +391,7 @@ export default function VendorProfilePage() {
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center border-4 border-white shadow-lg">
               {vendor.logo ? (
-                <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+                <Image src={getOptimizedCloudinaryUrl(vendor.logo, 80)} alt={vendor.name} className="object-cover w-full h-full" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
               ) : (
                 <span className="text-4xl font-bold text-slate-700">
                   {vendor.name.charAt(0).toUpperCase()}
@@ -617,14 +618,14 @@ export default function VendorProfilePage() {
                         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                           {product.images?.length > 0 ? (
                             <Image
-                              src={product.images[0].url}
+                              src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                               alt={product.images[0].alt || product.name}
                               className="object-cover"
                               fill
                               sizes={CARD_IMAGE_SIZES}
                               placeholder="blur"
                               blurDataURL={getBlurDataURL()}
-                            />
+                             unoptimized />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-slate-100">
                               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -786,14 +787,14 @@ export default function VendorProfilePage() {
                       <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                         {service.thumbnail ? (
                           <Image
-                            src={service.thumbnail}
+                            src={getOptimizedCloudinaryUrl(service.thumbnail, 400)}
                             alt={service.title}
                             className="object-cover"
                             fill
                             sizes={CARD_IMAGE_SIZES_3COL}
                             placeholder="blur"
                             blurDataURL={getBlurDataURL()}
-                          />
+                           unoptimized />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-slate-100">
                             <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

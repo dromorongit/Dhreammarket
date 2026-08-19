@@ -1869,7 +1869,7 @@ sectionSupportsServicesFn,
                             <div className="text-slate-400 cursor-grab min-w-[24px] min-h-[44px] flex items-center justify-center">⋮⋮</div>
                               {item.product.images?.[0] && (
                                 <Image
-                                  src={item.product.images[0].url}
+                                  src={getOptimizedCloudinaryUrl(item.product.images[0].url, 400)}
                                   alt=""
                                   width={400}
                                   height={400}
@@ -1877,6 +1877,7 @@ sectionSupportsServicesFn,
                                   sizes={CARD_IMAGE_SIZES_4COL}
                                   placeholder="blur"
                                   blurDataURL={getBlurDataURL()}
+                                  unoptimized
                                 />
                               )}
                             <div className="flex-1 min-w-0">
@@ -2056,7 +2057,7 @@ sectionSupportsServicesFn,
                               />
                               {service?.thumbnail ? (
                                 <Image
-                                  src={service.thumbnail}
+                                  src={getOptimizedCloudinaryUrl(service.thumbnail, 400)}
                                   alt={service.title}
                                   width={400}
                                   height={400}
@@ -2064,7 +2065,7 @@ sectionSupportsServicesFn,
                                   sizes={CARD_IMAGE_SIZES_4COL}
                                   placeholder="blur"
                                   blurDataURL={getBlurDataURL()}
-                                />
+                                 unoptimized />
                               ) : (
                                 <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
                                   <span className="text-xs font-medium">
@@ -2182,7 +2183,7 @@ sectionSupportsServicesFn,
                      </div>
 {brand.logo ? (
                          <Image
-                           src={brand.logo}
+                           src={getOptimizedCloudinaryUrl(brand.logo, 80)}
                            alt={brand.name}
                            width={400}
                            height={400}
@@ -2190,7 +2191,7 @@ sectionSupportsServicesFn,
                            sizes={CARD_IMAGE_SIZES_4COL}
                            placeholder="blur"
                            blurDataURL={getBlurDataURL()}
-                         />
+                          unoptimized />
                        ) : (
                        <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
                          <span className="text-xs font-medium">
@@ -2226,7 +2227,7 @@ sectionSupportsServicesFn,
                      </div>
                       {service.thumbnail ? (
                         <Image
-                          src={service.thumbnail}
+                          src={getOptimizedCloudinaryUrl(service.thumbnail, 400)}
                           alt={service.title}
                           width={400}
                           height={400}
@@ -2234,7 +2235,7 @@ sectionSupportsServicesFn,
                           sizes={CARD_IMAGE_SIZES_4COL}
                           placeholder="blur"
                           blurDataURL={getBlurDataURL()}
-                        />
+                         unoptimized />
                      ) : (
                        <div className="w-10 h-10 flex items-center justify-center bg-slate-200 rounded-full">
                          <span className="text-xs font-medium">S</span>
@@ -2373,7 +2374,7 @@ function PreviewPanel({
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {(section.products || []).slice(0, 4).map((p: any) => (
                       <div key={p.id} className="aspect-square bg-slate-100 rounded-lg overflow-hidden">
-                        {p.images?.[0] ? <Image src={p.images[0].url} alt={p.name} className="w-full h-full object-cover" width={400} height={400} sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()} /> : <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No image</div>}
+                        {p.images?.[0] ? <Image src={getOptimizedCloudinaryUrl(p.images[0].url, 400)} alt={p.name} className="w-full h-full object-cover" width={400} height={400} sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized /> : <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No image</div>}
                       </div>
                     ))}
                     {(section.services || []).slice(0, 4).map((s: any) => (
@@ -2539,3 +2540,4 @@ function TrendingSettingsModal({
 }
 
 
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'

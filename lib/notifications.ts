@@ -152,6 +152,7 @@ export async function getPendingNotifications() {
       orderBy: {
         createdAt: 'desc',
       },
+      take: 100,
     })
     return notifications
   } catch (error) {

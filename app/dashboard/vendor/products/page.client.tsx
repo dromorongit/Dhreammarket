@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -187,7 +188,7 @@ export default function VendorProductsPageClient() {
                   <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
                     {Array.isArray(product.images) && product.images.length > 0 ? (
                       <Image
-                        src={product.images[0]?.url || ''}
+                        src={getOptimizedCloudinaryUrl(product.images[0]?.url || '', 400)}
                         alt={product.images[0]?.alt || product.name}
                         width={80}
                         height={80}
@@ -195,6 +196,7 @@ export default function VendorProductsPageClient() {
                         sizes={CARD_IMAGE_SIZES_3COL}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center bg-gray-100">

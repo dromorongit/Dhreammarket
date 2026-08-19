@@ -350,6 +350,7 @@ export async function getFulfillmentEvents(orderId: string) {
     const events = await getPrisma().fulfillmentEvent.findMany({
       where: { orderId },
       orderBy: { createdAt: 'asc' },
+      take: 100,
     })
     return events
   } catch (error) {

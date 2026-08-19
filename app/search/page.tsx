@@ -362,14 +362,14 @@ function SearchPageContent() {
                             <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center shrink-0 overflow-hidden">
                               {vendor.logo ? (
                                 <Image
-                                  src={vendor.logo}
+                                  src={getOptimizedCloudinaryUrl(vendor.logo, 80)}
                                   alt={vendor.name}
                                   className="object-cover"
                                   fill
                                   sizes={VENDOR_LOGO_SIZES}
                                   placeholder="blur"
                                   blurDataURL={getBlurDataURL()}
-                                />
+                                 unoptimized />
                               ) : (
                                 <span className="text-lg font-bold text-white">
                                   {vendor.name.charAt(0).toUpperCase()}
@@ -607,7 +607,7 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
            />
            {product.image ? (
               <Image
-                src={product.image}
+                src={getOptimizedCloudinaryUrl(product.image, 400)}
                 alt={product.name}
                 className="object-cover"
                 fill
@@ -615,7 +615,7 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
                  sizes={CARD_IMAGE_SIZES_6COL}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
-              />
+               unoptimized />
            ) : (
              <div className="w-full h-full flex items-center justify-center bg-slate-100">
                <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -681,3 +681,4 @@ function SkeletonCard() {
     </div>
   )
 }
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'

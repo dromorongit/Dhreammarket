@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import Link from 'next/link';
 import { Card } from '@/components/Card';
 import { MdVerified } from 'react-icons/md';
@@ -42,7 +43,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
             />
             {product.images?.[0] ? (
               <Image
-                src={product.images[0].url}
+                src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                 alt={product.images[0].alt || product.name}
                 className='absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
                 fill
@@ -50,7 +51,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
                 sizes={CARD_IMAGE_SIZES_5COL}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
-              />
+               unoptimized />
             ) : (
               <div className='absolute inset-0 flex items-center justify-center bg-slate-100'>
                 <svg className='w-8 h-8 text-slate-300' fill='none' stroke='currentColor' viewBox='0 0 24 24'>

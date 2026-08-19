@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -337,11 +338,12 @@ export default function VendorServicesPageClient() {
                   <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
                     {service.thumbnail || (service.images && service.images.length > 0) ? (
                       <Image
-                        src={service.thumbnail || service.images[0]?.imageUrl || ''}
+                        src={getOptimizedCloudinaryUrl(service.thumbnail || service.images[0]?.imageUrl || '', 400)}
                         alt={service.title}
                         width={400}
                         height={300}
                         className="w-full h-48 object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center bg-gray-100">

@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Card } from './Card'
@@ -37,7 +38,7 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
       <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`}>
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
           {item.image ? (
-            <Image src={item.image} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+            <Image src={getOptimizedCloudinaryUrl(item.image, 400)} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-slate-100">
               <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

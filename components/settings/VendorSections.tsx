@@ -6,6 +6,7 @@ import { Input } from '@/components/Input'
 import { Button } from '@/components/Button'
 import { Textarea } from '@/components/Textarea'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { useRouter } from 'next/navigation'
 import Toggle from '@/components/settings/Toggle'
 
@@ -299,7 +300,7 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
         <div className="flex flex-col sm:flex-row items-start gap-6">
           <div className="relative h-32 w-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex-shrink-0">
             {store.logo ? (
-              <Image src={store.logo} alt="Store logo" fill className="object-cover" />
+              <Image src={getOptimizedCloudinaryUrl(store.logo, 80)} alt="Store logo" fill className="object-cover"  unoptimized />
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400 text-xs text-center p-2">
                 No logo uploaded

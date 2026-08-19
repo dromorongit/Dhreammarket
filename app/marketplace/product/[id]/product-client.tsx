@@ -14,6 +14,7 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import WishlistButton from '@/components/WishlistButton'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import ScrollableRow from '@/components/ScrollableRow'
 import { MdVerified } from 'react-icons/md'
@@ -164,12 +165,12 @@ function RailProductCard({ product }: { product: RelatedProductForRail }) {
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
           {product.images?.[0] ? (
             <Image
-              src={product.images[0].url}
+              src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
               alt={product.images[0].alt || product.name}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               fill
               loading="lazy"
-            />
+             unoptimized />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

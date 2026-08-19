@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import Link from 'next/link'
 import { formatPrice } from '@/lib/currency'
 import { MdVerified } from 'react-icons/md'
@@ -21,7 +22,7 @@ function ProductRailItem({ product }: { product: EnterpriseProduct }) {
           <div className="relative w-14 h-14 sm:w-16 sm:h-16 lg:w-18 lg:h-18 flex-shrink-0 overflow-hidden rounded-xl bg-slate-800">
             {product.images?.[0] ? (
               <Image
-                src={product.images[0].url}
+                src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                 alt={product.images[0].alt || product.name}
                 className="object-cover w-full h-full"
                 fill
@@ -29,7 +30,7 @@ function ProductRailItem({ product }: { product: EnterpriseProduct }) {
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
                 loading="lazy"
-              />
+               unoptimized />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

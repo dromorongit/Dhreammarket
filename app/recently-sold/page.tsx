@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import Link from 'next/link'
 import { Card } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -91,7 +92,7 @@ export default function RecentlySoldPage() {
                 <Link href={item.type === 'PRODUCT' ? `/marketplace/product/${item.id}` : `/services/${item.id}`}>
                   <div className="aspect-square bg-gray-100 relative">
                     {item.images?.[0] ? (
-                      <Image src={item.images[0].url} alt={item.name} className="object-cover" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
+                      <Image src={getOptimizedCloudinaryUrl(item.images[0].url, 400)} alt={item.name} className="object-cover" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"  unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

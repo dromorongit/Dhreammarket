@@ -25,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categories = await getPrisma().productCategory.findMany({
     where: { isActive: true },
     select: { slug: true, updatedAt: true },
+    take: 50000,
   })
 
   const categoryEntries: MetadataRoute.Sitemap = categories
@@ -39,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const vendorCategories = await getPrisma().vendorCategory.findMany({
     where: { isActive: true },
     select: { slug: true },
+    take: 50000,
   })
 
   const vendorCategoryEntries: MetadataRoute.Sitemap = vendorCategories
@@ -53,6 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const vendors = await getPrisma().store.findMany({
     where: { categoryId: { not: null } },
     select: { slug: true, updatedAt: true },
+    take: 50000,
   })
 
   const vendorEntries: MetadataRoute.Sitemap = vendors
@@ -73,6 +76,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ],
     },
     select: { slug: true, updatedAt: true },
+    take: 50000,
   })
 
   const productEntries: MetadataRoute.Sitemap = products

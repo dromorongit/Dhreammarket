@@ -8,6 +8,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 
 interface AISimilarItem {
@@ -50,9 +51,9 @@ function AISimilarCard({ item }: { item: AISimilarItem }) {
       <Link href={isProduct ? `/marketplace/product/${item.slug}` : `/services/${item.slug}`} className="block">
         <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
           {item.image ? (
-            <Image src={item.image} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+            <Image src={getOptimizedCloudinaryUrl(item.image, 400)} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
           ) : item.thumbnail ? (
-            <Image src={item.thumbnail} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+            <Image src={getOptimizedCloudinaryUrl(item.thumbnail, 400)} alt={name} className="object-cover" fill loading="lazy" sizes={CARD_IMAGE_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

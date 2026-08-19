@@ -13,6 +13,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
@@ -169,7 +170,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
           />
           {(product.images?.length ?? 0) > 0 ? (
             <Image
-              src={product.images![0].url}
+              src={getOptimizedCloudinaryUrl(product.images![0].url, 400)}
               alt={product.images![0].alt || product.name}
                className="object-cover group-hover:scale-105 transition-transform duration-500"
               fill
@@ -177,7 +178,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
                sizes={CARD_IMAGE_SIZES_6COL}
               placeholder="blur"
               blurDataURL={getBlurDataURL()}
-            />
+             unoptimized />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1024,14 +1025,14 @@ function MarketplaceContent() {
                       <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
                         {vendor.logo ? (
                           <Image
-                            src={vendor.logo}
+                            src={getOptimizedCloudinaryUrl(vendor.logo, 80)}
                             alt={`${vendor.name} logo`}
                             className="absolute inset-0 w-full h-full object-cover opacity-50"
                             fill
                             sizes={VENDOR_LOGO_SIZES}
                             placeholder="blur"
                             blurDataURL={getBlurDataURL()}
-                          />
+                           unoptimized />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center">
                             <span className="text-4xl font-bold text-white opacity-30">

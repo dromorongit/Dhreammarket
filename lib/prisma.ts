@@ -3,6 +3,8 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 import { logInfo } from './logger'
 
+const MAX_CACHE_SIZE = 500
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
   pool: Pool | undefined
@@ -64,6 +66,16 @@ function registerDisconnectHandlers(): void {
   }
 }
 
+function enforceCacheCap<T>(cache: Map<string, { value: T; expiresAt: number }>): void {
+  if (cache.size <= MAX_CACHE_SIZE) return
+
+  const keys = Array.from(cache.keys())
+  const excess = cache.size - MAX_CACHE_SIZE
+  for (let i = 0; i < excess && i < keys.length; i++) {
+    cache.delete(keys[i])
+  }
+}
+
 export async function withCache<T>(
   key: string,
   fetcher: () => Promise<T>,
@@ -78,6 +90,7 @@ export async function withCache<T>(
     return cached.value
   }
   const value = await fetcher()
+  enforceCacheCap(cache._cache)
   cache._cache.set(key, { value, expiresAt: Date.now() + ttlMs })
   return value
 }

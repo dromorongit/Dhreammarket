@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { Button } from './Button'
 import { getBlurDataURL, CARD_IMAGE_SIZES_3COL } from '@/lib/image-utils'
 
@@ -42,7 +43,7 @@ export function ReviewImages({ productId, images, canEdit, onDelete }: ReviewIma
       {images.map((image) => (
         <div key={image.id} className="relative aspect-square rounded-lg overflow-hidden group">
           <Image
-            src={image.url}
+            src={getOptimizedCloudinaryUrl(image.url, 400)}
             alt={image.alt || 'Review image'}
             className="object-cover w-full h-full"
             fill
@@ -50,7 +51,7 @@ export function ReviewImages({ productId, images, canEdit, onDelete }: ReviewIma
             sizes={CARD_IMAGE_SIZES_3COL}
             placeholder="blur"
             blurDataURL={getBlurDataURL()}
-          />
+           unoptimized />
           {canEdit && (
             <button
               onClick={() => handleDelete(image.id)}

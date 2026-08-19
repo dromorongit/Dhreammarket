@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import Link from 'next/link'
 import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
@@ -188,7 +189,7 @@ export default function CustomerDashboardPage() {
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center">
                         {vendor.logo ? (
-                          <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill sizes="64px" />
+                          <Image src={getOptimizedCloudinaryUrl(vendor.logo, 80)} alt={vendor.name} className="object-cover" fill sizes="64px"  unoptimized />
                         ) : (
                           <span className="text-2xl font-bold text-gray-400">{vendor.name[0]}</span>
                         )}

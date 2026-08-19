@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { MdVerified } from 'react-icons/md'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import WishlistButton from '@/components/WishlistButton'
@@ -442,7 +443,7 @@ const performSearch = useCallback(async (searchQuery: string) => {
                         <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                           {product.image ? (
                             <Image
-                              src={product.image}
+                              src={getOptimizedCloudinaryUrl(product.image, 400)}
                               alt={product.name}
                               width={56}
                               height={56}
@@ -450,7 +451,7 @@ const performSearch = useCallback(async (searchQuery: string) => {
                               sizes={SEARCH_THUMB_SIZES}
                               placeholder="blur"
                               blurDataURL={getBlurDataURL()}
-                            />
+                             unoptimized />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <svg className="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -520,7 +521,7 @@ const performSearch = useCallback(async (searchQuery: string) => {
 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-royal-blue to-purple-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
                          {vendor.logo ? (
                             <Image
-                              src={vendor.logo}
+                              src={getOptimizedCloudinaryUrl(vendor.logo, 80)}
                               alt={vendor.name}
                               width={56}
                               height={56}
@@ -528,7 +529,7 @@ const performSearch = useCallback(async (searchQuery: string) => {
                               sizes={VENDOR_LOGO_SIZES}
                               placeholder="blur"
                               blurDataURL={getBlurDataURL()}
-                            />
+                             unoptimized />
                          ) : (
                           <span className="text-sm font-bold text-white">
                             {vendor.name.charAt(0).toUpperCase()}

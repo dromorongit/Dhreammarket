@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
@@ -149,12 +150,12 @@ export default function ServiceRequestForm() {
                 <div className="flex items-start gap-3">
                       {service.thumbnail && (
                       <Image
-                        src={service.thumbnail}
+                        src={getOptimizedCloudinaryUrl(service.thumbnail, 400)}
                         alt={service.title}
                         className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                         width={64}
                         height={64}
-                      />
+                       unoptimized />
                     )}
                   <div className="min-w-0">
                     <h3 className="font-medium text-slate-900 text-sm truncate">{service.title}</h3>

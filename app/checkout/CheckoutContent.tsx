@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -84,7 +85,7 @@ function OrderSummaryDesktop({ items, subtotal }: {
               <div className="w-14 h-14 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                 {item.product.images.length > 0 ? (
                   <Image
-                    src={item.product.images[0].url}
+                    src={getOptimizedCloudinaryUrl(item.product.images[0].url, 400)}
                     alt={item.product.images[0].alt ?? item.product.name}
                     width={56}
                     height={56}
@@ -92,6 +93,7 @@ function OrderSummaryDesktop({ items, subtotal }: {
                     sizes={SEARCH_THUMB_SIZES}
                     placeholder="blur"
                     blurDataURL={getBlurDataURL()}
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -155,7 +157,7 @@ function MobileOrderSummary({
                 <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                   {item.product.images.length > 0 ? (
                     <Image
-                      src={item.product.images[0].url}
+                      src={getOptimizedCloudinaryUrl(item.product.images[0].url, 400)}
                       alt={item.product.images[0].alt ?? item.product.name}
                       width={48}
                       height={48}
@@ -163,6 +165,7 @@ function MobileOrderSummary({
                       sizes={SEARCH_THUMB_SIZES}
                       placeholder="blur"
                       blurDataURL={getBlurDataURL()}
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

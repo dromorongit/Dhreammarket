@@ -739,6 +739,7 @@ export async function exportAnalyticsData(
           customer: { select: { email: true } },
         },
         orderBy: { createdAt: 'desc' },
+        take: 500,
       })
     case 'customers':
       return prisma.$queryRaw`

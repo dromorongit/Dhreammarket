@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -182,7 +183,7 @@ export default function WishlistClient() {
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
                     {product.images?.[0] ? (
                       <Image
-                        src={product.images[0].url}
+                        src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                         alt={product.images[0].alt || product.name}
                         className="object-cover"
                         fill
@@ -190,7 +191,7 @@ export default function WishlistClient() {
                         sizes={CARD_IMAGE_SIZES_4COL}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
-                      />
+                       unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
                         <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

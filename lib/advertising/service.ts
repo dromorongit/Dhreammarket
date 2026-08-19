@@ -105,6 +105,7 @@ export async function getCampaignsByVendor(vendorId: string, status?: Advertisem
   const campaigns = await prisma.advertisementCampaign.findMany({
     where,
     orderBy: { createdAt: 'desc' },
+    take: 100,
     include: {
       product: { select: { id: true, name: true, slug: true, price: true } },
       service: { select: { id: true, title: true, slug: true, startingPrice: true } },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import Link from 'next/link'
 import { Card } from '@/components/Card'
 import { getRecentlyViewed } from '@/lib/recently-viewed'
@@ -79,7 +80,7 @@ export default function RecentlyViewedSection() {
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
                     {product.image ? (
                       <Image
-                        src={product.image}
+                        src={getOptimizedCloudinaryUrl(product.image, 400)}
                         alt={product.imageAlt || product.name}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         fill
@@ -87,7 +88,7 @@ export default function RecentlyViewedSection() {
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
                         loading="lazy"
-                      />
+                       unoptimized />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

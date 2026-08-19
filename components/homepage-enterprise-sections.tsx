@@ -54,7 +54,7 @@ function ProductImage({
   if (image) {
     return (
       <Image
-        src={image.url}
+        src={getOptimizedCloudinaryUrl(image.url, 400)}
         alt={image.alt || product.name}
         className={className}
         fill
@@ -62,7 +62,7 @@ function ProductImage({
         sizes={sizes}
         placeholder="blur"
         blurDataURL={getBlurDataURL()}
-      />
+       unoptimized />
     );
   }
   return (
@@ -1875,7 +1875,7 @@ export function ElectronicsShowcaseSection() {
                 <Link key={item.title} href={item.href} className='snap-start flex-shrink-0 w-[280px] sm:w-[360px] lg:w-[400px] block'>
                   <div className='relative aspect-[3/4] bg-slate-100 overflow-hidden'>
                       <Image
-                        src={item.image}
+                        src={getOptimizedCloudinaryUrl(item.image, 400)}
                         alt={item.title}
                         className='object-contain'
                         fill
@@ -1883,7 +1883,7 @@ export function ElectronicsShowcaseSection() {
                         sizes={CARD_IMAGE_SIZES_4COL}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
-                      />
+                       unoptimized />
                   </div>
                 </Link>
               ))}
@@ -1979,12 +1979,12 @@ export function ElectronicsShowcaseSection() {
                   >
                     <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
                       <Image
-                        src={item.image}
+                        src={getOptimizedCloudinaryUrl(item.image, 400)}
                         alt={item.title}
                         className='object-cover group-hover:scale-105 transition-transform duration-500'
                         fill
                         loading='lazy'
-                      />
+                       unoptimized />
                     </div>
                     <div className='p-4 text-center'>
                       <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
@@ -2082,12 +2082,12 @@ export function ElectronicsShowcaseSection() {
                   >
                     <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
                       <Image
-                        src={item.image}
+                        src={getOptimizedCloudinaryUrl(item.image, 400)}
                         alt={item.title}
                         className='object-cover group-hover:scale-105 transition-transform duration-500'
                         fill
                         loading='lazy'
-                      />
+                       unoptimized />
                     </div>
                     <div className='p-4 text-center'>
                       <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
@@ -2185,12 +2185,12 @@ export function ElectronicsShowcaseSection() {
                   >
                     <div className='relative aspect-[4/3] bg-slate-100 overflow-hidden'>
                       <Image
-                        src={item.image}
+                        src={getOptimizedCloudinaryUrl(item.image, 400)}
                         alt={item.title}
                         className='object-cover group-hover:scale-105 transition-transform duration-500'
                         fill
                         loading='lazy'
-                      />
+                       unoptimized />
                     </div>
                     <div className='p-4 text-center'>
                       <h3 className='text-base font-bold text-deep-navy group-hover:text-royal-blue transition-colors'>
@@ -2207,3 +2207,4 @@ export function ElectronicsShowcaseSection() {
     )
   }
 
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'

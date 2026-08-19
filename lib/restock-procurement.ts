@@ -236,6 +236,7 @@ export async function getVendorRestockOrders(
       },
     },
     orderBy: { createdAt: 'desc' },
+    take: 200,
   })
 
   return restockOrders.map(order => {

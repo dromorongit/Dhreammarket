@@ -1,71 +1,56 @@
 // Centralized revenue calculation logic for Dhream Market
 import { formatCurrency } from './currency'
 
+const MAX_VENDOR_COMMISSION_RATES = 1000
+
 /**
  * Configuration for commission rates
  * In a real application, this might come from a database or environment variables
  */
 export const COMMISSION_CONFIG = {
-  // Default commission rate (1%)
   DEFAULT_RATE: 0.01,
-  // Estimated processor fee rate used as fallback when Paystack fee is missing (2%)
   FALLBACK_PROCESSOR_FEE_RATE: 0.02,
-  // Could be extended to support vendor-specific rates in the future
 }
 
 /**
  * Vendor commission rate cache
- * In production, this would be stored in the database
+ * Bounded to prevent unbounded memory growth.
  */
 const vendorCommissionRates: Map<string, number> = new Map()
 
-/**
- * Get the commission rate for a vendor
- * @param vendorId - The vendor's user ID
- * @returns The commission rate to use (defaults to COMMISSION_CONFIG.DEFAULT_RATE)
- */
+function enforceVendorCommissionRateCap(): void {
+  if (vendorCommissionRates.size <= MAX_VENDOR_COMMISSION_RATES) return
+
+  const keys = Array.from(vendorCommissionRates.keys())
+  const excess = vendorCommissionRates.size - MAX_VENDOR_COMMISSION_RATES
+  for (let i = 0; i < excess && i < keys.length; i++) {
+    vendorCommissionRates.delete(keys[i])
+  }
+}
+
 export function getVendorCommissionRate(vendorId: string | null | undefined): number {
   if (!vendorId) return COMMISSION_CONFIG.DEFAULT_RATE
   return vendorCommissionRates.get(vendorId) ?? COMMISSION_CONFIG.DEFAULT_RATE
 }
 
-/**
- * Set a custom commission rate for a vendor
- * @param vendorId - The vendor's user ID
- * @param rate - The commission rate (e.g., 0.01 for 1%)
- */
 export function setVendorCommissionRate(vendorId: string, rate: number): void {
+  enforceVendorCommissionRateCap()
   vendorCommissionRates.set(vendorId, rate)
 }
 
-/**
- * Clear all cached vendor commission rates
- */
 export function clearVendorCommissionRates(): void {
   vendorCommissionRates.clear()
 }
 
-/**
- * Calculate financial breakdown for an order or order item
- * @param grossAmount - The total amount before any fees
- * @param processorFee - The payment processor fee (if known, otherwise null)
- * @param commissionRate - The commission rate to apply (defaults to COMMISSION_CONFIG.DEFAULT_RATE)
- * @returns Object containing all financial calculations
- */
 export function calculateFinancialBreakdown(
   grossAmount: number,
   processorFee: number | null = null,
   commissionRate: number = COMMISSION_CONFIG.DEFAULT_RATE
 ) {
-  // Calculate net amount (gross - processor fee) if fee is known
   const netAmount = processorFee !== null ? grossAmount - processorFee : null
-  
-  // Calculate platform commission
   const platformCommission = grossAmount * commissionRate
-  
-  // Calculate vendor earnings (net amount - platform commission) if net amount is known
   const vendorEarnings = netAmount !== null ? netAmount - platformCommission : null
-  
+
   return {
     grossAmount,
     processorFee,
@@ -76,35 +61,23 @@ export function calculateFinancialBreakdown(
   }
 }
 
-/**
- * Format financial values as currency strings using GHS
- * @param financialBreakdown - The financial breakdown object from calculateFinancialBreakdown
- * @returns Object with formatted currency strings
- */
 export function formatFinancialBreakdown(financialBreakdown: ReturnType<typeof calculateFinancialBreakdown>) {
   return {
     grossAmount: formatCurrency(financialBreakdown.grossAmount),
-    processorFee: financialBreakdown.processorFee !== null 
-      ? formatCurrency(financialBreakdown.processorFee) 
+    processorFee: financialBreakdown.processorFee !== null
+      ? formatCurrency(financialBreakdown.processorFee)
       : null,
-    netAmount: financialBreakdown.netAmount !== null 
-      ? formatCurrency(financialBreakdown.netAmount) 
+    netAmount: financialBreakdown.netAmount !== null
+      ? formatCurrency(financialBreakdown.netAmount)
       : null,
     platformCommission: formatCurrency(financialBreakdown.platformCommission),
-    vendorEarnings: financialBreakdown.vendorEarnings !== null 
-      ? formatCurrency(financialBreakdown.vendorEarnings) 
+    vendorEarnings: financialBreakdown.vendorEarnings !== null
+      ? formatCurrency(financialBreakdown.vendorEarnings)
       : null,
     commissionRate: `${(financialBreakdown.commissionRate * 100).toFixed(2)}%`
   }
 }
 
-/**
- * Calculate apportioned processor fee for an order item based on its contribution to gross amount
- * @param itemGross - The gross amount for this order item
- * @param orderGross - The total gross amount for the order
- * @param totalProcessorFee - The total processor fee for the order
- * @returns The apportioned processor fee for this item, or null if total fee is unknown
- */
 export function apportionProcessorFee(
   itemGross: number,
   orderGross: number,
@@ -116,12 +89,6 @@ export function apportionProcessorFee(
   return (itemGross / orderGross) * totalProcessorFee
 }
 
-/**
- * Resolve the actual processor fee from Paystack, falling back to an estimated rate when missing.
- * @param paystackFees - The actual fee from Paystack transaction data (data.fees)
- * @param grossAmount - The gross amount of the order
- * @returns The resolved processor fee (actual or estimated)
- */
 export function resolveProcessorFee(
   paystackFees: number | null | undefined,
   grossAmount: number

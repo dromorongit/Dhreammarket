@@ -842,14 +842,14 @@ function VendorCategorySection() {
 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                     {vendor.logo ? (
                       <Image
-                        src={vendor.logo}
+                        src={getOptimizedCloudinaryUrl(vendor.logo, 80)}
                         alt={vendor.name}
                         className="object-cover w-full h-full"
                         fill
                         sizes={VENDOR_LOGO_SIZES}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
-                      />
+                       unoptimized />
                     ) : (
                      <span className="text-2xl font-bold text-white">
                        {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
@@ -928,7 +928,7 @@ function TopVendorsSection() {
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                  {vendor.logo ? (
-                    <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+                    <Image src={getOptimizedCloudinaryUrl(vendor.logo, 80)} alt={vendor.name} className="object-cover" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
                  ) : (
                    <span className="text-2xl font-bold text-white">
                      {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
@@ -1011,7 +1011,7 @@ function NewVendorsSection() {
            <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
 <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                  {vendor.logo ? (
-                    <Image src={vendor.logo} alt={vendor.name} className="object-cover" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+                    <Image src={getOptimizedCloudinaryUrl(vendor.logo, 80)} alt={vendor.name} className="object-cover" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
                  ) : (
                    <span className="text-2xl font-bold text-white">
                      {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
@@ -1254,7 +1254,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                     {(product.images?.length ?? 0) > 0 ? (
                       <Image
-                        src={product.images![0].url}
+                        src={getOptimizedCloudinaryUrl(product.images![0].url, 400)}
                         alt={product.images![0].alt || product.name}
                         className="object-cover"
                         fill
@@ -1262,7 +1262,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                         sizes={CARD_IMAGE_SIZES_2COL}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
-                      />
+                       unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1359,7 +1359,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                     {(product.images?.length ?? 0) > 0 ? (
                       <Image
-                        src={product.images![0].url}
+                        src={getOptimizedCloudinaryUrl(product.images![0].url, 400)}
                         alt={product.images![0].alt || product.name}
                         className="object-cover"
                         fill
@@ -1367,7 +1367,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                         sizes={CARD_IMAGE_SIZES_3COL}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
-                      />
+                       unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1463,7 +1463,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                   <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden w-full">
                     {(product.images?.length ?? 0) > 0 ? (
                       <Image
-                        src={product.images![0].url}
+                        src={getOptimizedCloudinaryUrl(product.images![0].url, 400)}
                         alt={product.images![0].alt || product.name}
                         className="object-cover"
                         fill
@@ -1471,7 +1471,7 @@ function FeaturedProductsSection({ excludeIds }: { excludeIds?: Set<string> }) {
                         sizes={CARD_IMAGE_SIZES_5COL}
                         placeholder="blur"
                         blurDataURL={getBlurDataURL()}
-                      />
+                       unoptimized />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-100">
                         <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1652,3 +1652,4 @@ function FeaturedServicesSection() {
     </section>
   )
 }
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'

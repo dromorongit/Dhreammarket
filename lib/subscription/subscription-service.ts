@@ -404,6 +404,7 @@ export async function getUpcomingRenewals(daysAhead: number = 30) {
       plan: { select: { name: true, priceMonthly: true, priceYearly: true } },
     },
     orderBy: { nextRenewalAt: 'asc' },
+    take: 500,
   })
 
   return subscriptions.map((s) => ({

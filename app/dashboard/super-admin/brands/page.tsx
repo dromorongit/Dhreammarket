@@ -236,7 +236,7 @@ export default function SuperAdminBrandsPage() {
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {brand.logo ? (
-                      <Image src={brand.logo} alt={brand.name} width={80} height={80} className="w-full h-full object-contain" sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()} />
+                      <Image src={getOptimizedCloudinaryUrl(brand.logo, 80)} alt={brand.name} width={80} height={80} className="w-full h-full object-contain" sizes={CARD_IMAGE_SIZES_4COL} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
                     ) : (
                       <span className="text-xl font-bold text-royal-blue">{brand.name.charAt(0)}</span>
                     )}
@@ -446,3 +446,4 @@ function BrandModal({
     </div>
   )
 }
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'

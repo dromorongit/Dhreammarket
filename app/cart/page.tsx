@@ -13,6 +13,7 @@ import { getAvailableRegions } from '@/lib/shipping'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart } from '@/lib/CartContext'
 import { getBlurDataURL, SEARCH_THUMB_SIZES } from '@/lib/image-utils'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 
 export default function Cart() {
    const router = useRouter()
@@ -134,7 +135,7 @@ export default function Cart() {
                 <div className="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0">
                   {item.product.images.length > 0 ? (
                     <Image
-                      src={item.product.images[0].url}
+                      src={getOptimizedCloudinaryUrl(item.product.images[0].url, 400)}
                       alt={item.product.images[0].alt || item.product.name}
                       width={80}
                       height={80}
@@ -143,6 +144,7 @@ export default function Cart() {
                       sizes={SEARCH_THUMB_SIZES}
                       placeholder="blur"
                       blurDataURL={getBlurDataURL()}
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

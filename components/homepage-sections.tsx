@@ -98,7 +98,7 @@ return (
               />
               {product.images?.[0] ? (
                 <Image
-                  src={product.images?.[0]?.url}
+                  src={getOptimizedCloudinaryUrl(product.images?.[0]?.url, 400)}
                   alt={product.images?.[0]?.alt || product.name}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   fill
@@ -106,7 +106,7 @@ return (
                   placeholder="blur"
                   blurDataURL={getBlurDataURL()}
                   loading="lazy"
-                />
+                 unoptimized />
               ) : (
                <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,14 +318,14 @@ export function FeaturedVendorsSection({ section }: HomepageSectionProps) {
                 <div className="relative h-40 bg-gradient-to-br from-deep-navy to-royal-blue overflow-hidden">
                  {vendor.logo ? (
                      <Image
-                       src={vendor.logo}
+                       src={getOptimizedCloudinaryUrl(vendor.logo, 80)}
                        alt={vendor.name}
                        className="absolute inset-0 w-full h-full object-cover opacity-50"
                        fill
                        sizes={CARD_IMAGE_SIZES_4COL}
                        placeholder="blur"
                        blurDataURL={getBlurDataURL()}
-                     />
+                      unoptimized />
                    ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-4xl font-bold text-white opacity-30">
@@ -533,14 +533,14 @@ export function GadgetDisplaySection({ section }: HomepageSectionProps) {
            <div className="relative aspect-[4/5] bg-slate-50 overflow-hidden">
              {product.images?.[0] ? (
               <Image
-                src={product.images[0].url}
+                src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                 alt={product.images[0].alt || product.name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 fill
                 sizes={CARD_IMAGE_SIZES_4COL}
                 placeholder="blur"
                 blurDataURL={getBlurDataURL()}
-              />
+               unoptimized />
             ) : (
               <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-slate-50">
                 <svg className="w-16 h-16 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -672,13 +672,14 @@ export function HeroBannerSection({ section }: HomepageSectionProps) {
             <div className="aspect-square bg-white/10 rounded-3xl overflow-hidden backdrop-blur-sm">
               {heroProduct.images?.[0] ? (
                 <Image
-                  src={heroProduct.images[0].url}
+                  src={getOptimizedCloudinaryUrl(heroProduct.images[0].url, 400)}
                   alt={heroProduct.images[0].alt || heroProduct.name}
                   className="object-cover"
                   fill
                   sizes={CARD_IMAGE_SIZES_2COL}
                   placeholder="blur"
                   blurDataURL={getBlurDataURL()}
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -768,7 +769,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                               <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
   {product.images?.[0] ? (
                                   <Image
-                                    src={product.images[0].url}
+                                    src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                                     alt={product.images[0].alt || product.name}
                                     className="object-cover"
                                     fill
@@ -776,7 +777,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                                     placeholder="blur"
                                     blurDataURL={getBlurDataURL()}
                                     loading="lazy"
-                                  />
+                                   unoptimized />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center bg-slate-100">
                                     <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -829,7 +830,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                             <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
   {product.images?.[0] ? (
                                  <Image
-                                   src={product.images[0].url}
+                                   src={getOptimizedCloudinaryUrl(product.images[0].url, 400)}
                                    alt={product.images[0].alt || product.name}
                                    className="object-cover"
                                    fill
@@ -837,7 +838,7 @@ export function CategoryShowcaseSection({ section }: HomepageSectionProps) {
                                    placeholder="blur"
                                    blurDataURL={getBlurDataURL()}
                                    loading="lazy"
-                                 />
+                                  unoptimized />
                                ) : (
                                  <div className="w-full h-full flex items-center justify-center bg-slate-100">
                                    <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1149,7 +1150,7 @@ export function VerifiedVendorsSection({ section }: HomepageSectionProps) {
                 <Card variant="elevated" className="flex-shrink-0 snap-start group hover:shadow-xl transition-all duration-300 p-6 text-center w-[260px] sm:w-[300px] lg:w-[340px] h-full flex flex-col">
                   <div className="relative w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
                     {vendor.logo ? (
-                      <Image src={vendor.logo} alt={vendor.name} className="object-cover w-full h-full" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()} />
+                      <Image src={getOptimizedCloudinaryUrl(vendor.logo, 80)} alt={vendor.name} className="object-cover w-full h-full" fill sizes={VENDOR_LOGO_SIZES} placeholder="blur" blurDataURL={getBlurDataURL()}  unoptimized />
                     ) : (
                       <span className="text-2xl font-bold text-white">
                         {truncateVendorName(vendor.name).charAt(0).toUpperCase()}
@@ -1459,3 +1460,4 @@ export function HomepageSectionRenderer({ sections }: { sections: ManagedHomepag
     </>
   )
 }
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
