@@ -2,7 +2,7 @@ export function getOptimizedCloudinaryUrl(url: string | null | undefined, width:
   if (!url) return ''
   if (!url.includes('res.cloudinary.com') && !url.includes('cloudinary.com')) return url
 
-  const transformation = `f_auto,q_auto:${quality},w_${width}`
+  const transformation = `f_auto,q_auto,w_${width}`
 
   if (url.includes('/upload/')) {
     return url.replace('/upload/', `/upload/${transformation}/`)
