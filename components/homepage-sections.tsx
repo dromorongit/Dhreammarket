@@ -86,10 +86,10 @@ interface HomepageSectionProps {
   })
 
 return (
-      <Card variant="elevated" className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 border border-gold/20 hover:border-gold/50">
+      <Card variant="elevated" className="group flex flex-col overflow-hidden rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 w-full border border-gold/20 hover:border-gold/50">
         <div className="flex flex-col h-full">
           <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
               <WishlistButton
                 productId={product.id}
                 initialIsWishlisted={initialIsWishlisted}
@@ -121,8 +121,8 @@ return (
               </div>
               <ProductBadges product={badgeData} />
            </div>
-         </Link>
-        <div className="p-2 space-y-1 flex-1 flex flex-col">
+          </Link>
+        <div className="p-2.5 space-y-1 flex-1 flex flex-col">
           <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
             {product.name}
           </h3>
@@ -146,12 +146,12 @@ return (
                  if (badgeInfo) {
                    const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                    return (
-                     <MdVerified className={`w-4 h-4 flex-shrink-0 inline-block ${iconColor}`} />
+                      <MdVerified className={`w-3.5 h-3.5 flex-shrink-0 inline-block ${iconColor}`} />
                    )
                  }
                  if (product.store.isVerified) {
                    return (
-                     <MdVerified className="w-4 h-4 text-sky-500 flex-shrink-0 inline-block" />
+                      <MdVerified className="w-3.5 h-3.5 text-sky-500 flex-shrink-0 inline-block" />
                    )
                  }
                  return null

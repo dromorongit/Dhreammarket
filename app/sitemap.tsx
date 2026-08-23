@@ -22,71 +22,81 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: page.priority,
   }))
 
-  const categories = await getPrisma().productCategory.findMany({
-    where: { isActive: true },
-    select: { slug: true, updatedAt: true },
-    take: 50000,
-  })
+  let categoryEntries: MetadataRoute.Sitemap = []
+  let vendorCategoryEntries: MetadataRoute.Sitemap = []
+  let vendorEntries: MetadataRoute.Sitemap = []
+  let productEntries: MetadataRoute.Sitemap = []
 
-  const categoryEntries: MetadataRoute.Sitemap = categories
-    .filter((cat): cat is { slug: string; updatedAt: Date } => cat.slug !== null)
-    .map((category) => ({
-      url: `${SITE_URL}/marketplace/category/${category.slug}`,
-      lastModified: category.updatedAt,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    }))
+  try {
+    const categories = await getPrisma().productCategory.findMany({
+      where: { isActive: true },
+      select: { slug: true, updatedAt: true },
+      take: 50000,
+    })
 
-  const vendorCategories = await getPrisma().vendorCategory.findMany({
-    where: { isActive: true },
-    select: { slug: true },
-    take: 50000,
-  })
+    categoryEntries = categories
+      .filter((cat): cat is { slug: string; updatedAt: Date } => cat.slug !== null)
+      .map((category) => ({
+        url: `${SITE_URL}/marketplace/category/${category.slug}`,
+        lastModified: category.updatedAt,
+        changeFrequency: 'weekly',
+        priority: 0.7,
+      }))
 
-  const vendorCategoryEntries: MetadataRoute.Sitemap = vendorCategories
-    .filter((cat): cat is { slug: string } => cat.slug !== null)
-    .map((vc) => ({
-      url: `${SITE_URL}/marketplace/vendor/${vc.slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }))
+    const vendorCategories = await getPrisma().vendorCategory.findMany({
+      where: { isActive: true },
+      select: { slug: true },
+      take: 50000,
+    })
 
-  const vendors = await getPrisma().store.findMany({
-    where: { categoryId: { not: null } },
-    select: { slug: true, updatedAt: true },
-    take: 50000,
-  })
+    vendorCategoryEntries = vendorCategories
+      .filter((cat): cat is { slug: string } => cat.slug !== null)
+      .map((vc) => ({
+        url: `${SITE_URL}/marketplace/vendor/${vc.slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      }))
 
-  const vendorEntries: MetadataRoute.Sitemap = vendors
-    .filter((vendor): vendor is { slug: string; updatedAt: Date } => vendor.slug !== null)
-    .map((vendor) => ({
-      url: `${SITE_URL}/vendor/${vendor.slug}`,
-      lastModified: vendor.updatedAt ?? new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }))
+    const vendors = await getPrisma().store.findMany({
+      where: { categoryId: { not: null } },
+      select: { slug: true, updatedAt: true },
+      take: 50000,
+    })
 
-  const products = await getPrisma().product.findMany({
-    where: {
-      OR: [
-        { stock: { gt: 0 } },
-        { availabilityType: 'PREORDER' },
-        { availabilityType: 'BACKORDER' },
-      ],
-    },
-    select: { slug: true, updatedAt: true },
-    take: 50000,
-  })
+    vendorEntries = vendors
+      .filter((vendor): vendor is { slug: string; updatedAt: Date } => vendor.slug !== null)
+      .map((vendor) => ({
+        url: `${SITE_URL}/vendor/${vendor.slug}`,
+        lastModified: vendor.updatedAt ?? new Date(),
+        changeFrequency: 'weekly',
+        priority: 0.8,
+      }))
 
-  const productEntries: MetadataRoute.Sitemap = products
-    .filter((product): product is { slug: string; updatedAt: Date } => product.slug !== null)
-    .map((product) => ({
-      url: `${SITE_URL}/marketplace/product/${product.slug}`,
-      lastModified: product.updatedAt,
-      changeFrequency: 'daily',
-      priority: 0.8,
-    }))
+    const products = await getPrisma().product.findMany({
+      where: {
+        OR: [
+          { stock: { gt: 0 } },
+          { availabilityType: 'PREORDER' },
+          { availabilityType: 'BACKORDER' },
+        ],
+      },
+      select: { slug: true, updatedAt: true },
+      take: 50000,
+    })
+
+    productEntries = products
+      .filter((product): product is { slug: string; updatedAt: Date } => product.slug !== null)
+      .map((product) => ({
+        url: `${SITE_URL}/marketplace/product/${product.slug}`,
+        lastModified: product.updatedAt,
+        changeFrequency: 'daily',
+        priority: 0.8,
+      }))
+  } catch (error) {
+    console.error('Sitemap generation: transient database error, falling back to static sitemap', error)
+    return staticEntries
+  }
 
   return [...staticEntries, ...categoryEntries, ...vendorCategoryEntries, ...vendorEntries, ...productEntries]
 }
