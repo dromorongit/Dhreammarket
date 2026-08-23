@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logInfo } from './logger'
 
 const MAX_RATE_LIMIT_ENTRIES = 10000
+
+const globalForRateLimit = globalThis as unknown as {
+  cleanupInterval: NodeJS.Timeout | null
+  cleanupHandlersRegistered: boolean
+}
 
 // In-memory rate limit store (production should use Redis)
 // Key: IP + endpoint, Value: { count, resetTime }
@@ -120,16 +126,43 @@ export function rateLimit(endpoint: keyof typeof RATE_LIMIT_CONFIGS) {
   }
 }
 
-let cleanupInterval: NodeJS.Timeout | null = null
-if (typeof setInterval !== 'undefined' && !cleanupInterval) {
-  cleanupInterval = setInterval(() => {
-    const now = Date.now()
-    const entries = Array.from(rateLimitStore.entries())
-    for (const [key, value] of entries) {
-      if (now > value.resetTime) {
-        rateLimitStore.delete(key)
-      }
+function cleanupExpiredEntries(): void {
+  const now = Date.now()
+  const entries = Array.from(rateLimitStore.entries())
+  for (const [key, value] of entries) {
+    if (now > value.resetTime) {
+      rateLimitStore.delete(key)
     }
-    enforceRateLimitCap()
-  }, 60 * 1000)
+  }
+  enforceRateLimitCap()
+}
+
+function registerCleanupInterval(): void {
+  if (process.env.NODE_ENV === 'test') return
+  if (globalForRateLimit.cleanupHandlersRegistered) {
+    globalForRateLimit.cleanupInterval ??= setInterval(cleanupExpiredEntries, 60 * 1000)
+    return
+  }
+
+  if (typeof setInterval !== 'undefined') {
+    globalForRateLimit.cleanupInterval = setInterval(cleanupExpiredEntries, 60 * 1000)
+  }
+
+  const gracefulShutdown = () => {
+    if (globalForRateLimit.cleanupInterval) {
+      clearInterval(globalForRateLimit.cleanupInterval)
+      globalForRateLimit.cleanupInterval = null
+    }
+  }
+
+  if (typeof process !== 'undefined') {
+    process.on('SIGTERM', gracefulShutdown)
+    process.on('SIGINT', gracefulShutdown)
+    globalForRateLimit.cleanupHandlersRegistered = true
+    logInfo('Graceful shutdown handlers registered for rate-limit cleanup')
+  }
+}
+
+if (typeof globalThis !== 'undefined') {
+  registerCleanupInterval()
 }
