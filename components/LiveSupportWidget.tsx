@@ -43,6 +43,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
   const [subject, setSubject] = useState('')
   const [showSubject, setShowSubject] = useState(false)
   const [subjectError, setSubjectError] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
@@ -181,7 +182,11 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
       setConversationRef(data.conversationRef)
       setShowSubject(false)
       setSubjectError('')
+      setErrorMessage('')
       queryClient.invalidateQueries({ queryKey: ['support-conversations'] })
+    },
+    onError: (error: Error) => {
+      setErrorMessage(error.message)
     },
   })
 
@@ -208,6 +213,9 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
       refetchMessages()
       queryClient.invalidateQueries({ queryKey: ['support-conversations'] })
     },
+    onError: (error: Error) => {
+      setErrorMessage(error.message)
+    },
   })
 
   const handleSend = useCallback(() => {
@@ -216,6 +224,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
     if (!conversationRef && !showSubject) {
       setShowSubject(true)
       setSubjectError('')
+      setErrorMessage('')
       return
     }
 
@@ -226,23 +235,14 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
 
     if (!conversationRef && showSubject) {
       setSubjectError('')
+      setErrorMessage('')
       createConversationMutation.mutate(
-        { subject: subject.trim(), message: input.trim(), type: 'GENERAL' },
-        {
-          onSuccess: () => {
-            setInput('')
-            setSubject('')
-          },
-        }
+        { subject: subject.trim(), message: input.trim(), type: 'GENERAL' }
       )
       return
     }
 
-    sendMessageMutation.mutate(input.trim(), {
-      onSuccess: () => {
-        setInput('')
-      },
-    })
+    sendMessageMutation.mutate(input.trim())
   }, [input, subject, conversationRef, showSubject, createConversationMutation, sendMessageMutation])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -329,13 +329,16 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
           </div>
 
           <div className="p-4 border-t border-gray-100">
+            {errorMessage && (
+              <div className="text-red-600 text-sm mb-2">{errorMessage}</div>
+            )}
             {showSubject && !conversationRef ? (
               <div className="space-y-2">
                 <Input
                   type="text"
                   placeholder="Brief subject"
                   value={subject}
-                  onChange={(e) => { setSubject(e.target.value); setSubjectError('') }}
+                  onChange={(e) => { setSubject(e.target.value); setSubjectError(''); setErrorMessage('') }}
                   className="text-sm"
                 />
                 {subjectError && <div className="text-red-600 text-sm">{subjectError}</div>}
@@ -346,7 +349,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
                 type="text"
                 placeholder={conversationRef ? 'Type a message...' : 'Describe your issue...'}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); setErrorMessage('') }}
                 onKeyDown={handleKeyDown}
                 className="flex-1 text-sm"
                 disabled={sendMessageMutation.isPending || createConversationMutation.isPending}
