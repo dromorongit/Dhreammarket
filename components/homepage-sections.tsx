@@ -1257,7 +1257,6 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
         <div>
           {topRowItems.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
                 {topRowItems.map((item: any) => (
                   <div key={item.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
                     {item._itemType === 'product' ? (
@@ -1267,12 +1266,10 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
                     )}
                   </div>
                 ))}
-              </div>
             </ScrollableRow>
           )}
           {bottomRowItems.length > 0 && (
             <ScrollableRow>
-              <div className="flex gap-4">
                 {bottomRowItems.map((item: any) => (
                   <div key={item.id} className="snap-start flex-shrink-0 w-[calc(50%-8px)] sm:w-[calc(25%-12px)] lg:w-[calc(20%-12px)]">
                     {item._itemType === 'product' ? (
@@ -1282,7 +1279,6 @@ export function SponsoredSection({ section }: HomepageSectionProps) {
                     )}
                   </div>
                 ))}
-              </div>
             </ScrollableRow>
           )}
         </div>
