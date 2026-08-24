@@ -95,14 +95,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             select: { id: true, createdAt: true },
           })
 
-          console.log('[SUPPORT STREAM POLL]', JSON.stringify({
-            conversationRef,
-            ticketId,
-            lastMessageId: lastMessage?.id || null,
-            lastSeenMessageId,
-            newMessageDetected: lastMessage && lastMessage.id !== lastSeenMessageId,
-          }))
-
           if (lastMessage && lastMessage.id !== lastSeenMessageId) {
             lastSeenMessageId = lastMessage.id
             sendEvent({ type: 'activity', lastMessageAt: lastMessage.createdAt })

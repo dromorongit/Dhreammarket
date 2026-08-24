@@ -119,13 +119,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     })
 
-    console.log('[ADMIN SUPPORT MESSAGE]', JSON.stringify({
-      ticketId: id,
-      messageId: supportMessage.id,
-      senderType: supportMessage.senderType,
-      timestamp: supportMessage.createdAt,
-    }))
-
     const newStatus = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED' ? 'OPEN' : ticket.status
     await prisma.supportTicket.update({
       where: { id },
