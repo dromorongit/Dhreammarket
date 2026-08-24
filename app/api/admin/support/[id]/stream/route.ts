@@ -34,7 +34,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           }
         }
 
-        const pollInterval = setInterval(async () => {
+      sendEvent({ type: 'connected' })
+
+      const pollInterval = setInterval(async () => {
           if (isCancelled) return
           try {
             const lastMessage = await prisma.supportMessage.findFirst({

@@ -107,6 +107,13 @@ export default function AdminSupportPage() {
     fetchTickets()
   }, [fetchTickets])
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTickets()
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [fetchTickets])
+
   const { refetch: refetchTicketMessages } = useQuery({
     queryKey: ['admin-support-messages', selectedTicket?.id],
     queryFn: async () => {
