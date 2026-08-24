@@ -138,6 +138,11 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
               try {
                 const data = JSON.parse(line.slice(6))
                 if (data.type === 'activity' || data.type === 'status') {
+                  console.log('[LIVE SUPPORT WIDGET SSE]', JSON.stringify({
+                    eventType: data.type,
+                    conversationRef,
+                    refetchMessagesFired: true,
+                  }))
                   refetchMessages()
                 }
               } catch {

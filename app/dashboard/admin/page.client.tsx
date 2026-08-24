@@ -44,6 +44,16 @@ interface DemandAnalytics {
   stockoutFrequency: Array<{ productId: string; productName: string; stockoutCount: number }>
 }
 
+interface SupportTicket {
+  id: string
+  subject: string
+  status: string
+  createdAt: string
+  user: {
+    email: string
+  }
+}
+
 interface RecentItem {
   id: string
   createdAt: string
@@ -105,30 +115,37 @@ export default function AdminDashboard() {
   }>>([])
   const [recentVendors, setRecentVendors] = useState<Array<{
     id: string
+    createdAt: string
     email: string
     role: string
-    createdAt: string
     store: {
       name: string
     } | null
   }>>([])
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([])
 
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/admin/stats')
-      const data = await response.json()
-      
-      if (!response.ok) {
-        setError(data.error || 'Failed to load stats')
+      const [statsRes, supportRes] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/support'),
+      ])
+
+      if (!statsRes.ok || !supportRes.ok) {
+        setError('Failed to load dashboard data')
         return
       }
-      
-      setStats(data.stats)
-      setDemandAnalytics(data.demandAnalytics || null)
-      setRecentOrders(data.recentOrders)
-      setRecentUsers(data.recentUsers)
-      setRecentVendors(data.recentVendors)
+
+      const statsData = await statsRes.json()
+      const supportData = await supportRes.json()
+
+      setStats(statsData.stats)
+      setDemandAnalytics(statsData.demandAnalytics || null)
+      setRecentOrders(statsData.recentOrders)
+      setRecentUsers(statsData.recentUsers)
+      setRecentVendors(statsData.recentVendors)
+      setSupportTickets(supportData.tickets || [])
     } catch (err) {
       setError('Failed to fetch stats')
       console.error(err)
@@ -509,9 +526,48 @@ export default function AdminDashboard() {
                  <p className="text-sm text-slate-500 mt-1">For pre/backorders</p>
                </CardContent>
              </Card>
-           </div>
+            </div>
 
-         {/* Quick Links & Platform Status */}
+          <Card variant="elevated" className="mb-8">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-deep-navy">Support & Moderation</h3>
+                <Button asChild variant="primary" size="sm">
+                  <Link href="/dashboard/admin/support">View All</Link>
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {supportTickets.length === 0 ? (
+                  <EmptyState
+                    icon={
+                      <svg className="w-10 h-10 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    }
+                    title="No support tickets"
+                    description="Support tickets will appear here."
+                    className="py-6"
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    {supportTickets.slice(0, 5).map((ticket) => (
+                      <div key={ticket.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">{ticket.subject}</p>
+                          <p className="text-xs text-slate-500">{ticket.user?.email || 'No email'}</p>
+                        </div>
+                        <Badge variant={ticket.status === 'OPEN' ? 'warning' : 'success'}>
+                          {ticket.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Links & Platform Status */}
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
            <Card variant="elevated">
              <CardContent className="p-6">
@@ -587,17 +643,27 @@ export default function AdminDashboard() {
                    <span className="text-sm font-medium text-slate-700">Manage Payouts</span>
                  </Link>
                </Button>
- <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <Link href="/dashboard/admin/verification-applications">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Verify Vendors</span>
-                  </Link>
-                </Button>
-                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                   <Link href="/dashboard/admin/verification-applications">
+                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                       </svg>
+                     </div>
+                     <span className="text-sm font-medium text-slate-700">Verify Vendors</span>
+                   </Link>
+                 </Button>
+                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                   <Link href="/dashboard/admin/support">
+                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-royal-blue to-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                       </svg>
+                     </div>
+                     <span className="text-sm font-medium text-slate-700">Support Tickets</span>
+                   </Link>
+                 </Button>
+                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
                   <Link href="/dashboard/admin/settings">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
