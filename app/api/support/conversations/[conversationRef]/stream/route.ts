@@ -84,30 +84,34 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       sendEvent({ type: 'connected' })
 
+      let lastSeenMessageId: string | null = null
+
       const pollInterval = setInterval(async () => {
         if (isCancelled) return
         try {
           const lastMessage = await prisma.supportMessage.findFirst({
-            where: { ticketId, senderType: { not: resolved.role === 'CUSTOMER' ? 'CUSTOMER' : 'GUEST' } },
+            where: { ticketId, senderType: { in: ['ADMIN', 'SUPER_ADMIN'] } },
             orderBy: { createdAt: 'desc' },
             select: { id: true, createdAt: true },
           })
+
+          if (lastMessage && lastMessage.id !== lastSeenMessageId) {
+            lastSeenMessageId = lastMessage.id
+            sendEvent({ type: 'activity', lastMessageAt: lastMessage.createdAt })
+          }
 
           const conversation = await prisma.supportConversation.findUnique({
             where: { id: resolved.conversation.id },
             select: { status: true, isReadByCustomer: true, lastMessageAt: true },
           })
 
-          if (lastMessage) {
-            sendEvent({ type: 'activity', lastMessageAt: lastMessage.createdAt })
-          }
           if (conversation) {
             sendEvent({ type: 'status', status: conversation.status, isReadByCustomer: conversation.isReadByCustomer })
           }
         } catch {
           // ignore poll errors
         }
-      }, 3000)
+      }, 1500)
 
       request.signal.addEventListener('abort', () => {
         isCancelled = true

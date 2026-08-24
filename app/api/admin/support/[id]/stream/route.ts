@@ -36,30 +36,34 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
       sendEvent({ type: 'connected' })
 
+      let lastSeenMessageId: string | null = null
+
       const pollInterval = setInterval(async () => {
-          if (isCancelled) return
-          try {
-            const lastMessage = await prisma.supportMessage.findFirst({
-              where: { ticketId: id, senderType: { not: 'CUSTOMER' } },
-              orderBy: { createdAt: 'desc' },
-              select: { id: true, createdAt: true },
-            })
+        if (isCancelled) return
+        try {
+          const lastMessage = await prisma.supportMessage.findFirst({
+            where: { ticketId: id, senderType: { in: ['GUEST', 'CUSTOMER'] } },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, createdAt: true },
+          })
 
-            const conversation = await prisma.supportConversation.findFirst({
-              where: { ticketId: id },
-              select: { status: true, isReadByAdmin: true, lastMessageAt: true },
-            })
-
-            if (lastMessage) {
-              sendEvent({ type: 'activity', lastMessageAt: lastMessage.createdAt })
-            }
-            if (conversation) {
-              sendEvent({ type: 'status', status: conversation.status, isReadByAdmin: conversation.isReadByAdmin })
-            }
-          } catch {
-            // ignore poll errors
+          if (lastMessage && lastMessage.id !== lastSeenMessageId) {
+            lastSeenMessageId = lastMessage.id
+            sendEvent({ type: 'activity', lastMessageAt: lastMessage.createdAt })
           }
-        }, 3000)
+
+          const conversation = await prisma.supportConversation.findFirst({
+            where: { ticketId: id },
+            select: { status: true, isReadByAdmin: true, lastMessageAt: true },
+          })
+
+          if (conversation) {
+            sendEvent({ type: 'status', status: conversation.status, isReadByAdmin: conversation.isReadByAdmin })
+          }
+        } catch {
+          // ignore poll errors
+        }
+      }, 1500)
 
         request.signal.addEventListener('abort', () => {
           isCancelled = true
