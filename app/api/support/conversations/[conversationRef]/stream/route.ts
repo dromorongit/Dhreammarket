@@ -25,16 +25,33 @@ async function resolveConversation(request: NextRequest, conversationRef: string
     include: { ticket: true },
   })
 
-  if (!conversation) return null
+  if (!conversation) {
+    console.error(`[support stream] resolveConversation failed: no conversation found for ref=${conversationRef}`)
+    return null
+  }
 
   if (authUser) {
-    if (conversation.customerType !== 'CUSTOMER') return null
-    if (conversation.ticket.userId !== authUser.userId) return null
+    if (conversation.customerType !== 'CUSTOMER') {
+      console.error(`[support stream] resolveConversation failed: customerType mismatch (expected CUSTOMER, got ${conversation.customerType}) for ref=${conversationRef}`)
+      return null
+    }
+    if (conversation.ticket.userId !== authUser.userId) {
+      console.error(`[support stream] resolveConversation failed: userId mismatch (ticket.userId=${conversation.ticket.userId}, authUser.userId=${authUser.userId}) for ref=${conversationRef}`)
+      return null
+    }
     return { conversation, role: 'CUSTOMER' }
   }
 
   if (guestToken && conversation.customerType === 'GUEST' && conversation.guestToken === guestToken) {
     return { conversation, role: 'GUEST' }
+  }
+
+  if (!guestToken) {
+    console.error(`[support stream] resolveConversation failed: no guestToken cookie present for GUEST conversation ref=${conversationRef}`)
+  } else if (conversation.customerType !== 'GUEST') {
+    console.error(`[support stream] resolveConversation failed: guestToken present but conversation is ${conversation.customerType} (not GUEST) for ref=${conversationRef}`)
+  } else {
+    console.error(`[support stream] resolveConversation failed: guestToken mismatch for ref=${conversationRef}`)
   }
 
   return null
@@ -56,14 +73,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const encoder = new TextEncoder()
       let isCancelled = false
 
-        const sendEvent = (data: Record<string, unknown>) => {
-          if (isCancelled) return
-          try {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
-          } catch {
-            // stream closed
-          }
+      const sendEvent = (data: Record<string, unknown>) => {
+        if (isCancelled) return
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        } catch {
+          // stream closed
         }
+      }
+
+      sendEvent({ type: 'connected' })
 
       const pollInterval = setInterval(async () => {
         if (isCancelled) return

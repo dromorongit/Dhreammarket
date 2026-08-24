@@ -71,6 +71,13 @@ export async function PATCH(
       },
     })
 
+    // Sync conversation status with ticket status so customer-facing widget reflects changes
+    const conversationStatus = updateData.status ?? existingTicket.status
+    await getPrisma().supportConversation.updateMany({
+      where: { ticketId: id },
+      data: { status: conversationStatus },
+    })
+
     // Create audit log for support ticket update
     const { beforeData, afterData } = captureBeforeAfter(
       { status: existingTicket.status, priority: existingTicket.priority, adminReply: existingTicket.adminReply },

@@ -6,10 +6,13 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+const RESPONSE_TIME_ESTIMATE = 'a few minutes'
+
 interface Message {
   id: string
   senderType: string
   senderId?: string
+  senderName?: string | null
   message: string
   isRead: boolean
   createdAt: string
@@ -176,13 +179,23 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
         const error = await res.json()
         throw new Error(error.error || 'Failed to create conversation')
       }
-      return res.json() as Promise<{ ticket: unknown; conversationRef: string }>
+      return res.json() as Promise<{ ticket: unknown; conversationRef: string; initialMessage?: Message }>
     },
     onSuccess: (data) => {
       setConversationRef(data.conversationRef)
       setShowSubject(false)
       setSubjectError('')
       setErrorMessage('')
+      setInput('')
+      setSubject('')
+      if (data.initialMessage) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === data.initialMessage!.id)
+          if (exists) return prev
+          return [...prev, data.initialMessage!]
+        })
+      }
+      refetchMessages()
       queryClient.invalidateQueries({ queryKey: ['support-conversations'] })
     },
     onError: (error: Error) => {
@@ -256,17 +269,17 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
     return new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
   }
 
-  const getSenderLabel = (senderType: string) => {
-    switch (senderType) {
+  const getSenderLabel = (msg: Message) => {
+    switch (msg.senderType) {
       case 'GUEST':
       case 'CUSTOMER':
         return 'You'
       case 'ADMIN':
-        return 'Support Agent'
+        return msg.senderName || 'Support Agent'
       case 'SUPER_ADMIN':
-        return 'Support Manager'
+        return msg.senderName || 'Support Manager'
       default:
-        return senderType
+        return msg.senderName || msg.senderType
     }
   }
 
@@ -309,6 +322,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
                   </svg>
                 </div>
                 <p className="text-gray-500 text-sm">Start a conversation with our support team.</p>
+                <p className="text-gray-400 text-xs mt-2">We typically respond within {RESPONSE_TIME_ESTIMATE}.</p>
               </div>
             )}
 
@@ -316,7 +330,7 @@ export default function LiveSupportWidget({ userRole }: { userRole?: string | nu
               <div key={msg.id} className={'flex ' + (msg.senderType === 'GUEST' || msg.senderType === 'CUSTOMER' ? 'justify-end' : 'justify-start')}>
                 <div className={'max-w-[80%] rounded-2xl px-4 py-2 ' + (msg.senderType === 'GUEST' || msg.senderType === 'CUSTOMER' ? 'bg-royal-blue text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm')}>
                   {msg.senderType === 'ADMIN' || msg.senderType === 'SUPER_ADMIN' ? (
-                    <p className="text-xs font-medium mb-1 text-royal-blue">{getSenderLabel(msg.senderType)}</p>
+                    <p className="text-xs font-medium mb-1 text-royal-blue">{getSenderLabel(msg)}</p>
                   ) : null}
                   <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                   <p className={'text-xs mt-1 ' + (msg.senderType === 'GUEST' || msg.senderType === 'CUSTOMER' ? 'text-white/70' : 'text-gray-500')}>

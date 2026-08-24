@@ -919,6 +919,7 @@ model SupportMessage {
   ticketId    String
   senderType  SupportMessageSenderType
   senderId    String?
+  senderName  String?
   message     String
   isRead      Boolean                  @default(false)
   createdAt   DateTime                 @default(now())

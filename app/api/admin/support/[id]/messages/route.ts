@@ -33,6 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         id: true,
         senderType: true,
         senderId: true,
+        senderName: true,
         message: true,
         isRead: true,
         createdAt: true,
@@ -79,11 +80,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const senderType = adminUser.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN'
 
+    const adminWithName = await prisma.user.findUnique({
+      where: { id: adminUser.userId },
+      select: {
+        email: true,
+        profile: { select: { firstName: true, lastName: true } },
+      },
+    })
+
+    let senderName: string | null = null
+    if (adminWithName) {
+      const firstName = adminWithName.profile?.firstName
+      const lastName = adminWithName.profile?.lastName
+      if (firstName || lastName) {
+        senderName = `${firstName || ''} ${lastName || ''}`.trim()
+      } else {
+        senderName = adminWithName.email.split('@')[0]
+      }
+    }
+
     const supportMessage = await prisma.supportMessage.create({
       data: {
         ticketId: id,
         senderType,
         senderId: adminUser.userId,
+        senderName,
         message: sanitizedMessage,
         isRead: false,
       },
@@ -91,6 +112,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         id: true,
         senderType: true,
         senderId: true,
+        senderName: true,
         message: true,
         isRead: true,
         createdAt: true,

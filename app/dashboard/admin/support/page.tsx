@@ -32,6 +32,7 @@ interface SupportMessage {
   id: string
   senderType: string
   senderId?: string
+  senderName?: string | null
   message: string
   isRead: boolean
   createdAt: string
@@ -497,7 +498,7 @@ export default function AdminSupportPage() {
                         }`}>
                           {msg.senderType === 'ADMIN' || msg.senderType === 'SUPER_ADMIN' ? (
                             <p className="text-xs font-medium mb-1 text-royal-blue">
-                              {msg.senderType === 'SUPER_ADMIN' ? 'Support Manager' : 'Support Agent'}
+                              {msg.senderName || (msg.senderType === 'SUPER_ADMIN' ? 'Support Manager' : 'Support Agent')}
                             </p>
                           ) : null}
                           <p className="text-sm whitespace-pre-wrap">{msg.message}</p>

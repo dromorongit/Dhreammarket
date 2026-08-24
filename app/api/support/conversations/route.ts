@@ -201,6 +201,8 @@ export async function POST(request: NextRequest) {
       return response
     }
 
+    const customerType = authUser ? 'CUSTOMER' : 'GUEST'
+
     const ticket = await prisma.supportTicket.create({
       data: {
         userId: authUser?.userId || null,
@@ -213,12 +215,36 @@ export async function POST(request: NextRequest) {
       select: { id: true, subject: true, message: true, type: true, status: true, priority: true, createdAt: true, updatedAt: true },
     })
 
-    const customerType = authUser ? 'CUSTOMER' : 'GUEST'
     const conversationRef = await createConversationForTicket(ticket.id, customerType, authUser?.userId, guestToken || undefined)
+
+    const senderType = customerType === 'GUEST' ? 'GUEST' : 'CUSTOMER'
+    const createdMessage = await prisma.supportMessage.create({
+      data: {
+        ticketId: ticket.id,
+        senderType,
+        senderId: authUser?.userId || null,
+        message: sanitizedMessage,
+        isRead: false,
+      },
+      select: {
+        id: true,
+        senderType: true,
+        senderId: true,
+        senderName: true,
+        message: true,
+        isRead: true,
+        createdAt: true,
+      },
+    })
+
+    await prisma.supportConversation.update({
+      where: { ticketId: ticket.id },
+      data: { lastMessageAt: new Date() },
+    })
 
     if (!authUser) {
       const response = NextResponse.json(
-        { message: 'Conversation created successfully', ticket, conversationRef, customerType },
+        { message: 'Conversation created successfully', ticket, conversationRef, customerType, initialMessage: createdMessage },
         { status: 201 }
       )
       setGuestTokenCookie(response, guestToken!)
@@ -226,7 +252,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Conversation created successfully', ticket, conversationRef, customerType },
+      { message: 'Conversation created successfully', ticket, conversationRef, customerType, initialMessage: createdMessage },
       { status: 201 }
     )
   } catch (error) {
