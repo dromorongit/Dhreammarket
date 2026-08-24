@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { FiChevronLeft } from 'react-icons/fi'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import { Button } from '@/components/Button'
@@ -74,6 +75,7 @@ export default function AdminSupportPage() {
   const [newStatus, setNewStatus] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [ticketMessages, setTicketMessages] = useState<SupportMessage[]>([])
+  const [showFilters, setShowFilters] = useState(false)
   const queryClient = useQueryClient()
 
   const fetchTickets = useCallback(async () => {
@@ -302,16 +304,16 @@ export default function AdminSupportPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
           {Object.entries(statusConfig).map(([key, config]) => (
             <Card key={key} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
+              <CardContent className="p-3 md:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{statusCounts[key] || 0}</p>
-                    <p className="text-sm text-gray-600">{config.label}</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-900">{statusCounts[key] || 0}</p>
+                    <p className="text-xs md:text-sm text-gray-600">{config.label}</p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.color}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium md:px-3 md:py-1 md:text-sm ${config.bg} ${config.color}`}>
                     {config.label}
                   </span>
                 </div>
@@ -320,7 +322,21 @@ export default function AdminSupportPage() {
           ))}
         </div>
 
-        <Card className="mb-6">
+        {/* Mobile Filter Toggle */}
+        <div className="block md:hidden mb-4">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            {showFilters ? 'Hide Filters' : 'Filters'}
+            <svg className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </Button>
+        </div>
+
+        <Card className={`mb-6 ${showFilters ? 'block' : 'hidden md:block'}`}>
           <CardContent className="p-4">
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
@@ -407,170 +423,320 @@ export default function AdminSupportPage() {
               <p className="text-gray-500">No support tickets match your current filters.</p>
             </CardContent>
           ) : (
-            <div className="divide-y divide-gray-200">
-              {tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => openTicketDetails(ticket)}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
-                          {ticket.subject}
-                        </h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityConfig[ticket.priority]?.bg || 'bg-gray-100'} ${priorityConfig[ticket.priority]?.color || 'text-gray-700'}`}>
-                          {priorityConfig[ticket.priority]?.label || ticket.priority}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig[ticket.status]?.bg || 'bg-gray-100'} ${statusConfig[ticket.status]?.color || 'text-gray-700'}`}>
-                          {statusConfig[ticket.status]?.label || ticket.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
-                        <span className="font-medium text-gray-700">{getUserName(ticket)}</span>
-                        <span>•</span>
-                        <span>{typeLabels[ticket.type] || ticket.type}</span>
-                        <span>•</span>
-                        <span>{formatDate(ticket.createdAt)}</span>
-                      </div>
-                      <p className="text-gray-600 line-clamp-2">{ticket.message}</p>
+            <>
+              {/* Mobile Card View */}
+              <div className="block md:hidden divide-y divide-gray-200">
+                {tickets.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="p-4 hover:bg-gray-50 active:bg-gray-50 transition-colors cursor-pointer min-h-[44px]"
+                    onClick={() => openTicketDetails(ticket)}
+                  >
+                    <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">
+                      {ticket.subject}
+                    </h3>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${priorityConfig[ticket.priority]?.bg || 'bg-gray-100'} ${priorityConfig[ticket.priority]?.color || 'text-gray-700'}`}>
+                        {priorityConfig[ticket.priority]?.label || ticket.priority}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[ticket.status]?.bg || 'bg-gray-100'} ${statusConfig[ticket.status]?.color || 'text-gray-700'}`}>
+                        {statusConfig[ticket.status]?.label || ticket.status}
+                      </span>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openTicketDetails(ticket)
-                      }}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 mb-1.5">
+                      <span className="font-medium text-gray-700">{getUserName(ticket)}</span>
+                      <span>•</span>
+                      <span>{typeLabels[ticket.type] || ticket.type}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2">{ticket.message}</p>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* Desktop Card View */}
+              <div className="hidden md:block divide-y divide-gray-200">
+                {tickets.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => openTicketDetails(ticket)}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900 truncate">
+                            {ticket.subject}
+                          </h3>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${priorityConfig[ticket.priority]?.bg || 'bg-gray-100'} ${priorityConfig[ticket.priority]?.color || 'text-gray-700'}`}>
+                            {priorityConfig[ticket.priority]?.label || ticket.priority}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig[ticket.status]?.bg || 'bg-gray-100'} ${statusConfig[ticket.status]?.color || 'text-gray-700'}`}>
+                            {statusConfig[ticket.status]?.label || ticket.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
+                          <span className="font-medium text-gray-700">{getUserName(ticket)}</span>
+                          <span>•</span>
+                          <span>{typeLabels[ticket.type] || ticket.type}</span>
+                          <span>•</span>
+                          <span>{formatDate(ticket.createdAt)}</span>
+                        </div>
+                        <p className="text-gray-600 line-clamp-2">{ticket.message}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openTicketDetails(ticket)
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card>
 
         {selectedTicket && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedTicket.subject}</h2>
-                    <div className="flex items-center gap-3 text-sm text-gray-500">
-                      <span>{getUserName(selectedTicket)}</span>
-                      <span>•</span>
-                      <span>{formatDate(selectedTicket.createdAt)}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="default">{typeLabels[selectedTicket.type] || selectedTicket.type}</Badge>
-                    <Badge variant="default" className={`${priorityConfig[selectedTicket.priority]?.bg} ${priorityConfig[selectedTicket.priority]?.color}`}>
-                      {priorityConfig[selectedTicket.priority]?.label || selectedTicket.priority} Priority
-                    </Badge>
-                    <Badge variant="default" className={`${statusConfig[selectedTicket.status]?.bg} ${statusConfig[selectedTicket.status]?.color}`}>
-                      {statusConfig[selectedTicket.status]?.label || selectedTicket.status}
-                    </Badge>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversation</h3>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto mb-4">
-                    {ticketMessages.map((msg) => (
-                      <div key={msg.id} className={`flex ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                          msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST'
-                            ? 'bg-royal-blue text-white rounded-br-sm'
-                            : 'bg-gray-100 text-gray-900 rounded-bl-sm'
-                        }`}>
-                          {msg.senderType === 'ADMIN' || msg.senderType === 'SUPER_ADMIN' ? (
-                            <p className="text-xs font-medium mb-1 text-royal-blue">
-                              {msg.senderName || (msg.senderType === 'SUPER_ADMIN' ? 'Support Manager' : 'Support Agent')}
-                            </p>
-                          ) : null}
-                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                          <p className={`text-xs mt-1 ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'text-white/70' : 'text-gray-500'}`}>
-                            {formatDate(msg.createdAt)}
-                          </p>
-                        </div>
+          <>
+            {/* Desktop Modal */}
+            <div className="hidden md:flex fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6 border-b">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedTicket.subject}</h2>
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <span>{getUserName(selectedTicket)}</span>
+                        <span>•</span>
+                        <span>{formatDate(selectedTicket.createdAt)}</span>
                       </div>
-                    ))}
+                    </div>
+                    <button
+                      onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="default">{typeLabels[selectedTicket.type] || selectedTicket.type}</Badge>
+                      <Badge variant="default" className={`${priorityConfig[selectedTicket.priority]?.bg} ${priorityConfig[selectedTicket.priority]?.color}`}>
+                        {priorityConfig[selectedTicket.priority]?.label || selectedTicket.priority} Priority
+                      </Badge>
+                      <Badge variant="default" className={`${statusConfig[selectedTicket.status]?.bg} ${statusConfig[selectedTicket.status]?.color}`}>
+                        {statusConfig[selectedTicket.status]?.label || selectedTicket.status}
+                      </Badge>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
+                    </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Update Status
-                      </label>
-                      <select
-                        value={newStatus}
-                        onChange={(e) => setNewStatus(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        {Object.entries(statusConfig).map(([key, config]) => (
-                          <option key={key} value={key}>{config.label}</option>
-                        ))}
-                      </select>
-                      <Button variant="outline" size="sm" onClick={handleStatusChange} className="mt-2" disabled={updateStatusMutation.isPending}>
-                        Update Status
-                      </Button>
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversation</h3>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto mb-4">
+                      {ticketMessages.map((msg) => (
+                        <div key={msg.id} className={`flex ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                            msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST'
+                              ? 'bg-royal-blue text-white rounded-br-sm'
+                              : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                          }`}>
+                            {msg.senderType === 'ADMIN' || msg.senderType === 'SUPER_ADMIN' ? (
+                              <p className="text-xs font-medium mb-1 text-royal-blue">
+                                {msg.senderName || (msg.senderType === 'SUPER_ADMIN' ? 'Support Manager' : 'Support Agent')}
+                              </p>
+                            ) : null}
+                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                            <p className={`text-xs mt-1 ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'text-white/70' : 'text-gray-500'}`}>
+                              {formatDate(msg.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Reply to Customer
-                      </label>
-                      <textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        rows={4}
-                        placeholder="Type your response here..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                      />
-                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Update Status
+                        </label>
+                        <select
+                          value={newStatus}
+                          onChange={(e) => setNewStatus(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          {Object.entries(statusConfig).map(([key, config]) => (
+                            <option key={key} value={key}>{config.label}</option>
+                          ))}
+                        </select>
+                        <Button variant="outline" size="sm" onClick={handleStatusChange} className="mt-2" disabled={updateStatusMutation.isPending}>
+                          Update Status
+                        </Button>
+                      </div>
 
-                    <div className="flex gap-3">
-                      <Button
-                        variant="primary"
-                        onClick={handleReply}
-                        disabled={!replyText.trim() || sendReplyMutation.isPending}
-                        className="flex-1"
-                      >
-                        {sendReplyMutation.isPending ? 'Sending...' : 'Send Reply'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
-                      >
-                        Close
-                      </Button>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Reply to Customer
+                        </label>
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          rows={4}
+                          placeholder="Type your response here..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        />
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          variant="primary"
+                          onClick={handleReply}
+                          disabled={!replyText.trim() || sendReplyMutation.isPending}
+                          className="flex-1"
+                        >
+                          {sendReplyMutation.isPending ? 'Sending...' : 'Send Reply'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
+                        >
+                          Close
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          )}
+
+            {/* Mobile Full-screen View */}
+            <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
+              <div className="flex items-center gap-3 p-4 border-b shrink-0">
+                <button
+                  onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label="Back to list"
+                >
+                  <FiChevronLeft className="w-5 h-5 text-gray-500" />
+                </button>
+                <h2 className="text-lg font-semibold text-gray-900 truncate flex-1">{selectedTicket.subject}</h2>
+                <button
+                  onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="p-6 space-y-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant="default">{typeLabels[selectedTicket.type] || selectedTicket.type}</Badge>
+                      <Badge variant="default" className={`${priorityConfig[selectedTicket.priority]?.bg} ${priorityConfig[selectedTicket.priority]?.color}`}>
+                        {priorityConfig[selectedTicket.priority]?.label || selectedTicket.priority} Priority
+                      </Badge>
+                      <Badge variant="default" className={`${statusConfig[selectedTicket.status]?.bg} ${statusConfig[selectedTicket.status]?.color}`}>
+                        {statusConfig[selectedTicket.status]?.label || selectedTicket.status}
+                      </Badge>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4">
+                      <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Conversation</h3>
+                    <div className="space-y-3 mb-4">
+                      {ticketMessages.map((msg) => (
+                        <div key={msg.id} className={`flex ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                            msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST'
+                              ? 'bg-royal-blue text-white rounded-br-sm'
+                              : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                          }`}>
+                            {msg.senderType === 'ADMIN' || msg.senderType === 'SUPER_ADMIN' ? (
+                              <p className="text-xs font-medium mb-1 text-royal-blue">
+                                {msg.senderName || (msg.senderType === 'SUPER_ADMIN' ? 'Support Manager' : 'Support Agent')}
+                              </p>
+                            ) : null}
+                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                            <p className={`text-xs mt-1 ${msg.senderType === 'CUSTOMER' || msg.senderType === 'GUEST' ? 'text-white/70' : 'text-gray-500'}`}>
+                              {formatDate(msg.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="shrink-0 border-t p-4 space-y-4" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Update Status
+                  </label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Object.entries(statusConfig).map(([key, config]) => (
+                      <option key={key} value={key}>{config.label}</option>
+                    ))}
+                  </select>
+                  <Button variant="outline" size="sm" onClick={handleStatusChange} className="mt-2" disabled={updateStatusMutation.isPending}>
+                    Update Status
+                  </Button>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reply to Customer
+                  </label>
+                  <textarea
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    rows={4}
+                    placeholder="Type your response here..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="primary"
+                    onClick={handleReply}
+                    disabled={!replyText.trim() || sendReplyMutation.isPending}
+                    className="flex-1"
+                  >
+                    {sendReplyMutation.isPending ? 'Sending...' : 'Send Reply'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setSelectedTicket(null); setTicketMessages([]) }}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
