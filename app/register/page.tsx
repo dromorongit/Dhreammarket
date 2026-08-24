@@ -104,23 +104,26 @@ function RegisterContent() {
 
 if (response.ok) {
           event({ action: 'sign_up', category: 'engagement' })
-          if (data.user) {
-            const role = data.user.role
-            const isOnboarded = data.isOnboarded
-            let dashboardPath: string
-            if (role === 'SUPER_ADMIN') {
-              dashboardPath = '/dashboard/super-admin'
-            } else if (role === 'ADMIN') {
-              dashboardPath = '/dashboard/admin'
-            } else if (role === 'VENDOR') {
-              dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
-            } else {
-              dashboardPath = '/dashboard/customer'
-            }
-            const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor')
-              ? redirectUrl
-              : dashboardPath
-            window.location.href = targetUrl
+             if (data.user) {
+             const role = data.user.role
+             const isOnboarded = data.isOnboarded
+             let dashboardPath: string
+             if (role === 'SUPER_ADMIN') {
+               dashboardPath = '/dashboard/super-admin'
+             } else if (role === 'ADMIN') {
+               dashboardPath = '/dashboard/admin'
+             } else if (role === 'VENDOR') {
+               dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+             } else {
+               dashboardPath = '/dashboard/customer'
+             }
+             let targetUrl: string
+             if (role === 'VENDOR' && !isOnboarded) {
+               targetUrl = '/dashboard/vendor/store'
+             } else {
+               targetUrl = redirectUrl || dashboardPath
+             }
+             window.location.href = targetUrl
           } else if (data.needsVerification) {
            const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
            window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`

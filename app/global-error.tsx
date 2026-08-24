@@ -9,6 +9,7 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  console.error('[Global Error Boundary]', error.message, error.digest)
   Sentry.captureException(error);
 
   return (
