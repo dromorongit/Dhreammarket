@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/Button'
-import { Badge } from '@/components/Badge'
 import { StarRating } from '@/components/StarRating'
 import { Skeleton } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
@@ -27,6 +26,7 @@ export default function WorthDiscovering() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -47,9 +47,29 @@ export default function WorthDiscovering() {
     fetchProducts()
   }, [fetchProducts])
 
+  const resetAutoAdvance = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
+    intervalRef.current = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % products.length)
+    }, 4000)
+  }, [products.length])
+
+  useEffect(() => {
+    if (products.length <= 1) return
+    resetAutoAdvance()
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+  }, [products.length, resetAutoAdvance])
+
   const goTo = (index: number) => {
     if (products.length === 0) return
     setCurrentIndex((index + products.length) % products.length)
+    resetAutoAdvance()
   }
 
   const goNext = () => goTo(currentIndex + 1)
@@ -66,7 +86,7 @@ export default function WorthDiscovering() {
             </div>
             <Skeleton className="h-10 w-32 rounded-full" />
           </div>
-          <Skeleton className="w-full aspect-[16/9] rounded-3xl" />
+          <Skeleton className="w-full h-[400px] sm:h-[520px] lg:h-[600px] rounded-3xl" />
         </div>
       </section>
     )
@@ -101,7 +121,7 @@ export default function WorthDiscovering() {
           </Link>
         </div>
 
-        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] rounded-3xl overflow-hidden bg-slate-900 group">
+        <div className="relative w-full h-[400px] sm:h-[520px] lg:h-[600px] rounded-3xl overflow-hidden bg-slate-900 group">
           {imageUrl && (
             <Image
               src={imageUrl}
@@ -117,11 +137,16 @@ export default function WorthDiscovering() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
           <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2">
-            <Badge variant="premium" className="text-[10px] sm:text-xs">FEATURED</Badge>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest">
+              <svg className="w-3 h-3 text-premium-gold" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+              Featured
+            </span>
             {product.category && (
-              <Badge variant="default" className="text-[10px] sm:text-xs bg-white/20 text-white border-white/30">
+              <span className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
                 {product.category.name}
-              </Badge>
+              </span>
             )}
           </div>
 
@@ -157,43 +182,43 @@ export default function WorthDiscovering() {
               </Link>
             </div>
           </div>
-
-          {products.length > 1 && (
-            <>
-              <div className="absolute bottom-5 sm:bottom-8 lg:bottom-10 left-5 sm:left-8 lg:left-10 flex items-center gap-1.5 sm:gap-2">
-                {products.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => goTo(idx)}
-                    className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
-                      idx === currentIndex
-                        ? 'w-6 sm:w-8 bg-white'
-                        : 'w-1.5 sm:w-2 bg-white/40 hover:bg-white/70'
-                    }`}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                ))}
-              </div>
-
-              <div className="absolute bottom-5 sm:bottom-8 lg:bottom-10 right-5 sm:right-8 lg:right-10 flex items-center gap-2">
-                <button
-                  onClick={goPrev}
-                  className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-colors"
-                  aria-label="Previous product"
-                >
-                  <FiChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <button
-                  onClick={goNext}
-                  className="inline-flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30 transition-colors"
-                  aria-label="Next product"
-                >
-                  <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-              </div>
-            </>
-          )}
         </div>
+
+        {products.length > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {products.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => goTo(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === currentIndex
+                      ? 'w-6 sm:w-8 bg-deep-navy'
+                      : 'w-2 bg-slate-300 hover:bg-slate-400'
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goPrev}
+                className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200 text-deep-navy hover:bg-slate-50 transition-colors shadow-sm"
+                aria-label="Previous product"
+              >
+                <FiChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+              <button
+                onClick={goNext}
+                className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-slate-200 text-deep-navy hover:bg-slate-50 transition-colors shadow-sm"
+                aria-label="Next product"
+              >
+                <FiChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )
