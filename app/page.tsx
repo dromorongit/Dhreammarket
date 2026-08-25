@@ -62,6 +62,7 @@ import ApplianceInfiniteBannerRail from '@/components/ApplianceInfiniteBannerRai
 import SneakerBrandCarousel from '@/components/SneakerBrandCarousel'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
+import WorthDiscovering from '@/components/home/WorthDiscovering'
 import StaticBannerRail from '@/components/StaticBannerRail'
 import StaticBannerImage from '@/components/StaticBannerImage'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
@@ -272,16 +273,17 @@ export default function Home() {
              vendors: section.vendors,
              brands: section.brands || [],
            }
-              if (section.slug === 'sponsored')
-                return (
-                  <>
-                    <StaticBannerRail />
-                    <DynamicRandomProductRail />
-                    <PromotionalFeatureImageStrip />
-                    <FirstOrderDiscountBanner />
-                    <SponsoredSection key={section.id} section={sectionProps} />
-                  </>
-                )
+               if (section.slug === 'sponsored')
+                 return (
+                   <>
+                     <StaticBannerRail />
+                     <DynamicRandomProductRail />
+                     <PromotionalFeatureImageStrip />
+                     <FirstOrderDiscountBanner />
+                     <SponsoredSection key={section.id} section={sectionProps} />
+                     <WorthDiscovering />
+                   </>
+                 )
                if (section.slug === 'quick-links') {
                   return (
                     <>
