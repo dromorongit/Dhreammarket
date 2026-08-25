@@ -63,6 +63,7 @@ import SneakerBrandCarousel from '@/components/SneakerBrandCarousel'
 import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import WorthDiscovering from '@/components/home/WorthDiscovering'
+import CuratedCategories from '@/components/home/CuratedCategories'
 import StaticBannerRail from '@/components/StaticBannerRail'
 import StaticBannerImage from '@/components/StaticBannerImage'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
@@ -284,18 +285,19 @@ export default function Home() {
                      <WorthDiscovering />
                    </>
                  )
-               if (section.slug === 'quick-links') {
-                  return (
-                    <>
-                      <BagInfiniteBannerRail />
-                      <QuickLinksContactBar />
-                      <QuickLinksSection key={section.id} />
-                      <BeautyInfiniteBannerRail />
-                      <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
-                      <ServiceShowcaseSection />
-                    </>
-                  )
-                }
+                if (section.slug === 'quick-links') {
+                   return (
+                     <>
+                       <BagInfiniteBannerRail />
+                       <QuickLinksContactBar />
+                       <QuickLinksSection key={section.id} />
+                       <CuratedCategories />
+                       <BeautyInfiniteBannerRail />
+                       <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
+                       <ServiceShowcaseSection />
+                     </>
+                   )
+                 }
               if (section.slug === 'trending-now')
                 return (
                   <>
