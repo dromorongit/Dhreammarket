@@ -504,6 +504,7 @@ export async function GET(_request: NextRequest) {
             },
           },
         },
+        take: 100,
       })
     } catch (e) {
       console.error('[homepage/public] brand.findMany FAILED:', e)
@@ -548,7 +549,7 @@ export async function GET(_request: NextRequest) {
           'resolveAutomaticVendors'
         )
         sortedBrands = await safeResolve(
-          () => resolveAutomaticBrands(prismaInstance, section, settings),
+          () => resolveAutomaticBrands(prismaInstance, section, settings, brands),
           [],
           sectionSlug,
           'resolveAutomaticBrands'
@@ -836,7 +837,7 @@ async function resolveAutomaticVendors(prisma: ReturnType<typeof getPrisma> | nu
 }
 
 async function resolveManualServices(settings: AutoRankSettings, maxServices: number): Promise<any[]> {
-  const serviceIds = settings.serviceIds || []
+  const serviceIds = settings.serviceIds ?? []
   if (serviceIds.length === 0) return []
 
   const prisma = getPrisma()
@@ -847,6 +848,7 @@ async function resolveManualServices(settings: AutoRankSettings, maxServices: nu
       category: { select: { id: true, name: true, slug: true } },
       store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
     },
+    take: serviceIds.length,
   })
 
   return services.map((s) => ({
@@ -877,6 +879,7 @@ async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null
       category: { select: { id: true, name: true, slug: true } },
       store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
     },
+    take: joinTableProductIds.length,
   })
 
   const pinnedMap = new Map(pinnedProducts.map((p: any) => [p.id, p]))
@@ -891,7 +894,7 @@ async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null
 }
 
 async function resolveHybridServices(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, maxServices: number): Promise<any[]> {
-  const serviceIds = settings.serviceIds || []
+  const serviceIds = settings.serviceIds ?? []
   const autoServices = await resolveAutomaticServices(prisma, section, settings, maxServices)
 
   if (serviceIds.length === 0) return autoServices
@@ -905,6 +908,7 @@ async function resolveHybridServices(prisma: ReturnType<typeof getPrisma> | null
       category: { select: { id: true, name: true, slug: true } },
       store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true, logo: true, averageRating: true, reviewCount: true } },
     },
+    take: serviceIds.length,
   })
 
   const newAutoServices = autoServices.filter((s: any) => !serviceIds.includes(s.id))
@@ -933,6 +937,7 @@ async function resolveHybridVendors(prisma: ReturnType<typeof getPrisma> | null,
       },
       profile: true,
     },
+    take: joinTableVendorIds.length,
   })
 
   const formattedPinned = pinnedVendors
@@ -984,27 +989,8 @@ function resolveHybridBrands(section: any): any[] {
     .filter((b: any) => b && b.isActive !== false)
 }
 
-async function resolveAutomaticBrands(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings): Promise<any[]> {
-  if (!prisma) return []
-  const allBrands = await prisma.brand.findMany({
-    where: { isActive: true },
-    orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
-    include: {
-      _count: {
-        select: {
-          products: {
-            where: {
-              OR: [
-                { stock: { gt: 0 } },
-                { availabilityType: 'PREORDER' },
-                { availabilityType: 'BACKORDER' },
-              ],
-            },
-          },
-        },
-      },
-    },
-  })
+async function resolveAutomaticBrands(prisma: ReturnType<typeof getPrisma> | null, section: any, settings: AutoRankSettings, allBrands: any[] = []): Promise<any[]> {
+  if (!prisma || allBrands.length === 0) return []
   return allBrands.map((brand) => ({
     id: brand.id,
     name: brand.name,
