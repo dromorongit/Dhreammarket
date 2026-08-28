@@ -6,6 +6,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   experimental: {
+    webpackBuildWorker: false,
+    cpus: 1,
     serverComponentsExternalPackages: [
       '@prisma/client',
       'prisma',
@@ -13,7 +15,7 @@ const nextConfig = {
       'cloudinary',
       'pg',
     ],
-    optimizePackageImports: ['recharts', 'react-icons', 'lucide-react'],
+    optimizePackageImports: ['react-icons', 'lucide-react'],
   },
   images: {
     deviceSizes: [640, 768, 1024, 1280, 1536, 1920],
@@ -44,6 +46,8 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
+    config.parallelism = 1
+
     config.externals = [
       ...(config.externals || []),
       ({ context, request }, callback) => {
