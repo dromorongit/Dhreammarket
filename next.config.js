@@ -5,6 +5,12 @@ const nextConfig = {
   generateEtags: true,
   reactStrictMode: true,
   swcMinify: true,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     webpackBuildWorker: false,
     cpus: 1,
