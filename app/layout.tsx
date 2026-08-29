@@ -10,6 +10,7 @@ import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import { getServerSession } from '@/lib/auth'
 import LiveSupportWidget from '@/components/LiveSupportWidget'
+import BackToSchoolPromo from '@/components/BackToSchoolPromo'
 import { Suspense } from 'react'
 
 export const viewport: Viewport = {
@@ -59,9 +60,10 @@ export default async function RootLayout({
               {children}
             </main>
             <Footer />
-            <CookieConsentBanner />
-            <LiveSupportWidget userRole={session?.role ?? null} />
-          </QueryProvider>
+             <CookieConsentBanner />
+             <LiveSupportWidget userRole={session?.role ?? null} />
+             <BackToSchoolPromo />
+           </QueryProvider>
         </CartProvider>
       </body>
     </html>
