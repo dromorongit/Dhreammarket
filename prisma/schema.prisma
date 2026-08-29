@@ -73,6 +73,7 @@ model User {
   vendorRewardCampaigns    VendorRewardCampaign[]
   vendorSubscriptions      VendorSubscription[]
   advertisementCampaigns   AdvertisementCampaign[]
+  advertisements           Advertisement[]
 
   @@map("users")
   @@index([role, createdAt])
@@ -273,6 +274,7 @@ model Product {
   collectionItems          CollectionItem[]
   flashDealProducts        FlashDealProduct[]
   advertisementCampaigns   AdvertisementCampaign[]
+  advertisements           Advertisement[]
 
   @@map("products")
   @@index([storeId])
@@ -2755,6 +2757,27 @@ model AdvertisementHistory {
   @@index([campaignId])
   @@index([performedBy])
   @@index([createdAt])
+}
+
+model Advertisement {
+  id          String    @id @default(cuid())
+  slot        String
+  title       String
+  imageUrl    String
+  linkUrl     String
+  vendorId    String?
+  productId   String?
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean   @default(true)
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  vendor      User?     @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  product     Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@map("advertisements")
+  @@index([slot, isActive, startDate, endDate])
 }
 
 enum AdvertisementCampaignType {
