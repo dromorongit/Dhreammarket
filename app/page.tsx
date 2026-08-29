@@ -64,6 +64,7 @@ import PhoneRail from '@/components/advertising/homepage/PhoneRail'
 import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicRandomProductRail'
 import WorthDiscovering from '@/components/home/WorthDiscovering'
 import CuratedCategories from '@/components/home/CuratedCategories'
+import OfficialStores from '@/components/home/OfficialStores'
 import StaticBannerRail from '@/components/StaticBannerRail'
 import StaticBannerImage from '@/components/StaticBannerImage'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
@@ -291,7 +292,8 @@ export default function Home() {
                        <BagInfiniteBannerRail />
                        <QuickLinksContactBar />
                        <QuickLinksSection key={section.id} />
-                       <CuratedCategories />
+                        <CuratedCategories />
+                        <OfficialStores brands={managedData.brands} />
                        <BeautyInfiniteBannerRail />
                        <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
                        <ServiceShowcaseSection />
