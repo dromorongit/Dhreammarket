@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
+import { checkRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -18,6 +19,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const ticket = await prisma.supportTicket.findUnique({ where: { id } })
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    const adminKey = `admin-support-stream:${adminUser.userId}`
+    const adminRateLimit = checkRateLimit(adminKey, RATE_LIMIT_CONFIGS['admin-support-stream'])
+    if (!adminRateLimit.success) {
+      const response = NextResponse.json(
+        {
+          error: 'Too many requests. Please try again later.',
+          resetTime: new Date(adminRateLimit.resetTime!).toISOString(),
+        },
+        { status: 429 }
+      )
+      response.headers.set('X-RateLimit-Limit', String(adminRateLimit.limit))
+      response.headers.set('X-RateLimit-Remaining', '0')
+      response.headers.set('X-RateLimit-Reset', String(adminRateLimit.resetTime))
+      response.headers.set('Retry-After', String(Math.ceil((adminRateLimit.resetTime! - Date.now()) / 1000)))
+      return response
     }
 
     const stream = new ReadableStream({

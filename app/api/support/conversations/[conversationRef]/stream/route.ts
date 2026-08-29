@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -67,6 +68,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const prisma = getPrisma()
   const ticketId = resolved.conversation.ticketId
+
+  const rateLimitResult = rateLimit('support-stream')(request)
+  if (!rateLimitResult.success) {
+    return rateLimitResult.response
+  }
 
   const stream = new ReadableStream({
     start(controller) {
