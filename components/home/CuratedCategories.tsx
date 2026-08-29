@@ -171,7 +171,7 @@ export default function CuratedCategories() {
               blurDataURL={getBlurDataURL()}
             />
           </Link>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute inset-0 z-20 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
           <div className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-xs font-bold uppercase tracking-widest">
@@ -187,7 +187,7 @@ export default function CuratedCategories() {
             </div>
           )}
 
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8 lg:p-10">
+          <div className="absolute bottom-0 left-0 right-0 z-20 p-5 sm:p-8 lg:p-10">
             <div className="flex items-center gap-3 mb-2 sm:mb-3">
               <span className="text-[10px] sm:text-xs font-mono text-white/70 tracking-widest">
                 {String(currentIndex + 1).padStart(2, '0')}
