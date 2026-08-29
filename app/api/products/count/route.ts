@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const categoryId = url.searchParams.get('categoryId')
     const brandId = url.searchParams.get('brandId')
+    const brandSlug = url.searchParams.get('brandSlug')
     const vendorCategoryId = url.searchParams.get('vendorCategoryId')
     const minPrice = url.searchParams.get('minPrice')
     const maxPrice = url.searchParams.get('maxPrice')
@@ -31,6 +32,18 @@ export async function GET(request: NextRequest) {
     }
     if (brandId) {
       whereClause.brandId = brandId
+    } else if (brandSlug) {
+      const matchedBrand = await getPrisma().brand.findUnique({
+        where: { slug: brandSlug },
+        select: { id: true },
+      })
+      if (matchedBrand) {
+        whereClause.brandId = matchedBrand.id
+      } else {
+        // Unknown brand slug: honor the filter by returning a zero count
+        // rather than silently ignoring it and returning an unfiltered count.
+        whereClause.brandId = '000000000000000000000000'
+      }
     }
     if (vendorCategoryId) {
       whereClause.store = { categoryId: vendorCategoryId }
