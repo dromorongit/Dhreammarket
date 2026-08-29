@@ -65,6 +65,7 @@ import DynamicRandomProductRail from '@/components/advertising/homepage/DynamicR
 import WorthDiscovering from '@/components/home/WorthDiscovering'
 import CuratedCategories from '@/components/home/CuratedCategories'
 import OfficialStores from '@/components/home/OfficialStores'
+import AdSlot from '@/components/home/AdSlot'
 import StaticBannerRail from '@/components/StaticBannerRail'
 import StaticBannerImage from '@/components/StaticBannerImage'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
@@ -282,8 +283,9 @@ export default function Home() {
                      <DynamicRandomProductRail />
                      <PromotionalFeatureImageStrip />
                      <FirstOrderDiscountBanner />
-                     <SponsoredSection key={section.id} section={sectionProps} />
-                     <WorthDiscovering />
+                      <SponsoredSection key={section.id} section={sectionProps} />
+                      <AdSlot ad={managedData.ads?.['after-sponsored'] ?? null} />
+                      <WorthDiscovering />
                    </>
                  )
                 if (section.slug === 'quick-links') {
@@ -291,12 +293,15 @@ export default function Home() {
                      <>
                        <BagInfiniteBannerRail />
                        <QuickLinksContactBar />
-                       <QuickLinksSection key={section.id} />
-                        <CuratedCategories />
-                        <OfficialStores brands={managedData.brands} />
-                       <BeautyInfiniteBannerRail />
-                       <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
-                       <ServiceShowcaseSection />
+                        <QuickLinksSection key={section.id} />
+                        <AdSlot ad={managedData.ads?.['after-quick-links'] ?? null} />
+                         <CuratedCategories />
+                         <OfficialStores brands={managedData.brands} />
+                        <AdSlot ad={managedData.ads?.['after-official-stores'] ?? null} />
+                        <BeautyInfiniteBannerRail />
+                        <StaticBannerImage src='/images/stationery1.jpg' alt='Stationery' />
+                        <AdSlot ad={managedData.ads?.['before-service-showcase'] ?? null} />
+                        <ServiceShowcaseSection />
                      </>
                    )
                  }
@@ -745,6 +750,7 @@ export default function Home() {
         </div>
       </section>
       <BlogArticleModal article={selectedArticle} onClose={() => setSelectedArticle(null)} />
+      <AdSlot ad={managedData.ads?.['homepage-bottom'] ?? null} />
     </div>
   )
 }

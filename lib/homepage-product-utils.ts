@@ -77,9 +77,23 @@ export interface ManagedHomepageSection {
   brands: EnterpriseBrand[]
 }
 
+export interface Advertisement {
+  id: string
+  slot: string
+  title: string
+  imageUrl: string
+  linkUrl: string
+  vendorId: string | null
+  productId: string | null
+  startDate: string
+  endDate: string
+  isActive: boolean
+}
+
 export interface ManagedHomepageData {
   sections: ManagedHomepageSection[]
   brands: EnterpriseBrand[]
+  ads: Record<string, Advertisement | null>
 }
 
 export function collectProductIds(products: EnterpriseProduct[] | undefined | null): Set<string> {
@@ -94,6 +108,7 @@ export const EMPTY_ENTERPRISE_DATA: EnterpriseHomepageData = {
 export const EMPTY_MANAGED_DATA: ManagedHomepageData = {
   sections: [],
   brands: [],
+  ads: {},
 }
 
 export function sectionsBySlug(sections: ManagedHomepageSection[]): Record<string, ManagedHomepageSection> {

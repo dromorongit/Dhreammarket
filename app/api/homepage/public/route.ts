@@ -1,3 +1,4 @@
+import type { Advertisement } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { ensureDefaultHomepageSections } from '@/lib/homepage-default-sections'
@@ -415,6 +416,38 @@ async function safeResolve<T>(
   }
 }
 
+
+function groupAdsBySlot(ads: Advertisement[]): Record<string, Advertisement | null> {
+  const grouped: Record<string, Advertisement | null> = {}
+  for (const ad of ads) {
+    grouped[ad.slot] = ad
+  }
+  return grouped
+}
+
+async function fetchActiveAds(prisma: ReturnType<typeof getPrisma>): Promise<Advertisement[]> {
+  const now = new Date()
+  return prisma.advertisement.findMany({
+    where: {
+      isActive: true,
+      startDate: { lte: now },
+      endDate: { gte: now },
+    },
+    select: {
+      id: true,
+      slot: true,
+      title: true,
+      imageUrl: true,
+      linkUrl: true,
+      vendorId: true,
+      productId: true,
+      startDate: true,
+      endDate: true,
+      isActive: true,
+    },
+  }) as Promise<Advertisement[]>
+}
+
 export async function GET(_request: NextRequest) {
   const perf = new PerformanceLogger('GET', _request.url)
   try {
@@ -514,188 +547,193 @@ export async function GET(_request: NextRequest) {
     perf.markPrismaEnd(prismaStartTime)
     prismaInstance = prisma
 
-    const formatted = (await Promise.allSettled((sections || []).map(async (section) => {
-      const settings = (section.settings || {}) as AutoRankSettings
-      const contentSource = resolveContentSource(settings)
-      const maxProducts = settings.maxProducts || 20
-      const maxServices = settings.maxServices || 20
-      const maxVendors = settings.maxVendors || 10
-      const sectionSlug = section.slug || 'unknown'
+    const [sectionsResult, activeAdsResult] = await Promise.all([
+      Promise.allSettled((sections || []).map(async (section) => {
+        const settings = (section.settings || {}) as AutoRankSettings
+        const contentSource = resolveContentSource(settings)
+        const maxProducts = settings.maxProducts || 20
+        const maxServices = settings.maxServices || 20
+        const maxVendors = settings.maxVendors || 10
+        const sectionSlug = section.slug || 'unknown'
 
-      let sortedProducts: any[] = []
-      let sortedServices: any[] = []
-      let sortedVendors: any[] = []
-      let sortedBrands: any[] = []
+        let sortedProducts: any[] = []
+        let sortedServices: any[] = []
+        let sortedVendors: any[] = []
+        let sortedBrands: any[] = []
 
-      const now = new Date()
+        const now = new Date()
 
-      if (contentSource === 'AUTOMATIC') {
-        sortedProducts = await safeResolve(
-          () => resolveAutomaticProducts(prismaInstance, section, settings, maxProducts),
-          [],
-          sectionSlug,
-          'resolveAutomaticProducts'
+        if (contentSource === 'AUTOMATIC') {
+          sortedProducts = await safeResolve(
+            () => resolveAutomaticProducts(prismaInstance, section, settings, maxProducts),
+            [],
+            sectionSlug,
+            'resolveAutomaticProducts'
+          )
+          sortedServices = await safeResolve(
+            () => resolveAutomaticServices(prismaInstance, section, settings, maxServices),
+            [],
+            sectionSlug,
+            'resolveAutomaticServices'
+          )
+          sortedVendors = await safeResolve(
+            () => resolveAutomaticVendors(prismaInstance, section, maxVendors),
+            [],
+            sectionSlug,
+            'resolveAutomaticVendors'
+          )
+          sortedBrands = await safeResolve(
+            () => resolveAutomaticBrands(prismaInstance, section, settings, brands),
+            [],
+            sectionSlug,
+            'resolveAutomaticBrands'
+          )
+        } else if (contentSource === 'MANUAL') {
+          sortedProducts = (section.products || [])
+            .map((sp: any) => ({ ...sp.product, dealEndsAt: sp.dealEndsAt ?? null, availableQuantity: (sp.product?.stock ?? 0) - (sp.product?.reservedQuantity ?? 0) }))
+            .filter((p: any) => p && (!settings.excludeOutOfStock || (p.availableQuantity > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER')))
+          sortedServices = await safeResolve(
+            () => resolveManualServices(settings, maxServices),
+            [],
+            sectionSlug,
+            'resolveManualServices'
+          )
+          sortedVendors = (section.vendors || [])
+            .map((sv: any) => ({
+              ...sv.vendor,
+              slug: sv.vendor.store?.slug ?? null,
+              badgeTier: sv.vendor.store?.badgeTier ?? null,
+              storeName: sv.vendor.store?.name ?? sv.vendor.name,
+              productCount: sv.vendor.store?._count?.products ?? 0,
+            }))
+            .filter(Boolean)
+          sortedBrands = resolveManualBrands(section)
+        } else {
+          sortedProducts = await safeResolve(
+            () => resolveHybridProducts(prismaInstance, section, settings, maxProducts),
+            [],
+            sectionSlug,
+            'resolveHybridProducts'
+          )
+          sortedServices = await safeResolve(
+            () => resolveHybridServices(prismaInstance, section, settings, maxServices),
+            [],
+            sectionSlug,
+            'resolveHybridServices'
+          )
+          sortedVendors = await safeResolve(
+            () => resolveHybridVendors(prismaInstance, section, settings, maxVendors),
+            [],
+            sectionSlug,
+            'resolveHybridVendors'
+          )
+          sortedBrands = resolveHybridBrands(section)
+        }
+
+        const expiredIds = new Set(
+          sortedProducts
+            .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
+            .map((p: any) => p.id)
         )
-        sortedServices = await safeResolve(
-          () => resolveAutomaticServices(prismaInstance, section, settings, maxServices),
-          [],
-          sectionSlug,
-          'resolveAutomaticServices'
+
+        if (expiredIds.size > 0) {
+          void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
+        }
+
+        sortedProducts = sortedProducts.map((p: any) =>
+          p && expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
         )
-        sortedVendors = await safeResolve(
-          () => resolveAutomaticVendors(prismaInstance, section, maxVendors),
-          [],
-          sectionSlug,
-          'resolveAutomaticVendors'
-        )
-        sortedBrands = await safeResolve(
-          () => resolveAutomaticBrands(prismaInstance, section, settings, brands),
-          [],
-          sectionSlug,
-          'resolveAutomaticBrands'
-        )
-      } else if (contentSource === 'MANUAL') {
-        sortedProducts = (section.products || [])
-          .map((sp: any) => ({ ...sp.product, dealEndsAt: sp.dealEndsAt ?? null, availableQuantity: (sp.product?.stock ?? 0) - (sp.product?.reservedQuantity ?? 0) }))
-          .filter((p: any) => p && (!settings.excludeOutOfStock || (p.availableQuantity > 0 || p.availabilityType === 'PREORDER' || p.availabilityType === 'BACKORDER')))
-        sortedServices = await safeResolve(
-          () => resolveManualServices(settings, maxServices),
-          [],
-          sectionSlug,
-          'resolveManualServices'
-        )
-        sortedVendors = (section.vendors || [])
-          .map((sv: any) => ({
-            ...sv.vendor,
-            slug: sv.vendor.store?.slug ?? null,
-            badgeTier: sv.vendor.store?.badgeTier ?? null,
-            storeName: sv.vendor.store?.name ?? sv.vendor.name,
-            productCount: sv.vendor.store?._count?.products ?? 0,
-          }))
-          .filter(Boolean)
-        sortedBrands = resolveManualBrands(section)
-      } else {
-        sortedProducts = await safeResolve(
-          () => resolveHybridProducts(prismaInstance, section, settings, maxProducts),
-          [],
-          sectionSlug,
-          'resolveHybridProducts'
-        )
-        sortedServices = await safeResolve(
-          () => resolveHybridServices(prismaInstance, section, settings, maxServices),
-          [],
-          sectionSlug,
-          'resolveHybridServices'
-        )
-        sortedVendors = await safeResolve(
-          () => resolveHybridVendors(prismaInstance, section, settings, maxVendors),
-          [],
-          sectionSlug,
-          'resolveHybridVendors'
-        )
-        sortedBrands = resolveHybridBrands(section)
-      }
 
-      const expiredIds = new Set(
-        sortedProducts
-          .filter((p: any) => p && p.availabilityType === 'PREORDER' && p.expectedArrivalDate && new Date(p.expectedArrivalDate) < now)
-          .map((p: any) => p.id)
-      )
+         let sponsoredProducts: any[] = []
+         let sponsoredServices: any[] = []
+         let sponsoredVendors: any[] = []
+         let sponsoredBrands: any[] = []
 
-      if (expiredIds.size > 0) {
-        void checkAndUpdateExpiredPreOrders(Array.from(expiredIds))
-      }
+         try {
+           const sponsoredPlacements = await getActiveSponsoredPlacements(sectionSlug)
+           sponsoredProducts = sponsoredPlacements
+             .filter((p) => p.type === 'PRODUCT')
+             .map((p) => ({
+               id: p.entityId,
+               _sponsored: true,
+               _campaignId: p.campaignId,
+               _campaignTitle: p.campaignTitle,
+               _badge: p.badge,
+               _displayOrder: p.displayOrder,
+             }))
+           sponsoredServices = sponsoredPlacements
+             .filter((p) => p.type === 'SERVICE')
+             .map((p) => ({
+               id: p.entityId,
+               _sponsored: true,
+               _campaignId: p.campaignId,
+               _campaignTitle: p.campaignTitle,
+               _badge: p.badge,
+               _displayOrder: p.displayOrder,
+             }))
+           sponsoredVendors = sponsoredPlacements
+             .filter((p) => p.type === 'VENDOR')
+             .map((p) => ({
+               id: p.entityId,
+               _sponsored: true,
+               _campaignId: p.campaignId,
+               _campaignTitle: p.campaignTitle,
+               _badge: p.badge,
+               _displayOrder: p.displayOrder,
+             }))
+         } catch (e) {
+           console.error('[homepage/public] Sponsored placements fetch failed:', e)
+         }
 
-      sortedProducts = sortedProducts.map((p: any) =>
-        p && expiredIds.has(p.id) ? { ...p, availabilityType: 'IN_STOCK', expectedArrivalDate: null } : p
-      )
+         const allProducts = [...sponsoredProducts, ...sortedProducts]
+         const allServices = [...sponsoredServices, ...sortedServices]
+         const allVendors = [...sponsoredVendors, ...sortedVendors]
+         const allBrands = [...sponsoredBrands, ...sortedBrands]
 
-       let sponsoredProducts: any[] = []
-       let sponsoredServices: any[] = []
-       let sponsoredVendors: any[] = []
-       let sponsoredBrands: any[] = []
+         const seenProductIds = new Set<string>()
+         const seenServiceIds = new Set<string>()
+         const seenVendorIds = new Set<string>()
+         const seenBrandIds = new Set<string>()
 
-       try {
-         const sponsoredPlacements = await getActiveSponsoredPlacements(sectionSlug)
-         sponsoredProducts = sponsoredPlacements
-           .filter((p) => p.type === 'PRODUCT')
-           .map((p) => ({
-             id: p.entityId,
-             _sponsored: true,
-             _campaignId: p.campaignId,
-             _campaignTitle: p.campaignTitle,
-             _badge: p.badge,
-             _displayOrder: p.displayOrder,
-           }))
-         sponsoredServices = sponsoredPlacements
-           .filter((p) => p.type === 'SERVICE')
-           .map((p) => ({
-             id: p.entityId,
-             _sponsored: true,
-             _campaignId: p.campaignId,
-             _campaignTitle: p.campaignTitle,
-             _badge: p.badge,
-             _displayOrder: p.displayOrder,
-           }))
-         sponsoredVendors = sponsoredPlacements
-           .filter((p) => p.type === 'VENDOR')
-           .map((p) => ({
-             id: p.entityId,
-             _sponsored: true,
-             _campaignId: p.campaignId,
-             _campaignTitle: p.campaignTitle,
-             _badge: p.badge,
-             _displayOrder: p.displayOrder,
-           }))
-       } catch (e) {
-         console.error('[homepage/public] Sponsored placements fetch failed:', e)
-       }
+         const dedupedProducts = allProducts.filter((p: any) => {
+           if (seenProductIds.has(p.id)) return false
+           seenProductIds.add(p.id)
+           return true
+         })
+         const dedupedServices = allServices.filter((s: any) => {
+           if (seenServiceIds.has(s.id)) return false
+           seenServiceIds.add(s.id)
+           return true
+         })
+         const dedupedVendors = allVendors.filter((v: any) => {
+           if (seenVendorIds.has(v.id)) return false
+           seenVendorIds.add(v.id)
+           return true
+         })
+         const dedupedBrands = allBrands.filter((b: any) => {
+           if (seenBrandIds.has(b.id)) return false
+           seenBrandIds.add(b.id)
+           return true
+         })
 
-       const allProducts = [...sponsoredProducts, ...sortedProducts]
-       const allServices = [...sponsoredServices, ...sortedServices]
-       const allVendors = [...sponsoredVendors, ...sortedVendors]
-       const allBrands = [...sponsoredBrands, ...sortedBrands]
+         return {
+           id: section.id,
+           name: section.name,
+           slug: section.slug,
+           type: section.type,
+           subtitle: section.subtitle,
+           displayOrder: section.displayOrder,
+           contentSource,
+           products: dedupedProducts.slice(0, maxProducts),
+           services: dedupedServices.slice(0, maxServices),
+           vendors: dedupedVendors.slice(0, maxVendors),
+           brands: dedupedBrands.slice(0, 10),
+         }
+      })),
+      fetchActiveAds(prisma),
+    ]) as any
 
-       const seenProductIds = new Set<string>()
-       const seenServiceIds = new Set<string>()
-       const seenVendorIds = new Set<string>()
-       const seenBrandIds = new Set<string>()
-
-       const dedupedProducts = allProducts.filter((p: any) => {
-         if (seenProductIds.has(p.id)) return false
-         seenProductIds.add(p.id)
-         return true
-       })
-       const dedupedServices = allServices.filter((s: any) => {
-         if (seenServiceIds.has(s.id)) return false
-         seenServiceIds.add(s.id)
-         return true
-       })
-       const dedupedVendors = allVendors.filter((v: any) => {
-         if (seenVendorIds.has(v.id)) return false
-         seenVendorIds.add(v.id)
-         return true
-       })
-       const dedupedBrands = allBrands.filter((b: any) => {
-         if (seenBrandIds.has(b.id)) return false
-         seenBrandIds.add(b.id)
-         return true
-       })
-
-       return {
-         id: section.id,
-         name: section.name,
-         slug: section.slug,
-         type: section.type,
-         subtitle: section.subtitle,
-         displayOrder: section.displayOrder,
-         contentSource,
-         products: dedupedProducts.slice(0, maxProducts),
-         services: dedupedServices.slice(0, maxServices),
-         vendors: dedupedVendors.slice(0, maxVendors),
-         brands: dedupedBrands.slice(0, 10),
-       }
-    }))).map((result, index) => {
+    const formatted = sectionsResult.map((result: any, index: number) => {
       if (result.status === 'fulfilled') {
         return result.value
       }
@@ -717,6 +755,8 @@ export async function GET(_request: NextRequest) {
       }
     })
 
+    const ads = groupAdsBySlot(activeAdsResult.status === 'fulfilled' ? activeAdsResult.value : [])
+
     const formattedBrands = (brands || []).map((brand) => ({
       id: brand.id,
       name: brand.name,
@@ -729,6 +769,7 @@ export async function GET(_request: NextRequest) {
     const response = NextResponse.json({
       sections: formatted,
       brands: formattedBrands,
+      ads,
     })
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300, max-age=30')
     perf.log()
@@ -736,7 +777,7 @@ export async function GET(_request: NextRequest) {
   } catch (error) {
     perf.log()
     console.error('Error fetching public homepage sections (outer):', error)
-    return NextResponse.json({ sections: [], brands: [] }, { status: 200 })
+    return NextResponse.json({ sections: [], brands: [], ads: {} }, { status: 200 })
   }
 }
 
