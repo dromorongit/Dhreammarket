@@ -13,6 +13,8 @@ import dynamic from 'next/dynamic'
 const AIVendorInsights = dynamic(() => import('@/components/ai').then(m => m.AIVendorInsights), { ssr: false })
 const AIRecommendations = dynamic(() => import('@/components/ai').then(m => m.AIRecommendations), { ssr: false })
 
+const SITE_URL = 'https://www.dhreamarket.com'
+
 interface VendorProduct {
   id: string
   name: string
@@ -54,6 +56,7 @@ export default function VendorDashboardPage() {
   const [productsLoading, setProductsLoading] = useState(false)
   const [servicesLoading, setServicesLoading] = useState(false)
   const [storeName, setStoreName] = useState<string | null>(null)
+  const [storeSlug, setStoreSlug] = useState<string | null>(null)
 
   const fetchStore = useCallback(async () => {
     try {
@@ -61,6 +64,7 @@ export default function VendorDashboardPage() {
       if (res.ok) {
         const data = await res.json()
         setStoreName(data.store?.name ?? null)
+        setStoreSlug(data.store?.slug ?? null)
       }
     } catch (err) {
       console.error('Error fetching store:', err)
@@ -296,9 +300,29 @@ export default function VendorDashboardPage() {
           </div>
         </div>
 
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+         {activeTab === 'overview' && (
+           <div className="space-y-8">
+             {storeSlug && (
+               <Card>
+                 <CardHeader>
+                   <h3 className="text-lg font-semibold text-deep-navy">Your Store URL</h3>
+                 </CardHeader>
+                 <CardContent>
+                   <p className="text-sm text-slate-500 mb-3">Share this link with customers to direct them to your store.</p>
+                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                     <p className="flex-1 text-sm font-mono bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 break-all select-all">
+                       {`${SITE_URL}/vendor/${storeSlug}`}
+                     </p>
+                     <div className="flex items-center gap-2 flex-shrink-0">
+                       <CopyLinkButton storeUrl={`${SITE_URL}/vendor/${storeSlug}`} />
+                       <ShareButton storeUrl={`${SITE_URL}/vendor/${storeSlug}`} storeName={storeName ?? undefined} />
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
+
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
               <Card.Header>
                 <h3 className="font-semibold text-deep-navy">Revenue</h3>
@@ -515,5 +539,109 @@ export default function VendorDashboardPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function CopyLinkButton({ storeUrl }: { storeUrl: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    if (!storeUrl) return
+    try {
+      await navigator.clipboard.writeText(storeUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // ignore clipboard errors
+    }
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleCopy}
+      className="flex items-center gap-1.5"
+    >
+      {copied ? (
+        <>
+          <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Copied!
+        </>
+      ) : (
+        <>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Copy Link
+        </>
+      )}
+    </Button>
+  )
+}
+
+function ShareButton({ storeUrl, storeName }: { storeUrl: string; storeName?: string }) {
+  const [copied, setCopied] = useState(false)
+  const [shareSupported, setShareSupported] = useState(false)
+
+  useEffect(() => {
+    setShareSupported(typeof navigator !== 'undefined' && typeof navigator.share === 'function')
+  }, [])
+
+  const handleShare = async () => {
+    if (!storeUrl) return
+    if (shareSupported) {
+      try {
+        await navigator.share({
+          title: storeName ? `${storeName} - Dhream Market` : 'Dhream Market Store',
+          text: storeName ? `Check out ${storeName} on Dhream Market` : 'Check out this store on Dhream Market',
+          url: storeUrl,
+        })
+        return
+      } catch {
+        // user cancelled or share failed, fall through to clipboard fallback
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(storeUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // ignore clipboard errors
+    }
+  }
+
+  return (
+    <Button
+      variant="primary"
+      size="sm"
+      onClick={handleShare}
+      className="flex items-center gap-1.5"
+    >
+      {copied ? (
+        <>
+          <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Copied!
+        </>
+      ) : shareSupported ? (
+        <>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.5 9 12c0-.828-.448-1.5-1-1.5s-1 .672-1 1.5c0 .5.114.938.316 1.342m0 0a2.5 2.5 0 010 3.316m0-3.316a2.5 2.5 0 013.536 0m0 0a2.5 2.5 0 013.536 0M5.634 9.342a2.5 2.5 0 013.536 0m0 0a2.5 2.5 0 013.536 0m9.832 0a2.5 2.5 0 00-3.536 0m0 0a2.5 2.5 0 00-3.536 0" />
+          </svg>
+          Share
+        </>
+      ) : (
+        <>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.5 9 12c0-.828-.448-1.5-1-1.5s-1 .672-1 1.5c0 .5.114.938.316 1.342m0 0a2.5 2.5 0 010 3.316m0-3.316a2.5 2.5 0 013.536 0m0 0a2.5 2.5 0 013.536 0M5.634 9.342a2.5 2.5 0 013.536 0m0 0a2.5 2.5 0 013.536 0m9.832 0a2.5 2.5 0 00-3.536 0m0 0a2.5 2.5 0 00-3.536 0" />
+          </svg>
+          Share
+        </>
+      )}
+    </Button>
   )
 }
