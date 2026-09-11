@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Use centralized revenue calculation logic
-      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
+      const financialBreakdown = await calculateFinancialBreakdown(grossAmount, processorFee)
 
         // Update order with financial totals
         await prisma.order.update({
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
             itemProcessorFee = (itemGross / grossAmount) * processorFee
           }
           
-          const itemFinancialBreakdown = calculateFinancialBreakdown(
+          const itemFinancialBreakdown = await calculateFinancialBreakdown(
             itemGross,
             itemProcessorFee
           )

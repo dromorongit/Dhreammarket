@@ -1,5 +1,6 @@
 // Centralized revenue calculation logic for Dhream Market
 import { formatCurrency } from './currency'
+import { getPrisma } from './prisma'
 
 const MAX_VENDOR_COMMISSION_RATES = 1000
 
@@ -10,6 +11,38 @@ const MAX_VENDOR_COMMISSION_RATES = 1000
 export const COMMISSION_CONFIG = {
   DEFAULT_RATE: 0.01,
   FALLBACK_PROCESSOR_FEE_RATE: 0.02,
+}
+
+let cachedPlatformFeePercent: number | null = null
+let cachedPlatformFeeAt = 0
+const PLATFORM_FEE_CACHE_TTL_MS = 60_000
+
+async function getPlatformFeePercent(): Promise<number> {
+  const now = Date.now()
+  if (cachedPlatformFeePercent !== null && now - cachedPlatformFeeAt < PLATFORM_FEE_CACHE_TTL_MS) {
+    return cachedPlatformFeePercent
+  }
+
+  try {
+    const settings = await getPrisma().superAdminSettings.findFirst()
+    const raw = settings?.platformFee ?? COMMISSION_CONFIG.DEFAULT_RATE * 100
+    cachedPlatformFeePercent = typeof raw === 'number' ? raw : parseFloat(String(raw))
+  } catch {
+    cachedPlatformFeePercent = COMMISSION_CONFIG.DEFAULT_RATE * 100
+  }
+
+  cachedPlatformFeeAt = now
+  return cachedPlatformFeePercent
+}
+
+export async function getCommissionRate(): Promise<number> {
+  const percent = await getPlatformFeePercent()
+  return percent / 100
+}
+
+export function invalidatePlatformFeeCache(): void {
+  cachedPlatformFeePercent = null
+  cachedPlatformFeeAt = 0
 }
 
 /**
@@ -42,13 +75,14 @@ export function clearVendorCommissionRates(): void {
   vendorCommissionRates.clear()
 }
 
-export function calculateFinancialBreakdown(
+export async function calculateFinancialBreakdown(
   grossAmount: number,
   processorFee: number | null = null,
-  commissionRate: number = COMMISSION_CONFIG.DEFAULT_RATE
+  commissionRate: number | null = null
 ) {
+  const rate = commissionRate ?? await getCommissionRate()
   const netAmount = processorFee !== null ? grossAmount - processorFee : null
-  const platformCommission = grossAmount * commissionRate
+  const platformCommission = grossAmount * rate
   const vendorEarnings = netAmount !== null ? netAmount - platformCommission : null
 
   return {
@@ -57,11 +91,20 @@ export function calculateFinancialBreakdown(
     netAmount,
     platformCommission,
     vendorEarnings,
-    commissionRate
+    commissionRate: rate,
   }
 }
 
-export function formatFinancialBreakdown(financialBreakdown: ReturnType<typeof calculateFinancialBreakdown>) {
+export type FinancialBreakdown = {
+  grossAmount: number
+  processorFee: number | null
+  netAmount: number | null
+  platformCommission: number
+  vendorEarnings: number | null
+  commissionRate: number
+}
+
+export function formatFinancialBreakdown(financialBreakdown: FinancialBreakdown) {
   return {
     grossAmount: formatCurrency(financialBreakdown.grossAmount),
     processorFee: financialBreakdown.processorFee !== null

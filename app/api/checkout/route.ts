@@ -6,6 +6,7 @@ import { sendOrderConfirmationEmail } from '@/lib/email'
 import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { createNotification, formatNotificationMessage } from '@/lib/notifications'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
+import { getCommissionRate } from '@/lib/revenue'
 import { SITE_URL } from '@/lib/site-config'
 import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
@@ -184,9 +185,10 @@ export async function POST(request: NextRequest) {
       vendorBreakdown[storeId].subtotal += item.product.price * item.quantity
     }
 
-    // Calculate vendor earnings (90% of item value, 10% platform commission)
+    // Calculate vendor earnings using the configured platform commission rate
+    const commissionRate = await getCommissionRate()
     for (const storeId in vendorBreakdown) {
-      vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * 0.9 * 100) / 100
+      vendorBreakdown[storeId].earnings = Math.round(vendorBreakdown[storeId].subtotal * (1 - commissionRate) * 100) / 100
     }
 
 // Determine order type and fulfillment status based on product availability

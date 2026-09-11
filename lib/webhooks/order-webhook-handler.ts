@@ -175,7 +175,7 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         console.warn('[Payment Webhook] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
       }
 
-      const financialBreakdown = calculateFinancialBreakdown(grossAmount, processorFee)
+      const financialBreakdown = await calculateFinancialBreakdown(grossAmount, processorFee)
 
       await prisma.order.update({
         where: { id: payment.orderId },
@@ -197,7 +197,7 @@ export async function handleOrderWebhook(body: string, signature: string | undef
           itemProcessorFee = (itemGross / grossAmount) * processorFee
         }
 
-        const itemFinancialBreakdown = calculateFinancialBreakdown(
+        const itemFinancialBreakdown = await calculateFinancialBreakdown(
           itemGross,
           itemProcessorFee
         )
