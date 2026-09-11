@@ -21,6 +21,7 @@ import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
 import { getBlurDataURL, HERO_IMAGE_SIZES, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_3COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
+import { SITE_URL } from '@/lib/site-config'
 
 interface VendorProduct {
   id: string
@@ -102,7 +103,6 @@ interface User {
   email: string
 }
 
-const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreamarket.png`
 
 export default function VendorProfilePage() {

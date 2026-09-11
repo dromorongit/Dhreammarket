@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { initializeVerificationPayment, generateVerificationReference, isPaystackConfigured } from '@/lib/verification-paystack'
+import { SITE_URL } from '@/lib/site-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -76,12 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Generate payment reference
     const paymentReference = generateVerificationReference()
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
-    const callbackUrl = `${appUrl}/dashboard/vendor/verification`
-
-    if (!appUrl) {
-      console.error('[Verification Payment API] CRITICAL ERROR: APP_URL is not configured. Set NEXT_PUBLIC_APP_URL or APP_URL environment variable.')
-    }
+    const callbackUrl = `${SITE_URL}/dashboard/vendor/verification`
 
     if (!application) {
       // Create new application in UNPAID state

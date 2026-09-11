@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { SITE_URL } from '@/lib/site-config'
 
 interface BreadcrumbItem {
   name: string
@@ -8,8 +9,6 @@ interface BreadcrumbItem {
 interface BreadcrumbJsonLdProps {
   items: BreadcrumbItem[]
 }
-
-const SITE_URL = 'https://www.dhreamarket.com'
 
 export const BreadcrumbJsonLd: FC<BreadcrumbJsonLdProps> = ({ items }) => {
   const itemListElement = items.map((item, index) => ({

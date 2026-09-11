@@ -1,7 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getPrisma } from '@/lib/prisma'
-
-const SITE_URL = 'https://www.dhreamarket.com'
+import { SITE_URL } from '@/lib/site-config'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [

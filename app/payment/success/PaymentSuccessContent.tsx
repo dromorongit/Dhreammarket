@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatPrice } from '@/lib/currency'
 import { event } from '@/lib/gtag'
+import { useCart } from '@/lib/CartContext'
 
 interface Order {
   id: string
@@ -28,6 +29,7 @@ interface Order {
 export default function PaymentSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { clearCart } = useCart()
   const orderId = searchParams?.get('orderId')
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
@@ -35,6 +37,7 @@ export default function PaymentSuccessContent() {
   useEffect(() => {
     if (orderId) {
       fetchOrder()
+      clearCart()
     }
   }, [orderId])
 

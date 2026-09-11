@@ -6,6 +6,7 @@ import { sendOrderConfirmationEmail } from '@/lib/email'
 import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { createNotification, formatNotificationMessage } from '@/lib/notifications'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
+import { SITE_URL } from '@/lib/site-config'
 import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -14,9 +15,6 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
-
-  // Rate limiting - security hardening
   const rateLimitCheck = rateLimit('checkout')(request)
   if (rateLimitCheck.success !== true) {
     return rateLimitCheck.response
@@ -134,7 +132,7 @@ export async function POST(request: NextRequest) {
         paymentId: recentOrder.payment?.id,
         reference: recentOrder.payment?.reference,
         authorizationUrl: recentOrder.payment?.paystackRef
-          ? `${appUrl}/checkout?reference=${recentOrder.payment.reference}`
+          ? `${SITE_URL}/checkout?reference=${recentOrder.payment.reference}`
           : undefined,
         pricing: {
           subtotal: recentOrder.subtotal ?? 0,
@@ -310,12 +308,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Paystack payment
-    const callbackUrl = `${appUrl}/checkout?reference=${reference}`
+    const callbackUrl = `${SITE_URL}/checkout`
     console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
-
-    if (!appUrl) {
-      console.error('[Checkout API] CRITICAL ERROR: APP_URL is not configured. Set NEXT_PUBLIC_APP_URL or APP_URL environment variable.')
-    }
 
     try {
       let paystackAuthorizationUrl: string | undefined

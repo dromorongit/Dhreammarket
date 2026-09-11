@@ -1,4 +1,5 @@
 import type { FC } from 'react'
+import { SITE_URL } from '@/lib/site-config'
 
 interface ProductImage {
   id: string
@@ -27,17 +28,15 @@ interface ProductForJsonLd {
   reviewCount: number
 }
 
-const SITE_URL = 'https://www.dhreamarket.com'
+interface ProductJsonLdProps {
+  product: ProductForJsonLd
+}
 
 function getAvailabilityStatus(availabilityType: string | null, stock: number): string {
   if (availabilityType === 'PREORDER' || availabilityType === 'BACKORDER') {
     return 'https://schema.org/PreOrder'
   }
   return stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
-}
-
-interface ProductJsonLdProps {
-  product: ProductForJsonLd
 }
 
 export const ProductJsonLd: FC<ProductJsonLdProps> = ({ product }) => {

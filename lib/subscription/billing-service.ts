@@ -3,6 +3,7 @@ import { initializePaystackPayment, verifyPaystackPayment, isPaystackConfigured 
 import { logInfo, logError } from '@/lib/logger'
 import { upgradeSubscription } from './subscription-service'
 import { sendPaymentSuccessNotification, sendPaymentFailedNotification } from './notification-integration'
+import { SITE_URL } from '@/lib/site-config'
 import crypto from 'crypto'
 
 export interface BillingInvoiceData {
@@ -37,8 +38,7 @@ export interface BillingVerificationResult {
 }
 
 export function getSubscriptionCallbackUrl(): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || ''
-  return `${appUrl.replace(/\/+$/, '')}/dashboard/vendor/subscription`
+  return `${SITE_URL.replace(/\/+$/, '')}/dashboard/vendor/subscription`
 }
 
 function resolvePlanAmount(plan: { priceMonthly: number | null; priceYearly: number | null }, billingCycle: 'MONTHLY' | 'YEARLY'): number {

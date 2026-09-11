@@ -1,8 +1,8 @@
 import { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
+import { SITE_URL } from '@/lib/site-config'
 import VendorClient from './vendor-client'
 
-const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreamarket.png`
 
 async function getVendorInfo(idOrSlug: string): Promise<any | null> {

@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 import CategoryClient from './category-client'
 
 interface Props {
@@ -6,7 +7,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const category = await fetch(`https://www.dhreamarket.com/api/service-categories`).then(r => r.json()).catch(() => null)
+  const category = await fetch(`${SITE_URL}/api/service-categories`).then(r => r.json()).catch(() => null)
   const cat = category?.categories?.find((c: any) => c.slug === params.slug)
 
   const title = cat?.name ? `${cat.name} Services - Dhream Market` : 'Services - Dhream Market'
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      url: `${process.env.SITE_URL || 'https://www.dhreamarket.com'}/services/category/${params.slug}`,
+      url: `${SITE_URL}/services/category/${params.slug}`,
       type: 'website',
     },
     twitter: {

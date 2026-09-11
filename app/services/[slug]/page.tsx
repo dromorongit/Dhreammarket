@@ -1,9 +1,9 @@
 import { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { SITE_URL } from '@/lib/site-config'
 import ServiceDetailClient from './service-detail-client'
 
-const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreamarket.png`
 
 interface ServiceForMetadata {

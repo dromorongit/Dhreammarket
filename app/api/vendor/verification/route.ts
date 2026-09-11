@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { sendEmail } from '@/lib/email'
 import { createNotification } from '@/lib/notifications'
+import { SITE_URL } from '@/lib/site-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
         select: { name: true },
       })
 
-      const APP_URL_ADMIN = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000'
+      const APP_URL_ADMIN = SITE_URL
 
       const adminSubject = `New Vendor Verification Request - ${store?.name || 'Unknown Store'}`
       const adminContent = `

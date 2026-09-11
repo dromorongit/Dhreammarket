@@ -7,13 +7,9 @@ import { Card, CardHeader, CardContent } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { formatCurrency } from '@/lib/currency'
+import { SITE_URL } from '@/lib/site-config'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
 import dynamic from 'next/dynamic'
-
-const AIVendorInsights = dynamic(() => import('@/components/ai').then(m => m.AIVendorInsights), { ssr: false })
-const AIRecommendations = dynamic(() => import('@/components/ai').then(m => m.AIRecommendations), { ssr: false })
-
-const SITE_URL = 'https://www.dhreamarket.com'
 
 interface VendorProduct {
   id: string
@@ -364,11 +360,10 @@ export default function VendorDashboardPage() {
                 <p className="text-sm text-gray-500">Views to purchases</p>
               </Card.Content>
             </Card>
-          </div>
+           </div>
 
-            <AIVendorInsights vendorId="" userId="" />
           </div>
-        )}
+         )}
 
         {activeTab === 'analytics' && (
           <div>

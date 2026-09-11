@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
+import { SITE_URL } from '@/lib/site-config'
 import ProductClient from './product-client'
 import { ProductJsonLd } from '@/components/seo/ProductJsonLd'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 
-const SITE_URL = 'https://www.dhreamarket.com'
 const DEFAULT_OG_IMAGE = getOptimizedCloudinaryUrl('https://res.cloudinary.com/doqfxvcy2/image/upload/v1789091543/dhream-market/images/leauw2looppm3eeiubws.png')
 
 interface RelatedProduct {

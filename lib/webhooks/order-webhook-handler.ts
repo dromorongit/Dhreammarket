@@ -263,6 +263,15 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       console.error('Failed to record payment confirmed event:', err)
     })
 
+    const cart = await getPrisma().cart.findUnique({
+      where: { userId: payment.userId },
+    })
+    if (cart) {
+      await getPrisma().cartItem.deleteMany({
+        where: { cartId: cart.id },
+      })
+    }
+
     await createAuditLog({
       userId: payment.userId,
       userRole: 'SYSTEM',

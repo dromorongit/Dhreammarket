@@ -352,7 +352,7 @@ export default function CheckoutContent() {
    const [useWalletBalance, setUseWalletBalance] = useState(false)
    const [walletAmount, setWalletAmount] = useState(0)
    
-    const { cart: contextCart } = useCart()
+    const { cart: contextCart, clearCart } = useCart()
    const paymentStatus = searchParams?.get('status') ?? null
    
    const [formData, setFormData] = useState({
@@ -491,7 +491,7 @@ export default function CheckoutContent() {
         if (response.ok && data.authorizationUrl) {
           window.location.href = data.authorizationUrl
         } else if (response.ok && data.fullyCoveredByWallet) {
-          dispatchCartUpdate()
+          clearCart()
           window.location.href = `/payment/success?orderId=${data.orderId}&walletApplied=true`
         } else {
           const errorMessage = data.error ?? data.message ?? 'Failed to initialize checkout'
@@ -536,9 +536,9 @@ export default function CheckoutContent() {
 
        const data = await response.json()
        
-       if (data.success) {
-         dispatchCartUpdate()
-         window.location.href = `/payment/success?orderId=${data.orderId}`
+        if (data.success) {
+          clearCart()
+          window.location.href = `/payment/success?orderId=${data.orderId}`
        } else if (data.status === 'cancelled' || data.status === 'abandoned' || data.status === 'failed') {
          setProcessing(false)
          if (data.status === 'cancelled' || data.status === 'abandoned') {
