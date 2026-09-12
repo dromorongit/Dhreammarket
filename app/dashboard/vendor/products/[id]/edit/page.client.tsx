@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import ImageUpload from '@/components/ImageUpload'
 import { SearchableCategorySelector } from '@/components/SearchableCategorySelector'
+import Toggle from '@/components/settings/Toggle'
 import Link from 'next/link'
 
 interface Category {
@@ -56,6 +57,7 @@ interface Product {
   preOrderNotes?: string | null
   expectedRestockDate?: string | null
   backOrderNotes?: string | null
+  isReturnable?: boolean
   images: Array<{
     id: string
     url: string
@@ -106,6 +108,7 @@ export default function VendorEditProductPageClient() {
     preOrderNotes: '',
     expectedRestockDate: '',
     backOrderNotes: '',
+    isReturnable: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -202,6 +205,7 @@ export default function VendorEditProductPageClient() {
           preOrderNotes: p.preOrderNotes || '',
           expectedRestockDate: p.expectedRestockDate ? new Date(p.expectedRestockDate).toISOString().split('T')[0] : '',
           backOrderNotes: p.backOrderNotes || '',
+          isReturnable: p.isReturnable !== false,
         })
       } else {
         alert('Product not found')
@@ -275,6 +279,7 @@ export default function VendorEditProductPageClient() {
         preOrderNotes: formData.preOrderNotes || null,
         expectedRestockDate: formData.expectedRestockDate || null,
         backOrderNotes: formData.backOrderNotes || null,
+        isReturnable: formData.isReturnable,
       }
 
       const response = await fetch(`/api/products/${productId}`, {
@@ -714,6 +719,15 @@ export default function VendorEditProductPageClient() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <Toggle
+                  label="Mark as non-returnable"
+                  description="Customers will not be able to return this product once purchased."
+                  checked={!formData.isReturnable}
+                  onChange={(checked) => setFormData(prev => ({ ...prev, isReturnable: !checked }))}
+                />
               </div>
 
               {errors.general && (

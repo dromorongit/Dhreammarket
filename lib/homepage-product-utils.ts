@@ -14,6 +14,7 @@ export interface EnterpriseProduct {
   availableQuantity?: number | null
   salesCount?: number
   isSponsored?: boolean
+  isReturnable?: boolean
   brand?: string | null
   availabilityType?: string
   expectedArrivalDate?: string | null

@@ -14,6 +14,7 @@ const productSelect = {
   reservedQuantity: true,
   salesCount: true,
   isSponsored: true,
+  isReturnable: true,
   brand: true,
   availabilityType: true,
   expectedArrivalDate: true,

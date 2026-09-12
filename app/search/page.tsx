@@ -16,6 +16,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import WishlistButton from '@/components/WishlistButton'
 import ServiceCard from '@/components/ServiceCard'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, CARD_IMAGE_SIZES_6COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 
 type SearchTab = 'all' | 'products' | 'vendors' | 'categories' | 'brands' | 'services'
@@ -35,6 +36,7 @@ interface SearchProduct {
   category: { id: string; name: string } | null
   type: string
   availabilityType?: string
+  isReturnable?: boolean
 }
 
 interface SearchVendor {
@@ -661,12 +663,13 @@ function CompactProductCard({ product, wishlistedProductIds }: { product: Search
                 })()}
               </div>
             )}
-             <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
-          </div>
-        </Card>
-      </Link>
-    )
-}
+              <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
+              <NonReturnableBadge isReturnable={product.isReturnable} />
+            </div>
+          </Card>
+        </Link>
+      )
+    }
 
 /* ─── SkeletonCard (inline for search page) ─── */
 function SkeletonCard() {

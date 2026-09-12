@@ -20,6 +20,7 @@ import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
 import { TrustBadge } from '@/components/TrustBadges'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 import { getBlurDataURL, HERO_IMAGE_SIZES, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_3COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import { SITE_URL } from '@/lib/site-config'
 
@@ -49,6 +50,7 @@ interface VendorProduct {
   preOrderNotes?: string | null
   expectedRestockDate?: string | null
   backOrderNotes?: string | null
+  isReturnable?: boolean
 }
 
 interface VendorReview {
@@ -678,6 +680,7 @@ export default function VendorProfilePage() {
                           })()}
                         </div>
                         <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+                        <NonReturnableBadge isReturnable={product.isReturnable} />
                       </div>
                     </Card>
                   )

@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
           type: 'product',
           availabilityType: isExpired ? 'IN_STOCK' : p.availabilityType,
           expectedArrivalDate: isExpired ? null : p.expectedArrivalDate,
+          isReturnable: p.isReturnable,
         }
       })
     }

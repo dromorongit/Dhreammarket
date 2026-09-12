@@ -8,6 +8,7 @@ import { formatPrice } from '@/lib/currency'
 import { MdVerified } from 'react-icons/md'
 import { type EnterpriseProduct } from '@/lib/homepage-product-utils'
 import { getBlurDataURL } from '@/lib/image-utils'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 const INITIAL_PRODUCT_COUNT = 10
 
@@ -63,6 +64,7 @@ function ProductRailItem({ product }: { product: EnterpriseProduct }) {
                 )}
               </div>
             )}
+            <NonReturnableBadge isReturnable={product.isReturnable} />
           </div>
         </div>
       </Link>

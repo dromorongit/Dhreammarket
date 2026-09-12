@@ -40,6 +40,7 @@ function buildProductResult(p: any, reason: string, score: number): Recommendati
     score,
     stock: p.stock,
     reservedQuantity: p.reservedQuantity,
+    isReturnable: p.isReturnable,
   }
 }
 
@@ -135,6 +136,7 @@ export class RuleBasedEngine implements AIEngine {
           reservedQuantity: true,
           averageRating: true,
           salesCount: true,
+          isReturnable: true,
           images: { take: 1 },
           category: { select: { name: true } },
           store: { select: { name: true, slug: true } },
@@ -176,6 +178,7 @@ export class RuleBasedEngine implements AIEngine {
           trendScore,
           trendDirection: direction,
           type: 'PRODUCT' as const,
+          isReturnable: p.isReturnable,
         }
       })
 
@@ -264,6 +267,7 @@ export class RuleBasedEngine implements AIEngine {
             reservedQuantity: true,
             averageRating: true,
             salesCount: true,
+            isReturnable: true,
             images: { take: 1 },
             store: { select: { name: true, slug: true } },
             category: { select: { name: true } },
@@ -390,6 +394,7 @@ export class RuleBasedEngine implements AIEngine {
             dealsPrice: true,
             stock: true,
             reservedQuantity: true,
+            isReturnable: true,
             images: { take: 1 },
             store: { select: { name: true, slug: true } },
             category: { select: { name: true } },
@@ -830,6 +835,7 @@ export class RuleBasedEngine implements AIEngine {
           dealsPrice: true,
           stock: true,
           reservedQuantity: true,
+          isReturnable: true,
           images: { take: 1 },
           store: { select: { name: true, slug: true } },
           category: { select: { name: true } },
@@ -871,6 +877,7 @@ export class RuleBasedEngine implements AIEngine {
           dealsPrice: true,
           stock: true,
           reservedQuantity: true,
+          isReturnable: true,
           images: { take: 1 },
           store: { select: { name: true, slug: true } },
           category: { select: { name: true } },
@@ -906,6 +913,7 @@ export class RuleBasedEngine implements AIEngine {
           dealsPrice: true,
           stock: true,
           reservedQuantity: true,
+          isReturnable: true,
           images: { take: 1 },
           store: { select: { name: true, slug: true } },
           category: { select: { name: true } },

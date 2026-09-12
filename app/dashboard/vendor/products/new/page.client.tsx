@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import ImageUpload from '@/components/ImageUpload'
 import { SearchableCategorySelector } from '@/components/SearchableCategorySelector'
+import Toggle from '@/components/settings/Toggle'
 import Link from 'next/link'
 
 interface Category {
@@ -64,6 +65,7 @@ export default function VendorNewProductPageClient() {
     preOrderNotes: '',
     expectedRestockDate: '',
     backOrderNotes: '',
+    isReturnable: true,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [canCreateProduct, setCanCreateProduct] = useState<boolean | null>(null)
@@ -208,6 +210,7 @@ export default function VendorNewProductPageClient() {
         preOrderNotes: formData.preOrderNotes || null,
         expectedRestockDate: formData.expectedRestockDate || null,
         backOrderNotes: formData.backOrderNotes || null,
+        isReturnable: formData.isReturnable,
       }
 
       const response = await fetch('/api/products', {
@@ -657,6 +660,15 @@ export default function VendorNewProductPageClient() {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <Toggle
+                  label="Mark as non-returnable"
+                  description="Customers will not be able to return this product once purchased."
+                  checked={!formData.isReturnable}
+                  onChange={(checked) => setFormData(prev => ({ ...prev, isReturnable: !checked }))}
+                />
               </div>
 
               {errors.general && (

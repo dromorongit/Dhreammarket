@@ -21,6 +21,7 @@ import { ProductBadges, calculateProductBadges } from '@/components/ProductBadge
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import ServiceCard from '@/components/ServiceCard'
 import WishlistButton from '@/components/WishlistButton'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 import { AIRecommendations } from '@/components/ai'
 import { AITrending } from '@/components/ai'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, CARD_IMAGE_SIZES_6COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
@@ -64,6 +65,7 @@ interface Product {
     alt: string | null
   }>
   availabilityType?: string
+  isReturnable?: boolean
   expectedArrivalDate?: string | null
   estimatedFulfillmentDays?: number | null
   preOrderNotes?: string | null
@@ -266,6 +268,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
           </Link>
         </div>
           <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
+          <NonReturnableBadge isReturnable={product.isReturnable} />
       </div>
     </Card>
   )

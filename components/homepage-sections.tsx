@@ -23,6 +23,7 @@ import { getBlurDataURL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LO
 import WishlistButton from '@/components/WishlistButton'
 import ScrollableRow from './ScrollableRow'
 import { SponsoredCard } from './homepage-enterprise-sections'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 export function SectionPill({ label, icon, gradientFrom, gradientVia, gradientTo, textColor = 'text-white' }: { label: string; icon: ReactNode; gradientFrom: string; gradientVia: string; gradientTo: string; textColor?: string }) {
   return (
@@ -159,9 +160,10 @@ return (
               </div>
             )}
             <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
-                              </div>
-                             </div>
-                           </Card>
+            <NonReturnableBadge isReturnable={product.isReturnable} />
+          </div>
+        </div>
+      </Card>
     )
   })
 

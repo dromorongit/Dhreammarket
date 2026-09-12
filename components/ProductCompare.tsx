@@ -69,7 +69,7 @@ interface CompareSidebarProps {
 export function CompareSidebar({ products, onRemove }: CompareSidebarProps) {
   if (products.length === 0) return null
 
-  const attributes = ['price', 'salesPrice', 'dealsPrice', 'stock', 'averageRating', 'reviewCount']
+  const attributes = ['price', 'salesPrice', 'dealsPrice', 'stock', 'averageRating', 'reviewCount', 'isReturnable']
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 sticky top-4">

@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
             price: true,
             salesPrice: true,
             dealsPrice: true,
+            isReturnable: true,
             images: { take: 1, select: { url: true } },
             store: { select: { name: true } },
           },

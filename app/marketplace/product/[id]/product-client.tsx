@@ -18,6 +18,7 @@ import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import ScrollableRow from '@/components/ScrollableRow'
 import { MdVerified } from 'react-icons/md'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 import { FiShoppingCart, FiChevronRight, FiStar, FiMinus, FiPlus, FiPhone } from 'react-icons/fi'
 import { event } from '@/lib/gtag'
 import { AISimilar } from '@/components/ai'
@@ -146,6 +147,7 @@ interface RelatedProductForRail {
   dealsPrice: number | null
   stock: number
   availabilityType: string | null
+  isReturnable: boolean
   images: Array<{ id: string; url: string; alt: string | null }>
   store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
   category: { id: string; name: string; slug: string | null } | null
@@ -193,6 +195,7 @@ function RailProductCard({ product }: { product: RelatedProductForRail }) {
           {product.store && (
             <p className="text-[10px] text-slate-500 truncate">{product.store.name}</p>
           )}
+          <NonReturnableBadge isReturnable={product.isReturnable} />
         </div>
       </Card>
     </Link>

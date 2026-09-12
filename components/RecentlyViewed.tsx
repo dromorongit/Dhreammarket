@@ -9,6 +9,7 @@ import { Button } from './Button'
 import { Skeleton } from './Skeleton'
 import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 interface RecentlyViewedItem {
   entityType: string
@@ -24,6 +25,7 @@ interface RecentlyViewedItem {
     stock?: number | null
     availabilityType?: string | null
     store?: { name: string } | null
+    isReturnable?: boolean
   }
   service?: {
     id: string
@@ -125,6 +127,9 @@ export function RecentlyViewed() {
                   )}
                   {isProduct && (
                     <ProductStockIndicator stock={product?.stock} availabilityType={product?.availabilityType} />
+                  )}
+                  {isProduct && product?.isReturnable === false && (
+                    <NonReturnableBadge isReturnable={product.isReturnable} />
                   )}
                 </div>
               </Card>

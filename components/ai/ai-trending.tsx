@@ -10,6 +10,7 @@ import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import Image from 'next/image'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 interface AITrendingItem {
   id: string
@@ -29,6 +30,7 @@ interface AITrendingItem {
   type: string
   stock?: number | null
   availabilityType?: string | null
+  isReturnable?: boolean
 }
 
 interface AITrendingProps {
@@ -101,6 +103,7 @@ function AITrendingCard({ item }: { item: AITrendingItem }) {
         {isProduct && (
           <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
         )}
+        <NonReturnableBadge isReturnable={item.isReturnable} />
       </div>
     </Card>
   )

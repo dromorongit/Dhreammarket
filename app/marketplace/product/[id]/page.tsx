@@ -21,6 +21,7 @@ interface RelatedProduct {
   images: Array<{ id: string; url: string; alt: string | null }>
   store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
   category: { id: string; name: string; slug: string | null } | null
+  isReturnable: boolean
 }
 
 interface ProductForMetadata {
@@ -82,6 +83,7 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
             dealsPrice: true,
             stock: true,
             availabilityType: true,
+            isReturnable: true,
             images: { take: 1, select: { id: true, url: true, alt: true } },
             store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
             category: { select: { id: true, name: true, slug: true } },
@@ -106,6 +108,7 @@ async function getProductInfo(idOrSlug: string): Promise<ProductForMetadata | nu
             dealsPrice: true,
             stock: true,
             availabilityType: true,
+            isReturnable: true,
             images: { take: 1, select: { id: true, url: true, alt: true } },
             store: { select: { id: true, name: true, slug: true, isVerified: true, badgeTier: true } },
             category: { select: { id: true, name: true, slug: true } },

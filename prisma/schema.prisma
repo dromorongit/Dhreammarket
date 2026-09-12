@@ -263,6 +263,7 @@ model Product {
   preOrderNotes            String?
   expectedRestockDate      DateTime?
   backOrderNotes           String?
+  isReturnable             Boolean                    @default(true)
   cartItems                CartItem[]
   wishlistItems          WishlistItem[]
   homepageSections         HomepageSectionProduct[]

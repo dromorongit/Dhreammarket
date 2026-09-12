@@ -14,6 +14,7 @@ import { event } from '@/lib/gtag'
 import { logCartRequest } from '@/lib/CartContext'
 import { getBlurDataURL, CARD_IMAGE_SIZES_4COL } from '@/lib/image-utils'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 interface WishlistItem {
   id: string
@@ -26,6 +27,7 @@ interface WishlistItem {
     dealsPrice: number | null
     availabilityType: string
     stock?: number | null
+    isReturnable?: boolean
     images: Array<{
       id: string
       url: string
@@ -242,6 +244,7 @@ export default function WishlistClient() {
                     </Button>
                   </div>
                   <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+                  <NonReturnableBadge isReturnable={product.isReturnable} />
                 </CardContent>
               </Card>
             )

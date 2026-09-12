@@ -9,6 +9,7 @@ import { getRecentlyViewed } from '@/lib/recently-viewed'
 import { getBlurDataURL, CARD_IMAGE_SIZES_2COL } from '@/lib/image-utils'
 import { formatPrice } from '@/lib/currency'
 import ScrollableRow from './ScrollableRow'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 interface ProductMinimal {
   id: string
@@ -21,6 +22,7 @@ interface ProductMinimal {
   image: string | null
   imageAlt: string | null
   storeName: string | null
+  isReturnable: boolean
 }
 
 export default function RecentlyViewedSection() {
@@ -107,6 +109,7 @@ export default function RecentlyViewedSection() {
                     {product.storeName && (
                       <p className="text-[10px] text-slate-500 truncate">{product.storeName}</p>
                     )}
+                    <NonReturnableBadge isReturnable={product.isReturnable} />
                   </div>
                 </Card>
               </Link>

@@ -10,6 +10,7 @@ import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import Image from 'next/image'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 interface AIRecommendationItem {
   id: string
@@ -30,6 +31,7 @@ interface AIRecommendationItem {
   stock?: number | null
   reservedQuantity?: number | null
   availabilityType?: string | null
+  isReturnable?: boolean
 }
 
 interface AIRecommendationsProps {
@@ -98,6 +100,7 @@ function AIRecommendationCard({ item }: { item: AIRecommendationItem }) {
         {isProduct && (
           <ProductStockIndicator stock={item.stock} reservedQuantity={item.reservedQuantity} availabilityType={item.availabilityType} />
         )}
+        <NonReturnableBadge isReturnable={item.isReturnable} />
       </div>
     </Card>
   )

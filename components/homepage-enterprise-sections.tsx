@@ -21,6 +21,7 @@ import { TrendingNowSection } from './TrendingNowSection';
 import { SectionPill } from './homepage-sections';
 import ScrollableRow from './ScrollableRow';
 import CountdownTimer from '@/components/CountdownTimer';
+import NonReturnableBadge from '@/components/NonReturnableBadge';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_2COL, CARD_IMAGE_SIZES_4COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
@@ -324,6 +325,7 @@ export function SponsoredCard({ product, initialIsWishlisted, isSponsored = fals
                 </div>
               )}
               <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
+              <NonReturnableBadge isReturnable={product.isReturnable} />
             </div>
           </Card>
         </Link>
@@ -331,7 +333,7 @@ export function SponsoredCard({ product, initialIsWishlisted, isSponsored = fals
     )
   }
 
-function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
+  function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
    const discountedPrice = getDiscountedPrice(product)
     const salePrice = discountedPrice ?? product.price
 
@@ -405,16 +407,17 @@ function DealCard({ product, initialIsWishlisted }: { product: EnterpriseProduct
                    return null
                  })()}
                 </div>
-              )}
-              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
-            </div>
-          </Card>
-        </Link>
-      </div>
-    )
-  }
+               )}
+               <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
+               <NonReturnableBadge isReturnable={product.isReturnable} />
+             </div>
+           </Card>
+         </Link>
+       </div>
+     )
+   }
 
-function StandardCard({
+  function StandardCard({
    product,
    badge,
    initialIsWishlisted,
@@ -492,16 +495,17 @@ function StandardCard({
                    return null
                  })()}
                 </div>
-              )}
-              <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
-            </div>
-          </Card>
-        </Link>
-      </div>
-    )
-  }
+               )}
+               <ProductStockIndicator stock={product.stock} reservedQuantity={(product as any).reservedQuantity} availabilityType={product.availabilityType} />
+               <NonReturnableBadge isReturnable={product.isReturnable} />
+             </div>
+           </Card>
+         </Link>
+       </div>
+     )
+   }
 
-export function FlashSalesSection({
+  export function FlashSalesSection({
   section,
   loading,
 }: {
@@ -730,6 +734,7 @@ export function EnterpriseGadgetDisplaySection({
               View Deal
             </Button>
             <ProductStockIndicator stock={product.stock} availabilityType={product.availabilityType} />
+            <NonReturnableBadge isReturnable={product.isReturnable} />
           </div>
         </div>
       </Link>

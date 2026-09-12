@@ -12,6 +12,7 @@ import { ProductStockIndicator } from '@/components/ProductStockIndicator';
 import WishlistButton from '@/components/WishlistButton';
 import { formatPrice } from '@/lib/currency';
 import { getBlurDataURL, CARD_IMAGE_SIZES_5COL } from '@/lib/image-utils';
+import NonReturnableBadge from '@/components/NonReturnableBadge';
 
 function TrendingProductCard({ product, initialIsWishlisted }: { product: EnterpriseProduct; initialIsWishlisted?: boolean }) {
   const effectivePrice = getEffectivePrice(product)
@@ -98,6 +99,7 @@ function TrendingProductCard({ product, initialIsWishlisted }: { product: Enterp
               </div>
             )}
             <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
+            <NonReturnableBadge isReturnable={product.isReturnable} />
           </div>
         </Card>
       </Link>

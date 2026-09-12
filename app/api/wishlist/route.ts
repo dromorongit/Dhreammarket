@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
             stock: true,
             salesPrice: true,
             dealsPrice: true,
+            isReturnable: true,
             availabilityType: true,
             images: true,
             store: {
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
               product: {
                 select: {
                   id: true, name: true, slug: true, price: true, stock: true,
-                  salesPrice: true, dealsPrice: true, availabilityType: true, images: true,
+                  salesPrice: true, dealsPrice: true, isReturnable: true, availabilityType: true, images: true,
                   store: { select: { name: true } },
                 },
               },

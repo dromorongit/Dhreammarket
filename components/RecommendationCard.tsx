@@ -10,6 +10,7 @@ import { Badge } from './Badge'
 import { getBlurDataURL, CARD_IMAGE_SIZES } from '@/lib/image-utils'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import { formatPrice } from '@/lib/currency'
+import NonReturnableBadge from '@/components/NonReturnableBadge'
 
 interface RecommendationCardProps {
   item: {
@@ -26,6 +27,7 @@ interface RecommendationCardProps {
     type: string
     stock?: number | null
     availabilityType?: string | null
+    isReturnable?: boolean
   }
 }
 
@@ -63,6 +65,7 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
         {isProduct && (
           <ProductStockIndicator stock={item.stock} availabilityType={item.availabilityType} />
         )}
+        <NonReturnableBadge isReturnable={item.isReturnable} />
       </div>
     </Card>
   )

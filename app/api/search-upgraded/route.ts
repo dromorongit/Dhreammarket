@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
         category: p.category,
         type: 'product',
         availabilityType: p.availabilityType,
+        isReturnable: p.isReturnable,
       }))
 
       let sponsoredProductIds: string[] = []

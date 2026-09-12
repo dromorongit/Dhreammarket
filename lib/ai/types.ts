@@ -52,6 +52,7 @@ export interface RecommendationResult {
   score: number
   stock?: number | null
   reservedQuantity?: number | null
+  isReturnable?: boolean
 }
 
 export interface TrendingInput {
@@ -79,6 +80,7 @@ export interface TrendingResult {
   type: EntityType
   stock?: number | null
   reservedQuantity?: number | null
+  isReturnable?: boolean
 }
 
 export interface SimilarInput {
@@ -105,6 +107,7 @@ export interface SimilarResult {
   score: number
   stock?: number | null
   reservedQuantity?: number | null
+  isReturnable?: boolean
 }
 
 export interface CrossSellInput {
@@ -131,6 +134,7 @@ export interface CrossSellResult {
   score: number
   stock?: number | null
   reservedQuantity?: number | null
+  isReturnable?: boolean
 }
 
 export interface CustomerInsightsInput {

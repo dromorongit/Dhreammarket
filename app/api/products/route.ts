@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
           stock: true,
           reservedQuantity: true,
           availabilityType: true,
+          isReturnable: true,
           category: { select: { id: true, name: true, slug: true } },
         images: { take: 1, select: { id: true, url: true, alt: true } },
         },
@@ -193,6 +194,7 @@ export async function GET(request: NextRequest) {
         reservedQuantity: true,
         salesCount: true,
         isSponsored: true,
+        isReturnable: true,
         brand: true,
         availabilityType: true,
         expectedArrivalDate: true,
@@ -287,7 +289,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes, isReturnable } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -454,25 +456,26 @@ export async function POST(request: NextRequest) {
      // Generate unique slug
      const slug = await generateSlug({ baseText: name.trim(), target: 'Product' })
 
-     const product = await getPrisma().product.create({
-       data: {
-         storeId: store.id,
-         categoryId: primaryCategoryId,
-         name: name.trim(),
-         description: description?.trim() || null,
-          price: parseFloat(price),
-          stock: parseInt(stock, 10),
-          brandId: brandId || null,
-          salesPrice: salesPrice ? parseFloat(salesPrice) : null,
-          dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
-          availabilityType: finalAvailabilityType as any,
-          expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
-          estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays, 10) : null,
-         preOrderNotes: preOrderNotes || null,
-         expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
-         backOrderNotes: backOrderNotes || null,
-         slug: slug,
-       },
+      const product = await getPrisma().product.create({
+        data: {
+          storeId: store.id,
+          categoryId: primaryCategoryId,
+          name: name.trim(),
+          description: description?.trim() || null,
+           price: parseFloat(price),
+           stock: parseInt(stock, 10),
+           brandId: brandId || null,
+           salesPrice: salesPrice ? parseFloat(salesPrice) : null,
+           dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+           availabilityType: finalAvailabilityType as any,
+           expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
+           estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays, 10) : null,
+          preOrderNotes: preOrderNotes || null,
+          expectedRestockDate: expectedRestockDate ? new Date(expectedRestockDate) : null,
+          backOrderNotes: backOrderNotes || null,
+          isReturnable: isReturnable !== false,
+          slug: slug,
+        },
        include: {
          category: true,
          images: true,
