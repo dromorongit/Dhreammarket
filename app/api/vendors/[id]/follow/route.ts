@@ -7,13 +7,19 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
+
+    const payload = outcome
 
     const vendorId = params.id
 
@@ -87,10 +93,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const token = request.cookies.get('token')?.value
     let isFollowing = false
     if (token) {
-      const payload = await verifyToken(token)
-      if (payload && payload.userId !== vendorId) {
+      const outcome = await verifyToken(token)
+      if (outcome.authenticated && outcome.userId !== vendorId) {
         const existing = await getPrisma().vendorFollow.findFirst({
-          where: { userId: payload.userId, vendorId },
+          where: { userId: outcome.userId, vendorId },
         })
         isFollowing = !!existing
       }

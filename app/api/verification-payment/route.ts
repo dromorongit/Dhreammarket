@@ -13,11 +13,20 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden - Vendors only' }, { status: 403 })
     }
 

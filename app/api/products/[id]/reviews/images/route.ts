@@ -7,11 +7,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || (payload.role !== 'CUSTOMER' && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN')) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'CUSTOMER' && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Only customers can upload review images' }, { status: 403 })
     }
 
@@ -91,13 +100,19 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
+
+    const payload = outcome
 
     const imageId = params.id
     const image = await getPrisma().reviewImage.findUnique({ where: { id: imageId } })

@@ -8,13 +8,19 @@ export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
+
+    const payload = outcome
 
     const productIdsParam = request.nextUrl.searchParams.get('productIds')
     const serviceIdsParam = request.nextUrl.searchParams.get('serviceIds')

@@ -25,14 +25,20 @@ export async function POST(request: NextRequest) {
     const token = request.cookies.get('token')?.value
     if (!token) {
       console.log('[Payment Verify API] No token found - Unauthorized')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       console.log('[Payment Verify API] Invalid token - Unauthorized')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
+
+    const payload = outcome
 
     const { reference } = await request.json()
     console.log('[Payment Verify API] Reference received:', reference)

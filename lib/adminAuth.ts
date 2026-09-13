@@ -10,14 +10,19 @@ export interface AdminUser {
 export async function requireAdmin(): Promise<AdminUser | NextResponse> {
   const token = cookies().get('token')?.value
   if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+    return response
   }
 
-  const user = await verifyToken(token)
-  if (!user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  const outcome = await verifyToken(token)
+  if (!outcome.authenticated) {
+    const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+    return response
   }
 
+  const user = outcome
   if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
@@ -28,14 +33,19 @@ export async function requireAdmin(): Promise<AdminUser | NextResponse> {
 export async function requireSuperAdmin(): Promise<AdminUser | NextResponse> {
   const token = cookies().get('token')?.value
   if (!token) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+    return response
   }
 
-  const user = await verifyToken(token)
-  if (!user) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  const outcome = await verifyToken(token)
+  if (!outcome.authenticated) {
+    const response = NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+    return response
   }
 
+  const user = outcome
   if (user.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'SUPER_ADMIN access required' }, { status: 403 })
   }
@@ -49,11 +59,12 @@ export async function requireAdminReturnUser(): Promise<{ userId: string; role: 
     return null
   }
 
-  const user = await verifyToken(token)
-  if (!user) {
+  const outcome = await verifyToken(token)
+  if (!outcome.authenticated) {
     return null
   }
 
+  const user = outcome
   if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
     return null
   }

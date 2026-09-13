@@ -24,7 +24,8 @@ export function generateToken(payload: { userId: string; role: Role; sessionId: 
 
 export function verifyToken(token: string): { userId: string; role: Role; sessionId: string } | null {
   if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required')
+    console.error('JWT_SECRET environment variable is not set')
+    return null
   }
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & { sessionId?: string }

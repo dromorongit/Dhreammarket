@@ -58,11 +58,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
       const token = request.cookies.get('token')?.value
       if (!token) {
-        return NextResponse.json({ canReview: false }, { status: 200 })
+        const response = NextResponse.json({ canReview: false }, { status: 200 })
+        response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+        return response
       }
 
-      const payload = await verifyToken(token)
-      if (!payload || payload.role !== 'CUSTOMER') {
+      const outcome = await verifyToken(token)
+      if (!outcome.authenticated) {
+        const response = NextResponse.json({ canReview: false }, { status: 200 })
+        response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+        return response
+      }
+
+      const payload = outcome
+      if (payload.role !== 'CUSTOMER') {
         return NextResponse.json({ canReview: false }, { status: 200 })
       }
 
@@ -227,11 +236,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can submit reviews' }, { status: 403 })
     }
 

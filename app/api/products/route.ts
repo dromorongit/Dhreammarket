@@ -17,11 +17,14 @@ export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
   const prismaPerfStart = perf.markPrismaStart()
   try {
-    const token = request.cookies.get('token')?.value
+     const token = request.cookies.get('token')?.value
     let payload = null
 
     if (token) {
-      payload = await verifyToken(token)
+      const outcome = await verifyToken(token)
+      if (outcome.authenticated) {
+        payload = outcome
+      }
     }
 
     const url = new URL(request.url)
@@ -277,13 +280,24 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      perf.markPrismaEnd(prismaPerfStart)
+      perf.log()
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'VENDOR') {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

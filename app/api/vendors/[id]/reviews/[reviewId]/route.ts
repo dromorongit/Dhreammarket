@@ -7,11 +7,20 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can edit reviews' }, { status: 403 })
     }
 
@@ -63,11 +72,20 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can delete reviews' }, { status: 403 })
     }
 

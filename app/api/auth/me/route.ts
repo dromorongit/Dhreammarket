@@ -11,14 +11,15 @@ export async function GET(request: NextRequest) {
   const prismaPerfStart = perf.markPrismaStart()
   try {
     const token = cookies().get('token')?.value
-    const userFromToken = token ? await verifyToken(token) : null
-    if (!userFromToken) {
+    const outcome = token ? await verifyToken(token) : null
+    if (!outcome || !outcome.authenticated) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ user: null }, { status: 200 })
     }
+    const payload = outcome
     const user = await getPrisma().user.findUnique({
-      where: { id: userFromToken.userId },
+      where: { id: payload.userId },
       include: { profile: true, store: true },
     })
     perf.markPrismaEnd(prismaPerfStart)
