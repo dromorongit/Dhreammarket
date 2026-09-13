@@ -26,10 +26,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     // Check if vendor has completed onboarding (store and category)
     const isOnboarded = await isVendorOnboarded(payload.userId)
@@ -144,10 +145,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const isOnboarded = await isVendorOnboarded(payload.userId)
     if (!isOnboarded) {

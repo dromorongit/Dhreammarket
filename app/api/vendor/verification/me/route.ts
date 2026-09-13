@@ -11,10 +11,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden - Vendors only' }, { status: 403 })
     }
+    const payload = outcome
 
     const application = await getPrisma().vendorVerificationApplication.findUnique({
       where: { vendorId: payload.userId },

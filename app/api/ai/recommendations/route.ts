@@ -6,7 +6,11 @@ import type { RecommendationReason } from '@/lib/ai/types'
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
-    const payload = token ? await verifyToken(token) : null
+    const outcome = token ? await verifyToken(token) : null
+    let payload: any = null
+    if (outcome?.authenticated) {
+      payload = outcome
+    }
 
     const type = request.nextUrl.searchParams.get('type') || 'RECOMMENDED_FOR_YOU'
     const entityId = request.nextUrl.searchParams.get('entityId')

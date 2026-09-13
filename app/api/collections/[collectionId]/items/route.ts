@@ -9,10 +9,11 @@ export async function POST(request: NextRequest, { params }: { params: { collect
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const { collectionId } = params
     const { productId, serviceId } = await request.json()
@@ -80,10 +81,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { colle
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const { collectionId, itemId } = params
     const item = await getPrisma().collectionItem.findUnique({

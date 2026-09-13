@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     // Verify SUPER_ADMIN authentication
     const token = cookies().get('token')?.value
     const user = token ? await verifyToken(token) : null
-    if (!user || user.role !== 'SUPER_ADMIN') {
+    if (!user || !user.authenticated || user.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'SUPER_ADMIN access required' }, { status: 403 })
     }
 

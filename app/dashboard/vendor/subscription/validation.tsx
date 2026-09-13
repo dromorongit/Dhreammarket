@@ -9,12 +9,12 @@ export default async function VendorSubscriptionValidation({ children }: { child
     redirect('/login')
   }
 
-  const payload = await verifyToken(token)
-  if (!payload || payload.role !== 'VENDOR') {
+  const outcome = await verifyToken(token)
+  if (!outcome.authenticated || outcome.role !== 'VENDOR') {
     redirect('/login')
   }
 
-  const userStatus = await getUserStatus(payload.userId, payload.role)
+  const userStatus = await getUserStatus(outcome.userId, outcome.role)
 
   if (!userStatus.isEmailVerified) {
     redirect('/verify-email')

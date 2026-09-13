@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     // Admin can see all feedback, users can see their own
     const whereClause = payload.role === 'ADMIN' ? {} : { userId: payload.userId }
@@ -53,12 +54,14 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     let userId: string | null = null
+    let payload: any = null
 
     // Try to get authenticated user (optional - allow anonymous submissions)
     if (token) {
-      const payload = await verifyToken(token)
-      if (payload) {
-        userId = payload.userId
+      const outcome = await verifyToken(token)
+      if (outcome.authenticated) {
+        payload = outcome
+        userId = outcome.userId
       }
     }
 

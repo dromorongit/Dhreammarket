@@ -15,10 +15,11 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const session = await getPrisma().session.findUnique({
       where: { sessionId: params.id },

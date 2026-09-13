@@ -8,10 +8,10 @@ export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
     if (token) {
-      const payload = await verifyToken(token)
-      if (payload?.sessionId) {
+      const outcome = await verifyToken(token)
+      if (outcome.authenticated && outcome.sessionId) {
         await getPrisma().session.updateMany({
-          where: { sessionId: payload.sessionId, userId: payload.userId, isExpired: false },
+          where: { sessionId: outcome.sessionId, userId: outcome.userId, isExpired: false },
           data: { isExpired: true, expiredAt: new Date() },
         }).catch((err) => console.error('Failed to expire session on logout:', err))
       }

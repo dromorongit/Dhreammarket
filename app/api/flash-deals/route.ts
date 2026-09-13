@@ -9,10 +9,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'ADMIN')) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const { title, description, discountType, discountValue, maxDiscount, startDate, endDate, vendorId } = await request.json()
 

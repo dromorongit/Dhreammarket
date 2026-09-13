@@ -87,10 +87,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Only customers can submit reviews' }, { status: 403 })
     }
+    const payload = outcome
 
     const serviceId = params.id
     const { rating, comment, requestId } = await request.json()
@@ -161,10 +162,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Only customers can edit reviews' }, { status: 403 })
     }
+    const payload = outcome
 
     const serviceId = params.id
     const { reviewId, rating, comment } = await request.json()
@@ -213,10 +215,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Only customers can delete reviews' }, { status: 403 })
     }
+    const payload = outcome
 
     const serviceId = params.id
     const { reviewId } = await request.json()

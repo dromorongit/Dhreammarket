@@ -33,10 +33,10 @@ export class SupportEngine {
     let userId: string | undefined
 
     if (token) {
-      const payload = await verifyToken(token)
-      if (payload) {
-        userRole = payload.role
-        userId = payload.userId
+      const outcome = await verifyToken(token)
+      if (outcome.authenticated) {
+        userRole = outcome.role
+        userId = outcome.userId
       }
     }
 

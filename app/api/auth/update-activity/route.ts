@@ -16,9 +16,9 @@ export async function POST(request: Request) {
       })
     }
 
-    const payload = await verifyToken(token)
+    const outcome = await verifyToken(token)
 
-    if (!payload) {
+    if (!outcome.authenticated) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
     const { ipAddress, userAgent } = await request.json().catch(() => ({}))
 
-    await updateLastActivity(payload.sessionId, ipAddress, userAgent)
+    await updateLastActivity(outcome.sessionId, ipAddress, userAgent)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

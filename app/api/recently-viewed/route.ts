@@ -9,10 +9,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const { entityType, entityId } = await request.json()
 
@@ -71,10 +72,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const entityType = request.nextUrl.searchParams.get('entityType')
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20')

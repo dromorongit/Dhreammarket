@@ -16,10 +16,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'ADMIN')) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden - Admins only' }, { status: 403 })
     }
+    const payload = outcome
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -106,10 +107,11 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'ADMIN')) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden - Admins only' }, { status: 403 })
     }
+    const payload = outcome
 
     const { searchParams } = new URL(request.url)
     const applicationId = searchParams.get('applicationId')

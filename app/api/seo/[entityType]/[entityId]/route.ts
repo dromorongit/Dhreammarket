@@ -41,10 +41,11 @@ export async function POST(request: NextRequest, { params }: { params: { entityT
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'ADMIN')) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const { entityType, entityId } = params
     const { metaTitle, metaDescription, canonicalUrl, ogTitle, ogDescription, ogImage, twitterTitle, twitterDescription, twitterImage, jsonLd } = await request.json()

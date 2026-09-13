@@ -19,10 +19,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
@@ -74,10 +75,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
@@ -251,10 +253,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },

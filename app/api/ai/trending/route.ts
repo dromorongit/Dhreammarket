@@ -5,7 +5,11 @@ import { getAIEngine } from '@/lib/ai/rule-based-engine'
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value
-    const payload = token ? await verifyToken(token) : null
+    const outcome = token ? await verifyToken(token) : null
+    let payload: any = null
+    if (outcome?.authenticated) {
+      payload = outcome
+    }
 
     const timeWindow = (request.nextUrl.searchParams.get('timeWindow') as any) || '7D'
     const entityType = (request.nextUrl.searchParams.get('entityType') as any) || 'PRODUCT'

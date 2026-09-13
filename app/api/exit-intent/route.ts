@@ -9,10 +9,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const { pageUrl, referrer } = await request.json()
 
@@ -38,10 +39,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const payload = outcome
 
     const exitIntents = await getPrisma().exitIntent.findMany({
       where: { userId: payload.userId },

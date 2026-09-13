@@ -17,8 +17,8 @@ async function resolveConversation(request: NextRequest, conversationRef: string
 
   let authUser: { userId: string; role: string } | null = null
   if (token) {
-    const payload = await verifyToken(token)
-    if (payload) authUser = { userId: payload.userId, role: payload.role }
+    const outcome = await verifyToken(token)
+    if (outcome.authenticated) authUser = { userId: outcome.userId, role: outcome.role }
   }
 
   const conversation = await prisma.supportConversation.findUnique({

@@ -9,9 +9,9 @@ export const dynamic = 'force-dynamic'
 async function getAuthenticatedUser(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   if (!token) return null
-  const payload = await verifyToken(token)
-  if (!payload) return null
-  return { userId: payload.userId, role: payload.role }
+  const outcome = await verifyToken(token)
+  if (!outcome.authenticated) return null
+  return { userId: outcome.userId, role: outcome.role }
 }
 
 async function getGuestToken(request: NextRequest): Promise<string | null> {

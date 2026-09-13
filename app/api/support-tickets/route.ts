@@ -22,9 +22,9 @@ export async function POST(request: NextRequest) {
 
     // Try to get authenticated user
     if (token) {
-      const payload = await verifyToken(token)
-      if (payload) {
-        userId = payload.userId
+      const outcome = await verifyToken(token)
+      if (outcome.authenticated) {
+        userId = outcome.userId
       }
     }
 

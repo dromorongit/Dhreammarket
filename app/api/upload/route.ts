@@ -28,9 +28,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const payload = await verifyToken(token);
-    if (!payload || payload.role !== 'VENDOR') {
-      console.log('[Upload] Invalid token or non-vendor role:', payload?.role);
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      console.log('[Upload] Invalid token:', outcome.reason);
+      return NextResponse.json({ error: 'Forbidden: Only vendors can upload images' }, { status: 403 });
+    }
+    const payload = outcome
+
+    if (payload.role !== 'VENDOR') {
+      console.log('[Upload] Non-vendor role:', payload.role);
       return NextResponse.json({ error: 'Forbidden: Only vendors can upload images' }, { status: 403 });
     }
 

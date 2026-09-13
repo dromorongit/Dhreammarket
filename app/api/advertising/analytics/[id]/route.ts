@@ -27,10 +27,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const campaign = await getPrisma().advertisementCampaign.findUnique({
       where: { id },
@@ -83,10 +84,11 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     if (payload.role !== 'SUPER_ADMIN' && campaign.vendorId !== payload.userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -117,10 +119,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated || outcome.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const prisma = getPrisma()
     await prisma.advertisementCampaign.delete({ where: { id } })

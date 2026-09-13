@@ -14,12 +14,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const user = { userId: payload.userId, role: payload.role }
+    const user = { userId: outcome.userId, role: outcome.role }
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -87,12 +87,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const user = { userId: payload.userId, role: payload.role }
+    const user = { userId: outcome.userId, role: outcome.role }
 
     const { subject, message, type, priority } = await request.json()
 

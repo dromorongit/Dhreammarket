@@ -12,10 +12,11 @@ export async function GET(request: NextRequest) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'VENDOR') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
     }
+    const payload = outcome
 
     const prisma = getPrisma()
     let subscription = await prisma.vendorSubscription.findUnique({

@@ -35,10 +35,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const vendorId = payload.role === 'SUPER_ADMIN' ? undefined : payload.userId
     const campaign = await getCampaignById(id, vendorId)
@@ -65,10 +66,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated || outcome.role !== 'SUPER_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const body = await request.json()
     const { campaignStatus, rejectedReason } = body

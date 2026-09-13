@@ -14,10 +14,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       return NextResponse.json({ error: 'Forbidden - SUPER_ADMIN access required' }, { status: 403 })
     }
+    const payload = outcome
 
     const { action } = await request.json()
 

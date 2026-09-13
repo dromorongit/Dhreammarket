@@ -41,12 +41,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload) {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const where: Record<string, unknown> = {}
 
@@ -232,12 +233,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token)
-    if (!payload || payload.role !== 'CUSTOMER') {
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
       perf.markPrismaEnd(prismaPerfStart)
       perf.log()
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    const payload = outcome
 
     const body = await request.json()
     const { serviceId, title, description, preferredCompletionDate, preferredBudget } = body

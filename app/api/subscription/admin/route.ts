@@ -14,17 +14,17 @@ import { logInfo, logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
-async function requireSuperAdmin(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-  if (!token) {
-    return { error: 'Unauthorized', status: 401, payload: null }
+  async function requireSuperAdmin(request: NextRequest) {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return { error: 'Unauthorized', status: 401, payload: null }
+    }
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated || outcome.role !== 'SUPER_ADMIN') {
+      return { error: 'Forbidden', status: 403, payload: null }
+    }
+    return { error: null, status: 200, payload: outcome }
   }
-  const payload = await verifyToken(token)
-  if (!payload || payload.role !== 'SUPER_ADMIN') {
-    return { error: 'Forbidden', status: 403, payload: null }
-  }
-  return { error: null, status: 200, payload }
-}
 
 export async function GET(request: NextRequest) {
   try {
