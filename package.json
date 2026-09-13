@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && cross-env NODE_OPTIONS=--max-old-space-size=3584 next build",
+    "build": "prisma generate && cross-env NODE_OPTIONS=--max-old-space-size=3584 next build && node scripts/copy-static.js",
     "start": "prisma migrate deploy && cross-env NODE_OPTIONS=--max-old-space-size=768 node server-entry.js",
     "lint": "next lint",
     "db:generate": "prisma generate",
