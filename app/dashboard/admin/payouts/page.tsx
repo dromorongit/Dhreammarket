@@ -57,6 +57,9 @@ export default function AdminPayoutsPage() {
   const [payoutReference, setPayoutReference] = useState('')
   const [payoutNote, setPayoutNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [selectedVendorPayoutMethod, setSelectedVendorPayoutMethod] = useState<any>(null)
+  const [hasPayoutMethod, setHasPayoutMethod] = useState(false)
+  const [loadingPayoutMethod, setLoadingPayoutMethod] = useState(false)
 
   const fetchPayouts = useCallback(async () => {
     try {
@@ -97,10 +100,36 @@ export default function AdminPayoutsPage() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchPayouts()
-    fetchVendors()
-  }, [fetchPayouts, fetchVendors])
+useEffect(() => {
+  fetchPayouts()
+  fetchVendors()
+}, [fetchPayouts, fetchVendors])
+
+useEffect(() => {
+  if (!selectedVendor) {
+    setSelectedVendorPayoutMethod(null)
+    setHasPayoutMethod(false)
+    return
+  }
+  let cancelled = false
+  setLoadingPayoutMethod(true)
+  fetch(`/api/admin/vendors/${selectedVendor}/payout-methods`)
+    .then(res => res.json())
+    .then(data => {
+      if (cancelled) return
+      setSelectedVendorPayoutMethod(data.payoutMethod)
+      setHasPayoutMethod(data.hasPayoutMethod || false)
+    })
+    .catch(() => {
+      if (cancelled) return
+      setSelectedVendorPayoutMethod(null)
+      setHasPayoutMethod(false)
+    })
+    .finally(() => {
+      if (!cancelled) setLoadingPayoutMethod(false)
+    })
+  return () => { cancelled = true }
+}, [selectedVendor])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GH', {
@@ -435,6 +464,27 @@ export default function AdminPayoutsPage() {
                     ))}
                   </select>
                 </div>
+                {selectedVendor && (
+                  <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
+                    {loadingPayoutMethod ? (
+                      <div className="h-4 bg-slate-200 rounded animate-pulse w-40" />
+                    ) : hasPayoutMethod && selectedVendorPayoutMethod ? (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Vendor Payout Method (Default)</p>
+                        <p className="text-sm text-slate-900">
+                          {selectedVendorPayoutMethod.type === 'MOBILE_MONEY'
+                            ? `${selectedVendorPayoutMethod.details?.momoProvider || 'Mobile Money'} ${selectedVendorPayoutMethod.details?.momoNumber || '••••'}`
+                            : `${selectedVendorPayoutMethod.details?.bankName || 'Bank'} ****${selectedVendorPayoutMethod.details?.accountNumber?.slice(-4) || '••••'}`}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Vendor Payout Method</p>
+                        <p className="text-sm text-amber-700">No payout method on file</p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Amount (GHS)</label>
                   <input

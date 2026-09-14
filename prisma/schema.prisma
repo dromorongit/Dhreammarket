@@ -47,6 +47,7 @@ model User {
   verificationAuditLogs    VerificationAuditLog[]
   addresses                Address[]
   paymentMethods           PaymentMethod[]
+  payoutMethods            VendorPayoutMethod[]
   vendorSettings           VendorSettings?
   adminSettings            AdminSettings?
   couponUsages             CouponUsage[]
@@ -176,6 +177,7 @@ model Store {
   vendor_categories        VendorCategory?                 @relation(fields: [categoryId], references: [id])
   user                     User                            @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorPayouts            VendorPayout[]                  @relation("VendorPayoutStore")
+  payoutMethods            VendorPayoutMethod[]            @relation("VendorPayoutMethodStore")
   vendorReviews            VendorReview[]
   verificationApplications VendorVerificationApplication[]
   serviceRequests          ServiceRequest[]
@@ -654,6 +656,24 @@ model VendorPayout {
   vendor    User         @relation("VendorPayoutVendor", fields: [vendorId], references: [id])
 
   @@map("vendor_payouts")
+}
+
+model VendorPayoutMethod {
+  id                String            @id @default(cuid())
+  vendorId          String
+  storeId           String
+  type              PayoutMethodType  @default(MOBILE_MONEY)
+  details           Json              @default("{}")
+  isDefault         Boolean           @default(false)
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  vendor            User              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  store             Store             @relation("VendorPayoutMethodStore", fields: [storeId], references: [id])
+
+  @@index([vendorId])
+  @@index([storeId])
+  @@map("vendor_payout_methods")
 }
 
 model VerificationSetting {
@@ -1189,6 +1209,11 @@ enum TokenType {
   PASSWORD_RESET
   OTP_LOGIN
   OTP_MFA
+}
+
+enum PayoutMethodType {
+  MOBILE_MONEY
+  BANK_ACCOUNT
 }
 
 enum Role {

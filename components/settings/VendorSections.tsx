@@ -229,6 +229,141 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
     setVendorSettings((prev) => (prev ? { ...prev, [field]: value } : prev))
   }
 
+  const [payoutMethods, setPayoutMethods] = useState<any[]>([])
+  const [payoutLoading, setPayoutLoading] = useState(true)
+  const [payoutSaving, setPayoutSaving] = useState(false)
+  const [payoutMessage, setPayoutMessage] = useState<string | null>(null)
+  const [payoutError, setPayoutError] = useState<string | null>(null)
+  const [payoutForm, setPayoutForm] = useState({ type: 'MOBILE_MONEY', details: {} as Record<string, any>, isDefault: false })
+  const [editingPayoutId, setEditingPayoutId] = useState<string | null>(null)
+
+  const fetchPayoutMethods = async () => {
+    setPayoutLoading(true)
+    try {
+      const res = await fetch('/api/vendor/payout-methods')
+      if (res.ok) {
+        const data = await res.json()
+        setPayoutMethods(data.payoutMethods || [])
+      }
+    } catch {
+      // silent
+    } finally {
+      setPayoutLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPayoutMethods()
+  }, [])
+
+  const maskValue = (val: string) => {
+    if (!val || val.length <= 4) return val || '****'
+    const digits = val.replace(/\s/g, '')
+    return digits.length > 4 ? `••••${digits.slice(-4)}` : val
+  }
+
+  const getPayoutDisplay = (pm: any) => {
+    if (pm.type === 'MOBILE_MONEY') {
+      const provider = pm.details?.momoProvider || 'Mobile Money'
+      const masked = maskValue(pm.details?.momoNumber || '')
+      return `${provider} ${masked}`
+    }
+    const bank = pm.details?.bankName || 'Bank'
+    const masked = maskValue(pm.details?.accountNumber || '')
+    return `${bank} ****${masked.slice(-4)}`
+  }
+
+  const handleSavePayoutMethod = async () => {
+    const { type, details } = payoutForm
+    if (!type) return
+
+    if (type === 'MOBILE_MONEY') {
+      if (!details.momoProvider?.trim()) { setPayoutError('Provider is required'); return }
+      const digits = String(details.momoNumber || '').replace(/\s/g, '')
+      if (digits.length < 9 || digits.length > 15 || !/^\d+$/.test(digits)) { setPayoutError('Enter a valid phone number'); return }
+      if (!details.accountHolderName?.trim()) { setPayoutError('Account holder name is required'); return }
+    }
+    if (type === 'BANK_ACCOUNT') {
+      if (!details.bankName?.trim()) { setPayoutError('Bank name is required'); return }
+      if (!details.accountNumber?.trim()) { setPayoutError('Account number is required'); return }
+      if (!details.accountHolderName?.trim()) { setPayoutError('Account holder name is required'); return }
+    }
+
+    setPayoutSaving(true)
+    setPayoutMessage(null)
+    setPayoutError(null)
+
+    try {
+      const url = editingPayoutId ? `/api/vendor/payout-methods/${editingPayoutId}` : '/api/vendor/payout-methods'
+      const method = editingPayoutId ? 'PATCH' : 'POST'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payoutForm),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPayoutForm({ type: 'MOBILE_MONEY', details: {}, isDefault: false })
+        setEditingPayoutId(null)
+        fetchPayoutMethods()
+        setPayoutMessage(editingPayoutId ? 'Payout method updated' : 'Payout method added')
+        setTimeout(() => setPayoutMessage(null), 3000)
+      } else {
+        setPayoutError(data.error || 'Failed to save payout method')
+      }
+    } catch {
+      setPayoutError('An error occurred')
+    } finally {
+      setPayoutSaving(false)
+    }
+  }
+
+  const handleDeletePayout = async (id: string) => {
+    setPayoutSaving(true)
+    setPayoutMessage(null)
+    setPayoutError(null)
+    try {
+      const res = await fetch(`/api/vendor/payout-methods/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        fetchPayoutMethods()
+        setPayoutMessage('Payout method removed')
+        setTimeout(() => setPayoutMessage(null), 3000)
+      } else {
+        const data = await res.json()
+        setPayoutError(data.error || 'Failed to remove payout method')
+      }
+    } catch {
+      setPayoutError('An error occurred')
+    } finally {
+      setPayoutSaving(false)
+    }
+  }
+
+  const handleSetDefaultPayout = async (id: string) => {
+    setPayoutSaving(true)
+    setPayoutMessage(null)
+    setPayoutError(null)
+    try {
+      const res = await fetch(`/api/vendor/payout-methods/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDefault: true }),
+      })
+      if (res.ok) {
+        fetchPayoutMethods()
+        setPayoutMessage('Default payout method updated')
+        setTimeout(() => setPayoutMessage(null), 3000)
+      } else {
+        const data = await res.json()
+        setPayoutError(data.error || 'Failed to set default')
+      }
+    } catch {
+      setPayoutError('An error occurred')
+    } finally {
+      setPayoutSaving(false)
+    }
+  }
+
   if (storeLoading) {
     return (
       <div className="space-y-6">
@@ -292,6 +427,134 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
               value={store.categoryId || ''}
               onChange={(e) => setStore({ ...store, categoryId: e.target.value })}
             />
+          </div>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection title="Payout Methods" description="Add your payout details so admins know where to send your earnings. This is optional.">
+        <p className="text-xs text-slate-500 mb-4">Payout method setup is optional — you can still sell without adding one.</p>
+        <div className="space-y-4">
+          {payoutMethods.length === 0 && !payoutLoading ? (
+            <p className="text-sm text-slate-500">No payout methods configured yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {payoutMethods.map((pm) => (
+                <div key={pm.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {pm.type === 'MOBILE_MONEY' ? 'Mobile Money' : 'Bank Account'}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {pm.isActive ? 'Active' : 'Inactive'} {pm.isDefault ? '• Default' : ''}
+                      {' — '}
+                      {pm.type === 'MOBILE_MONEY'
+                        ? `${pm.details?.momoProvider || ''} ${maskValue(pm.details?.momoNumber || '')}`
+                        : `${pm.details?.bankName || ''} ****${maskValue(pm.details?.accountNumber || '').slice(-4)}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!pm.isDefault && (
+                      <Button variant="ghost" size="sm" onClick={() => handleSetDefaultPayout(pm.id)} disabled={payoutSaving}>Set Default</Button>
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setEditingPayoutId(pm.id)
+                      setPayoutForm({ type: pm.type, details: pm.details || {}, isDefault: pm.isDefault })
+                    }} disabled={payoutSaving}>Edit</Button>
+                    <Button variant="ghost" size="sm" onClick={() => handleDeletePayout(pm.id)} disabled={payoutSaving}>Remove</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="p-4 rounded-2xl border border-slate-200 bg-white">
+            <p className="text-sm font-medium text-slate-900 mb-3">{editingPayoutId ? 'Edit Payout Method' : 'Add Payout Method'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Type</label>
+                <select
+                  value={payoutForm.type}
+                  onChange={(e) => setPayoutForm({ ...payoutForm, type: e.target.value, details: {} })}
+                  className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
+                >
+                  <option value="MOBILE_MONEY">Mobile Money</option>
+                  <option value="BANK_ACCOUNT">Bank Account</option>
+                </select>
+              </div>
+              {payoutForm.type === 'MOBILE_MONEY' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Provider</label>
+                    <select
+                      value={payoutForm.details.momoProvider || ''}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, details: { ...payoutForm.details, momoProvider: e.target.value } })}
+                      className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue hover:border-slate-300 hover:bg-white transition-all duration-200 shadow-sm hover:shadow"
+                    >
+                      <option value="">Select provider</option>
+                      <option value="MTN">MTN</option>
+                      <option value="VODAFONE">Vodafone</option>
+                      <option value="AIRTELTIGO">AirtelTigo</option>
+                      <option value="AIRTEL">Airtel</option>
+                      <option value="TIGO">Tigo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
+                    <Input
+                      value={payoutForm.details.momoNumber || ''}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, details: { ...payoutForm.details, momoNumber: e.target.value } })}
+                      placeholder="+233 24 000 0000"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Bank Name</label>
+                    <Input
+                      value={payoutForm.details.bankName || ''}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, details: { ...payoutForm.details, bankName: e.target.value } })}
+                      placeholder="e.g. GCB Bank"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Account Number</label>
+                    <Input
+                      value={payoutForm.details.accountNumber || ''}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, details: { ...payoutForm.details, accountNumber: e.target.value } })}
+                      placeholder="Account number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Branch Name (Optional)</label>
+                    <Input
+                      value={payoutForm.details.branchName || ''}
+                      onChange={(e) => setPayoutForm({ ...payoutForm, details: { ...payoutForm.details, branchName: e.target.value } })}
+                      placeholder="Branch name"
+                    />
+                  </div>
+                </>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Account Holder Name</label>
+                <Input
+                  value={payoutForm.details.accountHolderName || ''}
+                  onChange={(e) => setPayoutForm({ ...payoutForm, details: { ...payoutForm.details, accountHolderName: e.target.value } })}
+                  placeholder="Name on account"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-4">
+              <Toggle label="Set as default" checked={payoutForm.isDefault} onChange={() => setPayoutForm({ ...payoutForm, isDefault: !payoutForm.isDefault })} disabled={payoutSaving} />
+              <div className="flex gap-2">
+                {editingPayoutId && (
+                  <Button variant="outline" size="sm" onClick={() => { setEditingPayoutId(null); setPayoutForm({ type: 'MOBILE_MONEY', details: {}, isDefault: false }) }} disabled={payoutSaving}>Cancel</Button>
+                )}
+                <Button size="sm" onClick={handleSavePayoutMethod} disabled={payoutSaving}>
+                  {payoutSaving ? 'Saving...' : editingPayoutId ? 'Update' : 'Add Payout Method'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </SettingsSection>
@@ -526,6 +789,17 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
       {settingsError && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
           <p className="text-sm text-rose-700">{settingsError}</p>
+        </div>
+      )}
+
+      {payoutMessage && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <p className="text-sm text-emerald-700">{payoutMessage}</p>
+        </div>
+      )}
+      {payoutError && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl">
+          <p className="text-sm text-rose-700">{payoutError}</p>
         </div>
       )}
 

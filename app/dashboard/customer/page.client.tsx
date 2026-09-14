@@ -104,12 +104,13 @@ export default function CustomerDashboardPage() {
                 <h3 className="font-semibold text-deep-navy">Quick Links</h3>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <Link href="/dashboard/customer/orders" className="block text-royal-blue hover:underline">My Orders</Link>
-                  <Link href="/dashboard/customer/wishlist" className="block text-royal-blue hover:underline">Wishlist</Link>
-                  <Link href="/dashboard/customer/collections" className="block text-royal-blue hover:underline">Collections</Link>
-                  <button onClick={() => setActiveTab('saved-searches')} className="block text-royal-blue hover:underline text-left">Saved Searches</button>
-                </div>
+                 <div className="space-y-2">
+                   <Link href="/dashboard/customer/orders" className="block text-royal-blue hover:underline">My Orders</Link>
+                   <Link href="/dashboard/customer/wishlist" className="block text-royal-blue hover:underline">Wishlist</Link>
+                   <Link href="/dashboard/customer/collections" className="block text-royal-blue hover:underline">Collections</Link>
+                   <button onClick={() => setActiveTab('saved-searches')} className="block text-royal-blue hover:underline text-left">Saved Searches</button>
+                   <Link href="/dashboard/customer/settings" className="block text-royal-blue hover:underline">Account Settings</Link>
+                 </div>
               </CardContent>
             </Card>
 
