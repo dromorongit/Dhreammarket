@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         orderBy: { usedAt: 'desc' },
         take: 10,
       }),
-      getPrisma().vendorFollow.count({ where: { vendorId: payload.userId } }),
+      getPrisma().vendorFollow.count({ where: { vendorId: store.id } }),
       getPrisma().vendorAnalytics.findMany({
         where: { vendorId: payload.userId },
         orderBy: { date: 'desc' },

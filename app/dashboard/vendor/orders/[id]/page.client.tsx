@@ -374,40 +374,42 @@ export default function VendorOrderDetailPageClient() {
           </div>
 
           {!isCancelled && (
-            <div className="flex items-center justify-between mb-4">
-              {progression.map((status, index) => {
-                const config = FULFILLMENT_STATUS_CONFIG[status as keyof typeof FULFILLMENT_STATUS_CONFIG]
-                const isActive = index <= currentIndex
-                const isCurrent = status === order.fulfillmentStatus
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex items-center justify-between mb-4 min-w-[320px] sm:min-w-0">
+                {progression.map((status, index) => {
+                  const config = FULFILLMENT_STATUS_CONFIG[status as keyof typeof FULFILLMENT_STATUS_CONFIG]
+                  const isActive = index <= currentIndex
+                  const isCurrent = status === order.fulfillmentStatus
 
-                return (
-                  <div key={status} className="flex items-center flex-1">
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                          isActive
-                            ? isCurrent
-                              ? 'bg-orange-600 text-white ring-2 ring-orange-100'
-                              : 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-400'
-                        }`}
-                      >
-                        {index + 1}
+                  return (
+                    <div key={status} className="flex items-center flex-1">
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-semibold transition-all ${
+                            isActive
+                              ? isCurrent
+                                ? 'bg-orange-600 text-white ring-2 ring-orange-100'
+                                : 'bg-orange-100 text-orange-700'
+                              : 'bg-gray-100 text-gray-400'
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className={`text-[10px] sm:text-xs mt-1 font-medium ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                          {config?.label?.split(' ')[0] || status}
+                        </span>
                       </div>
-                      <span className={`text-xs mt-1 font-medium ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {config?.label?.split(' ')[0] || status}
-                      </span>
+                      {index < progression.length - 1 && (
+                        <div
+                          className={`flex-1 h-1 mx-1 sm:mx-2 rounded transition-all ${
+                            index < currentIndex ? 'bg-orange-300' : 'bg-gray-200'
+                          }`}
+                        />
+                      )}
                     </div>
-                    {index < progression.length - 1 && (
-                      <div
-                        className={`flex-1 h-1 mx-1 rounded transition-all ${
-                          index < currentIndex ? 'bg-orange-300' : 'bg-gray-200'
-                        }`}
-                      />
-                    )}
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -444,40 +446,42 @@ export default function VendorOrderDetailPageClient() {
         <h3 className="text-sm font-medium text-gray-700 mb-3">Order Progress</h3>
 
         {!isCancelled && (
-          <div className="flex items-center justify-between mb-4">
-            {STATUS_PROGRESSION.map((status, index) => {
-              const config = ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG]
-              const isActive = index <= currentIndex
-              const isCurrent = status === order.status
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex items-center justify-between mb-4 min-w-[320px] sm:min-w-0">
+              {STATUS_PROGRESSION.map((status, index) => {
+                const config = ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG]
+                const isActive = index <= currentIndex
+                const isCurrent = status === order.status
 
-              return (
-                <div key={status} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                        isActive
-                          ? isCurrent
-                            ? 'bg-orange-600 text-white ring-4 ring-orange-100'
-                            : 'bg-orange-100 text-orange-700'
-                          : 'bg-gray-100 text-gray-400'
-                      }`}
-                    >
-                      {index + 1}
+                return (
+                  <div key={status} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[10px] sm:text-sm font-semibold transition-all ${
+                          isActive
+                            ? isCurrent
+                              ? 'bg-orange-600 text-white ring-2 sm:ring-4 ring-orange-100'
+                              : 'bg-orange-100 text-orange-700'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {index + 1}
+                      </div>
+                      <span className={`text-[10px] sm:text-xs mt-1 font-medium ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {config.label}
+                      </span>
                     </div>
-                    <span className={`text-xs mt-1 font-medium ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
-                      {config.label}
-                    </span>
+                    {index < STATUS_PROGRESSION.length - 1 && (
+                      <div
+                        className={`flex-1 h-1 mx-1 sm:mx-2 rounded transition-all ${
+                          index < currentIndex ? 'bg-orange-300' : 'bg-gray-200'
+                        }`}
+                      />
+                    )}
                   </div>
-                  {index < STATUS_PROGRESSION.length - 1 && (
-                    <div
-                      className={`flex-1 h-1 mx-2 rounded transition-all ${
-                        index < currentIndex ? 'bg-orange-300' : 'bg-gray-200'
-                      }`}
-                    />
-                  )}
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         )}
 

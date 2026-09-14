@@ -53,6 +53,14 @@ export default function VendorDashboardPage() {
   const [servicesLoading, setServicesLoading] = useState(false)
   const [storeName, setStoreName] = useState<string | null>(null)
   const [storeSlug, setStoreSlug] = useState<string | null>(null)
+  const [followers, setFollowers] = useState<Array<{
+    id: string
+    userId: string
+    displayName: string
+    avatar: string | null
+    createdAt: string
+  }>>([])
+  const [followersLoading, setFollowersLoading] = useState(false)
 
   const fetchStore = useCallback(async () => {
     try {
@@ -116,6 +124,21 @@ export default function VendorDashboardPage() {
     }
   }, [])
 
+  const fetchFollowers = useCallback(async () => {
+    try {
+      setFollowersLoading(true)
+      const res = await fetch('/api/vendor/followers')
+      if (res.ok) {
+        const data = await res.json()
+        setFollowers(Array.isArray(data?.followers) ? data.followers : [])
+      }
+    } catch (err) {
+      console.error('Error fetching followers:', err)
+    } finally {
+      setFollowersLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchDashboardData()
     fetchStore()
@@ -132,6 +155,12 @@ export default function VendorDashboardPage() {
       fetchServices(servicesPage)
     }
   }, [activeTab, servicesPage, fetchServices])
+
+  useEffect(() => {
+    if (activeTab === 'followers') {
+      fetchFollowers()
+    }
+  }, [activeTab, fetchFollowers])
 
   const totalProductPages = Math.ceil(allProducts.length / PAGE_SIZE)
   const totalServicePages = Math.ceil(allServices.length / PAGE_SIZE)
@@ -522,7 +551,40 @@ export default function VendorDashboardPage() {
         {activeTab === 'followers' && (
           <div>
             <h2 className="text-xl font-bold text-deep-navy mb-6">Followers</h2>
-            <p className="text-gray-500">Your follower list will appear here</p>
+            {followersLoading ? (
+              <div className="text-center py-8 text-gray-500">Loading followers...</div>
+            ) : followers.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <p className="text-gray-500">You don&apos;t have any followers yet</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {followers.map((follower) => (
+                  <Card key={follower.id}>
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="relative w-10 h-10 bg-gray-200 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
+                        {follower.avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={follower.avatar} alt={follower.displayName} className="object-cover w-full h-full" />
+                        ) : (
+                          <span className="text-sm font-semibold text-gray-500">
+                            {follower.displayName.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-deep-navy truncate">{follower.displayName}</p>
+                        <p className="text-xs text-gray-500">
+                          Following since {new Date(follower.createdAt).toLocaleDateString('en-GH', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

@@ -368,32 +368,34 @@ export default function CustomerOrderDetailPage() {
     return (
       <div className="mb-6">
         <h3 className="text-sm font-medium text-gray-700 mb-3">Order Progress</h3>
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => (
-            <div key={step.key} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
-                <div 
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    index <= statusConfig.step 
-                      ? 'bg-orange-600 text-white' 
-                      : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {index + 1}
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center justify-between min-w-[280px] sm:min-w-0">
+            {steps.map((step, index) => (
+              <div key={step.key} className="flex items-center flex-1">
+                <div className="flex flex-col items-center">
+                  <div 
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] sm:text-sm font-medium ${
+                      index <= statusConfig.step 
+                        ? 'bg-orange-600 text-white' 
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <span className={`text-[10px] sm:text-xs mt-1 ${index <= statusConfig.step ? 'text-gray-900' : 'text-gray-500'}`}>
+                    {step.label}
+                  </span>
                 </div>
-                <span className={`text-xs mt-1 ${index <= statusConfig.step ? 'text-gray-900' : 'text-gray-500'}`}>
-                  {step.label}
-                </span>
+                {index < steps.length - 1 && (
+                  <div 
+                    className={`flex-1 h-1 mx-1 sm:mx-2 ${
+                      index < statusConfig.step ? 'bg-orange-600' : 'bg-gray-200'
+                    }`}
+                  />
+                )}
               </div>
-              {index < steps.length - 1 && (
-                <div 
-                  className={`flex-1 h-1 mx-2 ${
-                    index < statusConfig.step ? 'bg-orange-600' : 'bg-gray-200'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     )
