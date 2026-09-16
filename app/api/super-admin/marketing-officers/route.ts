@@ -27,21 +27,35 @@ export async function GET() {
 
     const officerIds = officers.map((officer) => officer.id)
 
-    const referralStats = await prisma.vendorReferral.groupBy({
-      by: ['marketingOfficerId'],
-      where: {
-        marketingOfficerId: { in: officerIds },
-      },
-      _count: { _all: true },
-      _sum: { amountOwed: true },
-    })
+    const [referralStats, unpaidStats] = await Promise.all([
+      prisma.vendorReferral.groupBy({
+        by: ['marketingOfficerId'],
+        where: {
+          marketingOfficerId: { in: officerIds },
+        },
+        _count: { _all: true },
+      }),
+      prisma.vendorReferral.groupBy({
+        by: ['marketingOfficerId'],
+        where: {
+          marketingOfficerId: { in: officerIds },
+          paid: false,
+        },
+        _sum: { amountOwed: true },
+      }),
+    ])
 
-    const statsMap = new Map(
-      referralStats.map((stat) => [
-        stat.marketingOfficerId,
-        { referralCount: stat._count._all, totalUnpaid: stat._sum.amountOwed ?? 0 },
-      ])
-    )
+    const statsMap = new Map<string, { referralCount: number; totalUnpaid: number }>()
+
+    for (const stat of referralStats) {
+      statsMap.set(stat.marketingOfficerId, { referralCount: stat._count._all, totalUnpaid: 0 })
+    }
+
+    for (const stat of unpaidStats) {
+      const current = statsMap.get(stat.marketingOfficerId) ?? { referralCount: 0, totalUnpaid: 0 }
+      current.totalUnpaid = stat._sum.amountOwed ?? 0
+      statsMap.set(stat.marketingOfficerId, current)
+    }
 
     const data = officers.map((officer) => ({
       ...officer,
