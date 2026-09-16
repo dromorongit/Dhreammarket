@@ -334,7 +334,7 @@ function LiveSupportConversation() {
       try {
         const res = await fetch('/api/support/conversations/' + conversationRef + '/messages', { cache: 'no-store' })
         if (!res.ok) return
-        const data = await res.json() as Promise<{ messages: LiveMessage[] }>
+        const data = (await res.json()) as { messages: LiveMessage[] }
         setMessages(data.messages)
       } catch {
         // ignore
@@ -345,7 +345,7 @@ function LiveSupportConversation() {
       try {
         const res = await fetch('/api/support/conversations', { cache: 'no-store' })
         if (!res.ok) return
-        const data = await res.json() as Promise<{ conversations: { conversationRef: string }[] }>
+        const data = (await res.json()) as { conversations: { conversationRef: string }[] }
         if (data.conversations?.length && !conversationRef) {
           setConversationRef(data.conversations[0].conversationRef)
           setShowSubject(false)

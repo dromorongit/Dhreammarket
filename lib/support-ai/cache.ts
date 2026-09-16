@@ -10,7 +10,7 @@ class SupportAICache {
   private ttl: number
   private maxSize: number
 
-  constructor(config: SupportEngineConfig = {}) {
+  constructor(config: Partial<SupportEngineConfig> = {}) {
     this.cache = new Map()
     this.ttl = config.cacheTTL ?? 5 * 60 * 1000
     this.maxSize = config.maxCacheSize ?? 200

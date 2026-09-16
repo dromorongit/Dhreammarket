@@ -106,12 +106,12 @@ export function formatOrderStatusMessage(results: OrderStatusResult[]): string {
 
   if (results.length === 1) {
     const o = results[0]
-    return `Order #${o.id.slice(-8)} — Status: ${o.status} | Payment: ${o.paymentStatus} | Fulfillment: ${o.fulfillmentStatus} | Total: GHS ${o.total.toFixed(2)} | ${o.itemCount} item(s) | Placed: ${new Date(o.createdAt).toLocaleDateString('en-GH', { year: 'numeric', month: 'short', day: 'numeric' })}. View full details in your Dashboard > Orders.`
+    return `Order #${o.orderId.slice(-8)} — Status: ${o.status} | Payment: ${o.paymentStatus} | Fulfillment: ${o.fulfillmentStatus} | Total: GHS ${o.total.toFixed(2)} | ${o.itemCount} item(s) | Placed: ${new Date(o.createdAt).toLocaleDateString('en-GH', { year: 'numeric', month: 'short', day: 'numeric' })}. View full details in your Dashboard > Orders.`
   }
 
   const lines = results.map(
     (o) =>
-      `• #${o.id.slice(-8)} — ${o.status} | Paid: ${o.paymentStatus} | GHS ${o.total.toFixed(2)} | ${new Date(o.createdAt).toLocaleDateString('en-GH', { month: 'short', day: 'numeric' })}`
+      `• #${o.orderId.slice(-8)} — ${o.status} | Paid: ${o.paymentStatus} | GHS ${o.total.toFixed(2)} | ${new Date(o.createdAt).toLocaleDateString('en-GH', { month: 'short', day: 'numeric' })}`
   )
   return `You have ${results.length} recent orders:\n${lines.join('\n')}\n\nView full details in your Dashboard > Orders.`
 }
