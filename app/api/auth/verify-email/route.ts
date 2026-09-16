@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, otp } = await request.json()
+    const { email, otp, marketingCode } = await request.json()
 
     if (!email || !otp) {
       return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 })
@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedEmail = email.trim().toLowerCase()
+    const resolvedMarketingCode = typeof marketingCode === 'string' && marketingCode.trim()
+      ? marketingCode.trim()
+      : null
 
     const pendingReg = await getPrisma().pendingRegistration.findUnique({
       where: { email: normalizedEmail },
@@ -98,6 +101,38 @@ export async function POST(request: NextRequest) {
             firstName: pendingReg.name,
           },
         })
+
+        if (typeof resolvedMarketingCode === 'string' && resolvedMarketingCode) {
+          const officer = await tx.marketingOfficer.findUnique({
+            where: { referralCode: resolvedMarketingCode },
+          })
+          if (!officer || !officer.active) {
+            throw new Error('INVALID_MARKETING_REFERRAL_CODE')
+          }
+          await tx.vendorReferral.create({
+            data: {
+              vendorUserId: createdUser.id,
+              marketingOfficerId: officer.id,
+              codeUsed: resolvedMarketingCode,
+              amountOwed: 25.00,
+            },
+          })
+        } else if (typeof pendingReg.marketingCode === 'string' && pendingReg.marketingCode.trim()) {
+          const officer = await tx.marketingOfficer.findUnique({
+            where: { referralCode: pendingReg.marketingCode.trim() },
+          })
+          if (!officer || !officer.active) {
+            throw new Error('INVALID_MARKETING_REFERRAL_CODE')
+          }
+          await tx.vendorReferral.create({
+            data: {
+              vendorUserId: createdUser.id,
+              marketingOfficerId: officer.id,
+              codeUsed: pendingReg.marketingCode.trim(),
+              amountOwed: 25.00,
+            },
+          })
+        }
 
         if (pendingReg.role === 'VENDOR') {
           try {
@@ -164,6 +199,9 @@ export async function POST(request: NextRequest) {
 
       return response
     } catch (error: any) {
+      if (error.message === 'INVALID_MARKETING_REFERRAL_CODE') {
+        return NextResponse.json({ error: 'Invalid marketing referral code' }, { status: 400 })
+      }
       if (error.code === 'P2002') {
         if (error.meta?.target?.includes('email')) {
           await getPrisma().pendingRegistration.delete({

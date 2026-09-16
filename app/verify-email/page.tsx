@@ -11,6 +11,7 @@ import { isEmailServiceEnabled } from '@/lib/feature-flags'
 function VerifyEmailContent() {
   const [otp, setOtp] = useState('')
   const [email, setEmail] = useState('')
+  const [marketingCode, setMarketingCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
@@ -20,6 +21,7 @@ function VerifyEmailContent() {
 
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
   const emailServiceEnabled = isEmailServiceEnabled()
+  const showMarketingCodeField = error === 'Invalid marketing referral code'
 
   useEffect(() => {
     const emailParam = searchParams?.get('email')
@@ -58,7 +60,7 @@ function VerifyEmailContent() {
       const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ email, otp, marketingCode: marketingCode || undefined }),
       })
 
       const data = await response.json()
@@ -202,6 +204,15 @@ function VerifyEmailContent() {
               />
               {error && (
                 <div className="text-red-600 text-sm">{error}</div>
+              )}
+              {showMarketingCodeField && (
+                <Input
+                  label="Marketing Referral Code"
+                  type="text"
+                  value={marketingCode}
+                  onChange={(e) => setMarketingCode(e.target.value.toUpperCase())}
+                  placeholder="Enter your marketing code (e.g. MKT-XXXXXXXX)"
+                />
               )}
               {resendMessage && (
                 <div className="text-green-600 text-sm">{resendMessage}</div>

@@ -73,6 +73,7 @@ model User {
   customerAchievements     CustomerAchievement[]
   referralRecordsAsReferrer ReferralRecord[] @relation("ReferralReferrer")
   referralRecordsAsReferee ReferralRecord[] @relation("ReferralReferee")
+  vendorReferral           VendorReferral?                @relation("UserVendorReferral")
   rewardRedemptions        RewardRedemption[]
   vendorRewardCampaigns    VendorRewardCampaign[]
   vendorSubscriptions      VendorSubscription[]
@@ -94,6 +95,7 @@ model PendingRegistration {
   name                String?
   hashedPassword      String
   referralCode        String?
+  marketingCode       String?
   registrationIpAddress String?
   createdAt           DateTime  @default(now())
 
@@ -2858,4 +2860,39 @@ enum AdvertisementCampaignAction {
   EXPIRED
   CANCELLED
   RENEWED
+}
+
+// ===== MODULE 22: Marketing Officer Referral System =====
+
+model MarketingOfficer {
+  id           String    @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  referralCode String    @unique
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  vendorRefs   VendorReferral[]
+
+  @@map("marketing_officers")
+  @@index([referralCode])
+  @@index([active])
+}
+
+model VendorReferral {
+  id               String         @id @default(cuid())
+  vendorUserId     String         @unique
+  marketingOfficerId String
+  codeUsed         String
+  amountOwed       Float          @default(25.00)
+  paid             Boolean        @default(false)
+  paidAt           DateTime?
+  createdAt        DateTime       @default(now())
+  vendor           User           @relation("UserVendorReferral", fields: [vendorUserId], references: [id], onDelete: Restrict)
+  marketingOfficer MarketingOfficer @relation(fields: [marketingOfficerId], references: [id], onDelete: Restrict)
+
+  @@map("vendor_referrals")
+  @@index([marketingOfficerId])
+  @@index([paid])
+  @@index([createdAt])
 }

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, password, role, mobileNumber, name, ageConsent, referralCode } = await request.json()
+    const { email, password, role, mobileNumber, name, ageConsent, referralCode, marketingCode } = await request.json()
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 })
@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
           name: role === 'CUSTOMER' ? name?.trim() : null,
           hashedPassword,
           referralCode: typeof referralCode === 'string' ? referralCode.trim() : null,
+          marketingCode: typeof marketingCode === 'string' ? marketingCode.trim() : null,
           registrationIpAddress,
         },
         create: {
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
           name: role === 'CUSTOMER' ? name?.trim() : null,
           hashedPassword,
           referralCode: typeof referralCode === 'string' ? referralCode.trim() : null,
+          marketingCode: typeof marketingCode === 'string' ? marketingCode.trim() : null,
           registrationIpAddress,
         },
       })
@@ -152,6 +154,23 @@ export async function POST(request: NextRequest) {
             firstName: role === 'CUSTOMER' ? name?.trim() : null,
           },
         })
+
+        if (typeof marketingCode === 'string' && marketingCode.trim()) {
+          const officer = await tx.marketingOfficer.findUnique({
+            where: { referralCode: marketingCode.trim() },
+          })
+          if (!officer || !officer.active) {
+            throw new Error('INVALID_MARKETING_REFERRAL_CODE')
+          }
+          await tx.vendorReferral.create({
+            data: {
+              vendorUserId: createdUser.id,
+              marketingOfficerId: officer.id,
+              codeUsed: marketingCode.trim(),
+              amountOwed: 25.00,
+            },
+          })
+        }
 
         if (role === 'VENDOR') {
           try {
@@ -209,6 +228,9 @@ export async function POST(request: NextRequest) {
 
       return response
     } catch (error: any) {
+      if (error.message === 'INVALID_MARKETING_REFERRAL_CODE') {
+        return NextResponse.json({ error: 'Invalid marketing referral code' }, { status: 400 })
+      }
       if (error.code === 'P2002') {
         if (error.meta?.target?.includes('email')) {
           return NextResponse.json({ error: 'User already exists' }, { status: 409 })
