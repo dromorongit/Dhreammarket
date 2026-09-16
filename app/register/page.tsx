@@ -21,6 +21,7 @@ function RegisterContent() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [referralCode, setReferralCode] = useState('')
+  const [marketingCode, setMarketingCode] = useState('')
   const [role, setRole] = useState<Role>('CUSTOMER')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [ageConsent, setAgeConsent] = useState(false)
@@ -44,6 +45,11 @@ function RegisterContent() {
       } catch {
         // Invalid redirect URL, ignore
       }
+    }
+
+    const marketingCodeParam = searchParams?.get('marketingCode')
+    if (marketingCodeParam) {
+      setMarketingCode(marketingCodeParam)
     }
   }, [searchParams])
 
@@ -105,7 +111,7 @@ function RegisterContent() {
        const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, role, mobileNumber, name, ageConsent, referralCode }),
+          body: JSON.stringify({ email, password, role, mobileNumber, name, ageConsent, referralCode, marketingCode }),
         })
 
        const data = await response.json()
@@ -232,13 +238,22 @@ if (response.ok) {
                     : 'Vendors pay a 1% platform commission on all completed orders. Payouts are processed after 2 business days.'}
                 </p>
               </div>
-              <Input
-                label="Referral Code (optional)"
-                type="text"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-                placeholder="REF-XXXXXXXX"
-              />
+               {role === 'VENDOR' && (
+                 <Input
+                   label="Marketing Officer Code (optional)"
+                   type="text"
+                   value={marketingCode}
+                   onChange={(e) => setMarketingCode(e.target.value)}
+                   placeholder="MKT-XXXXXXXX"
+                 />
+               )}
+               <Input
+                 label="Referral Code (optional)"
+                 type="text"
+                 value={referralCode}
+                 onChange={(e) => setReferralCode(e.target.value)}
+                 placeholder="REF-XXXXXXXX"
+               />
               <PasswordInput
                 label="Password"
                 value={password}
