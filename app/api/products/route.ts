@@ -95,8 +95,9 @@ export async function GET(request: NextRequest) {
           reservedQuantity: true,
           availabilityType: true,
           isReturnable: true,
+          description: true,
           category: { select: { id: true, name: true, slug: true } },
-        images: { take: 1, select: { id: true, url: true, alt: true } },
+          images: { take: 1, select: { id: true, url: true, alt: true } },
         },
       })
 
@@ -187,6 +188,7 @@ export async function GET(request: NextRequest) {
         id: true,
         slug: true,
         name: true,
+        description: true,
         price: true,
         flashSalePrice: true,
         flashSaleStart: true,
@@ -537,11 +539,16 @@ export async function POST(request: NextRequest) {
       let responseProduct = product
       if (imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0) {
         await getPrisma().productImage.createMany({
-          data: imageUrls.map((url: string) => ({
-            productId: product.id,
-            url: url.trim(),
-            alt: product.name,
-          })),
+          data: imageUrls.map((url: string) => {
+            const trimmed = url.trim()
+            const isVideo = /\/video\/upload\//.test(trimmed)
+            return {
+              productId: product.id,
+              url: trimmed,
+              alt: product.name,
+              mediaType: isVideo ? 'video' : 'image',
+            }
+          }),
         })
 
         const productWithImages = await getPrisma().product.findUnique({

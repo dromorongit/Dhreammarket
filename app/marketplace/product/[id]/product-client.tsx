@@ -31,6 +31,7 @@ interface ProductImage {
   id: string
   url: string
   alt: string | null
+  mediaType?: string
 }
 
 interface ProductVariant {
@@ -154,7 +155,7 @@ interface RelatedProductForRail {
   stock: number
   availabilityType: string | null
   isReturnable: boolean
-  images: Array<{ id: string; url: string; alt: string | null }>
+  images: Array<{ id: string; url: string; alt: string | null; mediaType?: string }>
   store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
   category: { id: string; name: string; slug: string | null } | null
 }
@@ -523,14 +524,32 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
               {selectedImage ? (
                 <>
                   <div className="relative aspect-square">
-                    <Image
-                      src={selectedImage}
-                      alt={product.name}
-                      className="object-contain"
-                      fill
-                      priority
-                      sizes="(max-width: 768px) 100vw, 55vw"
-                    />
+                    {(() => {
+                      const currentMedia = product.images?.find((img: ProductImage) => img.url === selectedImage)
+                      const isVideo = currentMedia?.mediaType === 'video'
+                      if (isVideo) {
+                        return (
+                          <video
+                            src={selectedImage}
+                            className="w-full h-full object-contain"
+                            controls
+                            playsInline
+                            preload="metadata"
+                            aria-label={product.name}
+                          />
+                        )
+                      }
+                      return (
+                        <Image
+                          src={selectedImage}
+                          alt={product.name}
+                          className="object-contain"
+                          fill
+                          priority
+                          sizes="(max-width: 768px) 100vw, 55vw"
+                        />
+                      )
+                    })()}
                   </div>
                   {totalImages > 1 && (
                     <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full">
@@ -549,23 +568,34 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
 
             {product.images && product.images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:pb-0">
-                {product.images.map((img: ProductImage) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setSelectedImage(img.url)}
-                    className={`w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 flex-shrink-0 ${
-                      selectedImage === img.url ? 'border-[#1E40AF]' : 'border-slate-200'
-                    }`}
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt ?? product.name}
-                      className="object-cover"
-                      width={80}
-                      height={80}
-                    />
-                  </button>
-                ))}
+                {product.images.map((img: ProductImage) => {
+                  const isVideo = img.mediaType === 'video'
+                  return (
+                    <button
+                      key={img.id}
+                      onClick={() => setSelectedImage(img.url)}
+                      className={`w-16 h-16 md:w-20 md:h-20 rounded-lg md:rounded-xl overflow-hidden border-2 flex-shrink-0 ${
+                        selectedImage === img.url ? 'border-[#1E40AF]' : 'border-slate-200'
+                      }`}
+                    >
+                      {isVideo ? (
+                        <div className="w-full h-full bg-slate-100 flex items-center justify-center relative">
+                          <svg className="w-6 h-6 text-slate-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <Image
+                          src={img.url}
+                          alt={img.alt ?? product.name}
+                          className="object-cover"
+                          width={80}
+                          height={80}
+                        />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>

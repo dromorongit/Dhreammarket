@@ -423,11 +423,16 @@ if (finalAvailabilityType === 'PREORDER') {
       // Add new images if provided
       if (Array.isArray(imageUrls) && imageUrls.length > 0) {
         await getPrisma().productImage.createMany({
-          data: imageUrls.map((url: string) => ({
-            productId: params.id,
-            url: url.trim(),
-            alt: product.name,
-          })),
+          data: imageUrls.map((url: string) => {
+            const trimmed = url.trim()
+            const isVideo = /\/video\/upload\//.test(trimmed)
+            return {
+              productId: params.id,
+              url: trimmed,
+              alt: product.name,
+              mediaType: isVideo ? 'video' : 'image',
+            }
+          }),
         })
       }
     }

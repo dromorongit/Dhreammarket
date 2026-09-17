@@ -30,6 +30,7 @@ interface Product {
     id: string
     url: string
     alt: string | null
+    mediaType?: string
   }>
   availabilityType?: string
 }
@@ -187,17 +188,25 @@ export default function VendorProductsPageClient() {
                 <CardContent className="p-0">
                   <div className="aspect-w-1 aspect-h-1 bg-gray-200 rounded-t-lg overflow-hidden">
                     {Array.isArray(product.images) && product.images.length > 0 ? (
-                      <Image
-                        src={getOptimizedCloudinaryUrl(product.images[0]?.url || '', 400)}
-                        alt={product.images[0]?.alt || product.name}
-                        width={80}
-                        height={80}
-                        className="w-full h-48 object-cover"
-                        sizes={CARD_IMAGE_SIZES_3COL}
-                        placeholder="blur"
-                        blurDataURL={getBlurDataURL()}
-                        unoptimized
-                      />
+                      product.images[0]?.mediaType === 'video' ? (
+                        <div className="w-full h-48 flex items-center justify-center bg-gray-100 relative">
+                          <svg className="w-10 h-10 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <Image
+                          src={getOptimizedCloudinaryUrl(product.images[0]?.url || '', 400)}
+                          alt={product.images[0]?.alt || product.name}
+                          width={80}
+                          height={80}
+                          className="w-full h-48 object-cover"
+                          sizes={CARD_IMAGE_SIZES_3COL}
+                          placeholder="blur"
+                          blurDataURL={getBlurDataURL()}
+                          unoptimized
+                        />
+                      )
                     ) : (
                       <div className="w-full h-48 flex items-center justify-center bg-gray-100">
                         <span className="text-gray-400 text-sm">No image</span>

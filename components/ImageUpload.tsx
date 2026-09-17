@@ -46,12 +46,12 @@ export default function ImageUpload({
       }
 
       // Validate each file
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'];
       const maxSize = maxSizeMB * 1024 * 1024;
 
       for (const file of fileArray) {
         if (!allowedTypes.includes(file.type)) {
-          setError(`Invalid file type: ${file.name}. Only JPG, PNG, and WebP allowed.`);
+          setError(`Invalid file type: ${file.name}. Only JPG, PNG, WebP, MP4, MOV, and WebM allowed.`);
           return;
         }
         if (file.size > maxSize) {
@@ -166,7 +166,7 @@ export default function ImageUpload({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp"
+          accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
           multiple
           onChange={handleInputChange}
           className="hidden"
@@ -197,7 +197,7 @@ export default function ImageUpload({
               or drag and drop
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              JPG, PNG, or WebP up to {maxSizeMB}MB each
+              JPG, PNG, WebP, MP4, MOV, or WebM up to {maxSizeMB}MB each
             </p>
           </div>
         </div>

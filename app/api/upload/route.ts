@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth-middleware';
-import { uploadImage, uploadMultipleImages } from '@/lib/cloudinary';
+import { uploadImage, uploadMultipleImages, uploadVideo, uploadMultipleVideos } from '@/lib/cloudinary';
 import { rateLimit } from '@/lib/rate-limit';
 
 // Force Node.js runtime (required for Cloudinary stream operations)
@@ -81,16 +81,21 @@ export async function POST(request: NextRequest) {
     }
 
     // File upload validation - security hardening
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf']
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf']
+    const allowedImageMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const allowedVideoMimeTypes = ['video/mp4', 'video/quicktime', 'video/webm']
+    const allowedMimeTypes = [...allowedImageMimeTypes, ...allowedVideoMimeTypes]
+    const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.webp']
+    const allowedVideoExtensions = ['.mp4', '.mov', '.webm']
+    const allowedExtensions = [...allowedImageExtensions, ...allowedVideoExtensions]
     const maxFileSize = 10 * 1024 * 1024 // 10MB - security hardening requirement
 
     for (const file of files) {
       const fileExtension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
+      const isVideo = allowedVideoMimeTypes.includes(file.type) && allowedVideoExtensions.includes(fileExtension)
 
       if (!allowedMimeTypes.includes(file.type) || !allowedExtensions.includes(fileExtension)) {
         return NextResponse.json(
-          { error: 'Invalid file type. Only JPG, PNG, WebP, and PDF are allowed.' },
+          { error: 'Invalid file type. Only JPG, PNG, WebP, MP4, MOV, and WebM are allowed.' },
           { status: 400 }
         );
       }
@@ -118,23 +123,62 @@ export async function POST(request: NextRequest) {
     // Debug: Log upload start
     console.log('[Upload] Starting Cloudinary upload...');
 
-    // Upload files to Cloudinary
-    const uploadedImages = await uploadMultipleImages(files, uploadFolder);
+    const imageFiles = files.filter((file) => {
+      const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
+      return allowedImageMimeTypes.includes(file.type) && allowedImageExtensions.includes(ext)
+    })
+    const videoFiles = files.filter((file) => {
+      const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
+      return allowedVideoMimeTypes.includes(file.type) && allowedVideoExtensions.includes(ext)
+    })
+
+    const uploadPromiseGroups: Promise<{ url: string; publicId: string; secureUrl: string; mediaType: string }[]>[] = []
+
+    if (imageFiles.length > 0) {
+      const imageUploads = uploadMultipleImages(imageFiles, uploadFolder)
+      uploadPromiseGroups.push(
+        imageUploads.then((results) =>
+          results.map((img) => ({
+            url: img.url,
+            publicId: img.publicId,
+            secureUrl: img.secureUrl,
+            mediaType: 'image' as const,
+          }))
+        )
+      )
+    }
+
+    if (videoFiles.length > 0) {
+      const videoUploads = uploadMultipleVideos(videoFiles, uploadFolder)
+      uploadPromiseGroups.push(
+        videoUploads.then((results) =>
+          results.map((img) => ({
+            url: img.url,
+            publicId: img.publicId,
+            secureUrl: img.secureUrl,
+            mediaType: 'video' as const,
+          }))
+        )
+      )
+    }
+
+    const uploadedMedia = (await Promise.all(uploadPromiseGroups)).flat()
 
     // Debug: Log upload response
-    console.log('[Upload] Upload completed, images count:', uploadedImages.length);
+    console.log('[Upload] Upload completed, media count:', uploadedMedia.length);
 
     // Extract URLs
-    const urls = uploadedImages.map((img: { url: string; publicId: string; secureUrl: string }) => ({
-      url: img.url,
-      publicId: img.publicId,
-      secureUrl: img.secureUrl,
+    const urls = uploadedMedia.map((item) => ({
+      url: item.url,
+      publicId: item.publicId,
+      secureUrl: item.secureUrl,
+      mediaType: item.mediaType,
     }));
 
     return NextResponse.json({
       success: true,
       urls,
-      message: `${files.length} image(s) uploaded successfully`,
+      message: `${files.length} file(s) uploaded successfully`,
     });
   } catch (error: any) {
     console.error('[Upload] Error during upload:', error);
