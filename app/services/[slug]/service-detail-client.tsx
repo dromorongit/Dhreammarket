@@ -14,6 +14,7 @@ import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { truncateVendorName } from '@/lib/utils'
 import { MdVerified } from 'react-icons/md'
+import { FiStar } from 'react-icons/fi'
 import WishlistButton from '@/components/WishlistButton'
 import { PricingType, AvailabilityStatus } from '@prisma/client'
 import { getBlurDataURL, HERO_IMAGE_SIZES, VENDOR_LOGO_SIZES, CARD_IMAGE_SIZES } from '@/lib/image-utils'
@@ -39,6 +40,12 @@ interface RelatedServiceRail {
   pricingType: string
   thumbnail: string | null
   store: { id: string; name: string; slug: string | null; isVerified: boolean; badgeTier: string | null }
+}
+
+interface User {
+  id: string
+  role: string
+  email: string
 }
 
 interface ServiceDetailProps {
@@ -120,6 +127,15 @@ function getPricingTypeVariant(pricingType: string): 'default' | 'premium' | 'in
   }
 }
 
+function renderStars(rating: number, size: 'sm' | 'md' = 'md'): React.ReactNode {
+  return Array.from({ length: 5 }).map((_, i) => (
+    <FiStar
+      key={i}
+      className={`${size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'} ${i < Math.floor(rating) ? 'text-premium-gold fill-current' : 'text-slate-300'}`}
+    />
+  ))
+}
+
 export default function ServiceDetail({ serviceId, vendorServices = [] }: ServiceDetailProps) {
   const params = useParams()
   const slug = params!.slug as string
@@ -129,6 +145,18 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
   const [wishlistServiceIds, setWishlistServiceIds] = useState<Set<string>>(new Set())
   const [showFullDescription, setShowFullDescription] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [serviceReviews, setServiceReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [averageRating, setAverageRating] = useState(0)
+  const [totalReviews, setTotalReviews] = useState(0)
+  const [canReviewService, setCanReviewService] = useState(false)
+  const [eligibilityReason, setEligibilityReason] = useState<string | null>(null)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [submittingReview, setSubmittingReview] = useState(false)
   const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -230,6 +258,94 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
       console.error('Error checking wishlist:', error)
     }
   }
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch user:', e)
+    }
+  }
+
+  const fetchReviews = async () => {
+    if (!serviceId) return
+    try {
+      setReviewsLoading(true)
+      const response = await fetch(`/api/services/${serviceId}/reviews`)
+      if (response.ok) {
+        const data = await response.json()
+        setServiceReviews(data.reviews || [])
+        setAverageRating(data.averageRating || 0)
+        setTotalReviews(data.totalReviews || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  const checkCanReviewService = async () => {
+    if (!serviceId) return
+    try {
+      const response = await fetch(`/api/services/${serviceId}/reviews?checkEligibility=true`)
+      if (response.ok) {
+        const data = await response.json()
+        setCanReviewService(data.canReview || false)
+        setEligibilityReason(data.reason || null)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const submitServiceReview = async () => {
+    if (!serviceId || !reviewComment.trim()) return
+    try {
+      setSubmittingReview(true)
+      setReviewError(null)
+      const response = await fetch(`/api/services/${serviceId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewComment.trim() }),
+      })
+      if (response.ok) {
+        setReviewComment('')
+        setReviewRating(5)
+        setShowReviewForm(false)
+        fetchReviews()
+        checkCanReviewService()
+      } else {
+        const errorData = await response.json()
+        setReviewError(errorData.error || 'Failed to submit review')
+      }
+    } catch (err) {
+      setReviewError('Failed to submit review')
+      console.error(err)
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  useEffect(() => {
+    if (service?.id) {
+      fetchReviews()
+      if (user && user.role === 'CUSTOMER') {
+        checkCanReviewService()
+      } else {
+        setCanReviewService(false)
+        setEligibilityReason(null)
+      }
+    }
+  }, [service?.id, user])
 
   const handleShare = async () => {
     const url = window.location.href
@@ -576,6 +692,151 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
             </div>
           </div>
         </div>
+
+        <section className="mt-8 md:mt-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-2xl p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-deep-navy">Customer Reviews</h2>
+                  {totalReviews > 0 && (
+                    <p className="text-slate-600 mt-1">
+                      {averageRating.toFixed(1)} out of 5 ({totalReviews} review{totalReviews !== 1 ? 's' : ''})
+                    </p>
+                  )}
+                </div>
+                {user && user.role === 'CUSTOMER' && canReviewService && !showReviewForm && (
+                  <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+                    Write a Review
+                  </Button>
+                )}
+              </div>
+
+              {user && user.role === 'CUSTOMER' && !canReviewService && !showReviewForm && eligibilityReason && (
+                <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-slate-700 text-sm">
+                    {eligibilityReason === 'already_reviewed'
+                      ? 'You have already reviewed this service. Thank you for your feedback!'
+                      : 'You can only review services you have purchased and completed.'}
+                  </p>
+                </div>
+              )}
+
+              {!user && (
+                <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-slate-700 text-sm">
+                    Please <Link href="/login" className="text-[#1E40AF] hover:underline">log in</Link> as a customer to review this service.
+                  </p>
+                </div>
+              )}
+
+              {showReviewForm && (
+                <Card variant="elevated" className="mb-8">
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-semibold text-deep-navy mb-4">Rate This Service</h3>
+                    {reviewError && (
+                      <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                        {reviewError}
+                      </div>
+                    )}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewRating(star)}
+                              className={`text-2xl ${star <= reviewRating ? 'text-premium-gold' : 'text-slate-300'}`}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-3">
+                          Your Comment <span className="text-red-500">*</span>
+                        </label>
+                        <textarea
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          rows={4}
+                          required
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
+                          placeholder="Share your experience with this service..."
+                        />
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <Button onClick={submitServiceReview} disabled={submittingReview}>
+                          {submittingReview ? 'Submitting...' : 'Submit Review'}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setShowReviewForm(false)
+                            setReviewRating(5)
+                            setReviewComment('')
+                            setReviewError(null)
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {reviewsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="border border-slate-200 rounded-xl p-4 animate-pulse">
+                      <div className="h-4 bg-slate-200 rounded w-1/4 mb-3" />
+                      <div className="h-3 bg-slate-200 rounded w-1/3 mb-2" />
+                      <div className="h-3 bg-slate-200 rounded w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : serviceReviews.length === 0 ? (
+                <EmptyState
+                  icon={
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-3.582 9 8z" />
+                    </svg>
+                  }
+                  title="No reviews yet"
+                  description={canReviewService ? 'Be the first to review this service!' : 'No reviews for this service yet.'}
+                />
+              ) : (
+                <div className="space-y-4">
+                  {serviceReviews.map((review) => (
+                    <div key={review.id} className="border border-slate-200 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-1">
+                          {renderStars(review.rating)}
+                        </div>
+                        <span className="text-sm font-medium text-[#0F1F3D]">{review.reviewer}</span>
+                        {review.isVerifiedPurchase && (
+                          <Badge variant="success" size="sm">Verified</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mb-2">
+                        {new Date(review.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <p className="text-slate-600 text-sm">{review.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
         {vendorServices.length > 0 && service.store && (
           <section className="mt-8 md:mt-12">

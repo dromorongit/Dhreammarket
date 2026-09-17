@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/Card'
@@ -51,6 +51,12 @@ interface ProductReview {
   createdAt: string
   isVerifiedPurchase: boolean
   reviewer: string
+}
+
+interface User {
+  id: string
+  role: string
+  email: string
 }
 
 interface ProductData {
@@ -214,6 +220,14 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description')
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [showFloatingCTA, setShowFloatingCTA] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [canReviewProduct, setCanReviewProduct] = useState(false)
+  const [eligibilityReason, setEligibilityReason] = useState<string | null>(null)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -346,6 +360,75 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
     const maxQty = Math.max(minQty, actualMax)
     setQuantity(Math.min(Math.max(minQty, newQuantity), maxQty))
   }
+
+  const queryClient = useQueryClient()
+
+  const fetchUser = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch user:', e)
+    }
+  }
+
+  const checkCanReviewProduct = async () => {
+    if (!productId) return
+    try {
+      const response = await fetch(`/api/products/${productId}/reviews?checkEligibility=true`)
+      if (response.ok) {
+        const data = await response.json()
+        setCanReviewProduct(data.canReview || false)
+        setEligibilityReason(data.reason || null)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const submitProductReview = async () => {
+    if (!productId || !reviewComment.trim()) return
+    try {
+      setSubmittingReview(true)
+      setReviewError(null)
+      const response = await fetch(`/api/products/${productId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewComment.trim() }),
+      })
+      if (response.ok) {
+        setReviewComment('')
+        setReviewRating(5)
+        setShowReviewForm(false)
+        queryClient.invalidateQueries({ queryKey: ['product', productId] })
+        checkCanReviewProduct()
+      } else {
+        const errorData = await response.json()
+        setReviewError(errorData.error || 'Failed to submit review')
+      }
+    } catch (err) {
+      setReviewError('Failed to submit review')
+      console.error(err)
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUser()
+  }, [])
+
+  useEffect(() => {
+    if (user && user.role === 'CUSTOMER' && productId) {
+      checkCanReviewProduct()
+    } else {
+      setCanReviewProduct(false)
+      setEligibilityReason(null)
+    }
+  }, [user, productId])
 
   if (productPending) {
     return (
@@ -834,51 +917,146 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
             </button>
           </div>
 
-          <div className="min-h-[200px]">
-            {activeTab === 'description' ? (
-              <div className="prose prose-slate max-w-none">
-                <p className="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-line">
-                  {product.description ?? 'No description available for this product.'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {reviews.length === 0 ? (
-                  <EmptyState
-                    icon={
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.417-4.03 8-9 8a9.863 9.863 0 01-4.255-.94L3 20l1.395-2.42C3.512 15.042 3 13.574 3 12c0-1.593.559-3.036 1.544-4.292A8.966 8.966 0 0112 4.97c4.97 0 9 3.582 9 8z" />
-                      </svg>
-                    }
-                    title="No reviews yet"
-                    description="Be the first to review this product."
-                  />
-                ) : (
-                  reviews.map((review: ProductReview) => (
-                    <div key={review.id} className="border border-slate-200 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center gap-1">
-                          {renderStars(review.rating, 'sm')}
-                        </div>
-                        <span className="text-sm font-medium text-[#0F1F3D]">{review.reviewer}</span>
-                        {review.isVerifiedPurchase && (
-                          <Badge variant="success" size="sm">Verified</Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mb-2">
-                        {new Date(review.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-slate-600 text-sm">{review.comment}</p>
+            <div className="min-h-[200px]">
+              {activeTab === 'description' ? (
+                <div className="prose prose-slate max-w-none">
+                  <p className="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-line">
+                    {product.description ?? 'No description available for this product.'}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-xl font-bold text-deep-navy">Customer Reviews</h3>
+                      {product.reviewCount > 0 && (
+                        <p className="text-slate-600 mt-1">
+                          {product.averageRating.toFixed(1)} out of 5 ({product.reviewCount} review{product.reviewCount !== 1 ? 's' : ''})
+                        </p>
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
+                    {user && user.role === 'CUSTOMER' && canReviewProduct && !showReviewForm && (
+                      <Button variant="outline" onClick={() => setShowReviewForm(true)}>
+                        Write a Review
+                      </Button>
+                    )}
+                  </div>
+
+                  {user && user.role === 'CUSTOMER' && !canReviewProduct && !showReviewForm && eligibilityReason && (
+                    <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <p className="text-slate-700 text-sm">
+                        {eligibilityReason === 'already_reviewed'
+                          ? 'You have already reviewed this product. Thank you for your feedback!'
+                          : 'You can only review products from orders that are PROCESSING, SHIPPED, DELIVERED, or COMPLETED.'}
+                      </p>
+                    </div>
+                  )}
+
+                  {!user && (
+                    <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <p className="text-slate-700 text-sm">
+                        Please <Link href="/login" className="text-[#1E40AF] hover:underline">log in</Link> as a customer to review this product.
+                      </p>
+                    </div>
+                  )}
+
+                  {showReviewForm && (
+                    <Card variant="elevated" className="mb-8">
+                      <CardContent className="pt-6">
+                        <h3 className="text-lg font-semibold text-deep-navy mb-4">Rate This Product</h3>
+                        {reviewError && (
+                          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                            {reviewError}
+                          </div>
+                        )}
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-3">Rating</label>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => setReviewRating(star)}
+                                  className={`text-2xl ${star <= reviewRating ? 'text-premium-gold' : 'text-slate-300'}`}
+                                >
+                                  ★
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-3">
+                              Your Comment <span className="text-red-500">*</span>
+                            </label>
+                            <textarea
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                              rows={4}
+                              required
+                              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200"
+                              placeholder="Share your experience with this product..."
+                            />
+                          </div>
+                          <div className="flex gap-3 pt-2">
+                            <Button onClick={submitProductReview} disabled={submittingReview}>
+                              {submittingReview ? 'Submitting...' : 'Submit Review'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setShowReviewForm(false)
+                                setReviewRating(5)
+                                setReviewComment('')
+                                setReviewError(null)
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <div className="space-y-4">
+                    {reviews.length === 0 ? (
+                      <EmptyState
+                        icon={
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.417-4.03 8-9 8a9.863 9.863 0 01-4.255-.94L3 20l1.395-2.42C3.512 15.042 3 13.574 3 12c0-1.593.559-3.036 1.544-4.292A8.966 8.966 0 0112 4.97c4.97 0 9 3.582 9 8z" />
+                          </svg>
+                        }
+                        title="No reviews yet"
+                        description={canReviewProduct ? 'Be the first to review this product!' : 'No reviews for this product yet.'}
+                      />
+                    ) : (
+                      reviews.map((review: ProductReview) => (
+                        <div key={review.id} className="border border-slate-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-1">
+                              {renderStars(review.rating, 'sm')}
+                            </div>
+                            <span className="text-sm font-medium text-[#0F1F3D]">{review.reviewer}</span>
+                            {review.isVerifiedPurchase && (
+                              <Badge variant="success" size="sm">Verified</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 mb-2">
+                            {new Date(review.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </p>
+                          <p className="text-slate-600 text-sm">{review.comment}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
         </div>
       </div>
 

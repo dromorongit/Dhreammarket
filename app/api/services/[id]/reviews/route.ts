@@ -2,15 +2,66 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 
+// Valid request statuses for service review eligibility
+const VALID_REVIEW_STATUSES = ['COMPLETED']
+
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const serviceId = params.id
+    const checkEligibility = request.nextUrl.searchParams.get('checkEligibility') === 'true'
     const page = Math.max(parseInt(request.nextUrl.searchParams.get('page') || '1', 10), 1)
     const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '10', 10), 1), 50)
     const sortBy = request.nextUrl.searchParams.get('sortBy') || 'newest'
 
     if (!serviceId) {
       return NextResponse.json({ error: 'Service ID is required' }, { status: 400 })
+    }
+
+    if (checkEligibility) {
+      const token = request.cookies.get('token')?.value
+      if (!token) {
+        const response = NextResponse.json({ canReview: false }, { status: 200 })
+        response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+        return response
+      }
+
+      const outcome = await verifyToken(token)
+      if (!outcome.authenticated) {
+        const response = NextResponse.json({ canReview: false }, { status: 200 })
+        response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+        return response
+      }
+
+      const payload = outcome
+      if (payload.role !== 'CUSTOMER') {
+        const response = NextResponse.json({ canReview: false }, { status: 200 })
+        response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+        return response
+      }
+
+      const existingReview = await getPrisma().serviceReview.findUnique({
+        where: { userId_serviceId: { userId: payload.userId, serviceId } },
+      })
+
+      if (existingReview) {
+        return NextResponse.json({ canReview: false, reason: 'already_reviewed' }, { status: 200 })
+      }
+
+      const eligibleRequest = await getPrisma().serviceRequest.findFirst({
+        where: {
+          serviceId,
+          customerId: payload.userId,
+          status: 'COMPLETED',
+        },
+        orderBy: { completedAt: 'desc' },
+        select: { id: true },
+      })
+
+      if (eligibleRequest) {
+        return NextResponse.json({ canReview: true, eligibleRequestId: eligibleRequest.id }, { status: 200 })
+      }
+
+      return NextResponse.json({ canReview: false, reason: 'not_purchased' }, { status: 200 })
     }
 
     let orderBy: any = { createdAt: 'desc' }
@@ -125,6 +176,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'You have already reviewed this service' }, { status: 400 })
     }
 
+    let verifiedRequestId: string | null = null
+
     if (requestId) {
       const request = await getPrisma().serviceRequest.findUnique({
         where: { id: requestId },
@@ -136,6 +189,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       if (request.status !== 'COMPLETED') {
         return NextResponse.json({ error: 'Can only review completed service requests' }, { status: 400 })
       }
+      verifiedRequestId = requestId
+    } else {
+      const eligibleRequest = await getPrisma().serviceRequest.findFirst({
+        where: {
+          serviceId,
+          customerId: payload.userId,
+          status: 'COMPLETED',
+        },
+        orderBy: { completedAt: 'desc' },
+        select: { id: true },
+      })
+
+      if (!eligibleRequest) {
+        return NextResponse.json(
+          { error: 'You can only review services you have purchased and completed' },
+          { status: 403 }
+        )
+      }
+
+      verifiedRequestId = eligibleRequest.id
     }
 
     const review = await getPrisma().serviceReview.create({
@@ -144,7 +217,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         userId: payload.userId,
         rating,
         comment: comment?.trim() || null,
-        requestId: requestId || null,
+        requestId: verifiedRequestId,
       },
     })
 
