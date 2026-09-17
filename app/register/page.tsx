@@ -53,6 +53,12 @@ function RegisterContent() {
     }
   }, [searchParams])
 
+  useEffect(() => {
+    if (role !== 'CUSTOMER') {
+      setReferralCode('')
+    }
+  }, [role])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -247,13 +253,15 @@ if (response.ok) {
                    placeholder="MKT-XXXXXXXX"
                  />
                )}
-               <Input
-                 label="Referral Code (optional)"
-                 type="text"
-                 value={referralCode}
-                 onChange={(e) => setReferralCode(e.target.value)}
-                 placeholder="REF-XXXXXXXX"
-               />
+               {role === 'CUSTOMER' && (
+                <Input
+                  label="Referral Code (optional)"
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  placeholder="REF-XXXXXXXX"
+                />
+              )}
               <PasswordInput
                 label="Password"
                 value={password}
