@@ -41,7 +41,7 @@ function ProductRailItem({ product }: { product: EnterpriseProduct }) {
             )}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <h3 className="text-[11px] sm:text-xs font-semibold text-white line-clamp-2 leading-tight">
+            <h3 className="text-[11px] sm:text-xs font-semibold text-slate-900 line-clamp-2 leading-tight">
               {product.name}
             </h3>
             <div className="flex items-baseline gap-1 mt-0.5">
@@ -64,7 +64,7 @@ function ProductRailItem({ product }: { product: EnterpriseProduct }) {
                 )}
               </div>
             )}
-            <NonReturnableBadge isReturnable={product.isReturnable} />
+            <NonReturnableBadge isReturnable={product.isReturnable} compact />
           </div>
         </div>
       </Link>
