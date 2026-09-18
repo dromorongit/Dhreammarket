@@ -57,7 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Get product with cached ratings
-    const product = await getPrisma().product.findUnique({
+    let product = await getPrisma().product.findUnique({
       where: { id: productId },
       select: {
         averageRating: true,
@@ -66,7 +66,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     })
 
     if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+      const productBySlug = await getPrisma().product.findUnique({
+        where: { slug: productId },
+        select: {
+          averageRating: true,
+          reviewCount: true,
+        },
+      })
+
+      if (!productBySlug) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+      }
+
+      product = productBySlug
     }
 
     // Build sorting
@@ -205,8 +217,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Rating must be between 1 and 5' }, { status: 400 })
     }
 
-    // Verify product exists
-    const product = await getPrisma().product.findUnique({
+    // Verify product exists by id or slug
+    let product = await getPrisma().product.findUnique({
       where: { id: productId },
       include: {
         store: {
@@ -218,8 +230,25 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })
 
     if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+      const productBySlug = await getPrisma().product.findUnique({
+        where: { slug: productId },
+        include: {
+          store: {
+            select: {
+              userId: true,
+            },
+          },
+        },
+      })
+
+      if (!productBySlug) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+      }
+
+      product = productBySlug
     }
+
+    const actualProductId = product.id
 
     // Anti self-review protection: prevent vendor from reviewing their own product
     if (product.store.userId === payload.userId) {
@@ -230,7 +259,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const existingReview = await getPrisma().productReview.findUnique({
       where: {
         userId_productId: {
-          productId,
+          productId: actualProductId,
           userId: payload.userId,
         },
       },
@@ -243,7 +272,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Create review
     const review = await getPrisma().productReview.create({
       data: {
-        productId,
+        productId: actualProductId,
         userId: payload.userId,
         rating,
         comment: sanitizedComment,
@@ -251,7 +280,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     })
 
     // Sync cached rating
-    await syncProductRating(productId)
+    await syncProductRating(actualProductId)
 
     return NextResponse.json({ review }, { status: 201 })
   } catch (error) {

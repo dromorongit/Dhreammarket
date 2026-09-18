@@ -119,6 +119,7 @@ export async function GET(request: NextRequest) {
       ...store,
       isFeatured: store.isFeatured && store.featuredUntil && new Date(store.featuredUntil) > now,
       rating: store.averageRating,
+      productCount: store._count.products,
       orderCount: orderItemsByStore.get(store.id) || 0,
       category: store.vendor_categories,
     }))
