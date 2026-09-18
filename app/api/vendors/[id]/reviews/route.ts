@@ -3,9 +3,6 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncStoreRating } from '@/lib/rating-sync'
 
-// Valid order statuses for review eligibility
-const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'] as any
-
 /**
  * Resolve a raw URL param (which may be a store slug OR a store id) to the
  * store's actual database id. All subsequent related queries MUST use this
@@ -113,23 +110,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         }, { status: 200 })
       }
 
-      // Check if user has purchased from this vendor in a valid order
-      const validOrder = await getPrisma().orderItem.findFirst({
-        where: {
-          product: {
-            storeId: store.id,
-          },
-          order: {
-            userId: payload.userId,
-            paymentStatus: 'PAID',
-            status: {
-              in: VALID_REVIEW_STATUSES,
-            },
-          },
-        },
-      })
-
-      return NextResponse.json({ canReview: !!validOrder, reason: validOrder ? null : 'no_valid_order' }, { status: 200 })
+      return NextResponse.json({ canReview: true }, { status: 200 })
     }
 
     const store = await resolveStoreId(idOrSlug)
@@ -298,28 +279,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (existingReview) {
       return NextResponse.json({ error: 'You have already reviewed this vendor' }, { status: 400 })
-    }
-
-    // Verify user has purchased from this vendor in a valid order
-    const validOrder = await getPrisma().orderItem.findFirst({
-      where: {
-        product: {
-          storeId,
-        },
-        order: {
-          userId: payload.userId,
-          paymentStatus: 'PAID',
-          status: {
-            in: VALID_REVIEW_STATUSES,
-          },
-        },
-      },
-    })
-
-    if (!validOrder) {
-      return NextResponse.json({
-        error: 'You can only review vendors from orders that are PROCESSING, SHIPPED, DELIVERED, or COMPLETED'
-      }, { status: 400 })
     }
 
     // Create review

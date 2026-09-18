@@ -857,12 +857,10 @@ export default function VendorProfilePage() {
               )}
             </div>
 
-            {user && user.role === 'CUSTOMER' && !canReviewVendor && !showReviewForm && eligibilityReason && (
+            {user && user.role === 'CUSTOMER' && !canReviewVendor && !showReviewForm && eligibilityReason === 'already_reviewed' && (
               <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <p className="text-slate-700 text-sm">
-                  {eligibilityReason === 'already_reviewed'
-                    ? 'You have already reviewed this store. Thank you for your feedback!'
-                    : 'You can only review this store after your order is PROCESSING, SHIPPED, DELIVERED, or COMPLETED.'}
+                  You have already reviewed this store. Thank you for your feedback!
                 </p>
               </div>
             )}

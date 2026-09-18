@@ -4,9 +4,6 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { syncProductRating } from '@/lib/rating-sync'
 import { sanitizeUserContent } from '@/lib/sanitize'
 
-// Valid order statuses for review eligibility
-const VALID_REVIEW_STATUSES = ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
-
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const productId = params.id
@@ -56,21 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({ canReview: false, reason: 'already_reviewed' }, { status: 200 })
       }
 
-      // Check if user has purchased this product in a valid order
-      const validOrder = await getPrisma().orderItem.findFirst({
-        where: {
-          productId,
-          order: {
-            userId: payload.userId,
-            paymentStatus: 'PAID',
-            status: {
-              in: VALID_REVIEW_STATUSES as any,
-            },
-          },
-        },
-      })
-
-      return NextResponse.json({ canReview: !!validOrder }, { status: 200 })
+      return NextResponse.json({ canReview: true }, { status: 200 })
     }
 
     // Get product with cached ratings
@@ -255,26 +238,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     if (existingReview) {
       return NextResponse.json({ error: 'You have already reviewed this product' }, { status: 400 })
-    }
-
-    // Verify user has purchased this product in a valid order
-    const validOrder = await getPrisma().orderItem.findFirst({
-      where: {
-        productId,
-        order: {
-          userId: payload.userId,
-          paymentStatus: 'PAID',
-          status: {
-            in: VALID_REVIEW_STATUSES as any,
-          },
-        },
-      },
-    })
-
-    if (!validOrder) {
-      return NextResponse.json({ 
-        error: 'You can only review products from orders that are PROCESSING, SHIPPED, DELIVERED, or COMPLETED' 
-      }, { status: 400 })
     }
 
     // Create review

@@ -712,12 +712,10 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
                 )}
               </div>
 
-              {user && user.role === 'CUSTOMER' && !canReviewService && !showReviewForm && eligibilityReason && (
+              {user && user.role === 'CUSTOMER' && !canReviewService && !showReviewForm && eligibilityReason === 'already_reviewed' && (
                 <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                   <p className="text-slate-700 text-sm">
-                    {eligibilityReason === 'already_reviewed'
-                      ? 'You have already reviewed this service. Thank you for your feedback!'
-                      : 'You can only review services you have purchased and completed.'}
+                    You have already reviewed this service. Thank you for your feedback!
                   </p>
                 </div>
               )}

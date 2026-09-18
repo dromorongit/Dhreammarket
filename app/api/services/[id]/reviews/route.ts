@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 
-// Valid request statuses for service review eligibility
-const VALID_REVIEW_STATUSES = ['COMPLETED']
-
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const serviceId = params.id
@@ -47,21 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({ canReview: false, reason: 'already_reviewed' }, { status: 200 })
       }
 
-      const eligibleRequest = await getPrisma().serviceRequest.findFirst({
-        where: {
-          serviceId,
-          customerId: payload.userId,
-          status: 'COMPLETED',
-        },
-        orderBy: { completedAt: 'desc' },
-        select: { id: true },
-      })
-
-      if (eligibleRequest) {
-        return NextResponse.json({ canReview: true, eligibleRequestId: eligibleRequest.id }, { status: 200 })
-      }
-
-      return NextResponse.json({ canReview: false, reason: 'not_purchased' }, { status: 200 })
+      return NextResponse.json({ canReview: true }, { status: 200 })
     }
 
     let orderBy: any = { createdAt: 'desc' }
@@ -191,24 +174,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       }
       verifiedRequestId = requestId
     } else {
-      const eligibleRequest = await getPrisma().serviceRequest.findFirst({
-        where: {
-          serviceId,
-          customerId: payload.userId,
-          status: 'COMPLETED',
-        },
-        orderBy: { completedAt: 'desc' },
-        select: { id: true },
-      })
-
-      if (!eligibleRequest) {
-        return NextResponse.json(
-          { error: 'You can only review services you have purchased and completed' },
-          { status: 403 }
-        )
-      }
-
-      verifiedRequestId = eligibleRequest.id
+      verifiedRequestId = null
     }
 
     const review = await getPrisma().serviceReview.create({
