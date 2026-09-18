@@ -23,22 +23,34 @@ const AIRecommendations = dynamic(() => import('@/components/ai').then((m) => m.
 export default function CustomerDashboardPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [followedVendors, setFollowedVendors] = useState<any[]>([])
+  const [followedVendorsLoading, setFollowedVendorsLoading] = useState(true)
   const [savedSearches, setSavedSearches] = useState<any[]>([])
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
   const [recentOrders, setRecentOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const fetchFollowedVendors = useCallback(async () => {
+    setFollowedVendorsLoading(true)
+    try {
+      const followRes = await fetch('/api/vendors/following')
+      if (followRes.ok) {
+        const data = await followRes.json()
+        setFollowedVendors(data.vendors || [])
+      }
+    } catch (error) {
+      console.error('Error fetching followed vendors:', error)
+    } finally {
+      setFollowedVendorsLoading(false)
+    }
+  }, [])
+
   const fetchTabData = useCallback(async (tab: string) => {
     setLoading(true)
     try {
       switch (tab) {
         case 'followed-vendors':
-          const followRes = await fetch('/api/vendors/following')
-          if (followRes.ok) {
-            const data = await followRes.json()
-            setFollowedVendors(data.vendors || [])
-          }
+          await fetchFollowedVendors()
           break
         case 'saved-searches':
           const searchRes = await fetch('/api/saved-searches')
@@ -60,7 +72,11 @@ export default function CustomerDashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetchFollowedVendors])
+
+  useEffect(() => {
+    fetchFollowedVendors()
+  }, [fetchFollowedVendors])
 
   useEffect(() => {
     if (activeTab !== 'overview') {
@@ -130,7 +146,13 @@ export default function CustomerDashboardPage() {
                 <h3 className="font-semibold text-deep-navy">Followed Vendors</h3>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500">You are following {followedVendors.length} vendors</p>
+                {followedVendorsLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 bg-gray-200 rounded w-24 animate-pulse" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">You are following {followedVendors.length} vendors</p>
+                )}
                 <Link href="#" onClick={() => setActiveTab('followed-vendors')} className="text-royal-blue hover:underline text-sm mt-2 inline-block">
                   View followed vendors
                 </Link>

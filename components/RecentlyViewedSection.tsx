@@ -99,8 +99,8 @@ export default function RecentlyViewedSection() {
                       </div>
                     )}
                   </div>
-                  <div className="p-2 space-y-1 flex-1 flex flex-col">
-                    <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-tight">
+                  <div className="p-2 space-y-1.5 flex-1 flex flex-col">
+                    <h3 className="text-xs font-semibold text-deep-navy line-clamp-2 group-hover:text-royal-blue transition-colors leading-snug">
                       {product.name}
                     </h3>
                     <span className="text-[11px] font-bold text-royal-blue">
@@ -109,7 +109,7 @@ export default function RecentlyViewedSection() {
                     {product.storeName && (
                       <p className="text-[10px] text-slate-500 truncate">{product.storeName}</p>
                     )}
-                    <NonReturnableBadge isReturnable={product.isReturnable} />
+                    <NonReturnableBadge isReturnable={product.isReturnable} compact />
                   </div>
                 </Card>
               </Link>

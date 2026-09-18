@@ -51,6 +51,11 @@ function RegisterContent() {
     if (marketingCodeParam) {
       setMarketingCode(marketingCodeParam)
     }
+
+    const referralCodeParam = searchParams?.get('referralCode')
+    if (referralCodeParam) {
+      setReferralCode(referralCodeParam)
+    }
   }, [searchParams])
 
   useEffect(() => {
