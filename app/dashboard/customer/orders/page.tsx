@@ -232,34 +232,29 @@ export default function CustomerOrdersPage() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex flex-wrap items-center gap-3 gap-y-2 mb-2">
                         <span className="font-semibold text-deep-navy text-lg">
                           Order #{order.id.slice(-8).toUpperCase()}
                         </span>
-                        <Badge variant="default" size="sm" className={
-                          order.orderType === 'PREORDER' 
-                            ? 'bg-cyan-100 text-cyan-800' 
-                            : order.orderType === 'BACKORDER'
-                            ? 'bg-orange-100 text-orange-800'
-                            : orderStatus.color
-                        }>
+                        <Badge variant="default" size="sm" className={`flex-shrink-0 ${order.orderType === 'PREORDER' ? 'bg-cyan-100 text-cyan-800' : order.orderType === 'BACKORDER' ? 'bg-orange-100 text-orange-800' : orderStatus.color}`}>
                           {order.orderType === 'PREORDER' ? 'Pre-Order' : order.orderType === 'BACKORDER' ? 'Back-Order' : orderStatus.label}
                         </Badge>
                         {order.orderType !== 'NORMAL' && (
-                          <Badge variant="default" size="sm" className={FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}>
+                          <Badge variant="default" size="sm" className={`flex-shrink-0 ${FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}`}>
                             {FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.label?.split(' ')[0] || order.fulfillmentStatus}
                           </Badge>
                         )}
                         <Badge 
                           variant={order.vendorAccepted ? 'success' : order.vendorRejected ? 'danger' : 'warning'} 
                           size="sm"
+                          className="flex-shrink-0"
                         >
                           {VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']?.label}
                         </Badge>
                         <Badge 
                           variant={order.paymentStatus === 'PAID' ? 'success' : order.paymentStatus === 'PENDING' ? 'warning' : 'danger'} 
                           size="sm"
-                          className={paymentStatus.color}
+                          className={`flex-shrink-0 ${paymentStatus.color}`}
                         >
                           {paymentStatus.label}
                         </Badge>

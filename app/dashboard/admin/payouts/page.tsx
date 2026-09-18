@@ -33,14 +33,10 @@ interface VendorPayout {
 
 interface Vendor {
   id: string
-  email: string
-  profile?: {
-    firstName?: string
-    lastName?: string
-  }
-  store?: {
+  name: string
+  user: {
     id: string
-    name: string
+    email: string
   }
 }
 
@@ -161,7 +157,7 @@ useEffect(() => {
     if (!selectedVendor || !payoutAmount) return
 
     const vendor = vendors.find(v => v.id === selectedVendor)
-    if (!vendor?.store) return
+    if (!vendor?.id) return
 
     setSubmitting(true)
     try {
@@ -170,7 +166,7 @@ useEffect(() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vendorId: selectedVendor,
-          storeId: vendor.store.id,
+          storeId: vendor.id,
           amount: parseFloat(payoutAmount),
           reference: payoutReference,
           note: payoutNote,
@@ -290,7 +286,7 @@ useEffect(() => {
                 <option value="">All Vendors</option>
                 {vendors.map(vendor => (
                   <option key={vendor.id} value={vendor.id}>
-                    {vendor.profile?.firstName || vendor.email} ({vendor.store?.name || 'No Store'})
+                    {vendor.name} ({vendor.user?.email || 'No Email'})
                   </option>
                 ))}
               </select>
@@ -459,7 +455,7 @@ useEffect(() => {
                     <option value="">Select a vendor</option>
                     {vendors.map(vendor => (
                       <option key={vendor.id} value={vendor.id}>
-                        {vendor.profile?.firstName || vendor.email} - {vendor.store?.name || 'No Store'}
+                        {vendor.name} - {vendor.user?.email || 'No Email'}
                       </option>
                     ))}
                   </select>

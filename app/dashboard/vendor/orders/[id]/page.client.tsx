@@ -48,6 +48,20 @@ interface Order {
   items: OrderItem[]
   payment: Payment | null
   vendorTotal: number
+  customerFirstName?: string | null
+  customerLastName?: string | null
+  customerEmail?: string | null
+  customerPhone?: string | null
+  customerAddress?: string | null
+  customerCity?: string | null
+  customerRegion?: string | null
+  shippingZone?: string | null
+  shippingDaysMin?: number | null
+  shippingDaysMax?: number | null
+  subtotal?: number | null
+  shipping?: number | null
+  tax?: number | null
+  walletAmountApplied?: number | null
   user: {
     id: string
     email: string
@@ -919,7 +933,7 @@ export default function VendorOrderDetailPageClient() {
         {/* Customer Information */}
         <Card className="mb-6">
           <CardHeader>
-            <h2 className="text-lg font-semibold text-gray-900">Customer Information</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Account Information</h2>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -937,19 +951,110 @@ export default function VendorOrderDetailPageClient() {
               )}
               {order.user.profile?.phone && (
                 <div>
-                  <p className="text-sm text-gray-500">Phone</p>
+                  <p className="text-sm text-gray-500">Phone (Account)</p>
                   <p className="text-gray-900">{order.user.profile.phone}</p>
                 </div>
               )}
               {order.user.profile?.address && (
                 <div>
-                  <p className="text-sm text-gray-500">Delivery Address</p>
+                  <p className="text-sm text-gray-500">Address (Account)</p>
                   <p className="text-gray-900">{order.user.profile.address}</p>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Checkout Details */}
+        {(order.customerFirstName || order.customerLastName || order.customerEmail || order.customerPhone || order.customerAddress || order.customerCity || order.customerRegion || order.shippingZone) && (
+          <Card className="mb-6">
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Delivery Details Entered at Checkout</h2>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {(order.customerFirstName || order.customerLastName) && (
+                  <div>
+                    <p className="text-sm text-gray-500">Contact Name</p>
+                    <p className="text-gray-900">
+                      {[order.customerFirstName, order.customerLastName].filter(Boolean).join(' ') || '—'}
+                    </p>
+                  </div>
+                )}
+                {order.customerEmail && (
+                  <div>
+                    <p className="text-sm text-gray-500">Contact Email</p>
+                    <p className="text-gray-900">{order.customerEmail}</p>
+                  </div>
+                )}
+                {order.customerPhone && (
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="text-gray-900">{order.customerPhone}</p>
+                  </div>
+                )}
+                {(order.customerAddress || order.customerCity || order.customerRegion) && (
+                  <div>
+                    <p className="text-sm text-gray-500">Shipping Address</p>
+                    <p className="text-gray-900">
+                      {[order.customerAddress, order.customerCity, order.customerRegion].filter(Boolean).join(', ') || '—'}
+                    </p>
+                  </div>
+                )}
+                {order.shippingZone && (
+                  <div>
+                    <p className="text-sm text-gray-500">Shipping Zone</p>
+                    <p className="text-gray-900">{order.shippingZone}</p>
+                  </div>
+                )}
+                {(order.shippingDaysMin || order.shippingDaysMax) && (
+                  <div>
+                    <p className="text-sm text-gray-500">Estimated Delivery</p>
+                    <p className="text-gray-900">
+                      {order.shippingDaysMin && order.shippingDaysMax
+                        ? `${order.shippingDaysMin}–${order.shippingDaysMax} days`
+                        : order.shippingDaysMin
+                          ? `${order.shippingDaysMin}+ days`
+                          : `${order.shippingDaysMax} days`}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {(order.subtotal !== null && order.subtotal !== undefined && order.subtotal > 0) && (
+                <div className="mt-4 pt-4 border-t border-slate-200">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Order Summary</h3>
+                  <div className="space-y-1 text-sm">
+                    {order.subtotal !== null && order.subtotal !== undefined && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(order.subtotal)}</span>
+                      </div>
+                    )}
+                    {order.shipping !== null && order.shipping !== undefined && order.shipping > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Shipping</span>
+                        <span>{formatPrice(order.shipping)}</span>
+                      </div>
+                    )}
+                    {order.tax !== null && order.tax !== undefined && order.tax > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Tax</span>
+                        <span>{formatPrice(order.tax)}</span>
+                      </div>
+                    )}
+                    {order.walletAmountApplied !== null && order.walletAmountApplied !== undefined && order.walletAmountApplied > 0 && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>Wallet Applied</span>
+                        <span>{formatPrice(order.walletAmountApplied)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Messages Section */}
         <Card className="mb-6">
