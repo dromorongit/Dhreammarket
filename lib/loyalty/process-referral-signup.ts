@@ -1,6 +1,7 @@
 import { getPrisma } from '@/lib/prisma'
 import { completeReferral } from './referral-engine'
 import { ReferralStatus } from '@prisma/client'
+import { randomUUID } from 'crypto'
 
 interface ProcessReferralSignupInput {
   referralCode: string | null | undefined
@@ -18,33 +19,53 @@ export async function processReferralSignup(input: ProcessReferralSignupInput): 
   }
 
   const trimmedCode = referralCode.trim()
-  const referral = await prisma.referralRecord.findUnique({
-    where: { code: trimmedCode },
-    include: { referrer: { select: { id: true, registrationIpAddress: true } } },
+
+  const referrer = await prisma.user.findUnique({
+    where: { referralCode: trimmedCode },
+    select: { id: true, registrationIpAddress: true },
   })
 
-  if (!referral || referral.referrerId === userId) {
+  if (!referrer) {
+    console.warn(`Invalid referral code at registration: "${trimmedCode}" for new user ${userId}`)
     return
   }
 
-  const referrerIp = referral.referrer?.registrationIpAddress || null
+  if (referrer.id === userId) {
+    return
+  }
+
+  const referrerIp = referrer.registrationIpAddress || null
   const isSameIp = registrationIpAddress && referrerIp && registrationIpAddress === referrerIp
 
   if (isSameIp) {
-    await prisma.referralRecord.update({
-      where: { code: trimmedCode },
-      data: {
-        refereeId: userId,
-        status: ReferralStatus.FLAGGED,
-        flagged: true,
-        flagReason: 'Same IP address as referrer',
-      },
-    })
+    console.warn(`Referral flagged – same IP as referrer: referrer=${referrer.id}, referee=${userId}, ip=${registrationIpAddress}`)
     return
   }
 
+  const existing = await prisma.referralRecord.findFirst({
+    where: {
+      referrerId: referrer.id,
+      refereeId: userId,
+    },
+  })
+
+  if (existing) {
+    return
+  }
+
+  const newCode = `REF-${randomUUID().slice(0, 8).toUpperCase()}`
+
+  await prisma.referralRecord.create({
+    data: {
+      referrerId: referrer.id,
+      refereeId: userId,
+      code: newCode,
+      status: ReferralStatus.PENDING,
+    },
+  })
+
   await completeReferral({
-    referralCode: trimmedCode,
+    referralCode: newCode,
     refereeId: userId,
   })
 }

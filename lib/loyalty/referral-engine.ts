@@ -85,7 +85,7 @@ export async function completeReferral(input: CompleteReferralInput): Promise<an
       })
 
       if (referee?.role === 'CUSTOMER') {
-        await tx.rewardPoints.upsert({
+        const updatedReward = await tx.rewardPoints.upsert({
           where: { userId: referral.referrerId },
           update: {
             balance: { increment: 20 },
@@ -105,7 +105,7 @@ export async function completeReferral(input: CompleteReferralInput): Promise<an
             type: 'EARN' as any,
             category: 'REFERRAL' as any,
             amount: 20,
-            balanceAfter: 0,
+            balanceAfter: updatedReward.balance,
             description: `Referral reward for code ${referralCode}`,
             referenceId: referral.id,
             referenceType: 'REFERRAL',
@@ -160,7 +160,7 @@ export async function claimReferralReward(input: ReferralRewardInput): Promise<a
     })
 
     if (rewardPoints > 0) {
-      await tx.rewardPoints.upsert({
+      const updatedReward = await tx.rewardPoints.upsert({
         where: { userId: referral.referrerId },
         update: {
           balance: { increment: rewardPoints },
@@ -180,7 +180,7 @@ export async function claimReferralReward(input: ReferralRewardInput): Promise<a
           type: 'EARN' as any,
           category: 'REFERRAL' as any,
           amount: rewardPoints,
-          balanceAfter: 0,
+          balanceAfter: updatedReward.balance,
           description: `Referral reward for code ${referralCode}`,
           referenceId: referral.id,
           referenceType: 'REFERRAL',

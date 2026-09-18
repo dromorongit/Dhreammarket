@@ -187,12 +187,21 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      await processReferralSignup({
-        referralCode,
-        userId: user.id,
-        registrationIpAddress,
-        role,
-      })
+      try {
+        await processReferralSignup({
+          referralCode,
+          userId: user.id,
+          registrationIpAddress,
+          role,
+        })
+      } catch (referralErr) {
+        console.error('Referral processing failed:', {
+          error: referralErr,
+          referrerCode: referralCode,
+          newUserId: user.id,
+          timestamp: new Date().toISOString(),
+        })
+      }
 
       const sessionId = randomBytes(32).toString('hex')
 

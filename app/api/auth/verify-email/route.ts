@@ -161,7 +161,12 @@ export async function POST(request: NextRequest) {
           role: pendingReg.role,
         })
       } catch (referralErr) {
-        console.error('Referral processing failed:', referralErr)
+        console.error('Referral processing failed:', {
+          error: referralErr,
+          referrerCode: pendingReg.referralCode,
+          newUserId: user.id,
+          timestamp: new Date().toISOString(),
+        })
       }
 
       const sessionId = randomBytes(32).toString('hex')
