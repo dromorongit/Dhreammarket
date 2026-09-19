@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyPaystackPayment } from '@/lib/paystack'
-import { calculateFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
+import { calculateFinancialBreakdown } from '@/lib/revenue'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { createAuditLog } from '@/lib/audit-log'
@@ -167,21 +167,20 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         grossAmount += item.price * item.quantity
       }
 
-      const paystackFees = paystackResponse.data?.fees != null ? paystackResponse.data.fees / 100 : null
-      const isFallback = paystackFees === null || paystackFees === undefined || paystackFees <= 0
-      let processorFee = resolveProcessorFee(paystackFees, grossAmount)
+      // Actual charged amount from Paystack (includes passed-through processing fee)
+      const actualChargedAmount = paystackResponse.data.amount / 100
 
-      if (isFallback) {
-        console.warn('[Payment Webhook] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
-      }
+      // Processor fee is the difference between what customer paid and original order total
+      const processorFee = Math.round((actualChargedAmount - grossAmount) * 100) / 100
 
-      const financialBreakdown = await calculateFinancialBreakdown(grossAmount, processorFee)
+      // Financial breakdown: fee is pass-through, so commission/earnings stay on original total
+      const financialBreakdown = await calculateFinancialBreakdown(grossAmount, 0)
 
       await prisma.order.update({
         where: { id: payment.orderId },
         data: {
-          grossAmount: financialBreakdown.grossAmount,
-          processorFee: financialBreakdown.processorFee,
+          grossAmount: actualChargedAmount,
+          processorFee: processorFee,
           netAmount: financialBreakdown.netAmount,
           platformCommission: financialBreakdown.platformCommission,
           vendorEarnings: financialBreakdown.vendorEarnings,
@@ -192,21 +191,18 @@ export async function handleOrderWebhook(body: string, signature: string | undef
 
       for (const item of orderItems) {
         const itemGross = item.price * item.quantity
-        let itemProcessorFee: number | null = null
-        if (processorFee !== null && grossAmount > 0) {
-          itemProcessorFee = (itemGross / grossAmount) * processorFee
-        }
+        const itemProcessorFee = Math.round((itemGross / grossAmount) * processorFee * 100) / 100
 
         const itemFinancialBreakdown = await calculateFinancialBreakdown(
           itemGross,
-          itemProcessorFee
+          0
         )
 
         await prisma.orderItem.update({
           where: { id: item.id },
           data: {
             grossAmount: itemFinancialBreakdown.grossAmount,
-            processorFee: itemFinancialBreakdown.processorFee,
+            processorFee: itemProcessorFee,
             netAmount: itemFinancialBreakdown.netAmount,
             platformCommission: itemFinancialBreakdown.platformCommission,
             vendorEarnings: itemFinancialBreakdown.vendorEarnings,

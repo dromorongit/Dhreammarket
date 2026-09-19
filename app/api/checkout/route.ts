@@ -7,7 +7,7 @@ import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { createNotification, formatNotificationMessage } from '@/lib/notifications'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { getCommissionRate } from '@/lib/revenue'
-import { SITE_URL } from '@/lib/site-config'
+import { SITE_URL, PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -108,6 +108,10 @@ export async function POST(request: NextRequest) {
 
     let effectiveTotal = Math.max(0, subtotal - walletAmountApplied)
     const fullyCoveredByWallet = effectiveTotal <= 0 && subtotal > 0
+
+    // Pass Paystack processing fee onto the customer so vendor/platform nets the original total
+    const processingFee = effectiveTotal > 0 ? Math.round((effectiveTotal / (1 - PAYSTACK_FEE_PERCENTAGE) - effectiveTotal) * 100) / 100 : 0
+    const chargeTotal = Math.round((effectiveTotal + processingFee) * 100) / 100
 
     // Idempotency: dedupe requests within a short window.
     // Always generate a key if the client did not provide one.
@@ -211,28 +215,29 @@ export async function POST(request: NextRequest) {
      }
 
 // Create order and payment record in a transaction
-       const orderData: any = {
-         userId: payload.userId,
-         total,
-         status: fullyCoveredByWallet ? 'PROCESSING' : 'PENDING',
-         paymentStatus: fullyCoveredByWallet ? 'PAID' : 'PENDING',
-         orderType,
-         fulfillmentStatus: fullyCoveredByWallet ? 'PROCESSING' : fulfillmentStatus,
-         idempotencyKey: effectiveIdempotencyKey,
-         walletAmountApplied: walletAmountApplied > 0 ? walletAmountApplied : undefined,
-         // Store customer info
-        customerFirstName: customerInfo?.firstName || '',
-        customerLastName: customerInfo?.lastName || '',
-        customerEmail: customerInfo?.email || user.email,
-        customerPhone: customerInfo?.phone || '',
-        customerAddress: customerInfo?.address || '',
-        customerCity: customerInfo?.city || '',
-        customerRegion: customerInfo?.region || '',
-        // Store shipping info
-        shippingZone: shippingInfo?.zone || 'Other Locations',
-        shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
-        shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
-      }
+    const orderData: any = {
+      userId: payload.userId,
+      total,
+      status: fullyCoveredByWallet ? 'PROCESSING' : 'PENDING',
+      paymentStatus: fullyCoveredByWallet ? 'PAID' : 'PENDING',
+      orderType,
+      fulfillmentStatus: fullyCoveredByWallet ? 'PROCESSING' : fulfillmentStatus,
+      idempotencyKey: effectiveIdempotencyKey,
+      walletAmountApplied: walletAmountApplied > 0 ? walletAmountApplied : undefined,
+      processorFee: processingFee > 0 ? processingFee : undefined,
+      // Store customer info
+     customerFirstName: customerInfo?.firstName || '',
+     customerLastName: customerInfo?.lastName || '',
+     customerEmail: customerInfo?.email || user.email,
+     customerPhone: customerInfo?.phone || '',
+     customerAddress: customerInfo?.address || '',
+     customerCity: customerInfo?.city || '',
+     customerRegion: customerInfo?.region || '',
+     // Store shipping info
+     shippingZone: shippingInfo?.zone || 'Other Locations',
+     shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
+     shippingDaysMax: shippingInfo?.estimatedDays?.max || 7,
+   }
     
     try {
       orderData.subtotal = subtotal
@@ -254,7 +259,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId: payload.userId,
             orderId: order.id,
-            amount: total,
+            amount: chargeTotal,
             currency: 'GHS',
             status: fullyCoveredByWallet ? 'PAID' : 'PENDING',
             reference,
@@ -322,7 +327,7 @@ export async function POST(request: NextRequest) {
       } else {
         const paystackResponse = await initializePaystackPayment(
           user.email,
-          total,
+          chargeTotal,
           reference,
           callbackUrl,
           {

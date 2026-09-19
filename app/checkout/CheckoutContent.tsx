@@ -13,6 +13,7 @@ import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
 import { getAvailableRegions } from '@/lib/shipping'
+import { PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
@@ -191,10 +192,12 @@ function MobileOrderSummary({
   )
 }
 
-function PaymentSummaryMobile({ total, subtotal, processing, onCheckout, effectiveWalletAmount }: {
+function PaymentSummaryMobile({ total, subtotal, processing, processingFee, feeInclusiveTotal, onCheckout, effectiveWalletAmount }: {
   total: number
   subtotal: number
   processing: boolean
+  processingFee: number
+  feeInclusiveTotal: number
   onCheckout: () => void
   effectiveWalletAmount: number
 }) {
@@ -202,9 +205,12 @@ function PaymentSummaryMobile({ total, subtotal, processing, onCheckout, effecti
     <div className="flex items-center justify-between gap-4">
       <div>
         <p className="text-xs text-slate-600">Total</p>
-        <p className="text-lg font-bold text-navy">{formatPrice(total)}</p>
+        <p className="text-lg font-bold text-navy">{formatPrice(feeInclusiveTotal)}</p>
         {effectiveWalletAmount > 0 && (
           <p className="text-xs text-green-600">-{formatPrice(effectiveWalletAmount)} wallet</p>
+        )}
+        {processingFee > 0 && (
+          <p className="text-xs text-slate-500">Includes {formatPrice(processingFee)} processing fee</p>
         )}
       </div>
       <Button
@@ -233,10 +239,12 @@ function PaymentSummaryMobile({ total, subtotal, processing, onCheckout, effecti
   )
 }
 
-function PaymentSummaryDesktop({ total, subtotal, processing, onCheckout, walletBalance, useWalletBalance, effectiveWalletAmount, onToggleWallet, onWalletAmountChange }: {
+function PaymentSummaryDesktop({ total, subtotal, processing, processingFee, feeInclusiveTotal, onCheckout, walletBalance, useWalletBalance, effectiveWalletAmount, onToggleWallet, onWalletAmountChange }: {
   total: number
   subtotal: number
   processing: boolean
+  processingFee: number
+  feeInclusiveTotal: number
   onCheckout: () => void
   walletBalance: number
   useWalletBalance: boolean
@@ -265,10 +273,16 @@ function PaymentSummaryDesktop({ total, subtotal, processing, onCheckout, wallet
             <span className="text-slate-600">Delivery fee</span>
             <span className="text-slate-900">{formatPrice(0)}</span>
           </div>
+          {processingFee > 0 && (
+            <div className="flex justify-between">
+              <span className="text-slate-600">Processing Fee</span>
+              <span className="text-slate-900">{formatPrice(processingFee)}</span>
+            </div>
+          )}
           <div className="border-t pt-3 mt-3">
             <div className="flex justify-between">
               <span className="text-lg font-bold text-navy">Total</span>
-              <span className="text-lg font-bold text-navy">{formatPrice(total)}</span>
+              <span className="text-lg font-bold text-navy">{formatPrice(feeInclusiveTotal)}</span>
             </div>
           </div>
           {walletBalance > 0 && (
@@ -390,6 +404,8 @@ export default function CheckoutContent() {
     const subtotal = contextCart?.total ?? 0
     const effectiveWalletAmount = useWalletBalance ? Math.min(walletAmount || walletBalance, walletBalance, subtotal) : 0
     const finalTotal = Math.max(0, subtotal - effectiveWalletAmount)
+    const processingFee = finalTotal > 0 ? Math.round((finalTotal / (1 - PAYSTACK_FEE_PERCENTAGE) - finalTotal) * 100) / 100 : 0
+    const feeInclusiveTotal = Math.round((finalTotal + processingFee) * 100) / 100
 
      const fetchProfile = async () => {
       try {
@@ -887,6 +903,8 @@ export default function CheckoutContent() {
                   total={finalTotal} 
                   subtotal={subtotal} 
                   processing={processing} 
+                  processingFee={processingFee}
+                  feeInclusiveTotal={feeInclusiveTotal}
                   onCheckout={handleCheckout}
                   walletBalance={walletBalance}
                   useWalletBalance={useWalletBalance}
@@ -926,6 +944,8 @@ export default function CheckoutContent() {
           total={finalTotal} 
           subtotal={subtotal} 
           processing={processing} 
+          processingFee={processingFee}
+          feeInclusiveTotal={feeInclusiveTotal}
           onCheckout={handleCheckout}
           effectiveWalletAmount={effectiveWalletAmount}
         />

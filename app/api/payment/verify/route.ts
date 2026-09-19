@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { verifyPaystackPayment } from '@/lib/paystack'
 import { sendPaymentConfirmationEmail } from '@/lib/email'
 import { canSendCustomerEmail, shouldSendNotification } from '@/lib/notification-preferences'
-import { calculateFinancialBreakdown, formatFinancialBreakdown, resolveProcessorFee } from '@/lib/revenue'
+import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -176,30 +176,27 @@ export async function POST(request: NextRequest) {
           },
         })
 
-      // Calculate gross amount from order items
+      // Calculate gross amount from order items (original order total)
       let grossAmount = 0
       for (const item of orderItems) {
         grossAmount += item.price * item.quantity
       }
 
-      // Determine processor fee from Paystack response (actual fees or fallback)
-      const paystackFees = paystackResponse.data?.fees != null ? paystackResponse.data.fees / 100 : null
-      const isFallback = paystackFees === null || paystackFees === undefined || paystackFees <= 0
-      let processorFee = resolveProcessorFee(paystackFees, grossAmount)
+      // Actual charged amount from Paystack (includes passed-through processing fee)
+      const actualChargedAmount = paystackResponse.data.amount / 100
 
-      if (isFallback) {
-        console.warn('[Payment Verify API] Paystack fees missing or zero for reference:', reference, '- using estimated 2% fallback (GHS', grossAmount.toFixed(2), '-> GHS', processorFee.toFixed(2), ')')
-      }
+      // Processor fee is the difference between what customer paid and original order total
+      const processorFee = Math.round((actualChargedAmount - grossAmount) * 100) / 100
 
-      // Use centralized revenue calculation logic
-      const financialBreakdown = await calculateFinancialBreakdown(grossAmount, processorFee)
+      // Financial breakdown: fee is pass-through, so commission/earnings stay on original total
+      const financialBreakdown = await calculateFinancialBreakdown(grossAmount, 0)
 
         // Update order with financial totals
         await prisma.order.update({
           where: { id: payment.orderId },
           data: {
-            grossAmount: financialBreakdown.grossAmount,
-            processorFee: financialBreakdown.processorFee,
+            grossAmount: actualChargedAmount,
+            processorFee: processorFee,
             netAmount: financialBreakdown.netAmount,
             platformCommission: financialBreakdown.platformCommission,
             vendorEarnings: financialBreakdown.vendorEarnings,
@@ -211,21 +208,18 @@ export async function POST(request: NextRequest) {
         // Update each order item with financials
         for (const item of orderItems) {
           const itemGross = item.price * item.quantity
-          let itemProcessorFee: number | null = null
-          if (processorFee !== null && grossAmount > 0) {
-            itemProcessorFee = (itemGross / grossAmount) * processorFee
-          }
+          const itemProcessorFee = Math.round((itemGross / grossAmount) * processorFee * 100) / 100
           
           const itemFinancialBreakdown = await calculateFinancialBreakdown(
             itemGross,
-            itemProcessorFee
+            0
           )
 
           await prisma.orderItem.update({
             where: { id: item.id },
             data: {
               grossAmount: itemFinancialBreakdown.grossAmount,
-              processorFee: itemFinancialBreakdown.processorFee,
+              processorFee: itemProcessorFee,
               netAmount: itemFinancialBreakdown.netAmount,
               platformCommission: itemFinancialBreakdown.platformCommission,
               vendorEarnings: itemFinancialBreakdown.vendorEarnings,
