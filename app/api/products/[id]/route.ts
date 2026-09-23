@@ -468,18 +468,19 @@ if (finalAvailabilityType === 'PREORDER') {
           // Update existing variant
           const previousStock = existingVariantMap.get(variant.id) ?? 0
 
-          await getPrisma().productVariant.update({
-            where: { id: variant.id },
-            data: {
-              productId: params.id,
-              color: variant.color || null,
-              size: variant.size || null,
-              age: variant.age || null,
-              sku: variant.sku || null,
-              stock: variantStock,
-              active: variant.active !== undefined ? variant.active : true,
-            },
-          })
+           await getPrisma().productVariant.update({
+             where: { id: variant.id },
+             data: {
+               productId: params.id,
+               color: variant.color || null,
+               size: variant.size || null,
+               age: variant.age || null,
+               sku: variant.sku || null,
+               price: variant.price !== undefined && variant.price !== null && variant.price !== '' ? parseFloat(variant.price) : null,
+               stock: variantStock,
+               active: variant.active !== undefined ? variant.active : true,
+             },
+           })
 
           // Trigger allocation if stock increased
           if (variantStock > previousStock) {
@@ -500,6 +501,7 @@ if (finalAvailabilityType === 'PREORDER') {
               size: variant.size || null,
               age: variant.age || null,
               sku: variant.sku || null,
+              price: variant.price !== undefined && variant.price !== null && variant.price !== '' ? parseFloat(variant.price) : null,
               stock: variantStock,
               active: variant.active !== undefined ? variant.active : true,
             },

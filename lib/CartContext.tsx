@@ -21,6 +21,7 @@ interface ProductVariant {
   age?: string
   sku?: string
   stock?: number
+  price?: number
 }
 
 interface CartItem {

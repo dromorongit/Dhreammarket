@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate total with safe access
     const total = (cart.items || []).reduce(
-      (sum: number, item: any) => sum + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)),
+      (sum: number, item: any) => sum + (((item?.productVariant?.price ?? item?.product?.price) ?? 0) * (item?.quantity ?? 0)),
       0
     )
 
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
     perf.markPrismaEnd(prismaPerfStart)
 
     const total = (updatedCart?.items || []).reduce(
-      (sum: number, item: any) => sum + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)),
+      (sum: number, item: any) => sum + (((item?.productVariant?.price ?? item?.product?.price) ?? 0) * (item?.quantity ?? 0)),
       0
     )
 

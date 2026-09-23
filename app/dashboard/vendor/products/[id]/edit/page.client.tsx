@@ -32,6 +32,7 @@ interface ProductVariant {
   age?: string
   sku?: string
   stock?: number
+  price?: number
   active?: boolean
 }
 
@@ -671,16 +672,18 @@ export default function VendorEditProductPageClient() {
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">Size</label>
-                            <select
+                            <Input
+                              type="text"
                               value={variant.size || ''}
                               onChange={(e) => updateVariant(index, 'size', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                            >
-                              <option value="">Select size</option>
+                              placeholder="e.g., 30ml, 1kg, One Size"
+                              list="size-options"
+                            />
+                            <datalist id="size-options">
                               {SIZE_OPTIONS.map(size => (
-                                <option key={size} value={size}>{size}</option>
+                                <option key={size} value={size} />
                               ))}
-                            </select>
+                            </datalist>
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">Age</label>
@@ -712,6 +715,17 @@ export default function VendorEditProductPageClient() {
                               value={variant.stock !== undefined ? variant.stock : ''}
                               onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
                               placeholder="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Price (optional)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={variant.price !== undefined ? variant.price : ''}
+                              onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                              placeholder="Uses product price if left blank"
                             />
                           </div>
                         </div>

@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate subtotal
     const subtotal = cart.items.reduce(
-      (sum: number, item: any) => sum + (item.product.price * item.quantity), 
+      (sum: number, item: any) => sum + ((item.productVariant?.price ?? item.product.price) * item.quantity),
       0
     )
 
@@ -182,12 +182,12 @@ export async function POST(request: NextRequest) {
       vendorBreakdown[storeId].items.push({
         productId: item.productId,
         quantity: item.quantity,
-        price: item.product.price,
+        price: item.productVariant?.price ?? item.product.price,
         color: item.color,
         size: item.size,
         age: item.age,
       })
-      vendorBreakdown[storeId].subtotal += item.product.price * item.quantity
+      vendorBreakdown[storeId].subtotal += (item.productVariant?.price ?? item.product.price) * item.quantity
     }
 
     // Calculate vendor earnings using the configured platform commission rate
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
                productId: item.productId,
                productVariantId: item.productVariantId || null,
                quantity: item.quantity,
-               price: item.product.price,
+                price: item.productVariant?.price ?? item.product.price,
                color: item.color || null,
                size: item.size || null,
                age: item.age || null,

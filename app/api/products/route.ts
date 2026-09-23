@@ -508,6 +508,7 @@ export async function POST(request: NextRequest) {
             size: variant.size || null,
             age: variant.age || null,
             sku: variant.sku || null,
+            price: variant.price !== undefined && variant.price !== null && variant.price !== '' ? parseFloat(variant.price) : null,
             stock: variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock, 10) : 0,
             active: variant.active !== undefined ? variant.active : true,
           })),

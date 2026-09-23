@@ -42,6 +42,7 @@ interface ProductVariant {
   sku: string | null
   stock: number
   reservedQuantity: number
+  price: number | null
   active: boolean
 }
 
@@ -485,7 +486,7 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
 
   const availableStock = product.stock - (product.reservedQuantity || 0)
   const variantStock = selectedVariant ? selectedVariant.stock - (selectedVariant.reservedQuantity || 0) : availableStock
-  const effectivePrice = product.dealsPrice ?? product.salesPrice ?? product.price
+  const effectivePrice = selectedVariant?.price ?? product.dealsPrice ?? product.salesPrice ?? product.price
   const hasDeal = !!product.dealsPrice && product.dealsPrice < product.price
   const hasSale = !!product.salesPrice && product.salesPrice < product.price && !hasDeal
   const stockBadge = getStockBadge(product.availabilityType, availableStock)
