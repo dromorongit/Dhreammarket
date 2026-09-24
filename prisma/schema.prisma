@@ -54,6 +54,7 @@ model User {
   payoutMethods                VendorPayoutMethod[]
   vendorPayouts                VendorPayout[]                 @relation("VendorPayoutVendor")
   vendorReferral               VendorReferral?                @relation("UserVendorReferral")
+  influencerReferrals          InfluencerReferral[]
   vendorReviews                VendorReview[]
   vendorSettings               VendorSettings?
   verificationApplications     VendorVerificationApplication?
@@ -79,6 +80,7 @@ model PendingRegistration {
   referralCode          String?  @db.VarChar(32)
   registrationIpAddress String?  @db.VarChar(64)
   marketingCode         String?
+  influencerCode        String?
 
   @@index([email])
   @@index([otpExpiresAt])
@@ -2250,6 +2252,65 @@ model VendorReferral {
   @@index([paid])
   @@index([createdAt])
   @@map("vendor_referrals")
+}
+
+model Influencer {
+  id                 String           @id @default(cuid())
+  name               String
+  email              String?
+  phone              String?
+  referralCode       String           @unique @db.VarChar(32)
+  active             Boolean          @default(true)
+  incentivePerVendor Float?
+  incentivePerCustomer Float?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  referrals          InfluencerReferral[]
+  clicks             InfluencerClick[]
+
+  @@index([referralCode])
+  @@index([active])
+  @@map("influencers")
+}
+
+model InfluencerReferral {
+  id                   String           @id @default(cuid())
+  influencerId         String
+  refereeId            String           @unique
+  refereeRole          String
+  codeUsed             String
+  registrationIpAddress String?
+  qualified            Boolean          @default(false)
+  qualifiedAt          DateTime?
+  incentiveAmount      Float?
+  incentivePaid        Boolean          @default(false)
+  incentivePaidAt      DateTime?
+  createdAt            DateTime         @default(now())
+  influencer           Influencer       @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  referee              User             @relation(fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([influencerId])
+  @@index([refereeRole])
+  @@index([qualified])
+  @@index([incentivePaid])
+  @@index([createdAt])
+  @@map("influencer_referrals")
+}
+
+model InfluencerClick {
+  id           String   @id @default(cuid())
+  influencerId String
+  ipAddress    String?
+  userAgent    String?
+  referrerUrl  String?
+  landingPage  String?
+  createdAt    DateTime @default(now())
+  influencer   Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+
+  @@index([influencerId])
+  @@index([ipAddress])
+  @@index([createdAt])
+  @@map("influencer_clicks")
 }
 
 enum SupportMessageSenderType {

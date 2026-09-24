@@ -578,6 +578,13 @@ responseProduct = productWithImages ?? product
         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
       })
 
+      try {
+        const { checkAndQualifyInfluencerReferral } = await import('@/lib/influencer/qualification-service')
+        await checkAndQualifyInfluencerReferral(payload.userId)
+      } catch (qualifyError) {
+        console.error('Influencer qualification check failed:', qualifyError)
+      }
+
       perf.log()
       return NextResponse.json({ product: responseProduct }, { status: 201 })
     } catch (error) {

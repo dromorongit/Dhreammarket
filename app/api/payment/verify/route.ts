@@ -261,6 +261,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    try {
+      const { checkAndQualifyInfluencerReferral } = await import('@/lib/influencer/qualification-service')
+      if (order?.userId) {
+        await checkAndQualifyInfluencerReferral(order.userId)
+      }
+    } catch (qualifyError) {
+      console.error('Influencer qualification check failed after payment:', qualifyError)
+    }
+
     // Send payment confirmation email (non-blocking)
     const user = await getPrisma().user.findUnique({
       where: { id: payload.userId },

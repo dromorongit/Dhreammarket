@@ -22,6 +22,7 @@ function RegisterContent() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [referralCode, setReferralCode] = useState('')
   const [marketingCode, setMarketingCode] = useState('')
+  const [influencerCode, setInfluencerCode] = useState('')
   const [role, setRole] = useState<Role>('CUSTOMER')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [ageConsent, setAgeConsent] = useState(false)
@@ -55,6 +56,11 @@ function RegisterContent() {
     const referralCodeParam = searchParams?.get('referralCode')
     if (referralCodeParam) {
       setReferralCode(referralCodeParam)
+    }
+
+    const influencerCodeParam = searchParams?.get('influencerCode')
+    if (influencerCodeParam) {
+      setInfluencerCode(influencerCodeParam)
     }
   }, [searchParams])
 
@@ -122,7 +128,7 @@ function RegisterContent() {
        const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, role, mobileNumber, name, ageConsent, referralCode, marketingCode }),
+           body: JSON.stringify({ email, password, role, mobileNumber, name, ageConsent, referralCode, marketingCode, influencerCode }),
         })
 
        const data = await response.json()

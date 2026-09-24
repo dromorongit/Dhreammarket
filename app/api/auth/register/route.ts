@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, password, role, mobileNumber, name, ageConsent, referralCode, marketingCode } = await request.json()
+    const { email, password, role, mobileNumber, name, ageConsent, referralCode, marketingCode, influencerCode } = await request.json()
 
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Email, password, and role are required' }, { status: 400 })
@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
           hashedPassword,
           referralCode: typeof referralCode === 'string' ? referralCode.trim() : null,
           marketingCode: typeof marketingCode === 'string' ? marketingCode.trim() : null,
+          influencerCode: typeof influencerCode === 'string' ? influencerCode.trim() : null,
           registrationIpAddress,
         },
         create: {
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
           hashedPassword,
           referralCode: typeof referralCode === 'string' ? referralCode.trim() : null,
           marketingCode: typeof marketingCode === 'string' ? marketingCode.trim() : null,
+          influencerCode: typeof influencerCode === 'string' ? influencerCode.trim() : null,
           registrationIpAddress,
         },
       })
@@ -170,6 +172,32 @@ export async function POST(request: NextRequest) {
               amountOwed: 25.00,
             },
           })
+        }
+
+        if (typeof influencerCode === 'string' && influencerCode.trim()) {
+          const influencer = await tx.influencer.findUnique({
+            where: { referralCode: influencerCode.trim() },
+          })
+          if (influencer?.active && registrationIpAddress) {
+            const existingInfluencerReferral = await tx.influencerReferral.findFirst({
+              where: {
+                influencerId: influencer.id,
+                registrationIpAddress,
+                refereeRole: role,
+              },
+            })
+            if (!existingInfluencerReferral) {
+              await tx.influencerReferral.create({
+                data: {
+                  influencerId: influencer.id,
+                  refereeId: createdUser.id,
+                  refereeRole: role,
+                  codeUsed: influencerCode.trim(),
+                  registrationIpAddress,
+                },
+              })
+            }
+          }
         }
 
         if (role === 'VENDOR') {

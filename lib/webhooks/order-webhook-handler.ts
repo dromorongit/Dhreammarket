@@ -233,6 +233,15 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       }
     }
 
+    try {
+      const { checkAndQualifyInfluencerReferral } = await import('@/lib/influencer/qualification-service')
+      if (payment.userId) {
+        await checkAndQualifyInfluencerReferral(payment.userId)
+      }
+    } catch (qualifyError) {
+      console.error('Influencer qualification check failed after payment webhook:', qualifyError)
+    }
+
     if (order && order.walletAmountApplied && order.walletAmountApplied > 0) {
       await getPrisma().$transaction(async (tx: any) => {
         await tx.customerLoyalty.update({

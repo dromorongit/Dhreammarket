@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, otp, marketingCode } = await request.json()
+    const { email, otp, marketingCode, influencerCode } = await request.json()
 
     if (!email || !otp) {
       return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 })
@@ -37,6 +37,9 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase()
     const resolvedMarketingCode = typeof marketingCode === 'string' && marketingCode.trim()
       ? marketingCode.trim()
+      : null
+    const resolvedInfluencerCode = typeof influencerCode === 'string' && influencerCode.trim()
+      ? influencerCode.trim()
       : null
 
     const pendingReg = await getPrisma().pendingRegistration.findUnique({
@@ -132,6 +135,33 @@ export async function POST(request: NextRequest) {
               amountOwed: 25.00,
             },
           })
+        }
+
+        const influencerCodeToUse = resolvedInfluencerCode || pendingReg.influencerCode
+        if (typeof influencerCodeToUse === 'string' && influencerCodeToUse.trim() && pendingReg.registrationIpAddress) {
+          const influencer = await tx.influencer.findUnique({
+            where: { referralCode: influencerCodeToUse.trim() },
+          })
+          if (influencer?.active) {
+            const existingInfluencerReferral = await tx.influencerReferral.findFirst({
+              where: {
+                influencerId: influencer.id,
+                registrationIpAddress: pendingReg.registrationIpAddress,
+                refereeRole: pendingReg.role,
+              },
+            })
+            if (!existingInfluencerReferral) {
+              await tx.influencerReferral.create({
+                data: {
+                  influencerId: influencer.id,
+                  refereeId: createdUser.id,
+                  refereeRole: pendingReg.role,
+                  codeUsed: influencerCodeToUse.trim(),
+                  registrationIpAddress: pendingReg.registrationIpAddress,
+                },
+              })
+            }
+          }
         }
 
         if (pendingReg.role === 'VENDOR') {

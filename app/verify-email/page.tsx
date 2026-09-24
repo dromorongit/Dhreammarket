@@ -12,6 +12,7 @@ function VerifyEmailContent() {
   const [otp, setOtp] = useState('')
   const [email, setEmail] = useState('')
   const [marketingCode, setMarketingCode] = useState('')
+  const [influencerCode, setInfluencerCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
@@ -43,6 +44,11 @@ function VerifyEmailContent() {
         // Invalid redirect URL, ignore
       }
     }
+
+    const influencerParam = searchParams?.get('influencerCode')
+    if (influencerParam) {
+      setInfluencerCode(influencerParam)
+    }
   }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +66,7 @@ function VerifyEmailContent() {
       const response = await fetch('/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, marketingCode: marketingCode || undefined }),
+        body: JSON.stringify({ email, otp, marketingCode: marketingCode || undefined, influencerCode: influencerCode || undefined }),
       })
 
       const data = await response.json()
