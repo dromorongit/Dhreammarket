@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { SITE_URL } from '@/lib/site-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export async function GET(
     select: { id: true, active: true },
   })
 
-  const targetUrl = new URL('/register', request.url)
+  const targetUrl = new URL('/register', SITE_URL)
   targetUrl.searchParams.set('influencerCode', trimmedCode)
 
   if (!influencer || !influencer.active) {
