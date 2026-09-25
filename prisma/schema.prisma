@@ -65,6 +65,12 @@ model User {
   verificationApplications     VendorVerificationApplication?
   verificationAuditLogs        VerificationAuditLog[]
   wishlist                     Wishlist?
+  rewardPoints                RewardPoints?
+  cashbackBalances            CashbackBalance?
+  rewardTransactions          RewardTransaction[]
+  cashbackTransactions        CashbackTransaction[]
+  rewardRedemptions           RewardRedemption[]
+  vendorSubscriptions         VendorSubscription[]
 
   @@index([referralCode])
   @@index([registrationIpAddress])
@@ -252,6 +258,7 @@ model Product {
   dealsEnd                 DateTime?                   @db.Timestamp(6)
   isReturnable             Boolean                     @default(true)
   advertisements           Advertisement[]
+  advertisementCampaigns   AdvertisementCampaign[]
   cartItems                CartItem[]
   homepageSections         HomepageSectionProduct[]
   orderItems               OrderItem[]
@@ -297,6 +304,7 @@ model Service {
   reviewCount              Int                @default(0)
   images                   ServiceImage[]
   serviceRequests          ServiceRequest[]
+  advertisementCampaigns   AdvertisementCampaign[]
   category                 ServiceCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   store                    Store              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   wishlistItems            WishlistItem[]
@@ -1721,6 +1729,8 @@ model RewardPoints {
   updatedAt     DateTime @updatedAt
   createdAt     DateTime @default(now())
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("reward_points")
 }
 
@@ -1732,6 +1742,8 @@ model CashbackBalance {
   totalRedeemed Float    @default(0)
   updatedAt     DateTime @updatedAt
   createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("cashback_balances")
 }
@@ -1749,6 +1761,8 @@ model RewardTransaction {
   metadata      Json?
   createdAt     DateTime        @default(now())
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([createdAt])
   @@index([referenceId])
@@ -1765,6 +1779,8 @@ model CashbackTransaction {
   referenceType String?
   metadata      Json?
   createdAt     DateTime       @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
@@ -1909,6 +1925,8 @@ model RewardRedemption {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([createdAt])
   @@map("reward_redemptions")
@@ -1963,6 +1981,8 @@ model SubscriptionPlan {
   benefits      Json     @default("[]")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  vendorSubscriptions VendorSubscription[]
+  featurePermissions SubscriptionFeature[]
 
   @@index([isActive])
   @@index([displayOrder])
@@ -1988,6 +2008,12 @@ model VendorSubscription {
   notes                  String?
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
+  vendor    User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id])
+  invoices  SubscriptionInvoice[]
+  payments  SubscriptionPayment[]
+  usageRecords SubscriptionUsage[]
+  history   SubscriptionHistory[]
 
   @@index([planId])
   @@index([status])
@@ -2009,6 +2035,8 @@ model SubscriptionInvoice {
   metadata          Json?
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+  subscription VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payments SubscriptionPayment[]
 
   @@index([status])
   @@index([subscriptionId])
@@ -2028,6 +2056,8 @@ model SubscriptionPayment {
   metadata          Json?
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
+  invoice SubscriptionInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  subscription VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([paystackRef])
   @@index([status])
@@ -2043,9 +2073,11 @@ model SubscriptionUsage {
   limit          Float?   @map("limit")
   percentage     Float    @default(0) @map("percentage")
   recordedAt     DateTime @default(now()) @map("recorded_at")
+  subscription VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId])
   @@index([metric])
+  @@unique([subscriptionId, metric])
   @@map("subscription_usage")
 }
 
@@ -2058,6 +2090,7 @@ model SubscriptionFeature {
   currentUsage Int      @default(0) @map("current_usage")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  plan SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@map("subscription_features")
 }
@@ -2072,6 +2105,7 @@ model SubscriptionHistory {
   billingCycle   String?  @map("billing_cycle")
   notes          String?  @map("notes")
   createdAt      DateTime @default(now()) @map("created_at")
+  subscription VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([action])
   @@map("subscription_history")
@@ -2108,6 +2142,8 @@ model AdvertisementCampaign {
   revenueGenerated  Float                    @default(0) @map("revenue_generated")
   createdAt         DateTime                 @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  product Product? @relation(fields: [selectedProductId], references: [id])
+  service Service? @relation(fields: [selectedServiceId], references: [id])
   analytics         AdvertisementAnalytics[]
   vendor            User                     @relation(fields: [vendorId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   history           AdvertisementHistory[]
