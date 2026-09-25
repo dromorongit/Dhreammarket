@@ -53,7 +53,12 @@ model User {
   supportTickets               SupportTicket[]
   payoutMethods                VendorPayoutMethod[]
   vendorPayouts                VendorPayout[]                 @relation("VendorPayoutVendor")
-  vendorReferral               VendorReferral?                @relation("UserVendorReferral")
+  customerLoyalty          CustomerLoyalty?
+  customerAchievements     CustomerAchievement[]
+  referralRecordsAsReferrer ReferralRecord[] @relation("ReferralReferrer")
+  referralRecordsAsReferee  ReferralRecord[] @relation("ReferralReferee")
+  vendorRewardCampaigns    VendorRewardCampaign[]
+  vendorReferral           VendorReferral?                @relation("UserVendorReferral")
   influencerReferrals          InfluencerReferral[]
   vendorReviews                VendorReview[]
   vendorSettings               VendorSettings?
@@ -1783,6 +1788,8 @@ model LoyaltyTier {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  customerLoyalties CustomerLoyalty[]
+
   @@index([displayOrder])
   @@map("loyalty_tiers")
 }
@@ -1811,6 +1818,8 @@ model CustomerLoyalty {
   followVendorRewardClaimed Boolean   @default(false)
   lastWishlistRewardAt      DateTime? @db.Timestamp(6)
   walletBalance             Float     @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier      LoyaltyTier @relation(fields: [tierId], references: [id])
 
   @@index([tierId])
   @@index([points])
@@ -1838,6 +1847,8 @@ model Achievement {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  customerAchievements CustomerAchievement[]
+
   @@index([displayOrder])
   @@map("achievements")
 }
@@ -1847,6 +1858,8 @@ model CustomerAchievement {
   userId        String
   achievementId String
   unlockedAt    DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
 
   @@unique([userId, achievementId], map: "customer_achievements_userId_achievementId_unique")
   @@index([userId])
@@ -1870,6 +1883,8 @@ model ReferralRecord {
   updatedAt      DateTime       @updatedAt
   flagged        Boolean        @default(false)
   flagReason     String?
+  referrer  User     @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee   User?    @relation("ReferralReferee", fields: [refereeId], references: [id], onDelete: Cascade)
 
   @@index([referrerId])
   @@index([refereeId])
@@ -1914,8 +1929,9 @@ model VendorRewardCampaign {
   isActive          Boolean      @default(true)
   appliesToProducts Json?
   appliesToServices Json?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  vendor    User     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@index([vendorId])
   @@index([isActive])
