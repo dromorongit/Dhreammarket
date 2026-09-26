@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const [failedEmails, total] = await Promise.all([
       prisma.failedEmail.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
         take: Math.min(limit, 100),
         skip: offset,
       }),
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const pendingEmails = await prisma.failedEmail.findMany({
       where: { status: statusFilter },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { created_at: 'asc' },
     })
 
     const results = []
@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
       const result = await retryFailedEmail(email)
       results.push({
         id: email.id,
-        recipientEmail: email.recipientEmail,
-        emailType: email.emailType,
+        recipientEmail: email.recipient_email,
+        emailType: email.email_type,
         success: result.success,
         error: result.error,
       })

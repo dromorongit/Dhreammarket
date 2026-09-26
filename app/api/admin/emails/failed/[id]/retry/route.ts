@@ -29,8 +29,8 @@ export async function POST(
 
     return NextResponse.json({
       id: failedEmail.id,
-      recipientEmail: failedEmail.recipientEmail,
-      emailType: failedEmail.emailType,
+      recipientEmail: failedEmail.recipient_email,
+      emailType: failedEmail.email_type,
       success: result.success,
       error: result.error,
     })

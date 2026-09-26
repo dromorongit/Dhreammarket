@@ -33,9 +33,7 @@ export async function GET(
       getPrisma().vendorPost.findMany({
         where: { storeId: store.id, isHidden: false },
         include: {
-          vendor: {
-            select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } },
-          },
+          store: { select: { id: true, name: true, logo: true } },
           _count: { select: { likes: true, comments: true } },
         },
         orderBy: { createdAt: 'desc' },
@@ -54,9 +52,9 @@ export async function GET(
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
       author: {
-        id: post.vendor.id,
-        name: [post.vendor.profile?.firstName, post.vendor.profile?.lastName].filter(Boolean).join(' ') || 'Vendor',
-        avatar: post.vendor.profile?.avatar || null,
+        id: post.store.id,
+        name: post.store.name,
+        avatar: post.store.logo,
       },
       likesCount: post._count.likes,
       commentsCount: post._count.comments,

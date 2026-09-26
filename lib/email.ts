@@ -34,8 +34,8 @@ async function persistFailedEmail(
 
     await prisma.failedEmail.create({
       data: {
-        recipientEmail: params.to,
-        emailType,
+        recipient_email: params.to,
+        email_type: emailType,
         payload: params.retryPayload ?? {
           to: params.to,
           subject: params.subject,
@@ -43,10 +43,10 @@ async function persistFailedEmail(
           textContent: params.textContent,
           replyTo: params.replyTo,
         },
-        errorMessage,
+        error_message: errorMessage,
         status: 'PENDING',
-        attemptCount: 1,
-        lastAttemptAt: new Date(),
+        attempt_count: 1,
+        last_attempt_at: new Date(),
       }
     })
   } catch (persistError) {
@@ -110,10 +110,10 @@ export interface RetryResult {
 
 export async function retryFailedEmail(failedEmail: {
   id: string
-  recipientEmail: string
-  emailType: string
+  recipient_email: string
+  email_type: string
   payload: any
-  attemptCount: number
+  attempt_count: number
   status: string
 }): Promise<RetryResult> {
   const payload = failedEmail.payload
@@ -128,7 +128,7 @@ export async function retryFailedEmail(failedEmail: {
       htmlContent: payload.htmlContent,
       textContent: payload.textContent,
       replyTo: payload.replyTo,
-      emailType: failedEmail.emailType,
+      emailType: failedEmail.email_type,
     })
 
     const prisma = getPrisma()
@@ -137,35 +137,35 @@ export async function retryFailedEmail(failedEmail: {
         where: { id: failedEmail.id },
         data: {
           status: 'RESOLVED',
-          resolvedAt: new Date(),
-          attemptCount: failedEmail.attemptCount + 1,
-          lastAttemptAt: new Date(),
+          resolved_at: new Date(),
+          attempt_count: failedEmail.attempt_count + 1,
+          last_attempt_at: new Date(),
         }
       })
       return { success: true }
     } else {
-      const newAttemptCount = failedEmail.attemptCount + 1
+      const newAttemptCount = failedEmail.attempt_count + 1
       const isPermanent = newAttemptCount >= MAX_RETRY_ATTEMPTS
       await prisma.failedEmail.update({
         where: { id: failedEmail.id },
         data: {
           status: isPermanent ? 'FAILED_PERMANENTLY' : 'PENDING',
-          attemptCount: newAttemptCount,
-          lastAttemptAt: new Date(),
+          attempt_count: newAttemptCount,
+          last_attempt_at: new Date(),
         }
       })
       return { success: false, error: result.error ? String(result.error) : undefined }
     }
   } catch (error) {
     const prisma = getPrisma()
-    const newAttemptCount = failedEmail.attemptCount + 1
+    const newAttemptCount = failedEmail.attempt_count + 1
     const isPermanent = newAttemptCount >= MAX_RETRY_ATTEMPTS
     await prisma.failedEmail.update({
       where: { id: failedEmail.id },
       data: {
         status: isPermanent ? 'FAILED_PERMANENTLY' : 'PENDING',
-        attemptCount: newAttemptCount,
-        lastAttemptAt: new Date(),
+        attempt_count: newAttemptCount,
+        last_attempt_at: new Date(),
       }
     })
     return { success: false, error: error instanceof Error ? error.message : String(error) }

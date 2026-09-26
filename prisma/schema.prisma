@@ -75,6 +75,7 @@ model User {
   vendorPostLikes    VendorPostLike[]      @relation("UserVendorPostLikes")
   vendorPostComments VendorPostComment[]   @relation("UserVendorPostComments")
   vendorPostReports  VendorPostReport[]    @relation("UserVendorPostReports")
+  vendorFollows      VendorFollow[]
 
   @@index([referralCode])
   @@index([registrationIpAddress])
@@ -181,6 +182,8 @@ model Store {
   vendorPayouts            VendorPayout[]                  @relation("VendorPayoutStore")
   vendorReviews            VendorReview[]
   vendorPosts              VendorPost[]          @relation("StoreVendorPosts")
+  vendorTrustBadges        VendorTrustBadge[]
+  vendorFollows            VendorFollow[]
   verificationApplications VendorVerificationApplication[]
 
   @@map("stores")
@@ -276,7 +279,8 @@ model Product {
   store                    Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   purchaseOrderItems       PurchaseOrderItem[]
   restockOrders            RestockOrder[]
-  wishlistItems            WishlistItem[]
+  wishlistItems             WishlistItem[]
+  flashDealProducts         FlashDealProduct[]
 
   @@index([storeId])
   @@index([categoryId])
@@ -310,9 +314,10 @@ model Service {
   images                   ServiceImage[]
   serviceRequests          ServiceRequest[]
   advertisementCampaigns   AdvertisementCampaign[]
-  category                 ServiceCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  store                    Store              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category                 ServiceCategory             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  store                    Store                       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   wishlistItems            WishlistItem[]
+  flashDealProducts       FlashDealProduct[]
 
   @@index([vendorId])
   @@index([categoryId])
@@ -1456,6 +1461,7 @@ model Collection {
   isPublic    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  items       CollectionItem[]
 
   @@index([userId])
   @@index([slug])
@@ -1468,6 +1474,7 @@ model CollectionItem {
   productId    String?
   serviceId    String?
   createdAt    DateTime @default(now())
+  collection   Collection @relation(fields: [collectionId], references: [id])
 
   @@unique([collectionId, productId])
   @@unique([collectionId, serviceId])
@@ -1530,6 +1537,8 @@ model VendorFollow {
   id        String   @id @default(cuid())
   userId    String
   vendorId  String
+  user      User     @relation(fields: [userId], references: [id])
+  store     Store    @relation(fields: [vendorId], references: [userId])
   createdAt DateTime @default(now())
 
   @@unique([userId, vendorId])
@@ -1588,6 +1597,7 @@ model FlashDeal {
   endDate       DateTime
   isActive      Boolean      @default(true)
   vendorId      String?
+  products      FlashDealProduct[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -1605,6 +1615,9 @@ model FlashDealProduct {
   serviceId   String?
   dealPrice   Float
   createdAt   DateTime @default(now())
+  flashDeal   FlashDeal @relation(fields: [flashDealId], references: [id])
+  product     Product?  @relation(fields: [productId], references: [id])
+  service     Service?  @relation(fields: [serviceId], references: [id])
 
   @@index([flashDealId])
   @@index([productId])
@@ -1728,6 +1741,7 @@ model VendorTrustBadge {
   isActive  Boolean        @default(true)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+  store     Store?         @relation(fields: [vendorId], references: [userId])
 
   @@unique([vendorId, badgeType])
   @@index([vendorId])

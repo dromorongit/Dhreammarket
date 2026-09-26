@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
         imageUrl: typeof imageUrl === 'string' ? imageUrl : null,
       },
       include: {
+        store: { select: { id: true, name: true, logo: true } },
         _count: { select: { likes: true, comments: true } },
       },
     })
@@ -52,6 +53,11 @@ export async function POST(request: NextRequest) {
         imageUrl: post.imageUrl,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
+        author: {
+          id: post.store.id,
+          name: post.store.name,
+          avatar: post.store.logo,
+        },
         likesCount: post._count.likes,
         commentsCount: post._count.comments,
       },
@@ -89,7 +95,10 @@ export async function GET(request: NextRequest) {
 
     const posts = await getPrisma().vendorPost.findMany({
       where: { storeId: store.id },
-      include: { _count: { select: { likes: true, comments: true } } },
+      include: {
+        store: { select: { id: true, name: true, logo: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -100,6 +109,11 @@ export async function GET(request: NextRequest) {
         imageUrl: post.imageUrl,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
+        author: {
+          id: post.store.id,
+          name: post.store.name,
+          avatar: post.store.logo,
+        },
         likesCount: post._count.likes,
         commentsCount: post._count.comments,
       })),

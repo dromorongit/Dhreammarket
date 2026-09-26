@@ -142,6 +142,14 @@ export default function VendorProfilePage() {
   }>>([])
   const [feedLoading, setFeedLoading] = useState(false)
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set<string>())
+  const [selectedPost, setSelectedPost] = useState<{
+    id: string
+    content: string
+    imageUrl: string | null
+    author: { id: string; name: string; avatar: string | null }
+    likesCount: number
+    commentsCount: number
+  } | null>(null)
 
   useEffect(() => {
     if (!vendorId) return
@@ -1100,7 +1108,7 @@ export default function VendorProfilePage() {
             ) : (
               <div className="space-y-4">
                 {feedPosts.map((post) => (
-                  <Card key={post.id} variant="elevated">
+                  <Card key={post.id} variant="elevated" className="cursor-pointer" onClick={() => setSelectedPost(post)}>
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
@@ -1155,6 +1163,40 @@ export default function VendorProfilePage() {
           </section>
         )}
       </div>
+
+      {selectedPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setSelectedPost(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
+                  {selectedPost.author.avatar ? (
+                    <Image src={selectedPost.author.avatar} alt={selectedPost.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
+                  ) : (
+                    selectedPost.author.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-deep-navy">{selectedPost.author.name}</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setSelectedPost(null)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <p className="text-slate-700 whitespace-pre-wrap leading-relaxed mb-4">{selectedPost.content}</p>
+              {selectedPost.imageUrl && (
+                <div className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden">
+                  <Image src={selectedPost.imageUrl} alt="Post image" className="object-contain w-full h-full" fill sizes="100vw" unoptimized />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
