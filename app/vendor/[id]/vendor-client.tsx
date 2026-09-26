@@ -620,18 +620,18 @@ export default function VendorProfilePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-        <div className="bg-white rounded-lg shadow-sm p-2 inline-flex gap-1">
+        <div className="bg-white rounded-lg shadow-sm p-2 inline-flex gap-1 overflow-x-auto scrollbar-hide flex-nowrap">
           {[
             { key: 'products' as const, label: 'Products' },
             { key: 'services' as const, label: 'Services' },
+            { key: 'feed' as const, label: 'Feed' },
             { key: 'about' as const, label: 'About' },
             { key: 'reviews' as const, label: `Reviews${vendorReviewCount > 0 ? ` (${vendorReviewCount})` : ''}` },
-            { key: 'feed' as const, label: 'Feed' },
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? 'bg-royal-blue text-white'
                   : 'text-slate-600 hover:text-royal-blue hover:bg-slate-50'
