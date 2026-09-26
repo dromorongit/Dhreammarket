@@ -1111,9 +1111,9 @@ export default function VendorProfilePage() {
                   <Card key={post.id} variant="elevated" className="cursor-pointer" onClick={() => setSelectedPost(post)}>
                     <CardContent className="pt-6">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
+                        <div className="relative w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
                           {post.author.avatar ? (
-                            <Image src={post.author.avatar} alt={post.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
+                            <Image src={getOptimizedCloudinaryUrl(post.author.avatar, 40)} alt={post.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
                           ) : (
                             post.author.name.charAt(0).toUpperCase()
                           )}
@@ -1169,9 +1169,9 @@ export default function VendorProfilePage() {
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
+                <div className="relative w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
                   {selectedPost.author.avatar ? (
-                    <Image src={selectedPost.author.avatar} alt={selectedPost.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
+                    <Image src={getOptimizedCloudinaryUrl(selectedPost.author.avatar, 40)} alt={selectedPost.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
                   ) : (
                     selectedPost.author.name.charAt(0).toUpperCase()
                   )}
