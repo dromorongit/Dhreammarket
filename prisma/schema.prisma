@@ -71,6 +71,10 @@ model User {
   cashbackTransactions        CashbackTransaction[]
   rewardRedemptions           RewardRedemption[]
   vendorSubscriptions         VendorSubscription[]
+  vendorPosts        VendorPost[]          @relation("UserVendorPosts")
+  vendorPostLikes    VendorPostLike[]      @relation("UserVendorPostLikes")
+  vendorPostComments VendorPostComment[]   @relation("UserVendorPostComments")
+  vendorPostReports  VendorPostReport[]    @relation("UserVendorPostReports")
 
   @@index([referralCode])
   @@index([registrationIpAddress])
@@ -176,6 +180,7 @@ model Store {
   payoutMethods            VendorPayoutMethod[]            @relation("VendorPayoutMethodStore")
   vendorPayouts            VendorPayout[]                  @relation("VendorPayoutStore")
   vendorReviews            VendorReview[]
+  vendorPosts              VendorPost[]          @relation("StoreVendorPosts")
   verificationApplications VendorVerificationApplication[]
 
   @@map("stores")
@@ -1370,6 +1375,76 @@ model VendorReviewReply {
   @@index([reviewId])
   @@index([vendorId])
   @@map("vendor_review_replies")
+}
+
+model VendorPost {
+  id          String    @id @default(cuid())
+  vendorId    String
+  storeId     String
+  content     String
+  imageUrl    String?
+  isHidden    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  vendor      User            @relation("UserVendorPosts", fields: [vendorId], references: [id], onDelete: Cascade)
+  store       Store           @relation("StoreVendorPosts", fields: [storeId], references: [id], onDelete: Cascade)
+  likes       VendorPostLike[]    @relation("PostLikes")
+  comments    VendorPostComment[] @relation("PostComments")
+  reports     VendorPostReport[]  @relation("PostReports")
+
+  @@index([vendorId])
+  @@index([storeId])
+  @@index([createdAt])
+  @@map("vendor_posts")
+}
+
+model VendorPostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post VendorPost @relation("PostLikes", fields: [postId], references: [id], onDelete: Cascade)
+  user User       @relation("UserVendorPostLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("vendor_post_likes")
+}
+
+model VendorPostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post VendorPost @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
+  user User       @relation("UserVendorPostComments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("vendor_post_comments")
+}
+
+model VendorPostReport {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  reason    String
+  comment   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  post VendorPost @relation("PostReports", fields: [postId], references: [id], onDelete: Cascade)
+  user User       @relation("UserVendorPostReports", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("vendor_post_reports")
 }
 
 model Collection {

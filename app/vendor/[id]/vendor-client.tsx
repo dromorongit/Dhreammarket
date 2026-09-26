@@ -129,7 +129,19 @@ export default function VendorProfilePage() {
   const [userReview, setUserReview] = useState<VendorReview | null>(null)
   const [editingReview, setEditingReview] = useState<VendorReview | null>(null)
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'products' | 'services' | 'about' | 'reviews'>('products')
+  const [activeTab, setActiveTab] = useState<'products' | 'services' | 'about' | 'reviews' | 'feed'>('products')
+  const [feedPosts, setFeedPosts] = useState<Array<{
+    id: string
+    content: string
+    imageUrl: string | null
+    createdAt: string
+    updatedAt: string
+    author: { id: string; name: string; avatar: string | null }
+    likesCount: number
+    commentsCount: number
+  }>>([])
+  const [feedLoading, setFeedLoading] = useState(false)
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set<string>())
 
   useEffect(() => {
     if (!vendorId) return
@@ -165,6 +177,12 @@ export default function VendorProfilePage() {
       }).catch(() => {})
     }
   }, [vendorId, vendor])
+
+  useEffect(() => {
+    if (activeTab === 'feed' && vendorId) {
+      fetchFeed()
+    }
+  }, [activeTab, vendorId])
 
   useEffect(() => {
     if (vendorId) {
@@ -223,6 +241,53 @@ export default function VendorProfilePage() {
         if (data.userReview) {
           setUserReview(data.userReview)
         }
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const fetchFeed = async () => {
+    if (!vendorId) return
+    try {
+      setFeedLoading(true)
+      const response = await fetch(`/api/vendors/${vendorId}/feed?limit=20`)
+        if (response.ok) {
+          const data = await response.json()
+          setFeedPosts(data.posts || [])
+        }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setFeedLoading(false)
+    }
+  }
+
+  const toggleLike = async (postId: string) => {
+    if (!user) return
+    try {
+      const response = await fetch(`/api/vendor/feed/${postId}/like`, { method: 'POST' })
+      if (response.ok) {
+        const data = await response.json()
+        setLikedPosts((prev) => {
+          const next = new Set(prev)
+          if (data.liked) {
+            next.add(postId)
+          } else {
+            next.delete(postId)
+          }
+          return next
+        })
+        setFeedPosts((prev) =>
+          prev.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  likesCount: post.likesCount + (data.liked ? 1 : -1),
+                }
+              : post
+          )
+        )
       }
     } catch (err) {
       console.error(err)
@@ -561,6 +626,7 @@ export default function VendorProfilePage() {
             { key: 'services' as const, label: 'Services' },
             { key: 'about' as const, label: 'About' },
             { key: 'reviews' as const, label: `Reviews${vendorReviewCount > 0 ? ` (${vendorReviewCount})` : ''}` },
+            { key: 'feed' as const, label: 'Feed' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -996,6 +1062,91 @@ export default function VendorProfilePage() {
                       {review.comment && (
                         <p className="text-slate-700 leading-relaxed">{review.comment}</p>
                       )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === 'feed' && (
+          <section className="py-12 border-t border-slate-200">
+            <h2 className="text-2xl font-bold text-deep-navy mb-8">Feed</h2>
+            {feedLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} variant="elevated" className="p-6">
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-4 bg-slate-200 rounded w-3/4" />
+                      <div className="h-4 bg-slate-200 rounded w-full" />
+                      <div className="h-4 bg-slate-200 rounded w-1/2" />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : feedPosts.length === 0 ? (
+              <Card variant="elevated" className="p-12">
+                <EmptyState
+                  icon={
+                    <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9a2 2 0 00-2 2v1m-4 13h10a2 2 0 002-2v-1" />
+                    </svg>
+                  }
+                  title="No posts yet"
+                  description="This vendor hasn't posted any updates yet. Check back soon!"
+                />
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {feedPosts.map((post) => (
+                  <Card key={post.id} variant="elevated">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold overflow-hidden">
+                          {post.author.avatar ? (
+                            <Image src={post.author.avatar} alt={post.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
+                          ) : (
+                            post.author.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-deep-navy">{post.author.name}</p>
+                          <p className="text-xs text-slate-500">
+                            {new Date(post.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-slate-700 whitespace-pre-wrap leading-relaxed mb-4">{post.content}</p>
+                      {post.imageUrl && (
+                        <div className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden mb-4">
+                          <Image src={post.imageUrl} alt="Post image" className="object-cover" fill sizes="100vw" unoptimized />
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => toggleLike(post.id)}
+                          className={`flex items-center gap-1.5 text-sm transition-colors ${
+                            likedPosts.has(post.id) ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'
+                          }`}
+                        >
+                          <svg className="w-5 h-5" fill={likedPosts.has(post.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                          <span>{post.likesCount}</span>
+                        </button>
+                        <span className="flex items-center gap-1.5 text-sm text-slate-500">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-3.582 9 8z" />
+                          </svg>
+                          <span>{post.commentsCount}</span>
+                        </span>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
