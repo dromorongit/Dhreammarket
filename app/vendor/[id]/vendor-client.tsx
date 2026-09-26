@@ -620,7 +620,7 @@ export default function VendorProfilePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-        <div className="bg-white rounded-lg shadow-sm p-2 inline-flex gap-1 overflow-x-auto scrollbar-hide flex-nowrap">
+        <div className="bg-white rounded-lg shadow-sm p-2 flex gap-1 overflow-x-auto scrollbar-hide flex-nowrap">
           {[
             { key: 'products' as const, label: 'Products' },
             { key: 'services' as const, label: 'Services' },
