@@ -81,42 +81,52 @@ export async function createCampaign(
 
 export async function getCampaign(id: string): Promise<AdvertisementCampaignWithDetails | null> {
   const prisma = getPrisma()
-  const campaign = await prisma.advertisementCampaign.findUnique({
-    where: { id },
-    include: {
-      vendor: { select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } } },
-      product: { select: { id: true, name: true, slug: true, price: true } },
-      service: { select: { id: true, title: true, slug: true, startingPrice: true } },
-      placements: { orderBy: { displayOrder: 'asc' } },
-      payments: { orderBy: { createdAt: 'desc' } },
-      invoice: true,
-      analytics: { orderBy: { date: 'desc' }, take: 30 },
-      history: { orderBy: { createdAt: 'desc' }, take: 20 },
-    },
-  })
-  return campaign as AdvertisementCampaignWithDetails | null
+  try {
+    const campaign = await prisma.advertisementCampaign.findUnique({
+      where: { id },
+      include: {
+        vendor: { select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } } },
+        product: { select: { id: true, name: true, slug: true, price: true } },
+        service: { select: { id: true, title: true, slug: true, startingPrice: true } },
+        placements: { orderBy: { displayOrder: 'asc' } },
+        payments: { orderBy: { createdAt: 'desc' } },
+        invoice: true,
+        analytics: { orderBy: { date: 'desc' }, take: 30 },
+        history: { orderBy: { createdAt: 'desc' }, take: 20 },
+      },
+    })
+    return campaign as AdvertisementCampaignWithDetails | null
+  } catch (error) {
+    logError('Failed to load advertisement campaign', error, { campaignId: id })
+    return null
+  }
 }
 
 export async function getCampaignsByVendor(vendorId: string, status?: AdvertisementCampaignStatus) {
   const prisma = getPrisma()
-  const where: any = { vendorId }
-  if (status) where.campaignStatus = status
+  try {
+    const where: any = { vendorId }
+    if (status) where.campaignStatus = status
 
-  const campaigns = await prisma.advertisementCampaign.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-    include: {
-      product: { select: { id: true, name: true, slug: true, price: true } },
-      service: { select: { id: true, title: true, slug: true, startingPrice: true } },
-      placements: { orderBy: { displayOrder: 'asc' } },
-      payments: { orderBy: { createdAt: 'desc' } },
-      invoice: true,
-      analytics: { orderBy: { date: 'desc' }, take: 7 },
-      history: { orderBy: { createdAt: 'desc' }, take: 5 },
-    },
-  })
-  return campaigns as AdvertisementCampaignWithDetails[]
+    const campaigns = await prisma.advertisementCampaign.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      include: {
+        product: { select: { id: true, name: true, slug: true, price: true } },
+        service: { select: { id: true, title: true, slug: true, startingPrice: true } },
+        placements: { orderBy: { displayOrder: 'asc' } },
+        payments: { orderBy: { createdAt: 'desc' } },
+        invoice: true,
+        analytics: { orderBy: { date: 'desc' }, take: 7 },
+        history: { orderBy: { createdAt: 'desc' }, take: 5 },
+      },
+    })
+    return campaigns as AdvertisementCampaignWithDetails[]
+  } catch (error) {
+    logError('Failed to load advertisement campaigns for vendor', error, { vendorId, status })
+    return []
+  }
 }
 
 export async function updateCampaignStatus(
