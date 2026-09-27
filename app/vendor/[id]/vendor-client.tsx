@@ -150,6 +150,25 @@ export default function VendorProfilePage() {
     likesCount: number
     commentsCount: number
   } | null>(null)
+  const [comments, setComments] = useState<Array<{
+    id: string
+    message: string
+    createdAt: string
+    author: { id: string; name: string; avatar: string | null }
+  }>>([])
+  const [commentText, setCommentText] = useState('')
+  const [submittingComment, setSubmittingComment] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (selectedPost) {
+      fetch(`/api/vendor/feed/${selectedPost.id}/comments`)
+        .then((res) => res.ok ? res.json() : Promise.resolve({ comments: [] }))
+        .then((data) => setComments(data.comments || []))
+        .catch(() => setComments([]))
+      setCommentText('')
+    }
+  }, [selectedPost])
 
   useEffect(() => {
     if (!vendorId) return
@@ -299,6 +318,37 @@ export default function VendorProfilePage() {
       }
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  const submitComment = async () => {
+    if (!selectedPost || !commentText.trim() || !user) return
+    try {
+      setSubmittingComment(true)
+      const response = await fetch(`/api/vendor/feed/${selectedPost.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: commentText.trim() }),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setComments((prev) => [...prev, data.comment])
+        setCommentText('')
+        setFeedPosts((prev) =>
+          prev.map((post) =>
+            post.id === selectedPost.id
+              ? { ...post, commentsCount: post.commentsCount + 1 }
+              : post
+          )
+        )
+        setSelectedPost((prev) =>
+          prev ? { ...prev, commentsCount: prev.commentsCount + 1 } : prev
+        )
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSubmittingComment(false)
     }
   }
 
@@ -1138,7 +1188,10 @@ export default function VendorProfilePage() {
                       <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
                         <button
                           type="button"
-                          onClick={() => toggleLike(post.id)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleLike(post.id)
+                          }}
                           className={`flex items-center gap-1.5 text-sm transition-colors ${
                             likedPosts.has(post.id) ? 'text-rose-600' : 'text-slate-500 hover:text-rose-600'
                           }`}
@@ -1148,7 +1201,10 @@ export default function VendorProfilePage() {
                           </svg>
                           <span>{post.likesCount}</span>
                         </button>
-                        <span className="flex items-center gap-1.5 text-sm text-slate-500">
+                        <span 
+                          className="flex items-center gap-1.5 text-sm text-slate-500 cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-3.582 9 8z" />
                           </svg>
@@ -1189,12 +1245,68 @@ export default function VendorProfilePage() {
             <div className="p-4">
               <p className="text-slate-700 whitespace-pre-wrap leading-relaxed mb-4">{selectedPost.content}</p>
               {selectedPost.imageUrl && (
-                <div className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden">
+                <div 
+                  className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden cursor-pointer"
+                  onClick={() => setLightboxImage(selectedPost.imageUrl)}
+                >
                   <Image src={selectedPost.imageUrl} alt="Post image" className="object-contain w-full h-full" fill sizes="100vw" unoptimized />
                 </div>
               )}
+              <div className="mt-6 border-t border-slate-100 pt-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-3">Comments</h3>
+                {comments.length === 0 ? (
+                  <p className="text-sm text-slate-500">No comments yet.</p>
+                ) : (
+                  <div className="space-y-3 mb-4">
+                    {comments.map((comment) => (
+                      <div key={comment.id} className="flex items-start gap-2">
+                        <div className="relative w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-semibold flex-shrink-0 overflow-hidden">
+                          {comment.author.avatar ? (
+                            <Image src={getOptimizedCloudinaryUrl(comment.author.avatar, 40)} alt={comment.author.name} className="object-cover w-full h-full" fill sizes="40px" unoptimized />
+                          ) : (
+                            comment.author.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-900">{comment.author.name}</p>
+                          <p className="text-sm text-slate-700">{comment.message}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {user && (
+                  <div className="flex gap-2">
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-royal-blue/50 focus:border-royal-blue transition-all duration-200 text-sm"
+                      rows={2}
+                    />
+                    <button
+                      type="button"
+                      onClick={submitComment}
+                      disabled={submittingComment || !commentText.trim()}
+                      className="px-4 py-2 bg-royal-blue text-white rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                    >
+                      {submittingComment ? 'Posting...' : 'Post'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </div>
+      )}
+      {lightboxImage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90" onClick={() => setLightboxImage(null)}>
+          <button type="button" onClick={() => setLightboxImage(null)} className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <Image src={lightboxImage} alt="Full size" width={2400} height={1600} className="max-w-full max-h-full object-contain" />
         </div>
       )}
     </div>
