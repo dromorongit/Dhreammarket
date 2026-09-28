@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const user = await getPrisma().user.findUnique({
       where: { id: payload.userId },
       include: { profile: true, store: true },
+      omit: { password: true, resetPasswordToken: true, resetPasswordExpires: true, registrationIpAddress: true },
     })
     perf.markPrismaEnd(prismaPerfStart)
 

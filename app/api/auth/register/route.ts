@@ -252,7 +252,8 @@ export async function POST(request: NextRequest) {
         message: 'Registration successful',
         isEmailVerified: true,
         user: { id: user.id, email: user.email, role: user.role },
-        isOnboarded
+        isOnboarded,
+        token,
       }, { status: 201 })
 
       response.cookies.set('token', token, {

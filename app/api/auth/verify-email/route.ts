@@ -221,7 +221,8 @@ export async function POST(request: NextRequest) {
         email: user.email,
         isEmailVerified: true,
         user: { id: user.id, email: user.email, role: user.role },
-        isOnboarded
+        isOnboarded,
+        token,
       }, { status: 200 })
 
       response.cookies.set('token', token, {

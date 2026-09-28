@@ -24,6 +24,24 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-invoke-path', pathname)
 
+  if (pathname.startsWith('/api/')) {
+    const cookieToken = request.cookies.get('token')?.value
+    if (!cookieToken) {
+      const authHeader = request.headers.get('authorization') || ''
+      const match = authHeader.match(/^Bearer\s+([A-Za-z0-9\-_.]+)$/i)
+      if (match) {
+        const existingCookie = request.headers.get('cookie') || ''
+        const newCookie = existingCookie ? `${existingCookie}; token=${match[1]}` : `token=${match[1]}`
+        requestHeaders.set('cookie', newCookie)
+      }
+    }
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+  }
+
   if (!matchedRoute) {
     return NextResponse.next({
       request: {
@@ -68,5 +86,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/dashboard/:path*', '/api/:path*'],
 }
