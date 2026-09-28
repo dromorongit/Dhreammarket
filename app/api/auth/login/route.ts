@@ -125,8 +125,6 @@ export async function POST(request: NextRequest) {
       path: '/',
     })
 
-    console.log('Response Set-Cookie header:', response.headers.get('set-cookie'))
-
     return response
   } catch (error) {
     console.error('Login error:', error)
