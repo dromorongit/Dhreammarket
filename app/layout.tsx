@@ -37,8 +37,8 @@ export const metadata: Metadata = {
     description: 'Shop from verified Ghanaian vendors and pay securely with Paystack. Dhream Market makes online buying and selling in Ghana safe, simple, and fair.',
   },
   icons: {
-    icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/icon.png', type: 'image/png', sizes: '512x512' }],
-    apple: '/apple-icon.png',
+    icon: [{ url: '/assets/images/dhreammarket.png', type: 'image/png', sizes: '512x512' }],
+    apple: '/assets/images/dhreammarket.png',
   },
 }
 

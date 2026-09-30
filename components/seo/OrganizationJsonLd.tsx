@@ -1,8 +1,7 @@
 import type { FC } from 'react'
-import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { SITE_URL } from '@/lib/site-config'
 
-const SITE_LOGO = getOptimizedCloudinaryUrl('https://res.cloudinary.com/doqfxvcy2/image/upload/v1789091543/dhream-market/images/leauw2looppm3eeiubws.png')
+const SITE_LOGO = `${SITE_URL}/assets/images/dhreammarket.png`
 
 export const OrganizationJsonLd: FC = () => {
   const schema = {

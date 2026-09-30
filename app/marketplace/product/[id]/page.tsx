@@ -7,7 +7,7 @@ import { ProductJsonLd } from '@/components/seo/ProductJsonLd'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 
-const DEFAULT_OG_IMAGE = getOptimizedCloudinaryUrl('https://res.cloudinary.com/doqfxvcy2/image/upload/v1789091543/dhream-market/images/leauw2looppm3eeiubws.png')
+const DEFAULT_OG_IMAGE = '/assets/images/dhreammarket.png'
 
 interface RelatedProduct {
   id: string

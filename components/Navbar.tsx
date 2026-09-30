@@ -11,7 +11,6 @@ import { SearchDropdown } from './SearchDropdown'
 import { useCart } from '@/lib/CartContext'
 import { FiHeart } from 'react-icons/fi'
 import { getBlurDataURL, NAV_LOGO_SIZES } from '@/lib/image-utils'
-import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 
 interface User {
   userId: string
@@ -261,7 +260,7 @@ export function Navbar() {
             <Link href="/" className="flex items-center gap-2 sm:gap-3 group" onClick={() => { closeMobileMenu(); closeMobileSearch(); }}>
               <div className="relative w-16 h-16 sm:w-20 sm:h-20">
                 <Image
-                  src={getOptimizedCloudinaryUrl('https://res.cloudinary.com/doqfxvcy2/image/upload/v1789091543/dhream-market/images/leauw2looppm3eeiubws.png')}
+                  src="/assets/images/dhreammarket.png"
                   alt="Dhream Market Logo"
                   fill
                   className="object-contain"
