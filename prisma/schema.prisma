@@ -2927,3 +2927,33 @@ enum AdvertisementCampaignAction {
   CANCELLED
   RENEWED
 }
+
+enum AppPlatform {
+  ANDROID
+  IOS
+  BOTH
+}
+
+enum WaitlistRole {
+  CUSTOMER
+  VENDOR
+}
+
+model AppWaitlistEntry {
+  id                 String       @id @default(cuid())
+  email              String       @unique @db.VarChar(254)
+  name               String?
+  phone              String?
+  platform           AppPlatform  @default(BOTH)
+  role               WaitlistRole @default(CUSTOMER)
+  source             String?      @db.VarChar(64)
+  referredByCode     String?      @db.VarChar(32)
+  confirmationSentAt DateTime?
+  notifiedAt         DateTime?
+  createdAt          DateTime     @default(now())
+
+  @@index([createdAt])
+  @@index([platform])
+  @@index([role])
+  @@map("app_waitlist_entries")
+}

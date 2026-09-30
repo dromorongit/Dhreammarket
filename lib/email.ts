@@ -261,6 +261,26 @@ export async function sendOrderConfirmationEmail(
   })
 }
 
+export async function sendWaitlistConfirmationEmail(recipientEmail: string) {
+  const subject = "You're on the Dhream Market app waitlist"
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">You're on the list!</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Thanks for joining the Dhream Market mobile app waitlist.</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">We'll let you know as soon as the app is ready on Android and iOS. You'll be among the first to know when it launches.</p>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">No further action is needed. We'll be in touch soon.</p>
+  `
+  const htmlContent = getEmailTemplate(content, 'Questions? Contact us at support@dhreamarket.com')
+
+  return sendEmail({
+    to: recipientEmail,
+    subject,
+    htmlContent,
+    textContent: "You're on the Dhream Market app waitlist. We'll let you know as soon as the app launches on Android and iOS.",
+    emailType: 'WAITLIST_CONFIRMATION',
+    retryPayload: { recipientEmail },
+  })
+}
+
 // Payment confirmation email - refined
 export async function sendPaymentConfirmationEmail(
   customerEmail: string,
