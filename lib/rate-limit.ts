@@ -29,7 +29,6 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'support-message': { windowMs: 5 * 60 * 1000, maxRequests: 30 },
   'admin-support-message': { windowMs: 5 * 60 * 1000, maxRequests: 100 },
   'contact-form': { windowMs: 60 * 60 * 1000, maxRequests: 5 },
-  waitlist: { windowMs: 60 * 60 * 1000, maxRequests: 5 },
   checkout: { windowMs: 60 * 60 * 1000, maxRequests: 10 },
   'payment-verification': { windowMs: 60 * 60 * 1000, maxRequests: 20 },
   search: { windowMs: 60 * 1000, maxRequests: 60 },

@@ -160,6 +160,20 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      {
+        source: '/app',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/app/:path*',
+        destination: '/',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 const { withSentryConfig } = require('@sentry/nextjs')

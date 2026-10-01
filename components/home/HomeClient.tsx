@@ -70,7 +70,6 @@ import StaticBannerRail from '@/components/StaticBannerRail'
 import StaticBannerImage from '@/components/StaticBannerImage'
 import CarShowcaseCarousel from '@/components/CarShowcaseCarousel'
 import { RegistrationCTA } from '@/components/RegistrationCTA'
-import AppWaitlistStrip from '@/components/AppWaitlistStrip'
 import HowItWorksSection from '@/components/HowItWorksSection'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
@@ -248,10 +247,7 @@ export default function HomeClient() {
        {/* ─── Registration Call-to-Action ─── */}
         <RegistrationCTA />
 
-        {/* ─── App Waitlist Strip ─── */}
-        <AppWaitlistStrip />
-
-        {/* ─── How It Works ─── */}
+         {/* ─── How It Works ─── */}
         <HowItWorksSection />
 
          {/* ─── Featured Collections ─── */}
