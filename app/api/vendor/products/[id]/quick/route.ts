@@ -54,14 +54,24 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
+    let body: Record<string, any>
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
     const allowedFields = ['price', 'salesPrice', 'stock']
     const unknownFields = Object.keys(body).filter((key) => !allowedFields.includes(key))
     if (unknownFields.length > 0) {
       return NextResponse.json({ error: `Unknown fields: ${unknownFields.join(', ')}` }, { status: 400 })
     }
 
-    const { price, salesPrice, stock } = body as Record<string, any>
+    const { price, salesPrice, stock } = body
 
     const hasVariants = product.variants && product.variants.length > 0
     if (hasVariants) {
@@ -78,33 +88,30 @@ export async function PATCH(
     const updateData: any = {}
 
     if (price !== undefined && price !== null) {
-      const priceNum = parseFloat(price)
-      if (isNaN(priceNum) || priceNum < 0) {
+      if (typeof price !== 'number' || !Number.isFinite(price) || price < 0) {
         return NextResponse.json({ error: 'Valid price is required' }, { status: 400 })
       }
-      updateData.price = priceNum
+      updateData.price = price
     }
 
     if (salesPrice !== undefined && salesPrice !== null) {
-      const salesPriceNum = parseFloat(salesPrice)
-      if (isNaN(salesPriceNum) || salesPriceNum < 0) {
+      if (typeof salesPrice !== 'number' || !Number.isFinite(salesPrice) || salesPrice < 0) {
         return NextResponse.json({ error: 'Invalid sales price' }, { status: 400 })
       }
-      updateData.salesPrice = salesPriceNum
+      updateData.salesPrice = salesPrice
     }
 
     if (stock !== undefined && stock !== null) {
-      const stockNum = parseInt(stock, 10)
-      if (isNaN(stockNum) || stockNum < 0) {
+      if (typeof stock !== 'number' || !Number.isInteger(stock) || stock < 0) {
         return NextResponse.json({ error: 'Valid stock quantity is required' }, { status: 400 })
       }
-      if (stockNum < product.reservedQuantity) {
+      if (stock < product.reservedQuantity) {
         return NextResponse.json(
           { error: `Stock cannot be below reserved quantity (${product.reservedQuantity})` },
           { status: 400 }
         )
       }
-      updateData.stock = stockNum
+      updateData.stock = stock
     }
 
     if (Object.keys(updateData).length === 0) {
