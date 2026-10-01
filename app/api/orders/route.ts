@@ -41,6 +41,12 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
+                images: {
+                  where: { mediaType: 'image' },
+                  orderBy: { createdAt: 'asc' },
+                  select: { url: true },
+                  take: 1,
+                },
               },
             },
           },

@@ -42,6 +42,12 @@ export async function GET(
                 id: true,
                 name: true,
                 storeId: true,
+                images: {
+                  where: { mediaType: 'image' },
+                  orderBy: { createdAt: 'asc' },
+                  select: { url: true },
+                  take: 1,
+                },
                 store: {
                   select: {
                     id: true,
