@@ -185,6 +185,20 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'This user has orders and cannot be deleted. Account anonymization is required instead.' }, { status: 409 })
     }
 
+    const storeOrderItemCount = await prisma.orderItem.count({
+      where: {
+        product: {
+          store: {
+            userId: id,
+          },
+        },
+      },
+    })
+
+    if (storeOrderItemCount > 0) {
+      return NextResponse.json({ error: 'This user owns a store whose products have order history and cannot be deleted.' }, { status: 409 })
+    }
+
     // Delete the user (this will cascade to profile, store, etc. due to onDelete: Cascade)
     try {
       await prisma.user.delete({

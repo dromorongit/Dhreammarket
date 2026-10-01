@@ -365,6 +365,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
     }
 
+    const orderedItemCount = await prisma.orderItem.count({
+      where: {
+        product: {
+          storeId: id,
+        },
+      },
+    })
+
+    if (orderedItemCount > 0) {
+      return NextResponse.json({ error: 'This store has products with customer order history and cannot be deleted.' }, { status: 409 })
+    }
+
     // Delete the store (this will cascade to products, etc. due to onDelete: Cascade)
     try {
       await prisma.store.delete({
