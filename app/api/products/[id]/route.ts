@@ -599,6 +599,17 @@ export async function DELETE(
       }, { status: 400 })
     }
 
+    // Check for existing order items
+    const orderItemCount = await getPrisma().orderItem.count({
+      where: { productId: id },
+    })
+    if (orderItemCount > 0) {
+      return NextResponse.json(
+        { error: 'This product has order history and cannot be deleted. Set stock to 0 to stop sales.' },
+        { status: 409 }
+      )
+    }
+
     // Create audit log before deletion
     await createAuditLog({
       userId: payload.userId,

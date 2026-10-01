@@ -276,6 +276,22 @@ export async function DELETE(request: NextRequest) {
 
     // If force delete, remove product associations via raw SQL since categoryId is non-nullable
     if (force && category._count.products > 0) {
+      const orderedProductCount = await prisma.product.count({
+        where: {
+          categoryId: id,
+          orderItems: { some: {} },
+        },
+      })
+      if (orderedProductCount > 0) {
+        return NextResponse.json(
+          {
+            error: 'Cannot force-delete category because it contains products with order history.',
+            orderedProductCount,
+          },
+          { status: 409 }
+        )
+      }
+
       await prisma.$executeRaw`
         DELETE FROM products WHERE categoryId = ${id}
       `

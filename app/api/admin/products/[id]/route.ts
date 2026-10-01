@@ -78,6 +78,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
+    // Check for existing order items
+    const orderItemCount = await prisma.orderItem.count({
+      where: { productId: id },
+    })
+    if (orderItemCount > 0) {
+      return NextResponse.json(
+        { error: 'This product has order history and cannot be deleted.' },
+        { status: 409 }
+      )
+    }
+
     // Create audit log before deletion
     await createAuditLog({
       userId: adminUser.userId,
