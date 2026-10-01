@@ -14,7 +14,7 @@ export interface VerifyTokenResult {
 
 export interface VerifyTokenFailure {
   authenticated: false
-  reason: 'session_expired' | 'invalid_token' | 'verification_error' | 'no_secret' | 'session_not_found'
+  reason: 'session_expired' | 'invalid_token' | 'verification_error' | 'no_secret' | 'session_not_found' | 'user_inactive'
 }
 
 export type VerifyTokenOutcome = VerifyTokenResult | VerifyTokenFailure
@@ -34,6 +34,7 @@ export async function verifyToken(token: string): Promise<VerifyTokenOutcome> {
       const prisma = getPrisma()
       const session = await prisma.session.findUnique({
         where: { sessionId },
+        include: { user: { select: { status: true } } },
       })
 
       if (!session) {
@@ -42,6 +43,10 @@ export async function verifyToken(token: string): Promise<VerifyTokenOutcome> {
 
       if (session.isExpired) {
         return { authenticated: false, reason: 'session_expired' }
+      }
+
+      if (session.user.status !== 'ACTIVE') {
+        return { authenticated: false, reason: 'user_inactive' }
       }
 
       return {
