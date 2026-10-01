@@ -149,6 +149,16 @@ const skip = (page - 1) * limit
      ])
 
     // Calculate vendor totals for each order
+    const pageOrderIds = orders.map((order) => order.id)
+    const otherVendorItems = await getPrisma().orderItem.findMany({
+      where: {
+        orderId: { in: pageOrderIds },
+        productId: { notIn: productIds },
+      },
+      select: { orderId: true },
+    })
+    const otherVendorOrderIds = new Set(otherVendorItems.map((item) => item.orderId))
+
     const ordersWithTotals = orders.map((order) => {
       const vendorTotal = order.items.reduce(
         (sum, item) => sum + (item.price * item.quantity),
@@ -157,6 +167,7 @@ const skip = (page - 1) * limit
       return {
         ...order,
         vendorTotal,
+        hasOtherVendorItems: otherVendorOrderIds.has(order.id),
       }
     })
 

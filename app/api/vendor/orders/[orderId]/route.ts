@@ -117,10 +117,18 @@ export async function GET(
       0
     )
 
+    const otherVendorItemCount = await getPrisma().orderItem.count({
+      where: {
+        orderId: orderId,
+        productId: { notIn: productIds },
+      },
+    })
+
     return NextResponse.json({
       order: {
         ...order,
         vendorTotal,
+        hasOtherVendorItems: otherVendorItemCount > 0,
         vendorAccepted: order.vendorAccepted,
         vendorRejected: order.vendorRejected,
         vendorRejectionReason: order.vendorRejectionReason,
