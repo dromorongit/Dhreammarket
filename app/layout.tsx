@@ -9,7 +9,7 @@ import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import { getServerSession } from '@/lib/auth'
-import BackToSchoolPromo from '@/components/BackToSchoolPromo'
+import WaitlistPromo from '@/components/WaitlistPromo'
 import { SupportChatWidget } from '@/components/support-ai/support-chat-widget'
 import { Suspense } from 'react'
 
@@ -66,7 +66,8 @@ export default async function RootLayout({
              <Footer />
               <CookieConsentBanner />
                <SupportChatWidget userRole={session?.role ?? null} />
-               <BackToSchoolPromo />
+                <WaitlistPromo />
+
            </QueryProvider>
         </CartProvider>
       </body>
