@@ -64,8 +64,8 @@ export default async function RootLayout({
               {children}
             </main>
              <Footer />
-              <CookieConsentBanner />
-               <SupportChatWidget userRole={session?.role ?? null} />
+               <CookieConsentBanner />
+                <SupportChatWidget userRole={session?.role ?? null} />
                 <WaitlistPromo />
 
            </QueryProvider>
