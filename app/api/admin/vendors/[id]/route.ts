@@ -366,9 +366,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete the store (this will cascade to products, etc. due to onDelete: Cascade)
-    await prisma.store.delete({
-      where: { id },
-    })
+    try {
+      await prisma.store.delete({
+        where: { id },
+      })
+    } catch (error: any) {
+      if (error?.code === 'P2003') {
+        return NextResponse.json({ error: 'Cannot delete: this record is linked to customer order history.' }, { status: 409 })
+      }
+      throw error
+    }
 
     // Also update the user role to CUSTOMER (or delete the user? We'll keep the user but change role)
     // This prevents orphaned users

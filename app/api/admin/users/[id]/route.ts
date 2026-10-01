@@ -176,10 +176,26 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Only SUPER_ADMIN can delete ADMIN accounts' }, { status: 403 })
     }
 
-    // Delete the user (this will cascade to profile, store, etc. due to onDelete: Cascade)
-    await prisma.user.delete({
-      where: { id },
+    // Count all orders for this user, including soft-deleted ones
+    const orderCount = await prisma.order.count({
+      where: { userId: id },
     })
+
+    if (orderCount > 0) {
+      return NextResponse.json({ error: 'This user has orders and cannot be deleted. Account anonymization is required instead.' }, { status: 409 })
+    }
+
+    // Delete the user (this will cascade to profile, store, etc. due to onDelete: Cascade)
+    try {
+      await prisma.user.delete({
+        where: { id },
+      })
+    } catch (error: any) {
+      if (error?.code === 'P2003') {
+        return NextResponse.json({ error: 'Cannot delete: this record is linked to customer order history.' }, { status: 409 })
+      }
+      throw error
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
