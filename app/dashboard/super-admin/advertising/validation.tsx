@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { verifyToken } from '@/lib/auth-middleware'
 import { validateSession } from '@/lib/auth-db'
 
 export default async function SuperAdminAdvertisingValidation({
@@ -13,19 +14,17 @@ export default async function SuperAdminAdvertisingValidation({
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/super-admin/advertising'))
   }
 
-  const { verifyTokenEdge } = await import('@/lib/auth-edge')
-  const payload = await verifyTokenEdge(token)
+  const outcome = await verifyToken(token)
 
-  if (!payload) {
+  if (!outcome.authenticated) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/super-admin/advertising'))
   }
 
-  if (payload.role !== 'SUPER_ADMIN') {
+  if (outcome.role !== 'SUPER_ADMIN') {
     redirect('/')
   }
 
-  const { validateSession } = await import('@/lib/auth-db')
-  const result = await validateSession(payload.sessionId)
+  const result = await validateSession(outcome.sessionId)
 
   if (!result.valid) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/super-admin/advertising'))

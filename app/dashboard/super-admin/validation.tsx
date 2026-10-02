@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { validateSession } from '@/lib/auth-db'
+import { verifyToken } from '@/lib/auth-middleware'
 
 export default async function SuperAdminDashboardValidation({
   children,
@@ -13,19 +14,17 @@ export default async function SuperAdminDashboardValidation({
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/super-admin'))
   }
 
-  const { verifyTokenEdge } = await import('@/lib/auth-edge')
-  const payload = await verifyTokenEdge(token)
+  const outcome = await verifyToken(token)
 
-  if (!payload) {
+  if (!outcome.authenticated) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/super-admin'))
   }
 
-  if (payload.role !== 'SUPER_ADMIN') {
+  if (outcome.role !== 'SUPER_ADMIN') {
     redirect('/')
   }
 
-    const { validateSession } = await import('@/lib/auth-db')
-  const result = await validateSession(payload.sessionId)
+  const result = await validateSession(outcome.sessionId)
 
   if (!result.valid) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/super-admin'))

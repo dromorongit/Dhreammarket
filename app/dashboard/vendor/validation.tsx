@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { validateSession, getUserStatus } from '@/lib/auth-db'
+import { verifyToken } from '@/lib/auth-middleware'
 
 export default async function VendorDashboardValidation({
   children,
@@ -13,22 +14,20 @@ export default async function VendorDashboardValidation({
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor'))
   }
 
-  const { verifyTokenEdge } = await import('@/lib/auth-edge')
-  const payload = await verifyTokenEdge(token)
+  const outcome = await verifyToken(token)
 
-  if (!payload) {
+  if (!outcome.authenticated) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor'))
   }
 
-  if (payload.role === 'VENDOR') {
-    const { validateSession, getUserStatus } = await import('@/lib/auth-db')
-    const result = await validateSession(payload.sessionId)
+  if (outcome.role === 'VENDOR') {
+    const result = await validateSession(outcome.sessionId)
 
     if (!result.valid) {
       redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor'))
     }
 
-    const userStatus = await getUserStatus(payload.userId, payload.role)
+    const userStatus = await getUserStatus(outcome.userId, outcome.role)
 
     if (!userStatus.isEmailVerified) {
       redirect('/verify-email')

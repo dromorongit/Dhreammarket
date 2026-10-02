@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { validateSession, getUserStatus } from '@/lib/auth-db'
+import { verifyToken } from '@/lib/auth-middleware'
 
 export default async function VendorServiceRequestDetailValidation({
   children,
@@ -13,22 +13,21 @@ export default async function VendorServiceRequestDetailValidation({
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/service-requests'))
   }
 
-  const { verifyTokenEdge } = await import('@/lib/auth-edge')
-  const payload = await verifyTokenEdge(token)
+  const outcome = await verifyToken(token)
 
-  if (!payload) {
+  if (!outcome.authenticated) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/service-requests'))
   }
 
-  if (payload.role === 'VENDOR') {
+  if (outcome.role === 'VENDOR') {
     const { validateSession, getUserStatus } = await import('@/lib/auth-db')
-    const result = await validateSession(payload.sessionId)
+    const result = await validateSession(outcome.sessionId)
 
     if (!result.valid) {
       redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/service-requests'))
     }
 
-    const userStatus = await getUserStatus(payload.userId, payload.role)
+    const userStatus = await getUserStatus(outcome.userId, outcome.role)
 
     if (!userStatus.isEmailVerified) {
       redirect('/verify-email')

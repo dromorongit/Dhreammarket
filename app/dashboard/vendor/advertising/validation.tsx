@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { verifyToken } from '@/lib/auth-middleware'
 import { validateSession } from '@/lib/auth-db'
 import { isVendorOnboarded } from '@/lib/onboarding'
 
@@ -14,23 +15,22 @@ export default async function VendorAdvertisingValidation({
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/advertising'))
   }
 
-  const { verifyTokenEdge } = await import('@/lib/auth-edge')
-  const payload = await verifyTokenEdge(token)
+  const outcome = await verifyToken(token)
 
-  if (!payload) {
+  if (!outcome.authenticated) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/advertising'))
   }
 
-  if (payload.role !== 'VENDOR') {
+  if (outcome.role !== 'VENDOR') {
     redirect('/')
   }
 
-  const result = await validateSession(payload.sessionId)
+  const result = await validateSession(outcome.sessionId)
   if (!result.valid) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/vendor/advertising'))
   }
 
-  const onboarded = await isVendorOnboarded(payload.userId)
+  const onboarded = await isVendorOnboarded(outcome.userId)
   if (!onboarded) {
     redirect('/dashboard/vendor/store')
   }

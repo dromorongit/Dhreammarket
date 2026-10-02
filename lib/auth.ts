@@ -2,10 +2,11 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { randomBytes } from 'crypto'
+import { getPrisma } from './prisma'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
-export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'VENDOR' | 'CUSTOMER'
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'INFLUENCER' | 'VENDOR' | 'CUSTOMER'
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12)
@@ -55,7 +56,33 @@ export function getUserFromToken(): { userId: string; role: Role; sessionId: str
 export async function getServerSession(): Promise<{ userId: string; role: Role; sessionId: string } | null> {
   const token = getTokenFromCookies()
   if (!token) return null
-  return verifyToken(token)
+
+  const decoded = verifyToken(token)
+  if (!decoded) return null
+
+  try {
+    const prisma = getPrisma()
+    const session = await prisma.session.findUnique({
+      where: { sessionId: decoded.sessionId },
+      include: { user: { select: { status: true, role: true } } },
+    })
+
+    if (!session || session.isExpired) {
+      return null
+    }
+
+    if (!session.user || session.user.status !== 'ACTIVE') {
+      return null
+    }
+
+    return {
+      userId: decoded.userId,
+      role: session.user.role as Role,
+      sessionId: decoded.sessionId,
+    }
+  } catch {
+    return null
+  }
 }
 
 // Generate a selector (public identifier) for password reset tokens

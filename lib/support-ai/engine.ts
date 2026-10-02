@@ -29,7 +29,7 @@ export class SupportEngine {
       }
     }
 
-    let userRole: 'CUSTOMER' | 'VENDOR' | 'ADMIN' | 'SUPER_ADMIN' | 'GUEST' = 'CUSTOMER'
+    let userRole: 'CUSTOMER' | 'VENDOR' | 'ADMIN' | 'SUPER_ADMIN' | 'GUEST' | 'INFLUENCER' = 'CUSTOMER'
     let userId: string | undefined
 
     if (token) {

@@ -7,6 +7,7 @@ const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password',
 const protectedRoutes: Record<string, string[]> = {
   '/dashboard/admin': ['ADMIN', 'SUPER_ADMIN'],
   '/dashboard/super-admin': ['SUPER_ADMIN'],
+  '/dashboard/influencer': ['INFLUENCER', 'SUPER_ADMIN'],
   '/dashboard/vendor': ['VENDOR', 'ADMIN', 'SUPER_ADMIN'],
   '/dashboard/customer': ['CUSTOMER', 'VENDOR', 'ADMIN', 'SUPER_ADMIN'],
 }

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { validateSession, getUserStatus } from '@/lib/auth-db'
+import { verifyToken } from '@/lib/auth-middleware'
 
 export default async function AdminDashboardValidation({
   children,
@@ -13,26 +14,24 @@ export default async function AdminDashboardValidation({
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/admin'))
   }
 
-  const { verifyTokenEdge } = await import('@/lib/auth-edge')
-  const payload = await verifyTokenEdge(token)
+  const outcome = await verifyToken(token)
 
-  if (!payload) {
+  if (!outcome.authenticated) {
     redirect('/login?redirect=' + encodeURIComponent('/dashboard/admin'))
   }
 
-  if (!['ADMIN', 'SUPER_ADMIN'].includes(payload.role)) {
+  if (!['ADMIN', 'SUPER_ADMIN'].includes(outcome.role)) {
     redirect('/')
   }
 
-  if (payload.role === 'ADMIN') {
-    const { validateSession, getUserStatus } = await import('@/lib/auth-db')
-    const result = await validateSession(payload.sessionId)
+  if (outcome.role === 'ADMIN') {
+    const result = await validateSession(outcome.sessionId)
 
     if (!result.valid) {
       redirect('/login?redirect=' + encodeURIComponent('/dashboard/admin'))
     }
 
-    const userStatus = await getUserStatus(payload.userId, payload.role)
+    const userStatus = await getUserStatus(outcome.userId, outcome.role)
 
     if (!userStatus.isEmailVerified) {
       redirect('/verify-email')

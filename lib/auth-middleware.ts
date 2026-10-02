@@ -3,7 +3,7 @@ import { getPrisma } from './prisma'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
-export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'VENDOR' | 'CUSTOMER'
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'INFLUENCER' | 'VENDOR' | 'CUSTOMER'
 
 export interface VerifyTokenResult {
   authenticated: true
@@ -34,7 +34,7 @@ export async function verifyToken(token: string): Promise<VerifyTokenOutcome> {
       const prisma = getPrisma()
       const session = await prisma.session.findUnique({
         where: { sessionId },
-        include: { user: { select: { status: true } } },
+        include: { user: { select: { status: true, role: true } } },
       })
 
       if (!session) {
@@ -45,14 +45,14 @@ export async function verifyToken(token: string): Promise<VerifyTokenOutcome> {
         return { authenticated: false, reason: 'session_expired' }
       }
 
-      if (session.user.status !== 'ACTIVE') {
+      if (!session.user || session.user.status !== 'ACTIVE') {
         return { authenticated: false, reason: 'user_inactive' }
       }
 
       return {
         authenticated: true,
         userId: payload.userId as string,
-        role: payload.role as Role,
+        role: session.user.role as Role,
         sessionId,
       }
     }
