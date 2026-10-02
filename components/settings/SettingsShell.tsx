@@ -44,6 +44,7 @@ const roleLabels: Record<string, string> = {
   VENDOR: 'Vendor',
   ADMIN: 'Admin',
   SUPER_ADMIN: 'Super Admin',
+  INFLUENCER: 'Influencer',
 }
 
 export default function SettingsShell({ children, role, dashboardHref }: SettingsShellProps) {

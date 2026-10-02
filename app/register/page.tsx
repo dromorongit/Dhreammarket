@@ -138,16 +138,18 @@ if (response.ok) {
              if (data.user) {
              const role = data.user.role
              const isOnboarded = data.isOnboarded
-             let dashboardPath: string
-             if (role === 'SUPER_ADMIN') {
-               dashboardPath = '/dashboard/super-admin'
-             } else if (role === 'ADMIN') {
-               dashboardPath = '/dashboard/admin'
-             } else if (role === 'VENDOR') {
-               dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
-             } else {
-               dashboardPath = '/dashboard/customer'
-             }
+              let dashboardPath: string
+              if (role === 'SUPER_ADMIN') {
+                dashboardPath = '/dashboard/super-admin'
+              } else if (role === 'ADMIN') {
+                dashboardPath = '/dashboard/admin'
+              } else if (role === 'INFLUENCER') {
+                dashboardPath = '/dashboard/influencer'
+              } else if (role === 'VENDOR') {
+                dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+              } else {
+                dashboardPath = '/dashboard/customer'
+              }
              let targetUrl: string
              if (role === 'VENDOR' && !isOnboarded) {
                targetUrl = '/dashboard/vendor/store'

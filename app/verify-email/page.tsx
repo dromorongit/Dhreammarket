@@ -84,6 +84,8 @@ function VerifyEmailContent() {
             dashboardPath = '/dashboard/super-admin'
           } else if (role === 'ADMIN') {
             dashboardPath = '/dashboard/admin'
+          } else if (role === 'INFLUENCER') {
+            dashboardPath = '/dashboard/influencer'
           } else if (role === 'VENDOR') {
             // Vendors go to vendor dashboard if onboarded, otherwise to store setup
             dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'

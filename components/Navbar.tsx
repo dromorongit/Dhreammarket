@@ -323,10 +323,10 @@ export function Navbar() {
               <span>Support</span>
               <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
-            {user && (
-              <>
-                <Link
-                  href="/cart"
+             {user && user.role !== 'INFLUENCER' && (
+               <>
+                 <Link
+                   href="/cart"
                   className="relative px-3 py-2 text-sm font-medium text-slate-600 hover:text-deep-navy transition-colors duration-200 group"
                 >
                   <span className="flex items-center gap-1.5">
@@ -478,6 +478,11 @@ export function Navbar() {
                         Admin Dashboard
                       </Link>
                     )}
+                    {user.role === 'INFLUENCER' && (
+                      <Link href="/dashboard/influencer" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                        My Dashboard
+                      </Link>
+                    )}
                     {user.role === 'VENDOR' && (
                       <Link href="/dashboard/vendor" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         Vendor Dashboard
@@ -596,10 +601,10 @@ export function Navbar() {
            >
              Support
            </button>
-           {user && (
-              <>
-                <button
-                  onClick={() => navigateAndCloseMobileMenu('/cart')}
+            {user && user.role !== 'INFLUENCER' && (
+               <>
+                 <button
+                   onClick={() => navigateAndCloseMobileMenu('/cart')}
                   className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                 >
                   <span className="flex items-center gap-2">
@@ -660,15 +665,23 @@ export function Navbar() {
                    Homepage Sections
                  </button>
                )}
-               {user.role === 'ADMIN' && (
-                 <button
-                   onClick={() => navigateAndCloseMobileMenu('/dashboard/admin')}
-                   className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
-                 >
-                   Admin Dashboard
-                 </button>
-               )}
-               {user.role === 'VENDOR' && (
+                {user.role === 'ADMIN' && (
+                  <button
+                    onClick={() => navigateAndCloseMobileMenu('/dashboard/admin')}
+                    className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    Admin Dashboard
+                  </button>
+                )}
+                {user.role === 'INFLUENCER' && (
+                  <button
+                    onClick={() => navigateAndCloseMobileMenu('/dashboard/influencer')}
+                    className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    My Dashboard
+                  </button>
+                )}
+                {user.role === 'VENDOR' && (
                  <button
                    onClick={() => navigateAndCloseMobileMenu('/dashboard/vendor')}
                    className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
