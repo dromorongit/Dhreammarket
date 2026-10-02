@@ -49,3 +49,6 @@ prod_cookies*.txt
 dev.db
 
 /generated/prisma
+
+# backups
+/backups
