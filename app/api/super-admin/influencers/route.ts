@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/adminAuth'
+import { hashPassword } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     const prisma = getPrisma()
     const body = await request.json()
-    const { name, email, phone, incentivePerVendor, incentivePerCustomer } = body
+    const { name, email, phone, incentivePerVendor, incentivePerCustomer, createLogin, loginPassword } = body
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Influencer name is required' }, { status: 400 })
@@ -132,6 +133,10 @@ export async function POST(request: NextRequest) {
       typeof incentivePerVendor === 'number' ? incentivePerVendor : null
     const trimmedIncentivePerCustomer =
       typeof incentivePerCustomer === 'number' ? incentivePerCustomer : null
+
+    if (createLogin && (!loginPassword || typeof loginPassword !== 'string' || loginPassword.length < 6)) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters when creating a login' }, { status: 400 })
+    }
 
     const baseCode = trimmedName.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
     if (!baseCode) {
@@ -198,7 +203,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ influencer }, { status: 201 })
+    let user = null
+    if (createLogin && trimmedEmail) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: trimmedEmail },
+      })
+      if (existingUser) {
+        return NextResponse.json(
+          { error: 'A user with this email already exists' },
+          { status: 409 }
+        )
+      }
+
+      const hashedPassword = await hashPassword(loginPassword as string)
+      user = await prisma.user.create({
+        data: {
+          email: trimmedEmail,
+          password: hashedPassword,
+          role: 'INFLUENCER',
+          isEmailVerified: true,
+          emailVerifiedAt: new Date(),
+        },
+      })
+
+      await prisma.influencer.update({
+        where: { id: influencer.id },
+        data: { userId: user.id },
+      })
+    }
+
+    return NextResponse.json({ influencer, user }, { status: 201 })
   } catch (error: unknown) {
     console.error('Super Admin create influencer error:', error)
     const prismaError = error as { code?: string }
@@ -211,3 +245,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create influencer' }, { status: 500 })
   }
 }
+

@@ -48,11 +48,11 @@ export async function GET(
       codeUsed: referral.codeUsed,
       registrationIpAddress: referral.registrationIpAddress,
       qualified: referral.qualified,
-      qualifiedAt: referral.qualifiedAt,
+      qualifiedAt: referral.qualifiedAt ? referral.qualifiedAt.toISOString() : null,
       incentiveAmount: referral.incentiveAmount,
       incentivePaid: referral.incentivePaid,
-      incentivePaidAt: referral.incentivePaidAt,
-      createdAt: referral.createdAt,
+      incentivePaidAt: referral.incentivePaidAt ? referral.incentivePaidAt.toISOString() : null,
+      createdAt: referral.createdAt.toISOString(),
     }))
 
     return NextResponse.json({ referrals: formatted })

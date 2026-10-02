@@ -35,8 +35,13 @@ export default function InfluencersPage() {
     phone: '',
     incentivePerVendor: '',
     incentivePerCustomer: '',
+    createLogin: false,
+    loginPassword: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [linkingInfluencerId, setLinkingInfluencerId] = useState<string | null>(null)
+  const [linkEmail, setLinkEmail] = useState('')
+  const [linking, setLinking] = useState(false)
 
   useEffect(() => {
     fetchInfluencers()
@@ -60,20 +65,27 @@ export default function InfluencersPage() {
     e.preventDefault()
     setSubmitting(true)
     try {
+      const body: Record<string, unknown> = {
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        incentivePerVendor: formData.incentivePerVendor
+          ? parseFloat(formData.incentivePerVendor)
+          : null,
+        incentivePerCustomer: formData.incentivePerCustomer
+          ? parseFloat(formData.incentivePerCustomer)
+          : null,
+      }
+
+      if (formData.createLogin && formData.loginPassword) {
+        body.createLogin = true
+        body.loginPassword = formData.loginPassword
+      }
+
       const response = await fetch('/api/super-admin/influencers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email || null,
-          phone: formData.phone || null,
-          incentivePerVendor: formData.incentivePerVendor
-            ? parseFloat(formData.incentivePerVendor)
-            : null,
-          incentivePerCustomer: formData.incentivePerCustomer
-            ? parseFloat(formData.incentivePerCustomer)
-            : null,
-        }),
+        body: JSON.stringify(body),
       })
       if (response.ok) {
         fetchInfluencers()
@@ -101,9 +113,31 @@ export default function InfluencersPage() {
     }
   }
 
+  const handleLinkUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!linkingInfluencerId || !linkEmail) return
+    setLinking(true)
+    try {
+      const response = await fetch(`/api/super-admin/influencers/${linkingInfluencerId}/link-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: linkEmail }),
+      })
+      if (response.ok) {
+        setLinkingInfluencerId(null)
+        setLinkEmail('')
+        fetchInfluencers()
+      }
+    } catch (error) {
+      console.error('Error linking user:', error)
+    } finally {
+      setLinking(false)
+    }
+  }
+
   const resetForm = () => {
     setShowForm(false)
-    setFormData({ name: '', email: '', phone: '', incentivePerVendor: '', incentivePerCustomer: '' })
+    setFormData({ name: '', email: '', phone: '', incentivePerVendor: '', incentivePerCustomer: '', createLogin: false, loginPassword: '' })
   }
 
   const copyToClipboard = (text: string) => {
@@ -237,6 +271,34 @@ export default function InfluencersPage() {
                       className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue transition-all text-sm min-h-[44px]"
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="createLogin"
+                      type="checkbox"
+                      checked={formData.createLogin}
+                      onChange={(e) => setFormData({ ...formData, createLogin: e.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-royal-blue focus:ring-royal-blue"
+                    />
+                    <label htmlFor="createLogin" className="text-sm font-medium text-slate-700">
+                      Create login account for this influencer
+                    </label>
+                  </div>
+                  {formData.createLogin && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        Login Password <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.loginPassword}
+                        onChange={(e) => setFormData({ ...formData, loginPassword: e.target.value })}
+                        placeholder="Min 6 characters"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue transition-all text-sm min-h-[44px]"
+                        required={formData.createLogin}
+                        minLength={6}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-3 pt-2">
                   <Button type="submit" className="min-h-[44px]" disabled={submitting}>
@@ -303,6 +365,14 @@ export default function InfluencersPage() {
                         </Button>
                       </Link>
                       <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setLinkingInfluencerId(influencer.id)}
+                        className="min-h-[44px]"
+                      >
+                        Link User
+                      </Button>
+                      <Button
                         variant={influencer.active ? 'danger' : 'success'}
                         size="sm"
                         onClick={() => handleToggleActive(influencer)}
@@ -312,6 +382,29 @@ export default function InfluencersPage() {
                       </Button>
                     </div>
                   </div>
+                  {linkingInfluencerId === influencer.id && (
+                    <form onSubmit={handleLinkUser} className="mt-4 flex gap-2 items-end">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          User Email to Link
+                        </label>
+                        <input
+                          type="email"
+                          value={linkEmail}
+                          onChange={(e) => setLinkEmail(e.target.value)}
+                          placeholder="user@example.com"
+                          className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-royal-blue/20 focus:border-royal-blue transition-all text-sm min-h-[44px]"
+                          required
+                        />
+                      </div>
+                      <Button type="submit" size="sm" disabled={linking} className="min-h-[44px]">
+                        {linking ? 'Linking...' : 'Link'}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => { setLinkingInfluencerId(null); setLinkEmail('') }} className="min-h-[44px]">
+                        Cancel
+                      </Button>
+                    </form>
+                  )}
                 </div>
               </Card>
             ))
