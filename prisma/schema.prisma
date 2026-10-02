@@ -60,6 +60,7 @@ model User {
   vendorRewardCampaigns    VendorRewardCampaign[]
   vendorReferral           VendorReferral?                @relation("UserVendorReferral")
   influencerReferrals          InfluencerReferral[]
+  influencer          Influencer?
   vendorReviews                VendorReview[]
   vendorSettings               VendorSettings?
   verificationApplications     VendorVerificationApplication?
@@ -2406,6 +2407,8 @@ model Influencer {
   incentivePerCustomer Float?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
+  userId             String?          @unique
+  user               User?            @relation(fields: [userId], references: [id])
   referrals          InfluencerReferral[]
   clicks             InfluencerClick[]
 
@@ -2476,6 +2479,7 @@ enum PayoutMethodType {
 enum Role {
   SUPER_ADMIN
   ADMIN
+  INFLUENCER
   VENDOR
   CUSTOMER
 }
