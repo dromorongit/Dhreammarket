@@ -35,6 +35,8 @@ interface CartItem {
     id: string
     name: string
     price: number
+    dealsPrice?: number | null
+    salesPrice?: number | null
     stock: number
     availabilityType?: string
     expectedArrivalDate?: string | null
@@ -49,6 +51,7 @@ interface CartItem {
     }>
   }
   productVariant?: ProductVariant | null
+  effectivePrice?: number
 }
 
 interface Cart {

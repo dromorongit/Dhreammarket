@@ -18,6 +18,7 @@ import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { getBlurDataURL, SEARCH_THUMB_SIZES } from '@/lib/image-utils'
+import { getUnitPrice } from '@/lib/pricing'
 
 interface CartItem {
   id: string
@@ -26,6 +27,8 @@ interface CartItem {
     id: string
     name: string
     price: number
+    dealsPrice?: number | null
+    salesPrice?: number | null
     stock: number
     availabilityType?: string
     expectedArrivalDate?: string | null
@@ -45,10 +48,12 @@ interface CartItem {
     size?: string | null
     age?: string | null
     stock?: number
+    price?: number | null
   } | null
   color?: string | null
   size?: string | null
   age?: string | null
+  effectivePrice?: number
 }
 
 
@@ -110,7 +115,18 @@ function OrderSummaryDesktop({ items, subtotal }: {
                   Qty: {item.quantity}
                 </span>
               </div>
-              <p className="text-sm font-semibold text-slate-900">{formatPrice(item.product.price * item.quantity)}</p>
+              {(() => {
+                const effective = (item as any).effectivePrice ?? getUnitPrice(item.product, item.productVariant)
+                const lineTotal = effective * item.quantity
+                return (
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-900">{formatPrice(lineTotal)}</p>
+                    {effective < item.product.price && (
+                      <p className="text-[10px] text-slate-400 line-through">{formatPrice(item.product.price * item.quantity)}</p>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           ))}
         </div>
@@ -182,7 +198,18 @@ function MobileOrderSummary({
                     Qty: {item.quantity}
                   </span>
                 </div>
-                <p className="text-sm font-semibold text-slate-900">{formatPrice(item.product.price * item.quantity)}</p>
+                {(() => {
+                  const effective = (item as any).effectivePrice ?? getUnitPrice(item.product, item.productVariant)
+                  const lineTotal = effective * item.quantity
+                  return (
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-900">{formatPrice(lineTotal)}</p>
+                      {effective < item.product.price && (
+                        <p className="text-[10px] text-slate-400 line-through">{formatPrice(item.product.price * item.quantity)}</p>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             ))}
           </div>

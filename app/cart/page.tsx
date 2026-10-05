@@ -14,6 +14,7 @@ import NeedHelpButton from '@/components/NeedHelpButton'
 import { useCart } from '@/lib/CartContext'
 import { getBlurDataURL, SEARCH_THUMB_SIZES } from '@/lib/image-utils'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
+import { getUnitPrice } from '@/lib/pricing'
 
 export default function Cart() {
    const router = useRouter()
@@ -182,9 +183,21 @@ export default function Cart() {
                   <p className="text-xs text-gray-500 mt-0.5">
                     Store: Default Store
                   </p>
-                  <p className="text-base font-bold text-blue-700 mt-1">
-                    {formatPrice(item.product.price)}
-                  </p>
+                  {(() => {
+                    const effective = item.effectivePrice ?? getUnitPrice(item.product, item.productVariant)
+                    return (
+                      <div className="mt-1">
+                        <p className="text-base font-bold text-blue-700">
+                          {formatPrice(effective)}
+                        </p>
+                        {effective < item.product.price && (
+                          <p className="text-xs text-gray-400 line-through">
+                            {formatPrice(item.product.price)}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 
