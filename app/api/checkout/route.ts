@@ -10,6 +10,7 @@ import { getCommissionRate } from '@/lib/revenue'
 import { SITE_URL, PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
+import { getUnitPrice } from '@/lib/pricing'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -88,8 +89,12 @@ export async function POST(request: NextRequest) {
     const { customerInfo, shippingInfo, idempotencyKey, useWalletBalance, walletAmount } = await request.json()
 
     // Calculate subtotal
-    const subtotal = cart.items.reduce(
-      (sum: number, item: any) => sum + ((item.productVariant?.price ?? item.product.price) * item.quantity),
+    const itemsWithPrice = cart.items.map((item: any) => ({
+      ...item,
+      effectivePrice: getUnitPrice(item.product, item.productVariant),
+    }))
+    const subtotal = itemsWithPrice.reduce(
+      (sum: number, item: any) => sum + (item.effectivePrice * item.quantity),
       0
     )
 
@@ -174,7 +179,7 @@ export async function POST(request: NextRequest) {
 
     // Create vendor breakdown for marketplace settlement
     const vendorBreakdown: Record<string, { items: any[], subtotal: number, earnings: number }> = {}
-    for (const item of cart.items) {
+    for (const item of itemsWithPrice) {
       const storeId = item.product.storeId
       if (!vendorBreakdown[storeId]) {
         vendorBreakdown[storeId] = { items: [], subtotal: 0, earnings: 0 }
@@ -182,12 +187,12 @@ export async function POST(request: NextRequest) {
       vendorBreakdown[storeId].items.push({
         productId: item.productId,
         quantity: item.quantity,
-        price: item.productVariant?.price ?? item.product.price,
+        price: item.effectivePrice,
         color: item.color,
         size: item.size,
         age: item.age,
       })
-      vendorBreakdown[storeId].subtotal += (item.productVariant?.price ?? item.product.price) * item.quantity
+      vendorBreakdown[storeId].subtotal += item.effectivePrice * item.quantity
     }
 
     // Calculate vendor earnings using the configured platform commission rate
@@ -267,14 +272,14 @@ export async function POST(request: NextRequest) {
         })
 
 // Create order items with variant information and snapshots
-         for (const item of cart.items) {
+         for (const item of itemsWithPrice) {
            await prisma.orderItem.create({
              data: {
                orderId: order.id,
                productId: item.productId,
                productVariantId: item.productVariantId || null,
                quantity: item.quantity,
-                price: item.productVariant?.price ?? item.product.price,
+               price: item.effectivePrice,
                color: item.color || null,
                size: item.size || null,
                age: item.age || null,

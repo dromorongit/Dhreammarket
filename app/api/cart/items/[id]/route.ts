@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { getUnitPrice } from '@/lib/pricing'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -66,6 +67,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 id: true,
                 name: true,
                 price: true,
+                dealsPrice: true,
+                salesPrice: true,
                 stock: true,
                 reservedQuantity: true,
                 availabilityType: true,
@@ -83,12 +86,19 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       },
     })
 
-    const total = updatedCart?.items.reduce((sum: number, item: any) => sum + (((item?.productVariant?.price ?? item?.product?.price) ?? 0) * (item?.quantity ?? 0)), 0) || 0
+    const patchedItems = (updatedCart?.items || []).map((item: any) => ({
+      ...item,
+      effectivePrice: getUnitPrice(item.product, item.productVariant),
+    }))
+    const total = patchedItems.reduce(
+      (sum: number, item: any) => sum + (item.effectivePrice * (item.quantity ?? 0)),
+      0
+    )
 
     return NextResponse.json({
       cart: {
         id: updatedCart?.id,
-        items: updatedCart?.items || [],
+        items: patchedItems,
         total,
       }
     })
@@ -145,6 +155,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
                 id: true,
                 name: true,
                 price: true,
+                dealsPrice: true,
+                salesPrice: true,
                 stock: true,
                 reservedQuantity: true,
                 availabilityType: true,
@@ -162,12 +174,19 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       },
     })
 
-    const total = updatedCart?.items.reduce((sum: number, item: any) => sum + (((item?.productVariant?.price ?? item?.product?.price) ?? 0) * (item?.quantity ?? 0)), 0) || 0
+    const deletedItems = (updatedCart?.items || []).map((item: any) => ({
+      ...item,
+      effectivePrice: getUnitPrice(item.product, item.productVariant),
+    }))
+    const total = deletedItems.reduce(
+      (sum: number, item: any) => sum + (item.effectivePrice * (item.quantity ?? 0)),
+      0
+    )
 
     return NextResponse.json({
       cart: {
         id: updatedCart?.id,
-        items: updatedCart?.items || [],
+        items: deletedItems,
         total,
       }
     })

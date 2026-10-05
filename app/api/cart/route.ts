@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { PerformanceLogger } from '@/lib/performance'
+import { getUnitPrice } from '@/lib/pricing'
 
 export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
                   id: true,
                   name: true,
                   price: true,
+                  dealsPrice: true,
+                  salesPrice: true,
                   stock: true,
                   reservedQuantity: true,
                   availabilityType: true,
@@ -67,9 +70,12 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Calculate total with safe access
-    const total = (cart.items || []).reduce(
-      (sum: number, item: any) => sum + (((item?.productVariant?.price ?? item?.product?.price) ?? 0) * (item?.quantity ?? 0)),
+    const itemsWithEffectivePrice = (cart.items || []).map((item: any) => ({
+      ...item,
+      effectivePrice: getUnitPrice(item.product, item.productVariant),
+    }))
+    const total = itemsWithEffectivePrice.reduce(
+      (sum: number, item: any) => sum + (item.effectivePrice * (item.quantity ?? 0)),
       0
     )
 
@@ -77,7 +83,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       cart: {
         id: cart.id,
-        items: cart.items || [],
+        items: itemsWithEffectivePrice,
         total,
       }
     })
@@ -265,6 +271,8 @@ export async function POST(request: NextRequest) {
                   id: true,
                   name: true,
                   price: true,
+                  dealsPrice: true,
+                  salesPrice: true,
                   stock: true,
                   reservedQuantity: true,
                   availabilityType: true,
@@ -286,8 +294,12 @@ export async function POST(request: NextRequest) {
     }
     perf.markPrismaEnd(prismaPerfStart)
 
-    const total = (updatedCart?.items || []).reduce(
-      (sum: number, item: any) => sum + (((item?.productVariant?.price ?? item?.product?.price) ?? 0) * (item?.quantity ?? 0)),
+    const itemsWithEffectivePrice = (updatedCart?.items || []).map((item: any) => ({
+      ...item,
+      effectivePrice: getUnitPrice(item.product, item.productVariant),
+    }))
+    const total = itemsWithEffectivePrice.reduce(
+      (sum: number, item: any) => sum + (item.effectivePrice * (item.quantity ?? 0)),
       0
     )
 
@@ -295,7 +307,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       cart: {
         id: updatedCart?.id,
-        items: updatedCart?.items || [],
+        items: itemsWithEffectivePrice || [],
         total,
       }
     })
