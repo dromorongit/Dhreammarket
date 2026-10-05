@@ -96,8 +96,10 @@ export async function GET(request: NextRequest) {
           availabilityType: true,
           isReturnable: true,
           description: true,
+          lowStockThreshold: true,
           category: { select: { id: true, name: true, slug: true } },
           images: { take: 1, select: { id: true, url: true, alt: true } },
+          _count: { select: { variants: true } },
         },
       })
 
@@ -107,6 +109,7 @@ export async function GET(request: NextRequest) {
       const productsWithStock = vendorProducts.map((p) => ({
         ...p,
         availableStock: p.stock - (p.reservedQuantity || 0),
+        variantCount: p._count.variants,
       }))
 
       const response = NextResponse.json({
