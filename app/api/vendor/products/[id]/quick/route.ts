@@ -95,8 +95,15 @@ export async function PATCH(
     }
 
     if (salesPrice !== undefined && salesPrice !== null) {
-      if (typeof salesPrice !== 'number' || !Number.isFinite(salesPrice) || salesPrice < 0) {
-        return NextResponse.json({ error: 'Invalid sales price' }, { status: 400 })
+      if (typeof salesPrice !== 'number' || !Number.isFinite(salesPrice) || salesPrice <= 0) {
+        return NextResponse.json({ error: 'Sales price must be greater than 0' }, { status: 400 })
+      }
+      const basePrice = price ?? product.price
+      if (salesPrice >= basePrice) {
+        return NextResponse.json(
+          { error: `Sales price must be less than the product price (${basePrice})` },
+          { status: 400 }
+        )
       }
       updateData.salesPrice = salesPrice
     }
