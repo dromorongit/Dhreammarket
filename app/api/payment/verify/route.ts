@@ -7,6 +7,7 @@ import { canSendCustomerEmail, shouldSendNotification } from '@/lib/notification
 import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { rateLimit } from '@/lib/rate-limit'
+import { createAuditLog } from '@/lib/audit-log'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -76,6 +77,31 @@ export async function POST(request: NextRequest) {
 
     // Check both Paystack status and our payment status
     const paymentStatus = paystackResponse.data.status
+
+    const paystackAmountGhs = Math.round((paystackResponse.data.amount / 100) * 100) / 100
+    if (Math.abs(paystackAmountGhs - payment.amount) > 0.01) {
+      console.error('[Payment Verify API] Amount mismatch:', {
+        reference,
+        paystackAmountGhs,
+        storedAmount: payment.amount,
+        difference: Math.round((paystackAmountGhs - payment.amount) * 100) / 100,
+      })
+      createAuditLog({
+        userId: payment.userId,
+        userRole: 'SYSTEM',
+        action: 'PAYMENT_FAILED',
+        entityType: 'ORDER',
+        entityId: payment.orderId,
+        afterData: {
+          paymentId: payment.id,
+          reference,
+          paystackAmountGhs,
+          storedAmount: payment.amount,
+          difference: Math.round((paystackAmountGhs - payment.amount) * 100) / 100,
+          AMOUNT_MISMATCH: true,
+        },
+      }).catch(() => {})
+    }
     
     // CRITICAL: Early return if payment already verified (idempotency protection)
     // This prevents double stock deduction, double order processing, and double notifications
@@ -186,7 +212,7 @@ export async function POST(request: NextRequest) {
       const actualChargedAmount = paystackResponse.data.amount / 100
 
       // Processor fee is the difference between what customer paid and original order total
-      const processorFee = Math.round((actualChargedAmount - grossAmount) * 100) / 100
+      const processorFee = Math.max(0, Math.round((actualChargedAmount - grossAmount) * 100) / 100)
 
       // Financial breakdown: fee is pass-through, so commission/earnings stay on original total
       const financialBreakdown = await calculateFinancialBreakdown(grossAmount, 0)
