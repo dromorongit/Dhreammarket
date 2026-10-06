@@ -691,7 +691,7 @@ export default function VendorProfilePage() {
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Verification</p>
                 <p className="text-sm font-medium text-slate-900">
-                  {vendor.isVerified ? 'Verified Seller' : 'Unverified'}
+                  {vendor.isVerified ? 'Identity verified' : 'Identity not yet verified'}
                 </p>
               </div>
               <div>
