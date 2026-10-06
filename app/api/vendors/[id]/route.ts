@@ -157,6 +157,55 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const totalReviews = allReviews.length
     const followerCount = await getPrisma().vendorFollow.count({ where: { vendorId: actualStoreId } })
 
+    const [completedOrderCount, vendorCancelledCount, productVerifiedCount, vendorVerifiedCount] = await Promise.all([
+      getPrisma().order.count({
+        where: {
+          paymentStatus: 'PAID',
+          status: { in: ['DELIVERED', 'COMPLETED'] },
+          items: {
+            some: {
+              product: {
+                storeId: actualStoreId,
+              },
+            },
+          },
+        },
+      }),
+      getPrisma().order.count({
+        where: {
+          paymentStatus: 'PAID',
+          vendorRejected: true,
+          items: {
+            some: {
+              product: {
+                storeId: actualStoreId,
+              },
+            },
+          },
+        },
+      }),
+      getPrisma().productReview.count({
+        where: {
+          product: {
+            storeId: actualStoreId,
+          },
+          orderId: { not: null },
+        },
+      }),
+      getPrisma().vendorReview.count({
+        where: {
+          storeId: actualStoreId,
+          orderId: { not: null },
+        },
+      }),
+    ])
+
+    const totalCompletedOrCancelled = completedOrderCount + vendorCancelledCount
+    const vendorCancellationRate = totalCompletedOrCancelled >= 10
+      ? vendorCancelledCount / totalCompletedOrCancelled
+      : null
+    const isNewSeller = totalCompletedOrCancelled < 10
+
     // Check if featured status is still valid
     const isCurrentlyFeatured = store.isFeatured &&
       store.featuredUntil &&
@@ -176,6 +225,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       totalReviews,
       followerCount,
       createdAt: store.createdAt,
+      memberSince: store.createdAt,
+      completedOrders: completedOrderCount,
+      vendorCancelledCount,
+      vendorCancellationRate,
+      isNewSeller,
+      verifiedPurchaseReviewCount: productVerifiedCount + vendorVerifiedCount,
       category: store.vendor_categories,
       mainPhoneNumber: store.mainPhoneNumber,
       alternativePhoneNumber: store.alternativePhoneNumber,
@@ -215,7 +270,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
            category: s.category,
          })),
        productCount: store._count.products,
-     }
+    }
 
 // Check if this was found by id lookup (meaning old CUID URL) and redirect to slug
     const isIdLookup = !await getPrisma().store.findUnique({
