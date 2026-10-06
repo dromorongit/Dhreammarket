@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth-middleware'
+import { requireAdmin, requireSuperAdmin } from '@/lib/adminAuth'
+import { createAuditLog } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,47 +10,85 @@ export async function PATCH(
   { params }: { params: { payoutId: string } }
 ) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await requireAdmin()
+    if (authResult instanceof Response) {
+      return authResult
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    const payload = outcome
 
     const { payoutId } = params
-    const { status, reference, note, paidAt } = await request.json()
+    const body = await request.json()
+    const { status, reference, note, paidAt } = body
 
-    // Validate payout exists
     const existingPayout = await getPrisma().vendorPayout.findUnique({
-      where: { id: payoutId }
+      where: { id: payoutId },
     })
 
     if (!existingPayout) {
       return NextResponse.json({ error: 'Payout not found' }, { status: 404 })
     }
 
-    // Validate status if provided
-    if (status && !['PENDING', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED'].includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status. Must be PENDING, PROCESSING, PAID, FAILED, or CANCELLED' },
-        { status: 400 }
-      )
+    const allowedTransitions: Record<string, string[]> = {
+      PENDING: ['PROCESSING', 'PAID', 'FAILED', 'CANCELLED'],
+      PROCESSING: ['PAID', 'FAILED'],
     }
 
-    // Update payout
+    if (status) {
+      if (
+        !['PENDING', 'PROCESSING', 'PAID', 'FAILED', 'CANCELLED'].includes(
+          status
+        )
+      ) {
+        return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+      }
+
+      const currentStatus = existingPayout.status
+      if (status !== currentStatus) {
+        const permitted = allowedTransitions[currentStatus] || []
+        if (!permitted.includes(status)) {
+          return NextResponse.json(
+            {
+              error:
+                `Disallowed status transition from ${currentStatus} to ${status}`,
+            },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
+    if (paidAt !== undefined) {
+      if (status !== 'PAID') {
+        return NextResponse.json(
+          { error: 'paidAt may only be set when status is PAID' },
+          { status: 400 }
+        )
+      }
+    }
+
+    const updateData: any = {
+      ...(reference !== undefined && { reference }),
+      ...(note !== undefined && { note }),
+      ...(status && { status }),
+      updatedAt: new Date(),
+    }
+
+    if (status === 'PAID') {
+      updateData.paidAt = paidAt ? new Date(paidAt) : new Date()
+    }
+
     const updatedPayout = await getPrisma().vendorPayout.update({
       where: { id: payoutId },
-      data: {
-        status: status || undefined,
-        reference: reference || undefined,
-        note: note || undefined,
-        paidAt: paidAt ? new Date(paidAt) : undefined,
-        updatedAt: new Date()
-      }
+      data: updateData,
+    })
+
+    await createAuditLog({
+      userId: authResult.userId,
+      userRole: authResult.role,
+      action: 'PAYOUT_STATUS_UPDATED',
+      entityType: 'VENDOR_PAYOUT_METHOD',
+      entityId: payoutId,
+      beforeData: existingPayout,
+      afterData: updatedPayout,
     })
 
     return NextResponse.json(updatedPayout)
@@ -64,31 +103,43 @@ export async function DELETE(
   { params }: { params: { payoutId: string } }
 ) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authResult = await requireSuperAdmin()
+    if (authResult instanceof Response) {
+      return authResult
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    const payload = outcome
 
     const { payoutId } = params
 
-    // Validate payout exists
     const existingPayout = await getPrisma().vendorPayout.findUnique({
-      where: { id: payoutId }
+      where: { id: payoutId },
     })
 
     if (!existingPayout) {
       return NextResponse.json({ error: 'Payout not found' }, { status: 404 })
     }
 
-    // Delete payout
+    if (!['PENDING', 'CANCELLED'].includes(existingPayout.status)) {
+      return NextResponse.json(
+        {
+          error:
+            'Only PENDING or CANCELLED payouts can be deleted',
+          currentStatus: existingPayout.status,
+        },
+        { status: 400 }
+      )
+    }
+
     await getPrisma().vendorPayout.delete({
-      where: { id: payoutId }
+      where: { id: payoutId },
+    })
+
+    await createAuditLog({
+      userId: authResult.userId,
+      userRole: authResult.role,
+      action: 'PAYOUT_DELETED',
+      entityType: 'VENDOR_PAYOUT_METHOD',
+      entityId: payoutId,
+      beforeData: existingPayout,
     })
 
     return NextResponse.json({ success: true })
