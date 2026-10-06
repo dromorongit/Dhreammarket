@@ -361,3 +361,122 @@ describe('Review eligibility and trust aggregates', () => {
     expect(countForStore2).toBe(1)
   })
 })
+
+function countAttributableVendorCancelledOrders(orders: any[], orderItems: any[], products: any[], storeId: string): number {
+  const rejectedPaidOrderIds = new Set(
+    orders
+      .filter(o => o.paymentStatus === 'PAID' && o.vendorRejected === true)
+      .map(o => o.id)
+  )
+
+  if (rejectedPaidOrderIds.size === 0) {
+    return 0
+  }
+
+  const orderVendorMap = new Map<string, Set<string>>()
+  for (const item of orderItems) {
+    if (!rejectedPaidOrderIds.has(item.orderId)) continue
+    const product = products.find(p => p.id === item.productId)
+    if (!product) continue
+    const itemStoreId = product.storeId
+    if (!orderVendorMap.has(item.orderId)) {
+      orderVendorMap.set(item.orderId, new Set())
+    }
+    orderVendorMap.get(item.orderId)!.add(itemStoreId)
+  }
+
+  let attributableCount = 0
+  const entries = Array.from(orderVendorMap.entries())
+  for (const [orderId, vendorSet] of entries) {
+    if (vendorSet.size === 1 && vendorSet.has(storeId)) {
+      attributableCount++
+    }
+  }
+
+  return attributableCount
+}
+
+describe('Multi-vendor cancellation attribution', () => {
+  it('counts a single-vendor rejection for that vendor', () => {
+    const orders = [
+      { id: 'order-1', paymentStatus: 'PAID', vendorRejected: true, userId: 'customer-1' },
+    ]
+    const orderItems = [
+      { orderId: 'order-1', productId: 'product-1' },
+    ]
+    const products = [
+      { id: 'product-1', storeId: 'store-1' },
+    ]
+
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-1')).toBe(1)
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-2')).toBe(0)
+  })
+
+  it('does not attribute a multi-vendor rejection to any vendor', () => {
+    const orders = [
+      { id: 'order-multi', paymentStatus: 'PAID', vendorRejected: true, userId: 'customer-1' },
+    ]
+    const orderItems = [
+      { orderId: 'order-multi', productId: 'product-1' },
+      { orderId: 'order-multi', productId: 'product-2' },
+    ]
+    const products = [
+      { id: 'product-1', storeId: 'store-1' },
+      { id: 'product-2', storeId: 'store-2' },
+    ]
+
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-1')).toBe(0)
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-2')).toBe(0)
+  })
+
+  it('does not count non-rejected orders', () => {
+    const orders = [
+      { id: 'order-ok', paymentStatus: 'PAID', vendorRejected: false, userId: 'customer-1' },
+    ]
+    const orderItems = [
+      { orderId: 'order-ok', productId: 'product-1' },
+    ]
+    const products = [
+      { id: 'product-1', storeId: 'store-1' },
+    ]
+
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-1')).toBe(0)
+  })
+
+  it('does not count unpaid rejected orders', () => {
+    const orders = [
+      { id: 'order-unpaid', paymentStatus: 'PENDING', vendorRejected: true, userId: 'customer-1' },
+    ]
+    const orderItems = [
+      { orderId: 'order-unpaid', productId: 'product-1' },
+    ]
+    const products = [
+      { id: 'product-1', storeId: 'store-1' },
+    ]
+
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-1')).toBe(0)
+  })
+
+  it('handles multiple orders with mixed attribution', () => {
+    const orders = [
+      { id: 'order-single', paymentStatus: 'PAID', vendorRejected: true, userId: 'customer-1' },
+      { id: 'order-multi', paymentStatus: 'PAID', vendorRejected: true, userId: 'customer-1' },
+      { id: 'order-ok', paymentStatus: 'PAID', vendorRejected: false, userId: 'customer-1' },
+    ]
+    const orderItems = [
+      { orderId: 'order-single', productId: 'product-1' },
+      { orderId: 'order-multi', productId: 'product-2' },
+      { orderId: 'order-multi', productId: 'product-3' },
+      { orderId: 'order-ok', productId: 'product-4' },
+    ]
+    const products = [
+      { id: 'product-1', storeId: 'store-1' },
+      { id: 'product-2', storeId: 'store-1' },
+      { id: 'product-3', storeId: 'store-2' },
+      { id: 'product-4', storeId: 'store-1' },
+    ]
+
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-1')).toBe(1)
+    expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-2')).toBe(0)
+  })
+})
