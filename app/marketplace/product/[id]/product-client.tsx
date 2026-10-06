@@ -230,6 +230,14 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
   const [reviewComment, setReviewComment] = useState('')
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [submittingReview, setSubmittingReview] = useState(false)
+  const [vendorTrust, setVendorTrust] = useState<{
+    memberSince: string
+    completedOrders: number
+    vendorCancelledCount: number
+    vendorCancellationRate: number | null
+    isNewSeller: boolean
+    verifiedPurchaseReviewCount: number
+  } | null>(null)
 
   const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -285,6 +293,29 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
       addRecentlyViewed(product.id)
     }
   }, [product?.id])
+
+  useEffect(() => {
+    const vendorId = product?.store?.slug ?? product?.store?.id
+    if (!vendorId) return
+    let cancelled = false
+    fetch(`/api/vendors/${vendorId}`)
+      .then((res) => (res.ok ? res.json() : Promise.resolve({ vendor: null })))
+      .then((data) => {
+        if (cancelled || !data?.vendor) return
+        setVendorTrust({
+          memberSince: data.vendor.memberSince ?? data.vendor.createdAt,
+          completedOrders: data.vendor.completedOrders ?? 0,
+          vendorCancelledCount: data.vendor.vendorCancelledCount ?? 0,
+          vendorCancellationRate: data.vendor.vendorCancellationRate ?? null,
+          isNewSeller: data.vendor.isNewSeller ?? true,
+          verifiedPurchaseReviewCount: data.vendor.verifiedPurchaseReviewCount ?? 0,
+        })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [product?.store?.slug, product?.store?.id])
 
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist', 'status', productId],
@@ -866,6 +897,15 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
                         })()}
                         <DhreamSellerBadge className="h-6 w-auto max-w-none" />
                       </div>
+                      {vendorTrust && (
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Selling since {new Date(vendorTrust.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                          {' · '}
+                          {vendorTrust.isNewSeller
+                            ? `${vendorTrust.completedOrders} completed order${vendorTrust.completedOrders !== 1 ? 's' : ''}`
+                            : `${vendorTrust.completedOrders} completed orders`}
+                        </p>
+                      )}
                       <Link
                         href={`/vendor/${product.store?.slug ?? product.store?.id}`}
                         className="text-xs md:text-sm text-[#1E40AF] hover:underline"
@@ -977,6 +1017,14 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
                     <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                       <p className="text-slate-700 text-sm">
                         You have already reviewed this product. Thank you for your feedback!
+                      </p>
+                    </div>
+                  )}
+
+                  {user && user.role === 'CUSTOMER' && !canReviewProduct && !showReviewForm && eligibilityReason === 'not_purchased' && (
+                    <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <p className="text-slate-700 text-sm">
+                        Only customers who received this item can review it.
                       </p>
                     </div>
                   )}

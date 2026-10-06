@@ -78,6 +78,12 @@ interface VendorData {
   rating: number
   totalReviews: number
   createdAt: string
+  memberSince: string
+  completedOrders: number
+  vendorCancelledCount: number
+  vendorCancellationRate: number | null
+  isNewSeller: boolean
+  verifiedPurchaseReviewCount: number
   category: {
     id: string
     name: string
@@ -678,6 +684,64 @@ export default function VendorProfilePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <Card variant="elevated" className="p-6">
+          <CardContent className="p-0">
+            <h3 className="text-lg font-bold text-deep-navy mb-4">Trust & Verification</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Verification</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {vendor.isVerified ? 'Verified Seller' : 'Unverified'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Selling Since</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {new Date(vendor.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Completed Orders</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {vendor.isNewSeller
+                    ? `New seller (${vendor.completedOrders} completed order${vendor.completedOrders !== 1 ? 's' : ''})`
+                    : `${vendor.completedOrders} completed order${vendor.completedOrders !== 1 ? 's' : ''}`}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Cancellation Rate</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {vendor.isNewSeller
+                    ? 'New seller'
+                    : vendor.vendorCancellationRate !== null
+                      ? `${(vendor.vendorCancellationRate * 100).toFixed(1)}%`
+                      : 'N/A'}
+                </p>
+                <p className="text-xs text-slate-500">
+                  {vendor.vendorCancelledCount} vendor-cancelled order{vendor.vendorCancelledCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Rating</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {vendor.rating.toFixed(1)} out of 5
+                </p>
+                <p className="text-xs text-slate-500">
+                  {vendor.verifiedPurchaseReviewCount} verified purchase review{vendor.verifiedPurchaseReviewCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Badge</p>
+                <p className="text-sm font-medium text-slate-900">
+                  {vendor.badgeTier || 'None'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-2 flex gap-1 overflow-x-auto scrollbar-hide flex-nowrap">
           {[
             { key: 'products' as const, label: 'Products' },
@@ -985,6 +1049,14 @@ export default function VendorProfilePage() {
               <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <p className="text-slate-700 text-sm">
                   You have already reviewed this store. Thank you for your feedback!
+                </p>
+              </div>
+            )}
+
+            {user && user.role === 'CUSTOMER' && !canReviewVendor && !showReviewForm && eligibilityReason === 'not_purchased' && (
+              <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <p className="text-slate-700 text-sm">
+                  Only customers who received items from this store can review it.
                 </p>
               </div>
             )}
