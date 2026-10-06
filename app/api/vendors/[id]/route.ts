@@ -171,19 +171,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           },
         },
       }),
-      getPrisma().order.count({
-        where: {
-          paymentStatus: 'PAID',
-          vendorRejected: true,
-          items: {
-            some: {
-              product: {
-                storeId: actualStoreId,
-              },
-            },
-          },
-        },
-      }),
+      getPrisma().$queryRaw<{ count: number }[]>`
+        SELECT COUNT(*) AS count FROM orders o
+        WHERE o."payment_status" = 'PAID'
+          AND o."vendor_rejected" = true
+          AND o.id IN (
+            SELECT oi."orderId"
+            FROM order_items oi
+            JOIN products p ON p.id = oi."productId"
+            WHERE oi."orderId" = o.id
+            GROUP BY oi."orderId"
+            HAVING COUNT(DISTINCT p."storeId") = 1
+               AND MAX(CASE WHEN p."storeId" = ${actualStoreId} THEN 1 ELSE 0 END) = 1
+          )
+      `,
       getPrisma().productReview.count({
         where: {
           product: {
@@ -200,9 +201,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       }),
     ])
 
-    const totalCompletedOrCancelled = completedOrderCount + vendorCancelledCount
+    const vendorCancelledCountValue = vendorCancelledCount[0]?.count ?? 0
+
+    const totalCompletedOrCancelled = completedOrderCount + vendorCancelledCountValue
     const vendorCancellationRate = totalCompletedOrCancelled >= 10
-      ? vendorCancelledCount / totalCompletedOrCancelled
+      ? vendorCancelledCountValue / totalCompletedOrCancelled
       : null
     const isNewSeller = totalCompletedOrCancelled < 10
 
@@ -227,7 +230,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       createdAt: store.createdAt,
       memberSince: store.createdAt,
       completedOrders: completedOrderCount,
-      vendorCancelledCount,
+      vendorCancelledCount: vendorCancelledCountValue,
       vendorCancellationRate,
       isNewSeller,
       verifiedPurchaseReviewCount: productVerifiedCount + vendorVerifiedCount,
