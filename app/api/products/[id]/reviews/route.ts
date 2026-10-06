@@ -53,7 +53,24 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({ canReview: false, reason: 'already_reviewed' }, { status: 200 })
       }
 
-      return NextResponse.json({ canReview: true }, { status: 200 })
+      // Check if user has a delivered/completed paid order containing this product
+      const eligibleOrder = await getPrisma().order.findFirst({
+        where: {
+          userId: payload.userId,
+          paymentStatus: 'PAID',
+          status: { in: ['DELIVERED', 'COMPLETED'] },
+          items: {
+            some: { productId },
+          },
+        },
+        select: { id: true },
+      })
+
+      if (!eligibleOrder) {
+        return NextResponse.json({ canReview: false, reason: 'not_purchased' }, { status: 200 })
+      }
+
+      return NextResponse.json({ canReview: true, orderId: eligibleOrder.id }, { status: 200 })
     }
 
     // Get product with cached ratings
@@ -255,6 +272,23 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'You cannot review your own product' }, { status: 400 })
     }
 
+    // Check if user has a delivered/completed paid order containing this product
+    const eligibleOrder = await getPrisma().order.findFirst({
+      where: {
+        userId: payload.userId,
+        paymentStatus: 'PAID',
+        status: { in: ['DELIVERED', 'COMPLETED'] },
+        items: {
+          some: { productId: actualProductId },
+        },
+      },
+      select: { id: true },
+    })
+
+    if (!eligibleOrder) {
+      return NextResponse.json({ error: 'Only customers who received this item can review it' }, { status: 403 })
+    }
+
     // Check if user already reviewed this product
     const existingReview = await getPrisma().productReview.findUnique({
       where: {
@@ -274,6 +308,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data: {
         productId: actualProductId,
         userId: payload.userId,
+        orderId: eligibleOrder.id,
         rating,
         comment: sanitizedComment,
       },

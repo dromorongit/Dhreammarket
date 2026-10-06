@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Review not found' }, { status: 404 })
     }
 
-    if (review.userId !== payload.userId && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
+    if (review.userId !== payload.userId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

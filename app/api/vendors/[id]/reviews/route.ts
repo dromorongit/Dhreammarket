@@ -110,7 +110,28 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         }, { status: 200 })
       }
 
-      return NextResponse.json({ canReview: true }, { status: 200 })
+      // Check if user has a delivered/completed paid order containing this vendor's items
+      const eligibleOrder = await getPrisma().order.findFirst({
+        where: {
+          userId: payload.userId,
+          paymentStatus: 'PAID',
+          status: { in: ['DELIVERED', 'COMPLETED'] },
+          items: {
+            some: {
+              product: {
+                storeId: store.id,
+              },
+            },
+          },
+        },
+        select: { id: true },
+      })
+
+      if (!eligibleOrder) {
+        return NextResponse.json({ canReview: false, reason: 'not_purchased' }, { status: 200 })
+      }
+
+      return NextResponse.json({ canReview: true, orderId: eligibleOrder.id }, { status: 200 })
     }
 
     const store = await resolveStoreId(idOrSlug)
@@ -267,6 +288,27 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'You cannot review your own store' }, { status: 400 })
     }
 
+    // Check if user has a delivered/completed paid order containing this vendor's items
+    const eligibleOrder = await getPrisma().order.findFirst({
+      where: {
+        userId: payload.userId,
+        paymentStatus: 'PAID',
+        status: { in: ['DELIVERED', 'COMPLETED'] },
+        items: {
+          some: {
+            product: {
+              storeId: storeId,
+            },
+          },
+        },
+      },
+      select: { id: true },
+    })
+
+    if (!eligibleOrder) {
+      return NextResponse.json({ error: 'Only customers who received items from this store can review it' }, { status: 403 })
+    }
+
     // Check if user already reviewed this vendor
     const existingReview = await getPrisma().vendorReview.findUnique({
       where: {
@@ -286,6 +328,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       data: {
         storeId,
         userId: payload.userId,
+        orderId: eligibleOrder.id,
         rating,
         comment: comment?.trim() || null,
       },
