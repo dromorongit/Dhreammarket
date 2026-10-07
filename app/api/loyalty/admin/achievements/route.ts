@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth-middleware'
+import { requireAdmin, requireSuperAdmin } from '@/lib/adminAuth'
 import { LoyaltyEngine } from '@/lib/loyalty/loyalty-engine'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = await requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    const payload = outcome
 
     const achievements = await getPrisma().achievement.findMany({
       where: { isActive: true },
@@ -30,16 +24,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = await requireSuperAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    const payload = outcome
 
     const body = await request.json()
     const { name, slug, description, badge, color, icon, criteria, points, cashbackReward, displayOrder } = body
