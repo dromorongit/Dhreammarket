@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     await createAuditLog({
       userId: authCheck.userId,
       userRole: authCheck.role,
-      action: 'PROFILE_UPDATED',
+      action: 'AUDIT_LOG_PURGED',
       entityType: 'SYSTEM',
       entityId: null,
       afterData: {
