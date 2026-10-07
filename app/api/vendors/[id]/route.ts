@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { countAttributableVendorCancelledOrders } from '@/lib/trust-metrics'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -157,7 +158,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const totalReviews = allReviews.length
     const followerCount = await getPrisma().vendorFollow.count({ where: { vendorId: actualStoreId } })
 
-    const [completedOrderCount, vendorCancelledCount, productVerifiedCount, vendorVerifiedCount] = await Promise.all([
+    let completedOrderCount: number | null = null
+    let productVerifiedCount: number | null = null
+    let vendorVerifiedCount: number | null = null
+    let vendorCancelledCountValue: number | null = null
+
+    const settled = await Promise.allSettled([
       getPrisma().order.count({
         where: {
           paymentStatus: 'PAID',
@@ -171,20 +177,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           },
         },
       }),
-      getPrisma().$queryRaw<{ count: number }[]>`
-        SELECT COUNT(*) AS count FROM orders o
-        WHERE o."payment_status" = 'PAID'
-          AND o."vendor_rejected" = true
-          AND o.id IN (
-            SELECT oi."orderId"
-            FROM order_items oi
-            JOIN products p ON p.id = oi."productId"
-            WHERE oi."orderId" = o.id
-            GROUP BY oi."orderId"
-            HAVING COUNT(DISTINCT p."storeId") = 1
-               AND MAX(CASE WHEN p."storeId" = ${actualStoreId} THEN 1 ELSE 0 END) = 1
-          )
-      `,
       getPrisma().productReview.count({
         where: {
           product: {
@@ -199,14 +191,84 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           orderId: { not: null },
         },
       }),
+      (async () => {
+        const [orders, orderItems, products] = await Promise.all([
+          getPrisma().order.findMany({
+            where: {
+              paymentStatus: 'PAID',
+              vendorRejected: true,
+            },
+            select: {
+              id: true,
+              paymentStatus: true,
+              vendorRejected: true,
+              items: {
+                select: {
+                  product: {
+                    select: {
+                      storeId: true,
+                    },
+                  },
+                },
+              },
+            },
+          }),
+          getPrisma().orderItem.findMany({
+            where: {
+              order: {
+                paymentStatus: 'PAID',
+                vendorRejected: true,
+              },
+            },
+            select: {
+              orderId: true,
+              productId: true,
+            },
+          }),
+          getPrisma().product.findMany({
+            select: {
+              id: true,
+              storeId: true,
+            },
+          }),
+        ])
+        return countAttributableVendorCancelledOrders(orders, orderItems, products, actualStoreId)
+      })(),
     ])
 
-    const vendorCancelledCountValue = vendorCancelledCount[0]?.count ?? 0
+    if (settled[0].status === 'fulfilled') {
+      completedOrderCount = settled[0].value
+    } else {
+      console.error('Failed to compute completed order count:', settled[0].reason)
+    }
 
-    const totalCompletedOrCancelled = completedOrderCount + vendorCancelledCountValue
-    const vendorCancellationRate = totalCompletedOrCancelled >= 10
-      ? vendorCancelledCountValue / totalCompletedOrCancelled
-      : null
+    if (settled[1].status === 'fulfilled') {
+      productVerifiedCount = settled[1].value
+    } else {
+      console.error('Failed to compute product verified review count:', settled[1].reason)
+    }
+
+    if (settled[2].status === 'fulfilled') {
+      vendorVerifiedCount = settled[2].value
+    } else {
+      console.error('Failed to compute vendor verified review count:', settled[2].reason)
+    }
+
+    if (settled[3].status === 'fulfilled') {
+      vendorCancelledCountValue = settled[3].value
+    } else {
+      console.error('Failed to compute vendor cancelled count:', settled[3].reason)
+    }
+
+    const safeCompletedOrderCount = completedOrderCount ?? 0
+    const safeVendorCancelledCount = vendorCancelledCountValue ?? 0
+    const totalCompletedOrCancelled = safeCompletedOrderCount + safeVendorCancelledCount
+    const vendorCancellationRate =
+      completedOrderCount === null || vendorCancelledCountValue === null
+        ? null
+        : totalCompletedOrCancelled >= 10
+          ? safeVendorCancelledCount / totalCompletedOrCancelled
+          : null
     const isNewSeller = totalCompletedOrCancelled < 10
 
     // Check if featured status is still valid
@@ -230,10 +292,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       createdAt: store.createdAt,
       memberSince: store.createdAt,
       completedOrders: completedOrderCount,
-      vendorCancelledCount: vendorCancelledCountValue,
+      vendorCancelledCount: safeVendorCancelledCount,
       vendorCancellationRate,
       isNewSeller,
-      verifiedPurchaseReviewCount: productVerifiedCount + vendorVerifiedCount,
+      verifiedPurchaseReviewCount: (productVerifiedCount ?? 0) + (vendorVerifiedCount ?? 0),
       category: store.vendor_categories,
       mainPhoneNumber: store.mainPhoneNumber,
       alternativePhoneNumber: store.alternativePhoneNumber,
@@ -275,7 +337,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
        productCount: store._count.products,
     }
 
-// Check if this was found by id lookup (meaning old CUID URL) and redirect to slug
+    // Check if this was found by id lookup (meaning old CUID URL) and redirect to slug
     const isIdLookup = !await getPrisma().store.findUnique({
       where: { slug: params.id },
       select: { id: true },

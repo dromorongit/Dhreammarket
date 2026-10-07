@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { countAttributableVendorCancelledOrders } from '@/lib/trust-metrics'
 
 vi.mock('@/lib/prisma', () => ({
   getPrisma: vi.fn(),
@@ -362,40 +363,6 @@ describe('Review eligibility and trust aggregates', () => {
   })
 })
 
-function countAttributableVendorCancelledOrders(orders: any[], orderItems: any[], products: any[], storeId: string): number {
-  const rejectedPaidOrderIds = new Set(
-    orders
-      .filter(o => o.paymentStatus === 'PAID' && o.vendorRejected === true)
-      .map(o => o.id)
-  )
-
-  if (rejectedPaidOrderIds.size === 0) {
-    return 0
-  }
-
-  const orderVendorMap = new Map<string, Set<string>>()
-  for (const item of orderItems) {
-    if (!rejectedPaidOrderIds.has(item.orderId)) continue
-    const product = products.find(p => p.id === item.productId)
-    if (!product) continue
-    const itemStoreId = product.storeId
-    if (!orderVendorMap.has(item.orderId)) {
-      orderVendorMap.set(item.orderId, new Set())
-    }
-    orderVendorMap.get(item.orderId)!.add(itemStoreId)
-  }
-
-  let attributableCount = 0
-  const entries = Array.from(orderVendorMap.entries())
-  for (const [orderId, vendorSet] of entries) {
-    if (vendorSet.size === 1 && vendorSet.has(storeId)) {
-      attributableCount++
-    }
-  }
-
-  return attributableCount
-}
-
 describe('Multi-vendor cancellation attribution', () => {
   it('counts a single-vendor rejection for that vendor', () => {
     const orders = [
@@ -478,5 +445,15 @@ describe('Multi-vendor cancellation attribution', () => {
 
     expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-1')).toBe(1)
     expect(countAttributableVendorCancelledOrders(orders, orderItems, products, 'store-2')).toBe(0)
+  })
+
+  it('falls back to 0 when attribution data is malformed', () => {
+    const result = countAttributableVendorCancelledOrders(
+      [{ id: 'order-1', paymentStatus: 'PAID', vendorRejected: true, userId: 'customer-1' }],
+      [{ orderId: 'order-1', productId: 'product-missing' }],
+      [{ id: 'product-1', storeId: 'store-1' }],
+      'store-1'
+    )
+    expect(result).toBe(0)
   })
 })
