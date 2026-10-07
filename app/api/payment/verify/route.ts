@@ -61,6 +61,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
+    if (payment.userId !== payload.userId) {
+      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+    }
+
     // Verify the payment with Paystack
     console.log('[Payment Verify API] Paystack verification started for reference:', reference)
     
