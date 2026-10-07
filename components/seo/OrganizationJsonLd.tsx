@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { SITE_URL } from '@/lib/site-config'
+import { SOCIAL_LINKS } from '@/lib/social-links'
 
 const SITE_LOGO = `${SITE_URL}/assets/images/dhreammarket.png`
 
@@ -11,9 +12,10 @@ export const OrganizationJsonLd: FC = () => {
     url: SITE_URL,
     logo: SITE_LOGO,
     sameAs: [
-      'https://www.instagram.com/dhreamarket',
-      'https://www.tiktok.com/@dhreamarket',
-      'https://www.x.com/dhreamarket',
+      SOCIAL_LINKS.instagram,
+      SOCIAL_LINKS.tiktok,
+      SOCIAL_LINKS.x,
+      SOCIAL_LINKS.facebook,
     ],
     contactPoint: [
       {

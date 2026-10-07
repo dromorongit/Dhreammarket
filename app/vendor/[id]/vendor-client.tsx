@@ -15,6 +15,8 @@ import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink, getWhatsAppLinks }
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { MdVerified } from 'react-icons/md'
+import { FiShield, FiCheckCircle, FiPackage, FiXCircle, FiStar, FiCalendar } from 'react-icons/fi'
+import { FaCrown } from 'react-icons/fa'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
 import { VendorFollowButton } from '@/components/VendorFollowButton'
@@ -684,61 +686,95 @@ export default function VendorProfilePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-        <Card variant="elevated" className="p-6">
-          <CardContent className="p-0">
-            <h3 className="text-lg font-bold text-deep-navy mb-4">Trust & Verification</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Verification</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {vendor.isVerified ? 'Identity verified' : 'Identity not yet verified'}
-                </p>
+        <div className="rounded-3xl bg-white border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+          <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+                  <FiShield className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Trust & Verification</h3>
+                  <p className="text-xs text-blue-100">Checked by Dhream Market</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Selling Since</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {new Date(vendor.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Completed Orders</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {vendor.isNewSeller
-                    ? `New seller (${vendor.completedOrders} completed order${vendor.completedOrders !== 1 ? 's' : ''})`
-                    : `${vendor.completedOrders} completed order${vendor.completedOrders !== 1 ? 's' : ''}`}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Cancellation Rate</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {vendor.isNewSeller
-                    ? 'New seller'
-                    : vendor.vendorCancellationRate !== null
-                      ? `${(vendor.vendorCancellationRate * 100).toFixed(1)}%`
-                      : 'N/A'}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {vendor.vendorCancelledCount} vendor-cancelled order{vendor.vendorCancelledCount !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Rating</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {vendor.rating.toFixed(1)} out of 5
-                </p>
-                <p className="text-xs text-slate-500">
-                  {vendor.verifiedPurchaseReviewCount} verified purchase review{vendor.verifiedPurchaseReviewCount !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Badge</p>
-                <p className="text-sm font-medium text-slate-900">
-                  {vendor.badgeTier || 'None'}
-                </p>
-              </div>
+              {vendor.badgeTier && (
+                <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-300 to-yellow-500 px-3 py-1">
+                  <FaCrown className="h-3.5 w-3.5 text-amber-700" />
+                  <span className="text-xs font-semibold text-amber-700">{vendor.badgeTier}</span>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="px-6 py-4">
+            <div className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 ${
+              vendor.isVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+            }`}>
+              <FiCheckCircle className={`h-4 w-4 ${vendor.isVerified ? 'text-emerald-500' : 'text-slate-400'}`} />
+              <span className="text-sm font-medium">
+                {vendor.isVerified ? 'Identity verified' : 'Not yet verified'}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 px-6 pb-6">
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100 text-blue-600">
+                  <FiPackage className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Completed Orders</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">{vendor.completedOrders}</p>
+              {vendor.completedOrders < 10 && (
+                <p className="text-xs text-slate-500">New seller</p>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`flex h-6 w-6 items-center justify-center rounded-md ${
+                  (vendor.vendorCancelledCount ?? 0) === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                }`}>
+                  <FiXCircle className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Cancellations</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">{vendor.vendorCancelledCount ?? 0}</p>
+              <p className="text-xs text-slate-500">Vendor-cancelled</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-100 text-amber-600">
+                  <FiStar className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rating</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">
+                {vendor.verifiedPurchaseReviewCount > 0 ? `${vendor.rating.toFixed(1)} / 5` : '—'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {vendor.verifiedPurchaseReviewCount > 0
+                  ? `${vendor.verifiedPurchaseReviewCount} verified review${vendor.verifiedPurchaseReviewCount !== 1 ? 's' : ''}`
+                  : 'No reviews yet'}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100 text-indigo-600">
+                  <FiCalendar className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Selling Since</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">
+                {new Date(vendor.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">

@@ -3,6 +3,8 @@ import Image from 'next/image'
 import { FiInstagram } from 'react-icons/fi'
 import { SiTiktok } from 'react-icons/si'
 import { FaXTwitter } from 'react-icons/fa6'
+import { FaFacebook } from 'react-icons/fa'
+import { SOCIAL_LINKS } from '@/lib/social-links'
 
 export function Footer() {
   return (
@@ -197,39 +199,48 @@ export function Footer() {
            </div>
          </div>
 
-         {/* Social Media Links */}
-         <div className="relative flex flex-col sm:flex-row items-center justify-center gap-6 pt-6 border-t border-slate-700/50 mb-8">
-           <span className="text-slate-400 text-sm font-medium">Follow Us:</span>
-           <div className="flex items-center gap-4">
-             <a
-               href="https://www.instagram.com/dhreamarket"
-               target="_blank"
-               rel="noopener noreferrer"
-               aria-label="Follow us on Instagram"
-               className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-pink-500 hover:scale-110 transition-all duration-300"
-             >
-               <FiInstagram className="w-5 h-5" />
-             </a>
-             <a
-               href="https://www.tiktok.com/@dhreamarket"
-               target="_blank"
-               rel="noopener noreferrer"
-               aria-label="Follow us on TikTok"
-               className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-black hover:scale-110 transition-all duration-300"
-             >
-               <SiTiktok className="w-5 h-5" />
-             </a>
-             <a
-               href="https://www.x.com/dhreamarket"
-               target="_blank"
-               rel="noopener noreferrer"
-               aria-label="Follow us on X"
-               className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-slate-100 hover:text-black hover:scale-110 transition-all duration-300"
-             >
-               <FaXTwitter className="w-5 h-5" />
-             </a>
-           </div>
-         </div>
+          {/* Social Media Links */}
+          <div className="relative flex flex-col sm:flex-row items-center justify-center gap-6 pt-6 border-t border-slate-700/50 mb-8">
+            <span className="text-slate-400 text-sm font-medium">Follow Us:</span>
+            <div className="flex items-center gap-4">
+              <a
+                href={SOCIAL_LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Instagram"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-pink-500 hover:scale-110 transition-all duration-300"
+              >
+                <FiInstagram className="w-5 h-5" />
+              </a>
+              <a
+                href={SOCIAL_LINKS.tiktok}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on TikTok"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-black hover:scale-110 transition-all duration-300"
+              >
+                <SiTiktok className="w-5 h-5" />
+              </a>
+              <a
+                href={SOCIAL_LINKS.x}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on X"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-slate-100 hover:text-black hover:scale-110 transition-all duration-300"
+              >
+                <FaXTwitter className="w-5 h-5" />
+              </a>
+              <a
+                href={SOCIAL_LINKS.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Follow us on Facebook"
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-blue-600 hover:scale-110 transition-all duration-300"
+              >
+                <FaFacebook className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
 
          {/* Bottom section */}
         <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-700/50">

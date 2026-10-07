@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/EmptyState'
 import { FiInstagram } from 'react-icons/fi'
 import { SiTiktok } from 'react-icons/si'
 import { FaXTwitter } from 'react-icons/fa6'
+import { FaFacebook } from 'react-icons/fa'
+import { SOCIAL_LINKS } from '@/lib/social-links'
 
 interface FormData {
   name: string
@@ -437,39 +439,48 @@ export default function ContactPage() {
             </CardContent>
           </Card>
 
-          {/* Social Media Links */}
-          <div className="mt-12 text-center">
-            <h3 className="text-lg font-semibold text-deep-navy mb-6">Connect With Us</h3>
-            <div className="flex items-center justify-center gap-6">
-              <a
-                 href="https://www.instagram.com/dhreamarket"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 aria-label="Follow us on Instagram"
-                 className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
-               >
-                 <FiInstagram className="w-6 h-6" />
-               </a>
+           {/* Social Media Links */}
+           <div className="mt-12 text-center">
+             <h3 className="text-lg font-semibold text-deep-navy mb-6">Connect With Us</h3>
+             <div className="flex items-center justify-center gap-6">
                <a
-                 href="https://www.tiktok.com/@dhreamarket"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 aria-label="Follow us on TikTok"
-                 className="w-12 h-12 rounded-full bg-black flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
-               >
-                 <SiTiktok className="w-6 h-6" />
-               </a>
-               <a
-                 href="https://www.x.com/dhreamarket"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 aria-label="Follow us on X"
-                 className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-black hover:scale-110 transition-all duration-300 shadow-lg"
-               >
-                 <FaXTwitter className="w-6 h-6" />
-               </a>
-            </div>
-          </div>
+                  href={SOCIAL_LINKS.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on Instagram"
+                  className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
+                >
+                  <FiInstagram className="w-6 h-6" />
+                </a>
+                <a
+                  href={SOCIAL_LINKS.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on TikTok"
+                  className="w-12 h-12 rounded-full bg-black flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
+                >
+                  <SiTiktok className="w-6 h-6" />
+                </a>
+                <a
+                  href={SOCIAL_LINKS.x}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on X"
+                  className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-black hover:scale-110 transition-all duration-300 shadow-lg"
+                >
+                  <FaXTwitter className="w-6 h-6" />
+                </a>
+                <a
+                  href={SOCIAL_LINKS.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Follow us on Facebook"
+                  className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white hover:scale-110 transition-all duration-300 shadow-lg"
+                >
+                  <FaFacebook className="w-6 h-6" />
+                </a>
+             </div>
+           </div>
         </div>
       </div>
     )
