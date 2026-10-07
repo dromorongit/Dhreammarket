@@ -1,7 +1,7 @@
 // Admin verification API - only shows PAID applications
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth-middleware'
+import { requireAdmin } from '@/lib/adminAuth'
 import { createAuditLog } from '@/lib/audit-log'
 import { createNotification } from '@/lib/notifications'
 import { sendVerificationStatusEmail } from '@/lib/email'
@@ -11,16 +11,10 @@ export const dynamic = 'force-dynamic'
 // GET all verification applications (for admin listing - only PAID applications)
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = await requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden - Admins only' }, { status: 403 })
-    }
-    const payload = outcome
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -102,16 +96,10 @@ documents: true,
 
 export async function PATCH(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = await requireAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden - Admins only' }, { status: 403 })
-    }
-    const payload = outcome
 
     const { searchParams } = new URL(request.url)
     const applicationId = searchParams.get('applicationId')
@@ -196,8 +184,8 @@ export async function PATCH(request: NextRequest) {
 
     // Create audit log (platform-level)
     await createAuditLog({
-      userId: payload.userId,
-      userRole: payload.role,
+      userId: authCheck.userId,
+      userRole: authCheck.role,
       action: action === 'approve' ? 'KYC_APPROVED' : action === 'reject' || action === 'revoke' ? 'KYC_REJECTED' : 'SUPPORT_TICKET_UPDATED',
       entityType: 'KYC_APPLICATION',
       entityId: applicationId,
@@ -211,7 +199,7 @@ export async function PATCH(request: NextRequest) {
       data: {
         applicationId,
         action: auditAction as any,
-        adminId: payload.userId,
+        adminId: authCheck.userId,
         note,
       }
     })
