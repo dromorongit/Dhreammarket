@@ -176,6 +176,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
     }
 
+    if (payload.role === 'VENDOR' && subscription.vendorId !== payload.userId) {
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
+    }
+
     const updated = await prisma.vendorSubscription.update({
       where: { id: subscriptionId },
       data: { autoRenew: autoRenew ?? !subscription.autoRenew, updatedAt: new Date() },
@@ -213,6 +217,10 @@ export async function DELETE(request: NextRequest) {
       where: { id: subscriptionId },
     })
     if (!subscription) {
+      return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
+    }
+
+    if (payload.role === 'VENDOR' && subscription.vendorId !== payload.userId) {
       return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
     }
 
