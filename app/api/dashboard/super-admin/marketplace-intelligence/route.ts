@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth-middleware'
+import { requireSuperAdmin } from '@/lib/adminAuth'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = await requireSuperAdmin()
+    if (authCheck instanceof NextResponse) {
+      return authCheck
     }
-
-    const outcome = await verifyToken(token)
-    if (!outcome.authenticated) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-    const payload = outcome
 
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
