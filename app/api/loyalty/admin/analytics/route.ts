@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireSuperAdmin } from '@/lib/adminAuth'
 
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = await requireAdmin()
+    const authCheck = await requireSuperAdmin()
     if (authCheck instanceof NextResponse) {
       return authCheck
     }
