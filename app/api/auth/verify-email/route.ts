@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs'
 import { generateToken } from '@/lib/auth'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
+import { creditInfluencerSignupBonus } from '@/lib/influencer/signup-bonus'
+import { createInfluencerVendorTrial } from '@/lib/influencer/vendor-trial'
+import { getInfluencerPerksConfig } from '@/lib/influencer/perks-config'
 import { rateLimit } from '@/lib/rate-limit'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
 import { randomBytes } from 'crypto'
@@ -79,6 +82,17 @@ export async function POST(request: NextRequest) {
           ? `REF-${randomBytes(4).toString('hex').toUpperCase()}`
           : null
 
+        let validInfluencerForAttribution: string | null = null
+        const influencerCodeToValidate = resolvedInfluencerCode || pendingReg.influencerCode
+        if (typeof influencerCodeToValidate === 'string' && influencerCodeToValidate.trim()) {
+          const code = influencerCodeToValidate.trim()
+          const inf = await tx.influencer.findUnique({
+            where: { referralCode: code },
+            select: { active: true },
+          })
+          validInfluencerForAttribution = inf?.active ? code : null
+        }
+
         const createdUser = await tx.user.create({
           data: {
             email: pendingReg.email,
@@ -89,6 +103,7 @@ export async function POST(request: NextRequest) {
             emailVerifiedAt: new Date(),
             referralCode: generatedReferralCode,
             registrationIpAddress: pendingReg.registrationIpAddress,
+            influencerAttributionCode: validInfluencerForAttribution,
           },
           select: {
             id: true,
@@ -164,20 +179,45 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        if (pendingReg.role === 'VENDOR') {
-          try {
-            await ensureFreeSubscription(createdUser.id, tx)
-          } catch (subscriptionErr) {
-            console.error('Failed to create free subscription for new vendor:', subscriptionErr)
-          }
-        }
-
         return {
           id: createdUser.id,
           email: createdUser.email,
           role: createdUser.role,
         }
       })
+
+      const resolvedInfluencerCodeForPerks = typeof resolvedInfluencerCode === 'string' && resolvedInfluencerCode
+        ? resolvedInfluencerCode
+        : typeof pendingReg.influencerCode === 'string' && pendingReg.influencerCode.trim()
+          ? pendingReg.influencerCode.trim()
+          : null
+
+      if (pendingReg.role === 'VENDOR') {
+        if (resolvedInfluencerCodeForPerks) {
+          try {
+            await createInfluencerVendorTrial(user.id, resolvedInfluencerCodeForPerks)
+          } catch (trialErr) {
+            console.error('Failed to create influencer vendor trial:', trialErr)
+            try {
+              await ensureFreeSubscription(user.id)
+            } catch (fallbackErr) {
+              console.error('Failed to create fallback free subscription:', fallbackErr)
+            }
+          }
+        } else {
+          try {
+            await ensureFreeSubscription(user.id)
+          } catch (subscriptionErr) {
+            console.error('Failed to create free subscription for new vendor:', subscriptionErr)
+          }
+        }
+      }
+
+      try {
+        await creditInfluencerSignupBonus(user.id, resolvedInfluencerCodeForPerks ?? '')
+      } catch (bonusErr) {
+        console.error('Influencer signup bonus failed:', bonusErr)
+      }
 
       await getPrisma().pendingRegistration.delete({
         where: { id: pendingReg.id },
@@ -216,6 +256,22 @@ export async function POST(request: NextRequest) {
         isOnboarded = await isVendorOnboarded(user.id)
       }
 
+      let influencerPerk: { signupPoints: number; vendorTrial: boolean; influencerName: string } | undefined
+      if (resolvedInfluencerCodeForPerks) {
+        const perks = await getInfluencerPerksConfig(resolvedInfluencerCodeForPerks)
+        if (perks) {
+          const influencer = await getPrisma().influencer.findUnique({
+            where: { referralCode: resolvedInfluencerCodeForPerks },
+            select: { name: true },
+          })
+          influencerPerk = {
+            signupPoints: perks.customerSignupPoints,
+            vendorTrial: pendingReg.role === 'VENDOR',
+            influencerName: influencer?.name ?? resolvedInfluencerCodeForPerks,
+          }
+        }
+      }
+
       const response = NextResponse.json({
         message: 'Email verified successfully',
         email: user.email,
@@ -223,6 +279,7 @@ export async function POST(request: NextRequest) {
         user: { id: user.id, email: user.email, role: user.role },
         isOnboarded,
         token,
+        influencerPerk,
       }, { status: 200 })
 
       response.cookies.set('token', token, {

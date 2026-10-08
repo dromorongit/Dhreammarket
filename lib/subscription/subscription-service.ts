@@ -2,6 +2,7 @@ import { getPrisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { subscriptionPlans, planBenefits, getFeatureRestrictions, SubscriptionPlanName } from './types'
 import { logInfo, logError } from '@/lib/logger'
+import { isExpiredInfluencerTrial } from './feature-restriction'
 
 export async function getSubscriptionPlans() {
   const prisma = getPrisma()
@@ -234,33 +235,41 @@ export async function upgradeSubscription(vendorId: string, newPlanName: string,
     periodEnd.setMonth(periodEnd.getMonth() + 1)
   }
 
-  const updated = await prisma.vendorSubscription.update({
-    where: { id: subscription.id },
-    data: {
-      planId: newPlan.id,
-      billingCycle,
-      currentPeriodStart: periodStart,
-      currentPeriodEnd: periodEnd,
-      nextRenewalAt: periodEnd,
-      status: 'ACTIVE',
-      updatedAt: now,
-    },
-    include: { plan: true },
-  })
+  const isInfluencerUpgrade = subscription.source === 'INFLUENCER'
 
-  await prisma.subscriptionHistory.create({
-    data: {
-      subscriptionId: subscription.id,
-      action: 'UPGRADED',
-      fromPlanId: oldPlanId,
-      toPlanId: newPlan.id,
-      billingCycle,
-      notes: `Upgraded from ${subscription.plan.name} to ${newPlanName}`,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.vendorSubscription.update({
+      where: { id: subscription.id },
+      data: {
+        planId: newPlan.id,
+        billingCycle,
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
+        nextRenewalAt: periodEnd,
+        status: 'ACTIVE',
+        updatedAt: now,
+        ...(isInfluencerUpgrade ? { source: null, planExpiresAt: null } : {}),
+      },
+      include: { plan: true },
+    })
+
+    await tx.subscriptionHistory.create({
+      data: {
+        subscriptionId: subscription.id,
+        action: 'UPGRADED',
+        fromPlanId: oldPlanId,
+        toPlanId: newPlan.id,
+        billingCycle,
+        notes: `Upgraded from ${subscription.plan.name} to ${newPlanName}`,
+      },
+    })
   })
 
   logInfo(`Subscription upgraded: vendor=${vendorId}, from=${subscription.plan.name}, to=${newPlanName}`)
-  return updated
+  return prisma.vendorSubscription.findUnique({
+    where: { vendorId },
+    include: { plan: true },
+  })
 }
 
 export async function downgradeSubscription(vendorId: string, newPlanName: string, billingCycle: 'MONTHLY' | 'YEARLY' = 'MONTHLY') {
@@ -526,12 +535,18 @@ export async function checkSubscriptionFeatureAccess(vendorId: string, featureKe
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
-    include: { plan: { include: { featurePermissions: true } } },
+    include: { plan: true },
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
 
-  const feature = subscription.plan.featurePermissions.find((f) => f.featureKey === featureKey)
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  const plan = await getSubscriptionPlanByName(planName)
+  if (!plan) return false
+
+  const feature = await prisma.subscriptionFeature.findFirst({
+    where: { planId: plan.id, featureKey },
+  })
   if (!feature) return false
   if (!feature.isEnabled) return false
   if (feature.limit !== null && feature.currentUsage >= feature.limit) return false
@@ -543,16 +558,18 @@ export async function incrementFeatureUsage(vendorId: string, featureKey: string
   const prisma = getPrisma()
   const subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
-    include: { plan: { include: { featurePermissions: true } } },
+    include: { plan: true },
   })
   if (!subscription) return
 
-  const feature = subscription.plan.featurePermissions.find((f) => f.featureKey === featureKey)
+  const feature = await prisma.subscriptionFeature.findFirst({
+    where: { planId: subscription.planId, featureKey },
+  })
   if (!feature) return
 
   await prisma.subscriptionFeature.update({
     where: { id: feature.id },
-    data: { currentUsage: feature.currentUsage + increment },
+    data: { currentUsage: { increment } },
   })
 }
 
@@ -564,7 +581,9 @@ export async function getSubscriptionUsage(vendorId: string) {
   })
   if (!subscription) return []
 
-  const plan = subscription.plan
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  const effectivePlan = await getSubscriptionPlanByName(planName)
+  const plan = effectivePlan ?? subscription.plan
   const productsLimit = plan.productsLimit
   const servicesLimit = plan.servicesLimit
 

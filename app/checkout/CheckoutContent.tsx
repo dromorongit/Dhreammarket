@@ -389,9 +389,10 @@ export default function CheckoutContent() {
    const [orderSummaryExpanded, setOrderSummaryExpanded] = useState(false)
    const [verificationTimeout, setVerificationTimeout] = useState(false)
    const [processingScreenTimeout, setProcessingScreenTimeout] = useState(false)
-   const [walletBalance, setWalletBalance] = useState(0)
-   const [useWalletBalance, setUseWalletBalance] = useState(false)
-   const [walletAmount, setWalletAmount] = useState(0)
+    const [walletBalance, setWalletBalance] = useState(0)
+    const [useWalletBalance, setUseWalletBalance] = useState(false)
+    const [walletAmount, setWalletAmount] = useState(0)
+    const [influencerCashback, setInfluencerCashback] = useState<{ percent: number; maxOrders: number; used: number; amount: number; name: string } | null>(null)
    
     const { cart: contextCart, clearCart } = useCart()
    const paymentStatus = searchParams?.get('status') ?? null
@@ -450,6 +451,25 @@ export default function CheckoutContent() {
               phone: user.profile?.phone ?? '',
               address: user.profile?.address ?? ''
             }))
+
+            if (user.influencerAttributionCode && subtotal > 0) {
+              const perkRes = await fetch(`/api/influencer/perks?code=${encodeURIComponent(user.influencerAttributionCode)}`)
+              if (perkRes.ok) {
+                const perkData = await perkRes.json()
+                const used = user.influencerCashbackOrdersUsed || 0
+                const remaining = perkData.customerCashbackMaxOrders - used
+                if (remaining > 0) {
+                  const cashbackAmount = Math.round(subtotal * (perkData.customerCashbackPercent / 100) * 100) / 100
+                  setInfluencerCashback({
+                    percent: perkData.customerCashbackPercent,
+                    maxOrders: perkData.customerCashbackMaxOrders,
+                    used,
+                    amount: cashbackAmount,
+                    name: perkData.name,
+                  })
+                }
+              }
+            }
           }
         }
       } catch (error) {
@@ -925,6 +945,16 @@ export default function CheckoutContent() {
           <div className="mt-6 lg:mt-0 lg:col-span-4 w-full max-w-full">
             <div className="lg:sticky lg:top-28 space-y-4">
               <OrderSummaryDesktop items={contextCart.items} subtotal={subtotal} />
+              {influencerCashback && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                  <p className="text-sm font-medium text-emerald-800">
+                    Influencer perk: {influencerCashback.percent}% cashback
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Est. GH₵{influencerCashback.amount.toFixed(2)} cashback on this order ({influencerCashback.maxOrders - influencerCashback.used} of {influencerCashback.maxOrders} left)
+                  </p>
+                </div>
+              )}
               <div className="hidden lg:block">
                 <PaymentSummaryDesktop 
                   total={finalTotal} 
@@ -962,6 +992,16 @@ export default function CheckoutContent() {
             expanded={orderSummaryExpanded}
             onToggle={() => setOrderSummaryExpanded(!orderSummaryExpanded)}
           />
+          {influencerCashback && (
+            <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+              <p className="text-sm font-medium text-emerald-800">
+                Influencer perk: {influencerCashback.percent}% cashback
+              </p>
+              <p className="text-xs text-emerald-600 mt-1">
+                Est. GH₵{influencerCashback.amount.toFixed(2)} cashback ({influencerCashback.maxOrders - influencerCashback.used} of {influencerCashback.maxOrders} left)
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

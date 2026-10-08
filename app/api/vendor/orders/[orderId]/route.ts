@@ -7,6 +7,7 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { recordFulfillmentEvent, FulfillmentEventType } from '@/lib/fulfillment-events'
 import { consumeInventory, releaseStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
+import { creditInfluencerOrderCashback, reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 
 export const dynamic = 'force-dynamic'
 
@@ -265,6 +266,12 @@ export async function PATCH(
           data: updateData,
         })
 
+        try {
+          await reverseInfluencerOrderCashback(orderId)
+        } catch (reverseErr) {
+          console.error('Failed to reverse influencer cashback on rejection:', reverseErr)
+        }
+
         const orderWithUser = await getPrisma().order.findUnique({
           where: { id: orderId },
           include: {
@@ -383,6 +390,25 @@ export async function PATCH(
             description: `Consumed ${item.quantity} units of inventory.`,
           }).catch(err => console.error('Failed to record inventory consumed event:', err))
         }
+      }
+    }
+
+    if (isConsumptionStatus && existingOrder.paymentStatus === 'PAID') {
+      try {
+        const orderForCashback = await getPrisma().order.findUnique({
+          where: { id: orderId },
+          select: { subtotal: true, userId: true, user: { select: { influencerAttributionCode: true } } },
+        })
+        if (orderForCashback?.user?.influencerAttributionCode && orderForCashback.subtotal && orderForCashback.subtotal > 0) {
+          await creditInfluencerOrderCashback(
+            orderForCashback.userId,
+            orderId,
+            orderForCashback.user.influencerAttributionCode,
+            orderForCashback.subtotal
+          )
+        }
+      } catch (cashbackErr) {
+        console.error('Failed to credit influencer cashback:', cashbackErr)
       }
     }
 

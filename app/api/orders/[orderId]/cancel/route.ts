@@ -5,6 +5,7 @@ import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createAuditLog } from '@/lib/audit-log'
 import { releaseStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
+import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 
 export const dynamic = 'force-dynamic'
 
@@ -115,6 +116,12 @@ export async function PATCH(
         },
       },
     })
+
+    try {
+      await reverseInfluencerOrderCashback(orderId)
+    } catch (reverseErr) {
+      console.error('Failed to reverse influencer cashback on cancellation:', reverseErr)
+    }
 
     recordFulfillmentEvent(orderId, 'CANCELLED', payload.userId, {
       description: reason || 'Order cancelled by customer',

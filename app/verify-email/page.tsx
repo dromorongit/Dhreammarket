@@ -17,6 +17,7 @@ function VerifyEmailContent() {
   const [loading, setLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendMessage, setResendMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -72,43 +73,54 @@ function VerifyEmailContent() {
       const data = await response.json()
 
       if (response.ok) {
-        // Auto-login is handled by the backend - redirect to target page
-        if (data.user) {
-          // User is auto-authenticated, redirect directly
-          const role = data.user.role
-          const isOnboarded = data.isOnboarded
+         // Auto-login is handled by the backend - redirect to target page
+         if (data.user) {
+           const role = data.user.role
+           const isOnboarded = data.isOnboarded
 
-          // Determine dashboard path based on role and onboarding status
-          let dashboardPath: string
-          if (role === 'SUPER_ADMIN') {
-            dashboardPath = '/dashboard/super-admin'
-          } else if (role === 'ADMIN') {
-            dashboardPath = '/dashboard/admin'
-          } else if (role === 'INFLUENCER') {
-            dashboardPath = '/dashboard/influencer'
-          } else if (role === 'VENDOR') {
-            // Vendors go to vendor dashboard if onboarded, otherwise to store setup
-            dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
-          } else {
-            dashboardPath = '/dashboard/customer'
-          }
+           let dashboardPath: string
+           if (role === 'SUPER_ADMIN') {
+             dashboardPath = '/dashboard/super-admin'
+           } else if (role === 'ADMIN') {
+             dashboardPath = '/dashboard/admin'
+           } else if (role === 'INFLUENCER') {
+             dashboardPath = '/dashboard/influencer'
+           } else if (role === 'VENDOR') {
+             dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+           } else {
+             dashboardPath = '/dashboard/customer'
+           }
 
-          // Only allow redirect to non-vendor-dashboard paths; vendor onboarding must be completed via middleware
-          const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor')
-            ? redirectUrl
-            : dashboardPath
-          window.location.href = targetUrl
-        } else {
-          // Fallback: redirect to login if no auto-login
-          if (redirectUrl) {
-            window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`
-          } else {
-            window.location.href = '/login'
-          }
-        }
-      } else {
-        setError(data.error || 'Verification failed')
-      }
+           const targetUrl = redirectUrl && !redirectUrl.startsWith('/dashboard/vendor')
+             ? redirectUrl
+             : dashboardPath
+
+           if (data.influencerPerk) {
+             const msgs = []
+             if (data.influencerPerk.signupPoints > 0) {
+               msgs.push(`${data.influencerPerk.signupPoints} reward points have been added to your account`)
+             }
+             if (data.influencerPerk.vendorTrial) {
+               msgs.push(`You've started on the Starter Plan for your first month, courtesy of ${data.influencerPerk.influencerName}`)
+             }
+             setSuccessMessage(`Welcome! ${msgs.join('. ')}.`)
+             setTimeout(() => {
+               window.location.href = targetUrl
+             }, 3000)
+           } else {
+             window.location.href = targetUrl
+           }
+         } else {
+           // Fallback: redirect to login if no auto-login
+           if (redirectUrl) {
+             window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`
+           } else {
+             window.location.href = '/login'
+           }
+         }
+       } else {
+         setError(data.error || 'Verification failed')
+       }
     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {
@@ -212,6 +224,12 @@ function VerifyEmailContent() {
               />
               {error && (
                 <div className="text-red-600 text-sm">{error}</div>
+              )}
+              {successMessage && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <p className="text-sm text-emerald-800">{successMessage}</p>
+                  <p className="text-xs text-emerald-600 mt-1">Redirecting to your dashboard...</p>
+                </div>
               )}
               {showMarketingCodeField && (
                 <Input

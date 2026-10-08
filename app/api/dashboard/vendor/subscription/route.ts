@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { getFeatureRestrictions } from '@/lib/subscription/types'
+import { isExpiredInfluencerTrial, getEffectivePlanName } from '@/lib/subscription/feature-restriction'
 import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 import { SubscriptionDashboardData } from '@/lib/subscription/types'
 
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       }))
     )
 
-    const currentPlan = subscription?.plan?.name ?? 'Free'
+    const currentPlan = await getEffectivePlanName(payload.userId)
     const status = subscription?.status ?? 'NONE'
     const nextRenewal = subscription?.nextRenewalAt?.toISOString() ?? null
     const startDate = subscription?.currentPeriodStart?.toISOString() ?? null
@@ -62,9 +63,10 @@ export async function GET(request: NextRequest) {
       where: { vendorId: payload.userId },
     })
 
-    const plan = subscription?.plan ?? dbPlans.find((p) => p.name === 'Free')
-    const productsLimit = plan?.productsLimit ?? 20
-    const servicesLimit = plan?.servicesLimit ?? 10
+    const effectivePlanName = await getEffectivePlanName(payload.userId)
+    const effectivePlan = dbPlans.find((p) => p.name === effectivePlanName) ?? dbPlans.find((p) => p.name === 'Free')
+    const productsLimit = effectivePlan?.productsLimit ?? 20
+    const servicesLimit = effectivePlan?.servicesLimit ?? 10
 
     const invoices = await prisma.subscriptionInvoice.findMany({
       where: { subscription: { vendorId: payload.userId } },

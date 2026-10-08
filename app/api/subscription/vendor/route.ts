@@ -18,6 +18,7 @@ import {
   processSubscriptionPayment,
   getSubscriptionHistory,
   } from '@/lib/subscription/subscription-service'
+import { getEffectivePlanName } from '@/lib/subscription/feature-restriction'
 import { logInfo, logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -56,11 +57,13 @@ export async function GET(request: NextRequest) {
 
     const usage = await getSubscriptionUsage(vendorId)
     const history = await getSubscriptionHistory(subscription.id, 20)
+    const effectivePlanName = await getEffectivePlanName(vendorId)
 
     return NextResponse.json({
       subscription: {
         ...subscription,
         plan: subscription.plan,
+        effectivePlanName,
         usage,
         history,
       },

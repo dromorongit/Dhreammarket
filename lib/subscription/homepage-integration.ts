@@ -1,5 +1,7 @@
 import { getPrisma } from '@/lib/prisma'
 import { getFeatureRestrictions } from '@/lib/subscription/types'
+import { isExpiredInfluencerTrial } from '@/lib/subscription/feature-restriction'
+import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 
 export async function getFeaturedVendorsForHomepage(limit: number = 10) {
   const prisma = getPrisma()
@@ -8,6 +10,9 @@ export async function getFeaturedVendorsForHomepage(limit: number = 10) {
       status: 'ACTIVE',
       plan: {
         name: { in: ['Business', 'Professional', 'Enterprise'] },
+      },
+      source: {
+        not: 'INFLUENCER',
       },
     },
     include: {
@@ -37,6 +42,9 @@ export async function getSponsoredVendorsForHomepage(limit: number = 10) {
       plan: {
         name: { in: ['Professional', 'Enterprise'] },
       },
+      source: {
+        not: 'INFLUENCER',
+      },
     },
     include: {
       vendor: { select: { email: true, store: { select: { name: true, slug: true, logo: true, averageRating: true } } } },
@@ -65,6 +73,9 @@ export async function getVendorsWithPromotionCredits(limit: number = 20) {
       plan: {
         name: { in: ['Business', 'Professional', 'Enterprise'] },
       },
+      source: {
+        not: 'INFLUENCER',
+      },
     },
     include: {
       vendor: { select: { email: true, store: { select: { name: true, slug: true } } } },
@@ -85,24 +96,34 @@ export async function getVendorsWithPromotionCredits(limit: number = 20) {
 
 export async function canVendorBeFeatured(vendorId: string): Promise<boolean> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
-  if (!subscription) return false
-  if (subscription.status !== 'ACTIVE') return false
+
+  if (!subscription) {
+    subscription = await ensureFreeSubscription(vendorId)
+  }
+
+  if (!subscription || subscription.status !== 'ACTIVE') return false
+  if (isExpiredInfluencerTrial(subscription)) return false
   const restrictions = await getFeatureRestrictions(subscription.plan.name)
   return restrictions.homepagePromotions
 }
 
 export async function canVendorBeSponsored(vendorId: string): Promise<boolean> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
-  if (!subscription) return false
-  if (subscription.status !== 'ACTIVE') return false
+
+  if (!subscription) {
+    subscription = await ensureFreeSubscription(vendorId)
+  }
+
+  if (!subscription || subscription.status !== 'ACTIVE') return false
+  if (isExpiredInfluencerTrial(subscription)) return false
   const restrictions = await getFeatureRestrictions(subscription.plan.name)
   return restrictions.sponsoredProducts || restrictions.sponsoredServices
 }

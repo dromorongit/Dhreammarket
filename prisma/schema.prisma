@@ -2486,12 +2486,12 @@ model InfluencerClick {
 
 model InfluencerCashback {
   id             String    @id @default(cuid())
-  userId         String    @map("user_id")
+  userId         String?   @map("user_id")
   orderId        String    @unique @map("order_id")
   cashbackAmount Float     @map("cashback_amount")
   source         String    @default("INFLUENCER") @db.VarChar(32) @map("source")
   createdAt      DateTime  @default(now()) @map("created_at")
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([orderId])

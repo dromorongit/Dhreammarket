@@ -28,6 +28,7 @@ function RegisterContent() {
   const [ageConsent, setAgeConsent] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const searchParams = useSearchParams()
 
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null)
@@ -133,42 +134,57 @@ function RegisterContent() {
 
        const data = await response.json()
 
-if (response.ok) {
+   if (response.ok) {
           event({ action: 'sign_up', category: 'engagement' })
              if (data.user) {
-             const role = data.user.role
-             const isOnboarded = data.isOnboarded
-              let dashboardPath: string
-              if (role === 'SUPER_ADMIN') {
-                dashboardPath = '/dashboard/super-admin'
-              } else if (role === 'ADMIN') {
-                dashboardPath = '/dashboard/admin'
-              } else if (role === 'INFLUENCER') {
-                dashboardPath = '/dashboard/influencer'
-              } else if (role === 'VENDOR') {
-                dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+              const role = data.user.role
+              const isOnboarded = data.isOnboarded
+               let dashboardPath: string
+               if (role === 'SUPER_ADMIN') {
+                 dashboardPath = '/dashboard/super-admin'
+               } else if (role === 'ADMIN') {
+                 dashboardPath = '/dashboard/admin'
+               } else if (role === 'INFLUENCER') {
+                 dashboardPath = '/dashboard/influencer'
+               } else if (role === 'VENDOR') {
+                 dashboardPath = isOnboarded ? '/dashboard/vendor' : '/dashboard/vendor/store'
+               } else {
+                 dashboardPath = '/dashboard/customer'
+               }
+              let targetUrl: string
+              if (role === 'VENDOR' && !isOnboarded) {
+                targetUrl = '/dashboard/vendor/store'
               } else {
-                dashboardPath = '/dashboard/customer'
+                targetUrl = redirectUrl || dashboardPath
               }
-             let targetUrl: string
-             if (role === 'VENDOR' && !isOnboarded) {
-               targetUrl = '/dashboard/vendor/store'
-             } else {
-               targetUrl = redirectUrl || dashboardPath
-             }
-             window.location.href = targetUrl
-          } else if (data.needsVerification) {
-           const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
-           window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
-         } else {
-           const targetUrl = redirectUrl 
-             ? `/login?redirect=${encodeURIComponent(redirectUrl)}`
-             : '/login'
-           window.location.href = targetUrl
-         }
-       } else {
-         setError(data.error || 'Registration failed')
-       }
+
+              if (data.influencerPerk) {
+                const msgs = []
+                if (data.influencerPerk.signupPoints > 0) {
+                  msgs.push(`${data.influencerPerk.signupPoints} reward points have been added to your account`)
+                }
+                if (data.influencerPerk.vendorTrial) {
+                  msgs.push(`You've started on the Starter Plan for your first month, courtesy of ${data.influencerPerk.influencerName}`)
+                }
+                setSuccessMessage(`Welcome! ${msgs.join('. ')}.`)
+                setTimeout(() => {
+                  window.location.href = targetUrl
+                }, 3000)
+              } else {
+                window.location.href = targetUrl
+              }
+            } else if (data.needsVerification) {
+             const redirectParam = redirectUrl ? `&redirect=${encodeURIComponent(redirectUrl)}` : ''
+             window.location.href = `/verify-email?email=${encodeURIComponent(email)}${redirectParam}`
+          } else {
+            const targetUrl = redirectUrl 
+              ? `/login?redirect=${encodeURIComponent(redirectUrl)}`
+              : '/login'
+            window.location.href = targetUrl
+          }
+        } else {
+          setError(data.error || 'Registration failed')
+        }
      } catch (err) {
        setError('An error occurred. Please try again.')
      } finally {
@@ -320,6 +336,12 @@ if (response.ok) {
               </div>
               {error && (
                 <div className="text-red-600 text-sm">{error}</div>
+              )}
+              {successMessage && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <p className="text-sm text-emerald-800">{successMessage}</p>
+                  <p className="text-xs text-emerald-600 mt-1">Redirecting to your dashboard...</p>
+                </div>
               )}
               <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
                 {loading ? 'Creating account...' : 'Create account'}

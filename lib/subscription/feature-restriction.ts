@@ -1,7 +1,31 @@
 import { getPrisma } from '@/lib/prisma'
 import { getFeatureRestrictions, SubscriptionPlanName } from './types'
-import { ensureFreeSubscription } from './subscription-service'
+import { getSubscriptionPlanByName, ensureFreeSubscription } from './subscription-service'
 import { logError } from '@/lib/logger'
+
+export function isExpiredInfluencerTrial(subscription: {
+  source: string | null
+  planExpiresAt: Date | null
+  plan: { name: string } | null
+}): boolean {
+  return (
+    subscription.source === 'INFLUENCER' &&
+    subscription.planExpiresAt !== null &&
+    subscription.planExpiresAt < new Date() &&
+    subscription.plan?.name === 'Starter'
+  )
+}
+
+export async function getEffectivePlanName(vendorId: string): Promise<string> {
+  const prisma = getPrisma()
+  const subscription = await prisma.vendorSubscription.findUnique({
+    where: { vendorId },
+    include: { plan: true },
+  })
+  if (!subscription) return 'Free'
+  if (isExpiredInfluencerTrial(subscription)) return 'Free'
+  return subscription.plan?.name ?? 'Free'
+}
 
 export async function canCreateProduct(vendorId: string): Promise<{ allowed: boolean; current: number; limit: number | null; reason?: string }> {
   const prisma = getPrisma()
@@ -19,7 +43,10 @@ export async function canCreateProduct(vendorId: string): Promise<{ allowed: boo
       return { allowed: false, current: 0, limit: 0, reason: `Subscription status is ${subscription?.status ?? 'none'}` }
     }
 
-    const plan = subscription.plan
+    const expiredInfluencerTrial = isExpiredInfluencerTrial(subscription)
+    const effectivePlan = expiredInfluencerTrial ? await getSubscriptionPlanByName('Free') : subscription.plan
+    const plan = effectivePlan ?? subscription.plan
+
     const restrictions = await getFeatureRestrictions(plan.name)
     const productCount = await prisma.product.count({
       where: { store: { userId: vendorId } },
@@ -57,7 +84,10 @@ export async function canCreateService(vendorId: string): Promise<{ allowed: boo
       return { allowed: false, current: 0, limit: 0, reason: `Subscription status is ${subscription?.status ?? 'none'}` }
     }
 
-    const plan = subscription.plan
+    const expiredInfluencerTrial = isExpiredInfluencerTrial(subscription)
+    const effectivePlan = expiredInfluencerTrial ? await getSubscriptionPlanByName('Free') : subscription.plan
+    const plan = effectivePlan ?? subscription.plan
+
     const restrictions = await getFeatureRestrictions(plan.name)
     const serviceCount = await prisma.service.count({
       where: { vendorId },
@@ -87,7 +117,8 @@ export async function canUseHomepagePromotions(vendorId: string): Promise<boolea
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).homepagePromotions
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).homepagePromotions
 }
 
 export async function canUseSponsoredProducts(vendorId: string): Promise<boolean> {
@@ -98,7 +129,8 @@ export async function canUseSponsoredProducts(vendorId: string): Promise<boolean
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).sponsoredProducts
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).sponsoredProducts
 }
 
 export async function canUseSponsoredServices(vendorId: string): Promise<boolean> {
@@ -109,7 +141,8 @@ export async function canUseSponsoredServices(vendorId: string): Promise<boolean
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).sponsoredServices
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).sponsoredServices
 }
 
 export async function canUsePremiumAnalytics(vendorId: string): Promise<boolean> {
@@ -120,7 +153,8 @@ export async function canUsePremiumAnalytics(vendorId: string): Promise<boolean>
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).premiumAnalytics
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).premiumAnalytics
 }
 
 export async function canUseAdvancedAI(vendorId: string): Promise<boolean> {
@@ -131,7 +165,8 @@ export async function canUseAdvancedAI(vendorId: string): Promise<boolean> {
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).advancedAI
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).advancedAI
 }
 
 export async function canUseCashbackCampaigns(vendorId: string): Promise<boolean> {
@@ -142,7 +177,8 @@ export async function canUseCashbackCampaigns(vendorId: string): Promise<boolean
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).cashbackCampaigns
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).cashbackCampaigns
 }
 
 export async function canUseRewardCampaigns(vendorId: string): Promise<boolean> {
@@ -153,7 +189,8 @@ export async function canUseRewardCampaigns(vendorId: string): Promise<boolean> 
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).rewardCampaigns
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).rewardCampaigns
 }
 
 export async function canUseVendorAdvertisements(vendorId: string): Promise<boolean> {
@@ -164,7 +201,8 @@ export async function canUseVendorAdvertisements(vendorId: string): Promise<bool
   })
   if (!subscription) return false
   if (subscription.status !== 'ACTIVE') return false
-  return (await getFeatureRestrictions(subscription.plan.name)).vendorAdvertisements
+  const planName = isExpiredInfluencerTrial(subscription) ? 'Free' : subscription.plan.name
+  return (await getFeatureRestrictions(planName)).vendorAdvertisements
 }
 
 export async function getAllFeatureRestrictions(vendorId: string) {
@@ -174,6 +212,9 @@ export async function getAllFeatureRestrictions(vendorId: string) {
     include: { plan: true },
   })
   if (!subscription) {
+    return await getFeatureRestrictions('Free')
+  }
+  if (isExpiredInfluencerTrial(subscription)) {
     return await getFeatureRestrictions('Free')
   }
   return await getFeatureRestrictions(subscription.plan.name)

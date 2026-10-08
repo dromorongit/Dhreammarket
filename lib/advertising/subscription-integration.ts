@@ -1,19 +1,20 @@
 import { getPrisma } from '@/lib/prisma'
 import { getFeatureRestrictions, SubscriptionPlanName } from '@/lib/subscription/types'
+import { ensureFreeSubscription } from '@/lib/subscription/subscription-service'
 
 export async function canVendorCreateCampaign(vendorId: string): Promise<{ allowed: boolean; reason?: string }> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
 
   if (!subscription) {
-    return { allowed: false, reason: 'No active subscription found' }
+    subscription = await ensureFreeSubscription(vendorId)
   }
 
-  if (subscription.status !== 'ACTIVE') {
-    return { allowed: false, reason: `Subscription status is ${subscription.status}` }
+  if (!subscription || subscription.status !== 'ACTIVE') {
+    return { allowed: false, reason: `Subscription status is ${subscription?.status ?? 'none'}` }
   }
 
   const restrictions = await getFeatureRestrictions(subscription.plan.name)
@@ -30,10 +31,14 @@ export async function canVendorCreateCampaign(vendorId: string): Promise<{ allow
 
 export async function getVendorCampaignLimit(vendorId: string): Promise<{ maxCampaigns: number; currentCampaigns: number }> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
+
+  if (!subscription) {
+    subscription = await ensureFreeSubscription(vendorId)
+  }
 
   if (!subscription) {
     return { maxCampaigns: 0, currentCampaigns: 0 }
@@ -75,10 +80,14 @@ export async function getSubscriptionPlanFeatures(vendorId: string): Promise<{
   canUsePriorityApproval: boolean
 }> {
   const prisma = getPrisma()
-  const subscription = await prisma.vendorSubscription.findUnique({
+  let subscription = await prisma.vendorSubscription.findUnique({
     where: { vendorId },
     include: { plan: true },
   })
+
+  if (!subscription) {
+    subscription = await ensureFreeSubscription(vendorId)
+  }
 
   if (!subscription || subscription.status !== 'ACTIVE') {
     return {
