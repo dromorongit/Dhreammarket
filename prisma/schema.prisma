@@ -22,6 +22,9 @@ model User {
   behavioralTrackingConsent    Boolean                        @default(true)
   referralCode                 String?                        @unique @db.VarChar(32)
   registrationIpAddress        String?                        @db.VarChar(64)
+  influencerAttributionCode    String?                        @db.VarChar(32)
+  influencerBonusGrantedAt     DateTime?
+  influencerCashbackOrdersUsed Int                           @default(0)
   addresses                    Address[]
   adminSettings                AdminSettings?
   advertisementCampaigns       AdvertisementCampaign[]
@@ -72,6 +75,9 @@ model User {
   cashbackTransactions        CashbackTransaction[]
   rewardRedemptions           RewardRedemption[]
   vendorSubscriptions         VendorSubscription[]
+  influencerCashbacks         InfluencerCashback[]
+  returnRequests             ReturnRequest[]
+  vendorBalanceAdjustments   VendorBalanceAdjustment[]
   vendorPosts        VendorPost[]          @relation("UserVendorPosts")
   vendorPostLikes    VendorPostLike[]      @relation("UserVendorPostLikes")
   vendorPostComments VendorPostComment[]   @relation("UserVendorPostComments")
@@ -186,6 +192,7 @@ model Store {
   vendorTrustBadges        VendorTrustBadge[]
   vendorFollows            VendorFollow[]
   verificationApplications VendorVerificationApplication[]
+  vendorBalanceAdjustments VendorBalanceAdjustment[]
 
   @@map("stores")
 }
@@ -532,9 +539,17 @@ model OrderItem {
   expectedArrivalDate DateTime?
   expectedRestockDate DateTime?
   allocatedQuantity   Int                      @default(0)
+  shippedAt           DateTime?
+  deliveredAt         DateTime?
+  deliveryConfirmedAt DateTime?
+  deliveryConfirmedBy DeliveryConfirmedBy?
   order               Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product             Product                  @relation(fields: [productId], references: [id], onDelete: Restrict)
   productVariant      ProductVariant?          @relation(fields: [productVariantId], references: [id])
+  returnRequests      ReturnRequest[]
+  refunds             Refund[]
+  payoutItems         VendorPayoutItem[]
+  balanceAdjustments  VendorBalanceAdjustment[]
 
   @@map("order_items")
 }
@@ -553,6 +568,7 @@ model Payment {
   updatedAt   DateTime      @updatedAt
   order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refunds     Refund[]
 
   @@map("payments")
 }
@@ -635,6 +651,8 @@ model VendorPayout {
   updatedAt DateTime     @updatedAt
   store     Store        @relation("VendorPayoutStore", fields: [storeId], references: [id])
   vendor    User         @relation("VendorPayoutVendor", fields: [vendorId], references: [id])
+  payoutItems VendorPayoutItem[]
+  balanceAdjustments VendorBalanceAdjustment[]
 
   @@map("vendor_payouts")
 }
@@ -2089,6 +2107,9 @@ model VendorSubscription {
   currentPeriodEnd       DateTime  @map("current_period_end")
   nextRenewalAt          DateTime  @map("next_renewal_at")
   trialEndsAt            DateTime? @map("trial_ends_at")
+  planExpiresAt          DateTime? @map("plan_expires_at")
+  source                 String?   @db.VarChar(32) @map("source")
+  influencerCode         String?   @db.VarChar(32) @map("influencer_code")
   cancelledAt            DateTime? @map("cancelled_at")
   cancelledAtPeriodEnd   Boolean   @default(false) @map("cancelled_at_period_end")
   autoRenew              Boolean   @default(false) @map("auto_renew")
@@ -2109,6 +2130,8 @@ model VendorSubscription {
   @@index([status])
   @@index([currentPeriodEnd])
   @@index([nextRenewalAt])
+  @@index([source])
+  @@index([influencerCode])
   @@map("vendor_subscriptions")
 }
 
@@ -2397,20 +2420,25 @@ model VendorReferral {
 }
 
 model Influencer {
-  id                 String           @id @default(cuid())
-  name               String
-  email              String?
-  phone              String?
-  referralCode       String           @unique @db.VarChar(32)
-  active             Boolean          @default(true)
-  incentivePerVendor Float?
-  incentivePerCustomer Float?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  userId             String?          @unique
-  user               User?            @relation(fields: [userId], references: [id])
-  referrals          InfluencerReferral[]
-  clicks             InfluencerClick[]
+  id                       String           @id @default(cuid())
+  name                     String
+  email                    String?
+  phone                    String?
+  referralCode             String           @unique @db.VarChar(32)
+  active                   Boolean          @default(true)
+  incentivePerVendor       Float?
+  incentivePerCustomer     Float?
+  customerSignupPoints     Int              @default(500) @map("customer_signup_points")
+  customerCashbackPercent  Int              @default(10) @map("customer_cashback_percent")
+  customerCashbackMaxOrders Int             @default(5) @map("customer_cashback_max_orders")
+  vendorPlan               String           @default("STARTER") @db.VarChar(32) @map("vendor_plan")
+  vendorPlanDurationMonths Int              @default(1) @map("vendor_plan_duration_months")
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  userId                   String?          @unique
+  user                     User?            @relation(fields: [userId], references: [id])
+  referrals                InfluencerReferral[]
+  clicks                   InfluencerClick[]
 
   @@index([referralCode])
   @@index([active])
@@ -2452,9 +2480,157 @@ model InfluencerClick {
   influencer   Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
 
   @@index([influencerId])
-  @@index([ipAddress])
   @@index([createdAt])
   @@map("influencer_clicks")
+}
+
+model InfluencerCashback {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  orderId        String    @unique @map("order_id")
+  cashbackAmount Float     @map("cashback_amount")
+  source         String    @default("INFLUENCER") @db.VarChar(32) @map("source")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orderId])
+  @@map("influencer_cashbacks")
+}
+
+model PlatformPolicy {
+  id                              String      @id @default("singleton")
+  systemCutoverTimestamp          DateTime?
+  returnWindowDays                Int         @default(3)
+  vendorResponseBusinessDays      Int         @default(3)
+  disputeResolutionBusinessDays   Int         @default(7)
+  autoConfirmDeliveryDays         Int         @default(3)
+  payoutHoldDaysAfterConfirmation Int         @default(2)
+  dispatchTargetDaysAfterPayment  Int         @default(3)
+  minOrdersBeforeShowingRate      Int         @default(10)
+  payoutMode                      PayoutMode  @default(REPORT_ONLY)
+  holidayList                     String[]    @default([])
+  refundProcessingWindowDays      Int         @default(5)
+  createdAt                       DateTime    @default(now())
+  updatedAt                       DateTime    @updatedAt
+
+  @@map("platform_policy")
+}
+
+model Refund {
+  id             String       @id @default(cuid())
+  paymentId      String
+  orderItemId    String
+  amount         Decimal      @db.Decimal(12, 2)
+  walletAmount   Decimal      @default(0) @db.Decimal(12, 2)
+  idempotencyKey String       @unique
+  status         RefundStatus @default(PENDING)
+  paystackRefundId String?
+  paystackStatus String?
+  failureReason  String?
+  retryCount     Int          @default(0)
+  lastRetryAt    DateTime?
+  processedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  payment        Payment      @relation(fields: [paymentId], references: [id])
+  orderItem      OrderItem    @relation(fields: [orderItemId], references: [id])
+  balanceAdjustments VendorBalanceAdjustment[]
+
+  @@index([paymentId])
+  @@index([orderItemId])
+  @@index([status])
+  @@index([paystackRefundId])
+  @@map("refunds")
+}
+
+model ReturnRequest {
+  id                String           @id @default(cuid())
+  orderItemId       String
+  customerId        String
+  status            ReturnStatus     @default(PENDING)
+  reason            ReturnReason
+  returnRequired    Boolean          @default(true)
+  quantity          Int              @default(1)
+  policySnapshot    Json
+  escalationDeadline DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  orderItem         OrderItem        @relation(fields: [orderItemId], references: [id])
+  customer          User             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  events            ReturnRequestEvent[]
+  attachments       ReturnRequestAttachment[]
+
+  @@index([orderItemId])
+  @@index([customerId])
+  @@index([status])
+  @@map("return_requests")
+}
+
+model ReturnRequestEvent {
+  id            String        @id @default(cuid())
+  returnRequestId String
+  eventType     String
+  note          String?
+  createdBy     String?
+  createdAt     DateTime      @default(now())
+  returnRequest ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  @@index([returnRequestId])
+  @@map("return_request_events")
+}
+
+model ReturnRequestAttachment {
+  id            String        @id @default(cuid())
+  returnRequestId String
+  url           String
+  publicId      String?
+  mimeType      String?
+  sizeBytes     Int?
+  createdAt     DateTime      @default(now())
+  returnRequest ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+
+  @@index([returnRequestId])
+  @@map("return_request_attachments")
+}
+
+model VendorPayoutItem {
+  id            String       @id @default(cuid())
+  vendorPayoutId String
+  orderItemId   String       @unique
+  amount        Decimal      @db.Decimal(12, 2)
+  createdAt     DateTime     @default(now())
+  payout        VendorPayout @relation(fields: [vendorPayoutId], references: [id])
+  orderItem     OrderItem    @relation(fields: [orderItemId], references: [id])
+
+  @@index([vendorPayoutId])
+  @@map("vendor_payout_items")
+}
+
+model VendorBalanceAdjustment {
+  id              String           @id @default(cuid())
+  vendorId        String
+  storeId         String
+  appliedPayoutId String
+  orderItemId     String
+  refundId        String
+  adjustmentType  AdjustmentType
+  amount          Decimal          @db.Decimal(12, 2)
+  appliedAt       DateTime
+  note            String?
+  createdAt       DateTime         @default(now())
+  vendor          User             @relation(fields: [vendorId], references: [id])
+  store           Store            @relation(fields: [storeId], references: [id])
+  payout          VendorPayout     @relation(fields: [appliedPayoutId], references: [id])
+  orderItem       OrderItem        @relation(fields: [orderItemId], references: [id])
+  refund          Refund           @relation(fields: [refundId], references: [id])
+
+  @@index([vendorId])
+  @@index([storeId])
+  @@index([appliedPayoutId])
+  @@index([orderItemId])
+  @@index([refundId])
+  @@map("vendor_balance_adjustments")
 }
 
 enum SupportMessageSenderType {
@@ -2818,6 +2994,7 @@ enum CashbackSource {
   REFERRAL_BONUS
   REWARD_REDEMPTION
   ADJUSTMENT
+  INFLUENCER
 }
 
 enum ReferralStatus {
@@ -2960,4 +3137,50 @@ model AppWaitlistEntry {
   @@index([platform])
   @@index([role])
   @@map("app_waitlist_entries")
+}
+
+enum PayoutMode {
+  REPORT_ONLY
+  AUTOMATIC
+  MANUAL
+}
+
+enum AdjustmentType {
+  CHARGEBACK
+  FEE_CORRECTION
+  MANUAL
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  NEEDS_ATTENTION
+}
+
+enum ReturnReason {
+  NOT_AS_DESCRIBED
+  DAMAGED
+  WRONG_ITEM
+  NOT_RECEIVED
+  CHANGE_OF_MIND
+  OTHER
+}
+
+enum ReturnStatus {
+  PENDING
+  ITEM_IN_TRANSIT
+  ITEM_RECEIVED
+  AWAITING_REFUND
+  ESCALATED
+  REJECTED
+  CLOSED
+}
+
+enum DeliveryConfirmedBy {
+  VENDOR
+  CUSTOMER
+  AUTO
+  ADMIN
 }
