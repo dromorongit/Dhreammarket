@@ -39,6 +39,11 @@ yarn-error.log*
 
 # scratch / temp artifacts
 tsconfig.tsbuildinfo
+check*.js
+tmp_*.js
+q.py
+*.sql.bak
+readonly-check*.js
 
 # session cookie files (security risk if committed)
 cookies.txt
