@@ -2107,9 +2107,9 @@ model VendorSubscription {
   currentPeriodEnd       DateTime  @map("current_period_end")
   nextRenewalAt          DateTime  @map("next_renewal_at")
   trialEndsAt            DateTime? @map("trial_ends_at")
-  planExpiresAt          DateTime? @map("plan_expires_at")
+  planExpiresAt          DateTime? @map("planExpiresAt")
   source                 String?   @db.VarChar(32) @map("source")
-  influencerCode         String?   @db.VarChar(32) @map("influencer_code")
+  influencerCode         String?   @db.VarChar(32) @map("influencerCode")
   cancelledAt            DateTime? @map("cancelled_at")
   cancelledAtPeriodEnd   Boolean   @default(false) @map("cancelled_at_period_end")
   autoRenew              Boolean   @default(false) @map("auto_renew")
@@ -2428,11 +2428,11 @@ model Influencer {
   active                   Boolean          @default(true)
   incentivePerVendor       Float?
   incentivePerCustomer     Float?
-  customerSignupPoints     Int              @default(500) @map("customer_signup_points")
-  customerCashbackPercent  Int              @default(10) @map("customer_cashback_percent")
-  customerCashbackMaxOrders Int             @default(5) @map("customer_cashback_max_orders")
-  vendorPlan               String           @default("STARTER") @db.VarChar(32) @map("vendor_plan")
-  vendorPlanDurationMonths Int              @default(1) @map("vendor_plan_duration_months")
+  customerSignupPoints     Int              @default(500) @map("customerSignupPoints")
+  customerCashbackPercent  Int              @default(10) @map("customerCashbackPercent")
+  customerCashbackMaxOrders Int             @default(5) @map("customerCashbackMaxOrders")
+  vendorPlan               String           @default("STARTER") @db.VarChar(32) @map("vendorPlan")
+  vendorPlanDurationMonths Int              @default(1) @map("vendorPlanDurationMonths")
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
   userId                   String?          @unique
