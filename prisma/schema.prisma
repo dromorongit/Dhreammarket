@@ -77,6 +77,7 @@ model User {
   vendorSubscriptions         VendorSubscription[]
   influencerCashbacks         InfluencerCashback[]
   returnRequests             ReturnRequest[]
+  refunds                    Refund[]
   vendorBalanceAdjustments   VendorBalanceAdjustment[]
   vendorPosts        VendorPost[]          @relation("UserVendorPosts")
   vendorPostLikes    VendorPostLike[]      @relation("UserVendorPostLikes")
@@ -510,6 +511,7 @@ model Order {
   orderMessages         OrderMessage[]
   user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   payment               Payment?
+  refunds               Refund[]
   productReviews        ProductReview[]
   vendorReviews         VendorReview[]
 
@@ -2531,16 +2533,28 @@ model Refund {
   retryCount     Int          @default(0)
   lastRetryAt    DateTime?
   processedAt    DateTime?
+  orderId        String?
+  returnRequestId String?
+  reason         String?
+  initiatedByUserId String?
+  initiatedByRole String?
+  currency       String     @default("GHS")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   payment        Payment      @relation(fields: [paymentId], references: [id])
   orderItem      OrderItem    @relation(fields: [orderItemId], references: [id])
+  order          Order?       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  returnRequest  ReturnRequest? @relation(fields: [returnRequestId], references: [id], onDelete: Restrict)
+  initiatedByUser User?        @relation(fields: [initiatedByUserId], references: [id], onDelete: Restrict)
   balanceAdjustments VendorBalanceAdjustment[]
 
   @@index([paymentId])
   @@index([orderItemId])
   @@index([status])
   @@index([paystackRefundId])
+  @@index([orderId])
+  @@index([returnRequestId])
+  @@index([initiatedByUserId])
   @@map("refunds")
 }
 
@@ -2560,6 +2574,7 @@ model ReturnRequest {
   customer          User             @relation(fields: [customerId], references: [id], onDelete: Cascade)
   events            ReturnRequestEvent[]
   attachments       ReturnRequestAttachment[]
+  refunds           Refund[]
 
   @@index([orderItemId])
   @@index([customerId])
