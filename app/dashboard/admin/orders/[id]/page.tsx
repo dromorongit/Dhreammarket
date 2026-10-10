@@ -109,6 +109,11 @@ export default function AdminOrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showRefundDialog, setShowRefundDialog] = useState(false)
+  const [refundReason, setRefundReason] = useState('')
+  const [refundLoading, setRefundLoading] = useState(false)
+  const [refundError, setRefundError] = useState<string | null>(null)
+  const [refundSuccess, setRefundSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     if (orderId) {
@@ -135,6 +140,68 @@ export default function AdminOrderDetailPage() {
       setError('An error occurred while loading the order')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Fresh idempotency key for every refund confirmation, so a double submit or
+  // a retried request can never issue two Paystack refunds.
+  const generateRequestId = () => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0
+      const v = c === 'x' ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
+  }
+
+  const openRefundDialog = () => {
+    setRefundError(null)
+    setRefundSuccess(null)
+    setShowRefundDialog(true)
+  }
+
+  const closeRefundDialog = () => {
+    if (refundLoading) return
+    setShowRefundDialog(false)
+    setRefundReason('')
+  }
+
+  const confirmRefund = async () => {
+    if (!order) return
+    try {
+      setRefundLoading(true)
+      setRefundError(null)
+      setRefundSuccess(null)
+
+      const response = await fetch('/api/admin/refunds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: order.id,
+          requestId: generateRequestId(),
+          confirmRefund: true,
+          reason: refundReason.trim() || undefined,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setRefundError(data.error || 'Failed to process refund')
+        return
+      }
+
+      setRefundSuccess(`Refund processed for order #${order.id.slice(0, 8)}...`)
+      setShowRefundDialog(false)
+      setRefundReason('')
+      await fetchOrderDetail()
+    } catch (err) {
+      console.error('Error processing refund:', err)
+      setRefundError('An error occurred while processing the refund')
+    } finally {
+      setRefundLoading(false)
     }
   }
 
@@ -470,6 +537,17 @@ export default function AdminOrderDetailPage() {
                   </div>
                 )}
               </div>
+
+              {order.paymentStatus === 'PAID' && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <Button variant="outline" onClick={openRefundDialog}>
+                    Refund Order
+                  </Button>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Refunds are issued through Paystack and recorded against each order item.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -513,6 +591,58 @@ export default function AdminOrderDetailPage() {
             </Button>
           </Link>
         </div>
+
+        {refundSuccess && (
+          <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
+            <p className="text-sm text-green-800">{refundSuccess}</p>
+          </div>
+        )}
+
+        {refundError && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-800">{refundError}</p>
+          </div>
+        )}
+
+        {showRefundDialog && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+            role="presentation"
+            onClick={() => closeRefundDialog()}
+          >
+            <Card className="w-full max-w-md" aria-modal="true" role="dialog">
+              <CardHeader>
+                <h2 className="text-lg font-semibold text-gray-900">Confirm Refund</h2>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-gray-600">
+                  Refund order <span className="font-medium">#{order.id.slice(0, 8)}...</span> for{' '}
+                  <span className="font-medium">{formatCurrency(order.total)}</span>? This issues a refund
+                  through Paystack to the customer&apos;s original payment method.
+                </p>
+                <div className="mb-4">
+                  <label className="mb-1 block text-sm text-gray-500">Reason (optional)</label>
+                  <textarea
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    placeholder="Reason for the refund"
+                  />
+                </div>
+                {refundError && <p className="mb-4 text-sm text-red-700">{refundError}</p>}
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button variant="outline" onClick={closeRefundDialog} disabled={refundLoading}>
+                    Cancel
+                  </Button>
+                  <Button onClick={confirmRefund} disabled={refundLoading}>
+                    {refundLoading ? 'Processing...' : 'Confirm Refund'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )

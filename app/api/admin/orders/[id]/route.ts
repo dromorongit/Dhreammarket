@@ -146,6 +146,20 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json()
     const { status, paymentStatus, reason } = body
 
+    // Refunds are a money-moving operation with a Paystack call, a per-item
+    // cap and an audit trail, so they live in POST /api/admin/refunds.
+    if (paymentStatus === 'REFUNDED') {
+      return NextResponse.json(
+        {
+          error:
+            "Use POST /api/admin/refunds to refund this order. That endpoint issues the Paystack refund, enforces the per-item refund cap and records the refund for audit.",
+          endpoint: 'POST /api/admin/refunds',
+          orderId,
+        },
+        { status: 400 }
+      )
+    }
+
     // Get existing order for before data
     const existingOrder = await prisma.order.findUnique({
       where: { id: orderId, deletedAt: null },
@@ -167,13 +181,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
     }
 
-    if (paymentStatus && ['PENDING', 'PAID', 'FAILED', 'CANCELLED', 'REFUNDED'].includes(paymentStatus)) {
+    if (paymentStatus && ['PENDING', 'PAID', 'FAILED', 'CANCELLED'].includes(paymentStatus)) {
       updateData.paymentStatus = paymentStatus
-      if (paymentStatus === 'REFUNDED') {
-        recordFulfillmentEvent(orderId, 'REFUNDED', undefined, {
-          description: reason || 'Order refunded',
-        }).catch(err => console.error('Failed to record refund event:', err))
-      }
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -195,20 +204,6 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         entityId: orderId,
         beforeData: { status: existingOrder.status },
         afterData: { status: updatedOrder.status, reason },
-        ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-      })
-    }
-
-    // Create audit log for order refund
-    if (paymentStatus === 'REFUNDED') {
-      await createAuditLog({
-        userId: adminUser.userId,
-        userRole: adminUser.role,
-        action: 'ORDER_REFUNDED',
-        entityType: 'ORDER',
-        entityId: orderId,
-        beforeData: { paymentStatus: existingOrder.paymentStatus },
-        afterData: { paymentStatus: updatedOrder.paymentStatus, reason },
         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
       })
     }
