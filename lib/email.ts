@@ -620,3 +620,55 @@ export async function sendPasswordChangedEmail(
     retryPayload: { customerEmail, customerName },
   })
 }
+
+/**
+ * Refund confirmation email.
+ *
+ * recordFulfillmentEvent('REFUNDED') does NOT send a customer email:
+ * EMAIL_TEMPLATES['REFUNDED'] is null in lib/fulfillment-events.ts, so that
+ * path only records the fulfillment event plus an in-app
+ * 'ORDER_STATUS_UPDATED' notification titled 'Refunded'. Keeping
+ * EMAIL_TEMPLATES['REFUNDED'] null means this function is the ONLY customer
+ * refund email in the refund flow - no duplicate emails.
+ */
+export async function sendRefundConfirmationEmail(
+  customerEmail: string,
+  customerName: string,
+  orderId: string,
+  amount: number,
+  currency: string = 'GHS'
+) {
+  const formattedAmount = new Intl.NumberFormat('en-GH', {
+    style: 'currency',
+    currency,
+  }).format(amount)
+
+  const subject = `Refund Processed - Order #${orderId.slice(0, 8)}`
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Refund Processed</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">A refund of <strong>${formattedAmount}</strong> has been processed for your order.</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+      <tr>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Order Reference</td>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">#${orderId.slice(0, 8)}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; background-color: #f9fafb; font-weight: 600; color: #374151;">Refunded Amount</td>
+        <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${formattedAmount}</td>
+      </tr>
+    </table>
+    <p style="margin: 0 0 12px 0; font-size: 14px; color: #6b7280;">Refunds typically take 5-10 business days to appear on your original payment method.</p>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">If you have any questions, contact us at support@dhreamarket.com</p>
+  `
+  const htmlContent = getEmailTemplate(content, 'Questions? Contact us at support@dhreamarket.com')
+
+  return sendEmail({
+    to: customerEmail,
+    subject,
+    htmlContent,
+    textContent: `A refund of ${formattedAmount} has been processed for your order #${orderId.slice(0, 8)}. Refunds typically take 5-10 business days to appear on your original payment method.`,
+    emailType: 'REFUND',
+    retryPayload: { customerEmail, customerName, orderId },
+  })
+}
