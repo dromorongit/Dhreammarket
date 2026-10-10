@@ -224,4 +224,21 @@ describe('Influencer order cashback', () => {
     expect(ctx.tx.cashbackTransaction.create).not.toHaveBeenCalled()
     expect(ctx.tx.user.update).not.toHaveBeenCalled()
   })
+
+  it('deletes the orphaned cashback record when the user was deleted and does not throw', async () => {
+    const orderId = `order-${Date.now()}-orphan`
+    ctx.influencerCashbacks.push({
+      id: 'ic-orphan',
+      orderId,
+      userId: null,
+      cashbackAmount: 10,
+    })
+
+    await expect(reverseInfluencerOrderCashback(orderId)).resolves.toBeUndefined()
+
+    expect(ctx.tx.influencerCashback.delete).toHaveBeenCalledWith({ where: { orderId } })
+    expect(ctx.tx.cashbackBalance.update).not.toHaveBeenCalled()
+    expect(ctx.tx.cashbackTransaction.create).not.toHaveBeenCalled()
+    expect(ctx.tx.user.update).not.toHaveBeenCalled()
+  })
 })

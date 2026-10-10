@@ -110,15 +110,26 @@ export async function reverseInfluencerOrderCashback(orderId: string): Promise<v
     return
   }
 
+  // The user was deleted (InfluencerCashback.userId is set to NULL on user
+  // delete): the record is orphaned and there is no balance left to reverse.
+  // Delete it instead of throwing, so order cancellation and refunds cannot
+  // fail on it.
+  if (!cashbackRecord.userId) {
+    await prisma.influencerCashback.delete({ where: { orderId } })
+    return
+  }
+
+  const userId = cashbackRecord.userId
+
   await prisma.$transaction(async (tx) => {
     const cashback = await tx.cashbackBalance.findUnique({
-      where: { userId: cashbackRecord.userId },
+      where: { userId },
     })
 
     if (cashback) {
       const newBalance = Math.round((cashback.balance - amount) * 100) / 100
       await tx.cashbackBalance.update({
-        where: { userId: cashbackRecord.userId },
+        where: { userId },
         data: {
           balance: newBalance,
           totalRedeemed: { increment: amount },
@@ -127,7 +138,7 @@ export async function reverseInfluencerOrderCashback(orderId: string): Promise<v
 
       await tx.cashbackTransaction.create({
         data: {
-          userId: cashbackRecord.userId,
+          userId,
           amount: -amount,
           source: 'ADJUSTMENT',
           description: `Reversed influencer cashback for order #${orderId.slice(0, 8)}`,
@@ -139,7 +150,7 @@ export async function reverseInfluencerOrderCashback(orderId: string): Promise<v
     }
 
     await tx.user.update({
-      where: { id: cashbackRecord.userId },
+      where: { id: userId },
       data: { influencerCashbackOrdersUsed: { decrement: 1 } },
     })
 
