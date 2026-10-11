@@ -1,11 +1,17 @@
 import type { SupportEngineConfig } from './types'
+import { createHash } from 'crypto'
 
 interface CacheEntry<T> {
   data: T
   timestamp: number
 }
 
-class SupportAICache {
+function hashMessage(message: string): string {
+  const normalized = message.toLowerCase().trim().replace(/\s+/g, ' ')
+  return createHash('sha256').update(normalized).digest('hex')
+}
+
+export class SupportAICache {
   private cache: Map<string, CacheEntry<unknown>>
   private ttl: number
   private maxSize: number
@@ -22,6 +28,10 @@ class SupportAICache {
       .map((k) => `${k}=${JSON.stringify(params[k])}`)
       .join('&')
     return `${prefix}:${sorted}`
+  }
+
+  static generateCacheKey(userRole: string, message: string): string {
+    return `${userRole}:${hashMessage(message)}`
   }
 
   get<T>(prefix: string, params: Record<string, unknown>): T | null {

@@ -5,7 +5,7 @@ import { supportKnowledgeBase, WHATSAPP_SUPPORT_LINK, SUPPORT_EMAIL } from './kn
 import { lookupOrderStatus, lookupVendorPayoutStatus, formatOrderStatusMessage, formatVendorPayoutMessage } from './dynamic-lookups'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
-import { supportAICache } from './cache'
+import { supportAICache, SupportAICache } from './cache'
 
 function generateSessionId(): string {
   return `sup_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
@@ -40,7 +40,7 @@ export class SupportEngine {
       }
     }
 
-    const cacheKey = `${userRole}:${message.toLowerCase().slice(0, 200)}`
+    const cacheKey = SupportAICache.generateCacheKey(userRole, message)
     const cached = supportAICache.get<SupportChatResponse>('chat', { cacheKey })
     if (cached) return cached
 
