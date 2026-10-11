@@ -45,10 +45,22 @@ export interface PaystackRefund {
 
 export type PaystackRefundErrorCode = 'NOT_CONFIGURED' | 'TIMEOUT' | 'NETWORK_ERROR' | 'API_ERROR'
 
+/**
+ * Where an error message came from.
+ *
+ * 'PAYSTACK' means Paystack actually returned a message we could parse, so the
+ * answer is definite. 'GENERIC' means we could not read a Paystack message and
+ * fell back to our own string, so the outcome is not definite even when an
+ * HTTP status is present. The refund service uses this to decide whether a row
+ * may be marked FAILED.
+ */
+export type PaystackMessageSource = 'PAYSTACK' | 'GENERIC'
+
 export interface PaystackRefundError {
   code: PaystackRefundErrorCode
   message: string
   httpStatus?: number
+  messageSource?: PaystackMessageSource
 }
 
 export interface PaystackRefundResult {
@@ -215,17 +227,19 @@ function mapPaystackRefund(data: any): PaystackRefund {
 function refundErrorResult(
   code: PaystackRefundErrorCode,
   message: string,
-  httpStatus?: number
+  httpStatus?: number,
+  messageSource?: PaystackMessageSource
 ): PaystackRefundResult {
-  return { success: false, error: { code, message, httpStatus } }
+  return { success: false, error: { code, message, httpStatus, messageSource } }
 }
 
 function refundListErrorResult(
   code: PaystackRefundErrorCode,
   message: string,
-  httpStatus?: number
+  httpStatus?: number,
+  messageSource?: PaystackMessageSource
 ): PaystackRefundListResult {
-  return { success: false, refunds: [], error: { code, message, httpStatus } }
+  return { success: false, refunds: [], error: { code, message, httpStatus, messageSource } }
 }
 
 /**
@@ -269,7 +283,7 @@ export async function createPaystackRefund(
       const message =
         (data && (data.message || data.error)) ||
         `Paystack refund request failed (HTTP ${response.status})`
-      return refundErrorResult('API_ERROR', String(message), response.status)
+      return refundErrorResult('API_ERROR', String(message), response.status, data ? 'PAYSTACK' : 'GENERIC')
     }
 
     return { success: true, refund: mapPaystackRefund(data?.data) }
@@ -317,7 +331,7 @@ export async function listPaystackRefunds(
       const message =
         (data && (data.message || data.error)) ||
         `Paystack refund list request failed (HTTP ${response.status})`
-      return refundListErrorResult('API_ERROR', String(message), response.status)
+      return refundListErrorResult('API_ERROR', String(message), response.status, data ? 'PAYSTACK' : 'GENERIC')
     }
 
     const list = Array.isArray(data?.data) ? data.data : []
@@ -364,7 +378,7 @@ export async function fetchPaystackRefund(refundId: number | string): Promise<Pa
       const message =
         (data && (data.message || data.error)) ||
         `Paystack refund fetch failed (HTTP ${response.status})`
-      return refundErrorResult('API_ERROR', String(message), response.status)
+      return refundErrorResult('API_ERROR', String(message), response.status, data ? 'PAYSTACK' : 'GENERIC')
     }
 
     return { success: true, refund: mapPaystackRefund(data?.data) }
@@ -416,7 +430,7 @@ export async function retryPaystackRefundWithCustomerDetails(
       const message =
         (data && (data.message || data.error)) ||
         `Paystack refund retry failed (HTTP ${response.status})`
-      return refundErrorResult('API_ERROR', String(message), response.status)
+      return refundErrorResult('API_ERROR', String(message), response.status, data ? 'PAYSTACK' : 'GENERIC')
     }
 
     return { success: true, refund: mapPaystackRefund(data?.data) }

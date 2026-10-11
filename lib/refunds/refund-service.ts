@@ -7,7 +7,7 @@
 // client-supplied value. Order-level helpers below fan out to one row per item,
 // scoping the key with the item id only when more than one item is refunded.
 import { getPrisma } from '@/lib/prisma'
-import { createPaystackRefund, listPaystackRefunds, type PaystackRefund } from '@/lib/paystack'
+import { createPaystackRefund, listPaystackRefunds, type PaystackRefund, type PaystackRefundError } from '@/lib/paystack'
 import {
   Caps,
   RefundError,
@@ -33,6 +33,59 @@ import type { RefundStatus } from '@prisma/client'
 export const STUCK_REFUND_MIN_AGE_MS = 10 * 60 * 1000
 
 const CREATION_TIME_TOLERANCE_MS = 60_000
+
+/**
+ * Paystack HTTP statuses that prove the refund was definitively refused.
+ *
+ * A status in this set, together with a message Paystack actually returned,
+ * is the ONLY thing allowed to mark a Refund row FAILED from the create or
+ * resubmit path. Everything else is indeterminate: the refund may well have
+ * succeeded at Paystack even though we could not see the answer.
+ */
+const DEFINITE_REJECTION_HTTP_STATUSES = [400, 401, 403, 404, 422]
+
+/**
+ * True only when Paystack definitively refused the refund: an HTTP status that
+ * means "rejected", with a message that actually came from Paystack.
+ *
+ * A TIMEOUT, a NETWORK_ERROR, a 5xx, a 429, an unparseable body, a status
+ * outside the set above, or our own generic fallback message are all NOT
+ * definite, so the row must stay PENDING and be reconciled later.
+ */
+function isDefinitePaystackRejection(error?: PaystackRefundError): boolean {
+  if (!error) return false
+  if (error.code !== 'API_ERROR') return false
+  if (error.messageSource !== 'PAYSTACK') return false
+  return DEFINITE_REJECTION_HTTP_STATUSES.includes(error.httpStatus ?? 0)
+}
+
+/**
+ * A short, non-sensitive code describing an indeterminate Paystack outcome.
+ * Stored in Refund.failureReason so an admin can see why the row is stuck
+ * without any free-form text or key material being persisted.
+ */
+function indeterminateNote(error?: PaystackRefundError): string {
+  switch (error?.code) {
+    case 'TIMEOUT':
+      return 'PAYSTACK_TIMEOUT'
+    case 'NETWORK_ERROR':
+      return 'PAYSTACK_NETWORK_ERROR'
+    case 'NOT_CONFIGURED':
+      return 'PAYSTACK_NOT_CONFIGURED'
+    case 'API_ERROR': {
+      const status = error.httpStatus ?? 0
+      if (status === 429) return 'PAYSTACK_RATE_LIMITED'
+      if (status >= 500) return `PAYSTACK_HTTP_${status}`
+      // A 4xx outside the definite set, or an unparseable response.
+      return 'PAYSTACK_UNPARSEABLE_RESPONSE'
+    }
+    default:
+      return 'PAYSTACK_UNKNOWN_ERROR'
+  }
+}
+
+/** Admin-facing note for a Paystack status we do not recognise. */
+const UNKNOWN_STATUS_NOTE = 'UNKNOWN_PAYSTACK_STATUS'
 
 export const REFUNDABLE_ORDER_STATUS = 'PAID'
 
@@ -304,7 +357,12 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
   }
 
   // 2. Call Paystack once per brand new row.
-  const unknownStatuses: { refundId: string; paystackStatus: string }[] = []
+  const needsAttention: {
+    refundId: string
+    note: string
+    unknownPaystackStatus?: string
+  }[] = []
+
   for (const row of pending) {
     if (row.alreadyExisted) continue
 
@@ -313,22 +371,48 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
       merchantNote: input.reason,
     })
 
+    // A definite Paystack rejection is the only failure that settles the row.
+    // It frees the caps because that money will never move.
+    if (!paystackResult.success && isDefinitePaystackRejection(paystackResult.error)) {
+      const message = paystackResult.error?.message ?? 'Paystack refund failed'
+      await prisma.refund.update({
+        where: { id: row.id },
+        data: {
+          status: 'FAILED',
+          failureReason: message,
+        },
+      })
+      row.status = 'FAILED'
+      row.failureReason = message
+      continue
+    }
+
     if (paystackResult.success && paystackResult.refund) {
       const paystackRefundId = String(paystackResult.refund.id)
       const paystackStatus = paystackResult.refund.status
       const nextStatus = mapPaystackRefundStatus(paystackStatus)
 
       if (nextStatus === null) {
-        // Paystack answered with a status we do not recognise. Record the raw
-        // string and the refund id so a later check can reconcile it, but leave
-        // the row PENDING and tell the admins - never guess a status.
+        // Paystack answered with a status we do not recognise. Never guess:
+        // leave the row PENDING with no Paystack id attached, store a short
+        // code only, and tell the admins. Reconciliation resolves it later.
         await prisma.refund.update({
           where: { id: row.id },
-          data: { paystackRefundId, paystackStatus },
+          data: {
+            paystackRefundId: null,
+            paystackStatus: null,
+            failureReason: UNKNOWN_STATUS_NOTE,
+          },
         })
-        row.paystackRefundId = paystackRefundId
-        row.paystackStatus = paystackStatus
-        unknownStatuses.push({ refundId: row.id, paystackStatus })
+        row.paystackRefundId = null
+        row.paystackStatus = null
+        row.failureReason = UNKNOWN_STATUS_NOTE
+        row.status = 'PENDING'
+        needsAttention.push({
+          refundId: row.id,
+          note: UNKNOWN_STATUS_NOTE,
+          unknownPaystackStatus: paystackStatus,
+        })
         continue
       }
 
@@ -348,22 +432,30 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
       if (nextStatus === 'PROCESSED') {
         await notifyRefundProcessed(row.id)
       }
-    } else {
-      const message = paystackResult.error?.message ?? 'Paystack refund failed'
-      await prisma.refund.update({
-        where: { id: row.id },
-        data: {
-          status: 'FAILED',
-          failureReason: message,
-        },
-      })
-      row.status = 'FAILED'
-      row.failureReason = message
+      continue
     }
+
+    // Indeterminate: the refund may have gone through at Paystack, so the row
+    // stays PENDING with no Paystack id, keeps counting against every cap, and
+    // carries a short code rather than any message text.
+    const note = indeterminateNote(paystackResult.error)
+    await prisma.refund.update({
+      where: { id: row.id },
+      data: {
+        paystackRefundId: null,
+        paystackStatus: null,
+        failureReason: note,
+      },
+    })
+    row.paystackRefundId = null
+    row.paystackStatus = null
+    row.failureReason = note
+    row.status = 'PENDING'
+    needsAttention.push({ refundId: row.id, note })
   }
 
-  if (unknownStatuses.length > 0) {
-    await notifyAdminsOfUnknownStatuses(input.orderId, unknownStatuses)
+  if (needsAttention.length > 0) {
+    await notifyAdminsRefundNeedsChecking(input.orderId, needsAttention)
   }
 
   const orderRefunded = await settleOrderIfFullyRefunded(order.id)
@@ -466,6 +558,7 @@ export type CheckStatusResult = {
     | 'AMBIGUOUS'
     | 'NO_MATCH'
     | 'UNKNOWN_STATUS'
+    | 'INDETERMINATE'
     | 'MARKED_FAILED'
     | 'RESUBMITTED'
   message: string
@@ -548,23 +641,21 @@ export async function checkRefundStatus(
     const nextStatus = mapPaystackRefundStatus(match.status)
 
     if (nextStatus === null) {
-      // An unrecognised Paystack status is never guessed at. Attach the id so a
-      // later check can reconcile it, but leave the row's status alone and tell
-      // the admins the raw string.
-      if (!refund.paystackRefundId) {
-        await prisma.refund.update({
-          where: { id: refundId },
-          data: { paystackRefundId: String(match.id), paystackStatus: match.status },
-        })
-      }
-      await notifyAdminsOfUnknownStatuses(refund.payment.orderId, [
-        { refundId, paystackStatus: match.status },
+      // An unrecognised Paystack status is never guessed at. The row keeps its
+      // status and is left with no Paystack id attached so reconciliation can
+      // match it again; the admins are told the raw status string.
+      await notifyAdminsRefundNeedsChecking(refund.payment.orderId, [
+        {
+          refundId,
+          note: UNKNOWN_STATUS_NOTE,
+          unknownPaystackStatus: match.status,
+        },
       ])
       return {
         refundId,
         status: refund.status,
-        paystackRefundId: String(match.id),
-        paystackStatus: match.status,
+        paystackRefundId: null,
+        paystackStatus: null,
         outcome: 'UNKNOWN_STATUS',
         message: `Paystack reported an unrecognised refund status "${match.status}". Nothing was changed - an administrator has been notified.`,
         eligibleForManualResolution,
@@ -579,6 +670,9 @@ export async function checkRefundStatus(
           paystackRefundId: String(match.id),
           paystackStatus: match.status,
           status: nextStatus,
+          // The refund is confirmed now, so any earlier inconclusive note
+          // (PAYSTACK_TIMEOUT and friends) no longer applies.
+          failureReason: null,
           processedAt:
             (nextStatus === 'PROCESSED' || nextStatus === 'FAILED') && !refund.processedAt
               ? new Date()
@@ -722,34 +816,86 @@ export async function checkRefundStatus(
       { merchantNote: fresh.reason ?? undefined }
     )
 
-    if (!paystackResult.success || !paystackResult.refund) {
+    // A definite Paystack rejection is the only failure that settles the row.
+    if (!paystackResult.success && isDefinitePaystackRejection(paystackResult.error)) {
       const message = paystackResult.error?.message ?? 'Paystack refund resubmission failed'
-      logWarn('Refund resubmission failed', { refundId, message })
-      throw new RefundError(502, message, 'PAYSTACK_RESUBMIT_FAILED')
+      await tx.refund.update({
+        where: { id: refundId },
+        data: {
+          status: 'FAILED',
+          failureReason: message,
+          retryCount: { increment: 1 },
+          lastRetryAt: new Date(),
+        },
+      })
+      return {
+        refundId,
+        status: 'FAILED' as const,
+        paystackRefundId: null,
+        paystackStatus: null,
+        outcome: 'MARKED_FAILED' as const,
+        message: 'Paystack definitively rejected the resubmitted refund, so it was marked failed.',
+        eligibleForManualResolution,
+        eligibleAt,
+      }
+    }
+
+    if (!paystackResult.success || !paystackResult.refund) {
+      // Indeterminate: the refund may have gone through, so the row stays
+      // PENDING, is not linked to a Paystack id, and keeps counting against
+      // every cap. Only a short code is stored on the row.
+      const note = indeterminateNote(paystackResult.error)
+      logWarn('Refund resubmission inconclusive', { refundId, note })
+      await tx.refund.update({
+        where: { id: refundId },
+        data: {
+          failureReason: note,
+          retryCount: { increment: 1 },
+          lastRetryAt: new Date(),
+        },
+      })
+      await notifyAdminsRefundNeedsChecking(refund.payment.orderId, [
+        { refundId, note },
+      ])
+      return {
+        refundId,
+        status: fresh.status,
+        paystackRefundId: null,
+        paystackStatus: null,
+        outcome: 'INDETERMINATE' as const,
+        message: `Paystack did not give a definite answer for this refund (${note}). It has been left pending and an administrator has been notified.`,
+        eligibleForManualResolution,
+        eligibleAt,
+      }
     }
 
     const nextStatus = mapPaystackRefundStatus(paystackResult.refund.status)
 
     if (nextStatus === null) {
-      // A status we do not recognise: keep the raw string, keep the row's
-      // status, and tell the admins. Never guess.
+      // A status we do not recognise: keep the row's status, attach nothing,
+      // and tell the admins the raw string. Never guess.
       await tx.refund.update({
         where: { id: refundId },
         data: {
-          paystackRefundId: String(paystackResult.refund.id),
-          paystackStatus: paystackResult.refund.status,
+          paystackRefundId: null,
+          paystackStatus: null,
+          failureReason: UNKNOWN_STATUS_NOTE,
           retryCount: { increment: 1 },
           lastRetryAt: new Date(),
         },
       })
-      await notifyAdminsOfUnknownStatuses(refund.payment.orderId, [
-        { refundId, paystackStatus: paystackResult.refund.status },
+      await notifyAdminsRefundNeedsChecking(refund.payment.orderId, [
+        {
+          refundId,
+          note: UNKNOWN_STATUS_NOTE,
+          unknownPaystackStatus: paystackResult.refund.status,
+        },
       ])
       return {
         refundId,
         status: fresh.status,
-        paystackRefundId: String(paystackResult.refund.id),
-        paystackStatus: paystackResult.refund.status,
+        paystackRefundId: null,
+        paystackStatus: null,
         outcome: 'UNKNOWN_STATUS' as const,
         message: `Paystack reported an unrecognised refund status "${paystackResult.refund.status}" after the resubmission. The refund status was not changed - an administrator has been notified.`,
         eligibleForManualResolution,
@@ -810,17 +956,24 @@ async function notifyAdminsOfAmbiguity(paymentReference: string, refundId: strin
 }
 
 /**
- * Tell the super admins that Paystack reported a refund status we do not
- * recognise. The raw status string is included verbatim - we never guess.
+ * Tell the super admins that a refund could not be settled and needs a human.
+ *
+ * The note is a short code (e.g. PAYSTACK_TIMEOUT, UNKNOWN_PAYSTACK_STATUS).
+ * The raw Paystack status, when we have one, is included so an admin can act
+ * on it, but no refund amount, key material or personal data is ever sent.
  */
-async function notifyAdminsOfUnknownStatuses(
+async function notifyAdminsRefundNeedsChecking(
   orderId: string,
-  entries: { refundId: string; paystackStatus: string }[]
+  entries: { refundId: string; note: string; unknownPaystackStatus?: string }[]
 ): Promise<void> {
   if (entries.length === 0) return
   const prisma = getPrisma()
   const listed = entries
-    .map((entry) => `refund ${entry.refundId} (Paystack status "${entry.paystackStatus}")`)
+    .map((entry) =>
+      entry.unknownPaystackStatus !== undefined
+        ? `refund ${entry.refundId} (Paystack status "${entry.unknownPaystackStatus}")`
+        : `refund ${entry.refundId} (${entry.note})`
+    )
     .join(', ')
   try {
     const superAdmins = await prisma.user.findMany({
@@ -832,11 +985,11 @@ async function notifyAdminsOfUnknownStatuses(
         admin.id,
         'ORDER_STATUS_UPDATED',
         'Refund needs manual review',
-        `Refunds on order ${orderId} reported an unrecognised Paystack status and nothing was changed: ${listed}. Please review them manually.`
+        `Refunds on order ${orderId} could not be confirmed and were left pending: ${listed}. They have not been marked failed - please check them in Paystack and resolve them from the refund dashboard.`
       )
     }
   } catch (error) {
-    logError('Failed to notify admins about unrecognised refund status', error)
+    logError('Failed to notify admins about a refund that needs checking', error)
   }
 }
 

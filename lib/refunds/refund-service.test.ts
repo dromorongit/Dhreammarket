@@ -122,8 +122,11 @@ function buildPrisma(order: Record<string, any>) {
       findUnique: refundFindUnique,
       create: refundCreate,
       update: refundUpdate,
-      findMany: vi.fn(async (whereArg: any = {}) => {
-        const where = whereArg ?? {}
+      findMany: vi.fn(async (arg: any = {}) => {
+        // Prisma calls arrive as { where: {...} }, so unwrap the where clause
+        // before reading filters. Reading it off the argument directly makes
+        // every findMany return every row and hides the idempotency check.
+        const where = arg?.where ?? {}
         if (where.idempotencyKey?.in) {
           const inList = where.idempotencyKey.in as string[]
           return state.refunds.filter((r) => inList.includes(r.idempotencyKey))
@@ -153,6 +156,13 @@ const ADMIN = { triggeredByUserId: 'admin_1', triggeredByRole: 'SUPER_ADMIN' as 
 beforeEach(() => {
   resetRefundEmailsForTest()
 })
+
+function definiteRejection(message: string, httpStatus: number) {
+  return {
+    success: false,
+    error: { code: 'API_ERROR', message, httpStatus, messageSource: 'PAYSTACK' as const },
+  } as never
+}
 
 describe('createRefund', () => {
   let prisma: ReturnType<typeof buildPrisma>
@@ -316,10 +326,7 @@ describe('createRefund', () => {
   })
 
   it('marks the row FAILED when Paystack rejects the refund', async () => {
-    mockCreateRefund.mockResolvedValue({
-      success: false,
-      error: { code: 'API_ERROR', message: 'Amount exceeds remaining balance', httpStatus: 422 },
-    } as never)
+    mockCreateRefund.mockResolvedValue(definiteRejection('Amount exceeds remaining balance', 422))
 
     const result = await createRefund({
       orderId: 'order_1',
@@ -447,18 +454,212 @@ describe('createRefund', () => {
       actor: ADMIN,
     })
 
-    // The row keeps the raw string and stays PENDING - nothing was guessed.
+    // The row keeps a short code, stays PENDING, and attaches no Paystack id.
     const row = (prisma.__state.refunds as any[])[0]
     expect(row.status).toBe('PENDING')
-    expect(row.paystackStatus).toBe('brand-new-paystack-status')
-    expect(row.paystackRefundId).toBe('9001')
+    expect(row.paystackStatus).toBeNull()
+    expect(row.paystackRefundId).toBeNull()
+    expect(row.failureReason).toBe('UNKNOWN_PAYSTACK_STATUS')
     expect(result.refunds[0].status).toBe('PENDING')
-    // The admins are told, with the raw status verbatim.
-    expect(prisma.user.findMany).toHaveBeenCalled()
+    // The admins are told, with the raw status verbatim in the notification.
     const messages = vi.mocked(createNotification).mock.calls.map((call: any[]) => call[3])
     expect(messages.join('\n')).toContain('brand-new-paystack-status')
     // And nobody is emailed about a refund that has not been processed.
     expect(mockSendRefundEmail).not.toHaveBeenCalled()
+  })
+})
+
+describe('createRefund Paystack failure handling', () => {
+  let prisma: ReturnType<typeof buildPrisma>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resetRefundEmailsForTest()
+    prisma = buildPrisma(baseOrder())
+    vi.mocked(getPrisma).mockReturnValue(prisma as never)
+    mockCreateRefund.mockResolvedValue({
+      success: true,
+      refund: {
+        id: 9001,
+        reference: null,
+        amount: 3000,
+        currency: 'GHS',
+        status: 'processed',
+        transactionReference: 'DHV-REF1',
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+      },
+    } as never)
+    mockListRefunds.mockResolvedValue({ success: true, refunds: [] } as never)
+  })
+
+  const ONE_ITEM = {
+    orderId: 'order_1',
+    items: [{ orderItemId: 'item_a', amount: 30 }],
+    source: 'MANUAL' as const,
+    reference: 'f0a1b2c3-d4e5-4f67-8899-aabbccddeeff',
+    actor: ADMIN,
+  }
+
+  it('leaves the row PENDING on a timeout and keeps it counting against the caps', async () => {
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: { code: 'TIMEOUT', message: 'Paystack refund request timed out' },
+    } as never)
+
+    await createRefund(ONE_ITEM)
+
+    const row = (prisma.__state.refunds as any[])[0]
+    // Not failed: the refund may well have gone through at Paystack.
+    expect(row.status).toBe('PENDING')
+    expect(row.paystackRefundId).toBeNull()
+    expect(row.failureReason).toBe('PAYSTACK_TIMEOUT')
+    // Only a code is stored - never a free-form message.
+    expect(row.failureReason).not.toContain('timed out')
+
+    // The pending row still consumes the item cap, so the same amount cannot
+    // be requested a second time under a different requestId.
+    await expect(
+      createRefund({ ...ONE_ITEM, reference: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' })
+    ).rejects.toMatchObject({ code: 'ITEM_CAP_EXCEEDED' })
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+  })
+
+  it('cannot issue a second Paystack refund for the same amount after a timeout', async () => {
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: { code: 'TIMEOUT', message: 'Paystack refund request timed out' },
+    } as never)
+
+    // First attempt: inconclusive, so the row stays PENDING.
+    const first = await createRefund(ONE_ITEM)
+    expect(first.refunds[0].status).toBe('PENDING')
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+
+    // Replaying the same requestId replays the idempotency key, so the row is
+    // reported as already processed and no second Paystack call is made.
+    const again = await createRefund(ONE_ITEM)
+    expect(again.alreadyProcessed).toBe(true)
+    expect(again.refunds[0].alreadyExisted).toBe(true)
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+
+    // A different requestId hits the cap the pending row already consumed.
+    await expect(
+      createRefund({ ...ONE_ITEM, reference: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' })
+    ).rejects.toMatchObject({ code: 'ITEM_CAP_EXCEEDED' })
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks the row FAILED on a definite Paystack 422 and frees the caps', async () => {
+    mockCreateRefund.mockResolvedValue(
+      definiteRejection('Amount exceeds remaining balance', 422)
+    )
+
+    const result = await createRefund(ONE_ITEM)
+
+    const row = (prisma.__state.refunds as any[])[0]
+    expect(row.status).toBe('FAILED')
+    expect(row.failureReason).toBe('Amount exceeds remaining balance')
+    expect(result.refunds[0].status).toBe('FAILED')
+    // The Paystack message is kept on a definitively rejected row.
+    expect(result.refunds[0].failureReason).toBe('Amount exceeds remaining balance')
+
+    // A FAILED row does not consume the cap, so the amount is refundable again.
+    prisma = buildPrisma(baseOrder())
+    vi.mocked(getPrisma).mockReturnValue(prisma as never)
+    const after = await createRefund(ONE_ITEM)
+    expect(after.alreadyProcessed).toBe(false)
+    expect(mockCreateRefund).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([400, 401, 403, 404])('marks the row FAILED on a definite Paystack %s', async (status) => {
+    mockCreateRefund.mockResolvedValue(
+      definiteRejection('Paystack rejected the refund', status)
+    )
+
+    const result = await createRefund(ONE_ITEM)
+
+    expect(result.refunds[0].status).toBe('FAILED')
+    const row = (prisma.__state.refunds as any[])[0]
+    expect(row.status).toBe('FAILED')
+    expect(row.failureReason).toBe('Paystack rejected the refund')
+  })
+
+  it.each([500, 502, 503])('leaves the row PENDING on HTTP %s', async (status) => {
+    mockCreateRefund.mockResolvedValue(
+      definiteRejection('Paystack had a server error', status)
+    )
+
+    await createRefund(ONE_ITEM)
+
+    const row = (prisma.__state.refunds as any[])[0]
+    expect(row.status).toBe('PENDING')
+    expect(row.failureReason).toBe(`PAYSTACK_HTTP_${status}`)
+    expect(row.paystackRefundId).toBeNull()
+  })
+
+  it('leaves the row PENDING on 429', async () => {
+    mockCreateRefund.mockResolvedValue(
+      definiteRejection('Too many requests', 429)
+    )
+
+    await createRefund(ONE_ITEM)
+
+    expect((prisma.__state.refunds as any[])[0].failureReason).toBe('PAYSTACK_RATE_LIMITED')
+  })
+
+  it('leaves the row PENDING on a NETWORK_ERROR', async () => {
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: { code: 'NETWORK_ERROR', message: 'fetch failed' },
+    } as never)
+
+    await createRefund(ONE_ITEM)
+
+    expect((prisma.__state.refunds as any[])[0].failureReason).toBe('PAYSTACK_NETWORK_ERROR')
+  })
+
+  it('leaves the row PENDING when the response could not be parsed', async () => {
+    // A 422 with our generic fallback message is not a definite rejection: we
+    // never actually read a Paystack message.
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: {
+        code: 'API_ERROR',
+        message: 'Paystack refund request failed (HTTP 422)',
+        httpStatus: 422,
+        messageSource: 'GENERIC',
+      },
+    } as never)
+
+    await createRefund(ONE_ITEM)
+
+    expect((prisma.__state.refunds as any[])[0].status).toBe('PENDING')
+    expect((prisma.__state.refunds as any[])[0].failureReason).toBe('PAYSTACK_UNPARSEABLE_RESPONSE')
+  })
+
+  it('leaves the row PENDING when Paystack is not configured', async () => {
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: { code: 'NOT_CONFIGURED', message: 'Paystack secret key is not configured' },
+    } as never)
+
+    await createRefund(ONE_ITEM)
+
+    expect((prisma.__state.refunds as any[])[0].failureReason).toBe('PAYSTACK_NOT_CONFIGURED')
+  })
+
+  it('notifies the admins that an indeterminate refund needs checking', async () => {
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: { code: 'TIMEOUT', message: 'Paystack refund request timed out' },
+    } as never)
+
+    await createRefund(ONE_ITEM)
+
+    const messages = vi.mocked(createNotification).mock.calls.map((call: any[]) => call[3])
+    expect(messages.join('\n')).toContain('PAYSTACK_TIMEOUT')
+    expect(messages.join('\n')).toContain('not been marked failed')
   })
 })
 
@@ -697,7 +898,6 @@ describe('checkRefundStatus', () => {
   it("moves PROCESSING to PROCESSED on 'processed' and emails the customer", async () => {
     const row = makeRefundRow({ status: 'PROCESSING', paystackRefundId: '9001', amount: 30 })
     prisma.__state.refunds.push(row)
-    vi.mocked(prisma.refund.findUnique).mockResolvedValue(row as never)
     mockListRefunds.mockResolvedValue(
       { success: true, refunds: [paystackRefund({ status: 'processed' })] } as never
     )
@@ -712,7 +912,6 @@ describe('checkRefundStatus', () => {
   it('settles the order only when the PROCESSED refunds cover the full payment', async () => {
     const row = makeRefundRow({ status: 'PROCESSING', paystackRefundId: '9001', amount: 100 })
     prisma.__state.refunds.push(row)
-    vi.mocked(prisma.refund.findUnique).mockResolvedValue(row as never)
     mockListRefunds.mockResolvedValue(
       { success: true, refunds: [paystackRefund({ amount: 10_000, status: 'processed' })] } as never
     )
@@ -728,7 +927,6 @@ describe('checkRefundStatus', () => {
   it('leaves the order PAID when the PROCESSED refunds cover only part of the payment', async () => {
     const row = makeRefundRow({ status: 'PROCESSING', paystackRefundId: '9001', amount: 30 })
     prisma.__state.refunds.push(row)
-    vi.mocked(prisma.refund.findUnique).mockResolvedValue(row as never)
     mockListRefunds.mockResolvedValue(
       { success: true, refunds: [paystackRefund({ status: 'processed' })] } as never
     )
@@ -743,7 +941,6 @@ describe('checkRefundStatus', () => {
   it('changes nothing and reports UNKNOWN_STATUS for an unrecognised Paystack status', async () => {
     const row = makeRefundRow({ status: 'PROCESSING', paystackRefundId: '9001', amount: 30 })
     prisma.__state.refunds.push(row)
-    vi.mocked(prisma.refund.findUnique).mockResolvedValue(row as never)
     mockListRefunds.mockResolvedValue(
       { success: true, refunds: [paystackRefund({ status: 'brand-new-paystack-status' })] } as never
     )
@@ -754,8 +951,8 @@ describe('checkRefundStatus', () => {
     // Nothing was guessed and nothing was changed.
     expect(result.status).toBe('PROCESSING')
     expect(prisma.refund.update).not.toHaveBeenCalled()
-    // The raw status is surfaced to the admins.
-    expect(result.paystackStatus).toBe('brand-new-paystack-status')
+    // The raw status goes to the admins only; the row keeps a code-only note.
+    expect(result.paystackStatus).toBeNull()
     expect(result.message).toContain('brand-new-paystack-status')
     const messages = vi.mocked(createNotification).mock.calls.map((call: any[]) => call[3])
     expect(messages.join('\n')).toContain('brand-new-paystack-status')
@@ -765,7 +962,6 @@ describe('checkRefundStatus', () => {
   it("reports UNKNOWN_STATUS rather than guessing when Paystack says 'success'", async () => {
     const row = makeRefundRow({ status: 'PROCESSING', paystackRefundId: '9001', amount: 30 })
     prisma.__state.refunds.push(row)
-    vi.mocked(prisma.refund.findUnique).mockResolvedValue(row as never)
     mockListRefunds.mockResolvedValue(
       { success: true, refunds: [paystackRefund({ status: 'success' })] } as never
     )
@@ -774,5 +970,83 @@ describe('checkRefundStatus', () => {
 
     expect(result.outcome).toBe('UNKNOWN_STATUS')
     expect(result.status).toBe('PROCESSING')
+    // No Paystack id is attached, so reconciliation can match it again later.
+    expect(result.paystackRefundId).toBeNull()
+    const messages = vi.mocked(createNotification).mock.calls.map((call: any[]) => call[3])
+    expect(messages.join('\n')).toContain('success')
+  })
+
+  it('leaves the row PENDING and reports INDETERMINATE when a resubmit times out', async () => {
+    const row = makeRefundRow({
+      status: 'PENDING',
+      paystackRefundId: null,
+      amount: 30,
+      createdAt: new Date(Date.now() - 15 * 60 * 1000),
+    })
+    prisma.__state.refunds.push(row)
+    mockListRefunds.mockResolvedValue({ success: true, refunds: [] } as never)
+    mockCreateRefund.mockResolvedValue({
+      success: false,
+      error: { code: 'TIMEOUT', message: 'Paystack refund request timed out' },
+    } as never)
+
+    const result = await checkRefundStatus('refund_1', ADMIN, 'RESUBMIT')
+
+    expect(result.outcome).toBe('INDETERMINATE')
+    // The row stays PENDING with no Paystack id and a code-only note.
+    expect(row.status).toBe('PENDING')
+    expect(row.paystackRefundId).toBeNull()
+    expect(row.failureReason).toBe('PAYSTACK_TIMEOUT')
+    expect(result.paystackRefundId).toBeNull()
+    // Admins are told it needs checking, not that it failed.
+    const messages = vi.mocked(createNotification).mock.calls.map((call: any[]) => call[3])
+    expect(messages.join('\n')).toContain('PAYSTACK_TIMEOUT')
+    expect(mockSendRefundEmail).not.toHaveBeenCalled()
+  })
+
+  it('marks the row FAILED when a resubmit is definitively rejected', async () => {
+    const row = makeRefundRow({
+      status: 'PENDING',
+      paystackRefundId: null,
+      amount: 30,
+      createdAt: new Date(Date.now() - 15 * 60 * 1000),
+    })
+    prisma.__state.refunds.push(row)
+    mockListRefunds.mockResolvedValue({ success: true, refunds: [] } as never)
+    mockCreateRefund.mockResolvedValue(definiteRejection('Amount exceeds remaining balance', 422))
+
+    const result = await checkRefundStatus('refund_1', ADMIN, 'RESUBMIT')
+
+    expect(result.outcome).toBe('MARKED_FAILED')
+    expect(result.status).toBe('FAILED')
+    expect(row.status).toBe('FAILED')
+    expect(row.failureReason).toBe('Amount exceeds remaining balance')
+  })
+
+  it('attaches the refund found via listPaystackRefunds to a PENDING row left by a timeout', async () => {
+    // createRefund left this row PENDING with no Paystack id after a timeout.
+    const row = makeRefundRow({
+      status: 'PENDING',
+      paystackRefundId: null,
+      amount: 30,
+      failureReason: 'PAYSTACK_TIMEOUT',
+      createdAt: new Date(),
+    })
+    prisma.__state.refunds.push(row)
+    // Reconciliation finds the refund Paystack actually created.
+    mockListRefunds.mockResolvedValue({
+      success: true,
+      refunds: [paystackRefund({ id: 9001, amount: 3000, status: 'processed' })],
+    } as never)
+
+    const result = await checkRefundStatus('refund_1', ADMIN)
+
+    expect(result.outcome).toBe('ATTACHED')
+    expect(result.paystackRefundId).toBe('9001')
+    expect(row.paystackRefundId).toBe('9001')
+    expect(row.status).toBe('PROCESSED')
+    expect(row.failureReason).toBeNull()
+    // The customer is told now that the refund is confirmed.
+    expect(mockSendRefundEmail).toHaveBeenCalledTimes(1)
   })
 })
