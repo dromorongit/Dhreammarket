@@ -19,7 +19,7 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getPrisma } from '@/lib/prisma'
 import { listPaystackRefunds, type PaystackRefund } from '@/lib/paystack'
-import { canTransition, mapPaystackRefundStatus, round2 } from '@/lib/refunds/process-refund'
+import { canTransition, mapPaystackRefundStatus, round2, toPesewas } from '@/lib/refunds/process-refund'
 import { notifyRefundProcessed } from '@/lib/refunds/refund-email'
 import { createAuditLog } from '@/lib/audit-log'
 import { createNotification } from '@/lib/notifications'
@@ -81,8 +81,8 @@ function readTransactionReference(data: Record<string, any> | undefined): string
 }
 
 function amountMatches(storedAmount: unknown, paystackAmount: number): boolean {
-  const storedPesewas = Math.round(Number(storedAmount ?? 0) * 100)
-  return storedPesewas === paystackAmount
+  // Exact decimal conversion to pesewas, never a float multiply.
+  return toPesewas(storedAmount as number | string) === paystackAmount
 }
 
 function creationTimeMatches(stored: Date | null, paystackCreatedAt: string | null): boolean {
@@ -296,16 +296,14 @@ export async function handleRefundWebhook(
       where: { paymentId: payment.id },
       select: { amount: true, status: true },
     })
-    const processedTotal = round2(
-      refreshedRefunds
-        .filter((r) => r.status === 'PROCESSED')
-        .reduce((sum, r) => sum + Number(r.amount), 0)
-    )
-    const paymentTotal = round2(Number(payment.amount))
+    const processedPesewas = refreshedRefunds
+      .filter((r) => r.status === 'PROCESSED')
+      .reduce((sum, r) => sum + toPesewas(r.amount), 0)
+    const paymentAmountPesewas = toPesewas(payment.amount)
     const outstanding = refreshedRefunds.filter(
       (r) => r.status !== 'PROCESSED' && r.status !== 'FAILED'
     )
-    if (outstanding.length === 0 && processedTotal >= paymentTotal) {
+    if (outstanding.length === 0 && processedPesewas >= paymentAmountPesewas) {
       await prisma.order.update({
         where: { id: payment.orderId },
         data: { paymentStatus: 'REFUNDED' },

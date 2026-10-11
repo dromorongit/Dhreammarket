@@ -1,12 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import {
+  allocatePesewas,
   Caps,
   RefundError,
   buildIdempotencyKey,
   canTransition,
   computeItemCap,
   guardWalletOrder,
+  pesewasToGhs,
   round2,
+  toPesewas,
   type RefundSource,
 } from '@/lib/refunds/process-refund'
 
@@ -101,11 +104,17 @@ describe('Caps', () => {
       ],
     })
 
-    // item_a gross is 100 of 150 total, so its share of 100 GHS is 66.67.
-    expect(round2(caps.itemCap('item_a'))).toBe(66.67)
-    expect(round2(caps.itemRemaining('item_a'))).toBe(6.67)
+    // item_a gross is 100 of 150, item_b gross is 50 of 150, so the 100 GHS
+    // payment splits 66.66 / 33.34 in pesewas with the 1-pesewa remainder on
+    // the last item. The old float pro-rata gave 66.67 / 33.33 and left a
+    // stray pesewa unowned.
+    expect(caps.itemCap('item_a')).toBe(66.66)
+    // 66.66 cap minus 60 already refunded (50 processed + 10 pending).
+    expect(caps.itemRemaining('item_a')).toBe(6.66)
+    // The two caps sum exactly to the payment.
+    expect(round2(caps.itemCap('item_a') + caps.itemCap('item_b'))).toBe(100)
     // A FAILED refund does not consume the cap.
-    expect(round2(caps.paymentRemaining)).toBe(40)
+    expect(caps.paymentRemaining).toBe(40)
   })
 
   it('ignores failed refunds when computing what is left to refund', () => {
@@ -203,5 +212,140 @@ describe('round2', () => {
   it('keeps two decimal places without floating point noise', () => {
     expect(round2(0.1 + 0.2)).toBe(0.3)
     expect(round2(30.6000000001)).toBe(30.6)
+  })
+})
+
+describe('integer pesewa arithmetic', () => {
+  it('converts a GHS amount to pesewas without floating point error', () => {
+    expect(toPesewas(100)).toBe(10000)
+    expect(toPesewas(0.01)).toBe(1)
+    expect(toPesewas('102.07')).toBe(10207)
+    expect(toPesewas(0)).toBe(0)
+    expect(toPesewas(null)).toBe(0)
+    expect(toPesewas(undefined)).toBe(0)
+    // 30.6 is 30.599999999999998 in binary floating point; Math.round(30.6 * 100)
+    // happens to save this one, but 100.07-style values are not always so lucky.
+    expect(toPesewas(30.6)).toBe(3060)
+    expect(pesewasToGhs(10207)).toBe(102.07)
+    expect(pesewasToGhs(1)).toBe(0.01)
+  })
+
+  it('rejects amounts with more than two decimal places', () => {
+    // A refund request below one pesewa cannot be honoured exactly, so it is
+    // refused rather than silently rounded by the caps.
+    const caps = Caps.forOrder({
+      id: 'order_fine',
+      total: 100,
+      items: [makeItem('item_a', 100, 1)],
+      payment: { id: 'pay_fine', amount: 100 },
+      refunds: [],
+    })
+
+    expect(() => caps.validate([{ orderItemId: 'item_a', amount: 30.123 }])).toThrowError(
+      expect.objectContaining({ code: 'INVALID_AMOUNT' })
+    )
+    expect(() => caps.validate([{ orderItemId: 'item_a', amount: 30.1 }])).not.toThrow()
+  })
+})
+
+describe('pesewa allocation across order items', () => {
+  it('splits 100.00 GHS across three equal items', () => {
+    const alloc = allocatePesewas(
+      [
+        { orderItemId: 'a', grossPesewas: 3333 },
+        { orderItemId: 'b', grossPesewas: 3333 },
+        { orderItemId: 'c', grossPesewas: 3334 },
+      ],
+      10000
+    )
+    // Pro-rata floors to 3333 each, leaving 1 pesewa for the last item.
+    expect([alloc.get('a'), alloc.get('b'), alloc.get('c')]).toEqual([3333, 3333, 3334])
+    const sum = alloc.get('a')! + alloc.get('b')! + alloc.get('c')!
+    expect(sum).toBe(10000)
+  })
+
+  it('allocates the 0.01 remainder to the last item for an uneven split', () => {
+    const alloc = allocatePesewas(
+      [
+        { orderItemId: 'a', grossPesewas: 1 },
+        { orderItemId: 'b', grossPesewas: 1 },
+      ],
+      1
+    )
+    // 1 pesewa over two equal items: the first floors to 0, the last takes it.
+    expect([alloc.get('a'), alloc.get('b')]).toEqual([0, 1])
+  })
+
+  it('always allocates a sum equal to the payment, for every total', () => {
+    const grosses = [
+      { orderItemId: 'a', grossPesewas: 7 },
+      { orderItemId: 'b', grossPesewas: 11 },
+      { orderItemId: 'c', grossPesewas: 13 },
+    ]
+    for (let payment = 1; payment <= 5000; payment += 7) {
+      const alloc = allocatePesewas(grosses, payment)
+      const sum = alloc.get('a')! + alloc.get('b')! + alloc.get('c')!
+      expect(sum).toBe(payment)
+    }
+  })
+
+  it('keeps the item caps summing to the payment for a 102.07 uneven split', () => {
+    const caps = Caps.forOrder({
+      id: 'order_uneven',
+      total: 90,
+      items: [makeItem('item_a', 13.37, 2), makeItem('item_b', 41.99, 1), makeItem('item_c', 5.55, 3)],
+      payment: { id: 'pay_uneven', amount: 102.07 },
+      refunds: [],
+    })
+    const total = caps.itemCap('item_a') + caps.itemCap('item_b') + caps.itemCap('item_c')
+    expect(round2(total)).toBe(102.07)
+    expect(caps.paymentRemaining).toBe(102.07)
+  })
+
+  it('lets a whole-order refund cover the payment exactly and settle the order', () => {
+    const caps = Caps.forOrder({
+      id: 'order_whole',
+      total: 100,
+      items: [makeItem('item_a', 33.33, 1), makeItem('item_b', 33.33, 1), makeItem('item_c', 33.34, 1)],
+      payment: { id: 'pay_whole', amount: 100 },
+      refunds: [],
+    })
+
+    // Refunding everything left on every item must equal the payment exactly.
+    const items = [
+      { orderItemId: 'item_a', amount: caps.itemRemaining('item_a') },
+      { orderItemId: 'item_b', amount: caps.itemRemaining('item_b') },
+      { orderItemId: 'item_c', amount: caps.itemRemaining('item_c') },
+    ]
+    const totalPesewas = items.reduce((sum, item) => sum + toPesewas(item.amount), 0)
+    expect(totalPesewas).toBe(toPesewas(100))
+    // And the validation that gates settlement agrees.
+    expect(() => caps.validate(items)).not.toThrow()
+  })
+
+  it('caps a partial refund per item', () => {
+    const caps = Caps.forOrder({
+      id: 'order_partial',
+      total: 100,
+      items: [makeItem('item_a', 30, 1), makeItem('item_b', 70, 1)],
+      payment: { id: 'pay_partial', amount: 102 },
+      refunds: [],
+    })
+
+    caps.validate([{ orderItemId: 'item_a', amount: 30.6 }])
+    expect(() => caps.validate([{ orderItemId: 'item_a', amount: 30.61 }])).toThrowError(
+      expect.objectContaining({ code: 'ITEM_CAP_EXCEEDED' })
+    )
+    // The payment cap also still holds: item_a's 30.6 plus item_b's 71.4 is 102.
+    caps.validate([
+      { orderItemId: 'item_a', amount: 30.6 },
+      { orderItemId: 'item_b', amount: 71.4 },
+    ])
+    expect(() =>
+      caps.validate([
+        { orderItemId: 'item_a', amount: 30.6 },
+        { orderItemId: 'item_b', amount: 71.41 },
+      ])
+    ).toThrowError(expect.objectContaining({ code: 'ITEM_CAP_EXCEEDED' }))
   })
 })

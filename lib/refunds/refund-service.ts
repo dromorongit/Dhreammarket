@@ -15,7 +15,8 @@ import {
   canTransition,
   guardWalletOrder,
   mapPaystackRefundStatus,
-  round2,
+  pesewasToGhs,
+  toPesewas,
   type RefundActor,
   type RefundSource,
 } from './process-refund'
@@ -26,7 +27,7 @@ import { releaseStock } from '@/lib/stock-reservation'
 import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { createNotification } from '@/lib/notifications'
 import { logError, logInfo, logWarn } from '@/lib/logger'
-import type { RefundStatus } from '@prisma/client'
+import type { Prisma, RefundStatus } from '@prisma/client'
 
 /** A stuck PENDING refund with no Paystack id is eligible for manual resolution
   * only after this long, so a slow webhook always gets its chance first. */
@@ -141,7 +142,9 @@ function resolveIdempotencyKey(
 }
 
 function matchesAmount(storedAmount: unknown, paystackAmount: number): boolean {
-  return Math.round(Number(storedAmount ?? 0) * 100) === paystackAmount
+  if (storedAmount === null || storedAmount === undefined) return paystackAmount === 0
+  // A Decimal from Prisma, a plain number, or a numeric string.
+  return toPesewas(storedAmount as Prisma.Decimal | number | string) === paystackAmount
 }
 
 function matchesCreationTime(stored: Date | null, paystackCreatedAt: string | null): boolean {
@@ -234,7 +237,9 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
 
   const settled = requested.map((item) => ({
     orderItemId: item.orderItemId,
-    amount: round2(item.amount ?? caps.itemRemaining(item.orderItemId)),
+    // The remaining cap is already an exact 2-decimal GHS figure derived from
+    // integer pesewas, so no rounding repair is needed here.
+    amount: item.amount ?? caps.itemRemaining(item.orderItemId),
   }))
 
   const singleItem = settled.length === 1
@@ -273,7 +278,7 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
           id: row.id,
           idempotencyKey: row.idempotencyKey,
           orderItemId: row.orderItemId,
-          amount: round2(Number(row.amount)),
+          amount: pesewasToGhs(toPesewas(row.amount)),
           status: row.status,
           paystackRefundId: row.paystackRefundId,
           paystackStatus: row.paystackStatus,
@@ -306,7 +311,7 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
             id: existing.id,
             idempotencyKey: existing.idempotencyKey,
             orderItemId: existing.orderItemId,
-            amount: round2(Number(existing.amount)),
+            amount: pesewasToGhs(toPesewas(existing.amount)),
             status: existing.status,
             paystackRefundId: existing.paystackRefundId,
             paystackStatus: existing.paystackStatus,
@@ -366,7 +371,7 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
   for (const row of pending) {
     if (row.alreadyExisted) continue
 
-    const paystackResult = await createPaystackRefund(payment.paystackRef, Math.round(row.amount * 100), {
+    const paystackResult = await createPaystackRefund(payment.paystackRef, toPesewas(row.amount), {
       currency: 'GHS',
       merchantNote: input.reason,
     })
@@ -485,12 +490,15 @@ async function settleOrderIfFullyRefunded(orderId: string): Promise<boolean> {
     (refund) => refund.status !== 'PROCESSED' && refund.status !== 'FAILED'
   )
 
-  const refundedTotal = round2(processedRefunds.reduce((sum, refund) => sum + Number(refund.amount), 0))
-  const paymentTotal = round2(Number(latest.payment.amount))
+  const refundedPesewas = processedRefunds.reduce((sum, refund) => sum + toPesewas(refund.amount), 0)
+  const paymentPesewas = toPesewas(latest.payment.amount)
 
-  if (outstanding.length > 0 || refundedTotal < paymentTotal) {
+  if (outstanding.length > 0 || refundedPesewas < paymentPesewas) {
     return false
   }
+  // At this point the integer pesewa totals are equal, so the order settles.
+  const refundedTotal = pesewasToGhs(refundedPesewas)
+  const paymentTotal = pesewasToGhs(paymentPesewas)
 
   await prisma.order.update({
     where: { id: orderId },
@@ -812,7 +820,7 @@ export async function checkRefundStatus(
 
     const paystackResult = await createPaystackRefund(
       refund.payment.paystackRef as string,
-      Math.round(Number(fresh.amount) * 100),
+      toPesewas(fresh.amount),
       { merchantNote: fresh.reason ?? undefined }
     )
 

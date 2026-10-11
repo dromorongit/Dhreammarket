@@ -14,7 +14,7 @@
 // - No wallet credit code exists in this part.
 // - processRefund refuses any order with walletAmountApplied > 0 (HTTP 409).
 // - processRefund refuses wallet-only payments that have no paystackRef.
-import type { Prisma, RefundStatus, OrderItem } from '@prisma/client'
+import { Prisma, type Prisma as PrismaTypes, type RefundStatus, type OrderItem } from '@prisma/client'
 
 export type RefundSource = 'MANUAL' | 'RETURN' | 'VENDOR_REJECTION' | 'CUSTOMER_CANCEL'
 export type RefundTriggeredByRole = 'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT' | 'SYSTEM'
@@ -133,32 +133,123 @@ export function mapPaystackRefundStatus(paystackStatus: string | undefined): Ref
 }
 
 /**
- * Price an order item. OrderItem.price is the unit price captured at purchase
- * time, so the item gross is simply price * quantity.
+ * Price an order item in integer pesewas. OrderItem.price is the unit price
+ * captured at purchase time, so the item gross is price * quantity. The
+ * multiplication is exact decimal arithmetic, not floating point.
  */
+function itemGrossPesewas(item: Pick<OrderItem, 'price' | 'quantity'>): number {
+  return new Prisma.Decimal(item.price ?? 0).mul(item.quantity ?? 0).toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP).toNumber()
+}
+
+/** Item gross in GHS, kept for callers that display it. */
 function itemGross(item: Pick<OrderItem, 'price' | 'quantity'>): number {
-  return Number(item.price) * item.quantity
+  return pesewasToGhs(itemGrossPesewas(item))
 }
 
 /**
- * Pro-rated share of the payment amount that belongs to a single order item.
+ * Pro-rated share of the payment that belongs to a single order item.
  *
  * The share is computed off what was actually charged (payment.amount), not the
  * order total, because a wallet may have reduced the charge. We always call
  * this after the wallet guard, so walletAmountApplied is 0 in practice, but
  * using the charged amount keeps the math correct if that ever changes.
+ *
+ * Arithmetic is done in integer pesewas and converted back to GHS at the end,
+ * so this is the exact pro-rata share of the whole payment. To get per-item
+ * caps whose GHS total is exactly the payment amount, use the allocation in
+ * Caps.forOrder, which assigns the rounding remainder to the last item.
  */
 export function computeItemCap(
-  itemGrossAmount: number,
-  orderGrossTotal: number,
-  paymentAmount: number
+  itemGrossAmount: number | PrismaTypes.Decimal,
+  orderGrossTotal: number | PrismaTypes.Decimal,
+  paymentAmount: number | PrismaTypes.Decimal
 ): number {
-  if (orderGrossTotal <= 0 || itemGrossAmount <= 0) return 0
-  return round2((itemGrossAmount / orderGrossTotal) * paymentAmount)
+  const paymentPesewas = toPesewas(paymentAmount)
+  const itemGrossPesewas = toPesewas(itemGrossAmount)
+  const totalGrossPesewas = toPesewas(orderGrossTotal)
+  if (paymentPesewas <= 0 || itemGrossPesewas <= 0 || totalGrossPesewas <= 0) {
+    return 0
+  }
+  return pesewasToGhs(
+    Math.floor((paymentPesewas * itemGrossPesewas) / totalGrossPesewas)
+  )
+}
+
+/** Convert integer pesewas back to a GHS amount. */
+export function pesewasToGhs(pesewas: number): number {
+  return new Prisma.Decimal(Math.round(pesewas)).dividedBy(100).toNumber()
 }
 
 export function round2(value: number): number {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100
+}
+
+/**
+ * Convert a GHS amount (Prisma Decimal, number or numeric string) to integer
+ * pesewas.
+ *
+ * The multiplication by 100 happens on a Prisma.Decimal in exact base-10
+ * arithmetic, never on a binary float. A binary float carries 100.07 as
+ * 100.07000000000002..., so Math.round(x * 100) can land on the wrong side of
+ * a .5 boundary and off-by-one a refund. Decimal arithmetic has no such error.
+ *
+ * ROUND_HALF_UP matches how a human resolves an exact half, and toNumber() is
+ * safe because the value is an exact integer that 2^53 always represents.
+ */
+export function toPesewas(amount: PrismaTypes.Decimal | number | string | null | undefined): number {
+  if (amount === null || amount === undefined) return 0
+  return new Prisma.Decimal(amount)
+    .mul(100)
+    .toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP)
+    .toNumber()
+}
+
+/**
+ * Allocate a payment amount, in integer pesewas, across order items in
+ * proportion to each item's gross, with the rounding remainder added to the
+ * LAST item.
+ *
+ * Because the allocation is pure integer arithmetic, the per-item shares are
+ * exact integers and their sum is exactly paymentPesewas - there is never a
+ * stray pesewa left over, which is what lets a full-order refund settle to
+ * REFUNDED. Proportional shares can only lose or gain whole pesewas (the
+ * integer division discards a remainder), so every discarded remainder is
+ * collected and handed to the last item.
+ *
+ * `itemGross` must be given in the same order on every call for the same order
+ * so the remainder always lands on the same item.
+ */
+export function allocatePesewas(
+  itemGross: { orderItemId: string; grossPesewas: number }[],
+  paymentPesewas: number
+): Map<string, number> {
+  const result = new Map<string, number>()
+  const totalGross = itemGross.reduce((sum, entry) => sum + entry.grossPesewas, 0)
+
+  if (itemGross.length === 0 || totalGross <= 0) {
+    return result
+  }
+
+  const allocation: number[] = []
+  let allocated = 0
+  for (let i = 0; i < itemGross.length; i++) {
+    // Largest-remainder style floor division in integers.
+    const share =
+      paymentPesewas >= 0
+        ? Math.floor((paymentPesewas * itemGross[i].grossPesewas) / totalGross)
+        : Math.ceil((paymentPesewas * itemGross[i].grossPesewas) / totalGross)
+    allocation[i] = share
+    allocated += share
+  }
+
+  // The remainder - every pesewa the floor division dropped - goes to the last
+  // item, so the shares sum exactly to the payment.
+  allocation[allocation.length - 1] += paymentPesewas - allocated
+
+  for (let i = 0; i < itemGross.length; i++) {
+    result.set(itemGross[i].orderItemId, allocation[i])
+  }
+  return result
 }
 
 export type ItemRefundInput = {
@@ -227,6 +318,9 @@ export class Caps {
   /**
    * Validates a batch of requested item refunds against both the payment-level
    * cap and the per-item pro-rated cap. Throws RefundError with HTTP 400.
+   *
+   * Comparisons are made in integer pesewas so a 1-pesewa difference can never
+   * be decided by floating-point noise.
    */
   validate(items: ItemRefundInput[]): void {
     const perItemTotals = new Map<string, number>()
@@ -234,30 +328,43 @@ export class Caps {
       if (!Number.isFinite(item.amount) || item.amount <= 0) {
         throw new RefundError(400, 'Refund amount must be greater than zero', 'INVALID_AMOUNT')
       }
-      perItemTotals.set(item.orderItemId, (perItemTotals.get(item.orderItemId) ?? 0) + item.amount)
+      // A refund must be expressible in whole pesewas. Anything finer cannot be
+      // allocated or settled exactly, so it is refused rather than rounded.
+      if (round2(item.amount) !== item.amount) {
+        throw new RefundError(
+          400,
+          `Refund amount ${item.amount} must have at most two decimal places`,
+          'INVALID_AMOUNT'
+        )
+      }
+      perItemTotals.set(
+        item.orderItemId,
+        (perItemTotals.get(item.orderItemId) ?? 0) + toPesewas(item.amount)
+      )
     }
 
     // forEach avoids iterator down-leveling: the tsconfig target is ES5.
-    perItemTotals.forEach((amount, orderItemId) => {
-      const cap = this.itemCap(orderItemId)
-      const remaining = this.itemRemaining(orderItemId)
-      if (cap <= 0) {
+    perItemTotals.forEach((requestedPesewas, orderItemId) => {
+      const capPesewas = toPesewas(this.itemCap(orderItemId))
+      const remainingPesewas = toPesewas(this.itemRemaining(orderItemId))
+      if (capPesewas <= 0) {
         throw new RefundError(400, `Order item ${orderItemId} is not refundable`, 'ITEM_NOT_REFUNDABLE')
       }
-      if (round2(amount) > round2(remaining)) {
+      if (requestedPesewas > remainingPesewas) {
         throw new RefundError(
           400,
-          `Refund amount ${round2(amount)} exceeds the refundable cap ${round2(remaining)} for order item ${orderItemId}`,
+          `Refund amount ${pesewasToGhs(requestedPesewas)} exceeds the refundable cap ${pesewasToGhs(remainingPesewas)} for order item ${orderItemId}`,
           'ITEM_CAP_EXCEEDED'
         )
       }
     })
 
-    const total = round2(items.reduce((sum, item) => sum + item.amount, 0))
-    if (total > round2(this.paymentRemaining)) {
+    const totalPesewas = items.reduce((sum, item) => sum + toPesewas(item.amount), 0)
+    const remainingPaymentPesewas = toPesewas(this.paymentRemaining)
+    if (totalPesewas > remainingPaymentPesewas) {
       throw new RefundError(
         400,
-        `Refund total ${total} exceeds remaining refundable payment amount ${round2(this.paymentRemaining)}`,
+        `Refund total ${pesewasToGhs(totalPesewas)} exceeds remaining refundable payment amount ${pesewasToGhs(remainingPaymentPesewas)}`,
         'PAYMENT_CAP_EXCEEDED'
       )
     }
@@ -271,11 +378,18 @@ export class Caps {
     id: string
     total: number
     items: Pick<OrderItem, 'id' | 'price' | 'quantity'>[]
-    payment?: { id: string; amount: number } | null
+    payment?: { id: string; amount: number | PrismaTypes.Decimal } | null
     refunds?: { amount: Prisma.Decimal | number | null; status: RefundStatus; orderItemId: string | null }[]
   }): Caps {
     const paymentAmount = Number(order.payment?.amount ?? 0)
-    const orderGrossTotal = order.items.reduce((sum, item) => sum + itemGross(item), 0)
+    const itemGrossPesewas = order.items.map((item) => ({
+      orderItemId: item.id,
+      grossPesewas: toPesewas(itemGross(item)),
+    }))
+
+    // Per-item caps in integer pesewas, proportional to each item's gross, with
+    // the rounding remainder on the last item. These sum exactly to the payment.
+    const itemCapPesewas = allocatePesewas(itemGrossPesewas, toPesewas(paymentAmount))
 
     // A refund has already claimed its money as soon as it has been submitted
     // to Paystack, so only FAILED rows leave the cap untouched. Counting
@@ -285,31 +399,32 @@ export class Caps {
     const alreadyByItem = new Map<string, number>()
     for (const refund of refunds) {
       if (!refund.orderItemId) continue
-      alreadyByItem.set(
-        refund.orderItemId,
-        round2((alreadyByItem.get(refund.orderItemId) ?? 0) + Number(refund.amount ?? 0))
-      )
+      const previous = alreadyByItem.get(refund.orderItemId) ?? 0
+      alreadyByItem.set(refund.orderItemId, previous + toPesewas(refund.amount))
     }
 
     const itemCaps: CapsResult['itemCaps'] = {}
     for (const item of order.items) {
-      const gross = itemGross(item)
-      const itemCap = computeItemCap(gross, orderGrossTotal, paymentAmount)
-      const alreadyRefunded = alreadyByItem.get(item.id) ?? 0
+      const grossPesewas = itemGrossPesewas.find((entry) => entry.orderItemId === item.id)!.grossPesewas
+      const capPesewas = itemCapPesewas.get(item.id) ?? 0
+      const alreadyRefundedPesewas = alreadyByItem.get(item.id) ?? 0
       itemCaps[item.id] = {
-        gross: round2(gross),
-        itemCap,
-        alreadyRefunded,
-        remaining: round2(Math.max(0, itemCap - alreadyRefunded)),
+        gross: pesewasToGhs(grossPesewas),
+        itemCap: pesewasToGhs(capPesewas),
+        alreadyRefunded: pesewasToGhs(alreadyRefundedPesewas),
+        remaining: pesewasToGhs(Math.max(0, capPesewas - alreadyRefundedPesewas)),
       }
     }
 
-    const alreadyRefunded = round2(refunds.reduce((sum, refund) => sum + Number(refund.amount ?? 0), 0))
+    const alreadyRefundedPesewas = refunds.reduce(
+      (sum, refund) => sum + toPesewas(refund.amount),
+      0
+    )
 
     return new Caps({
       paymentCap: round2(paymentAmount),
-      alreadyRefunded,
-      remaining: round2(Math.max(0, paymentAmount - alreadyRefunded)),
+      alreadyRefunded: pesewasToGhs(alreadyRefundedPesewas),
+      remaining: pesewasToGhs(Math.max(0, toPesewas(paymentAmount) - alreadyRefundedPesewas)),
       itemCaps,
     })
   }
