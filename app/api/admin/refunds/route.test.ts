@@ -4,9 +4,14 @@ import { RefundError } from '@/lib/refunds'
 
 vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn(() => ({ payment: {} })) }))
 
-vi.mock('@/lib/adminAuth', () => ({
+const auth = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   requireSuperAdmin: vi.fn(),
+}))
+
+vi.mock('@/lib/adminAuth', () => ({
+  requireAdmin: auth.requireAdmin,
+  requireSuperAdmin: auth.requireSuperAdmin,
 }))
 
 vi.mock('@/lib/refunds', async (importOriginal) => {
@@ -20,13 +25,15 @@ vi.mock('@/lib/refunds', async (importOriginal) => {
 })
 
 import { POST, GET } from '@/app/api/admin/refunds/route'
-import { requireAdmin, requireSuperAdmin } from '@/lib/adminAuth'
 import { createRefund, getRefundHistory } from '@/lib/refunds'
 
-const mockRequireAdmin = vi.mocked(requireAdmin)
-const mockRequireSuperAdmin = vi.mocked(requireSuperAdmin)
+const mockCreateRefund = vi.mocked(createRefund)
+const mockGetRefundHistory = vi.mocked(getRefundHistory)
 
 const UUID = 'f0a1b2c3-d4e5-4f67-8899-aabbccddeeff'
+
+const SUPER_ADMIN = { userId: 'sa_1', role: 'SUPER_ADMIN' }
+const ADMIN = { userId: 'admin_1', role: 'ADMIN' }
 
 function buildRequest(body: unknown, url = 'http://localhost/api/admin/refunds'): NextRequest {
   return new NextRequest(url, {
@@ -44,18 +51,27 @@ function refundRow(overrides: Record<string, unknown> = {}) {
     amount: 100,
     status: 'PROCESSED',
     paystackRefundId: '724',
-    paystackStatus: 'success',
+    paystackStatus: 'processed',
     failureReason: null,
     alreadyExisted: false,
     ...overrides,
   }
 }
 
+/** requireSuperAdmin: 401 when nobody is signed in, 403 for a lesser role. */
+function unauth() {
+  return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+}
+
+function forbidden() {
+  return NextResponse.json({ error: 'SUPER_ADMIN access required' }, { status: 403 })
+}
+
 describe('POST /api/admin/refunds', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockRequireAdmin.mockResolvedValue({ userId: 'admin_1', role: 'SUPER_ADMIN' } as never)
-    mockRequireSuperAdmin.mockResolvedValue({ userId: 'admin_1', role: 'SUPER_ADMIN' } as never)
+    auth.requireSuperAdmin.mockResolvedValue(SUPER_ADMIN as never)
+    auth.requireAdmin.mockResolvedValue(SUPER_ADMIN as never)
     vi.mocked(createRefund).mockResolvedValue({
       orderId: 'order_1',
       refunds: [refundRow()],
@@ -64,10 +80,30 @@ describe('POST /api/admin/refunds', () => {
     } as never)
   })
 
-  it('returns the auth failure when the caller is not an admin', async () => {
-    mockRequireAdmin.mockResolvedValue(
-      NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) as never
+  it('lets a SUPER_ADMIN process a refund keyed by the client requestId', async () => {
+    const response = await POST(
+      buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true, reason: 'damaged' })
     )
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.message).toBe('Refund processed successfully')
+    expect(body.orderRefunded).toBe(true)
+    expect(createRefund).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_1',
+        source: 'MANUAL',
+        // The client UUID is used verbatim as the idempotency key.
+        reference: UUID,
+        reason: 'damaged',
+        // The role comes from the verified session, never a hardcoded string.
+        actor: { triggeredByUserId: 'sa_1', triggeredByRole: 'SUPER_ADMIN' },
+      })
+    )
+  })
+
+  it('returns 401 when the caller is not authenticated', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(unauth() as never)
 
     const response = await POST(
       buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true })
@@ -77,26 +113,50 @@ describe('POST /api/admin/refunds', () => {
     expect(createRefund).not.toHaveBeenCalled()
   })
 
-  it('processes a refund keyed by the client requestId when confirmed', async () => {
+  it('returns 403 for a plain ADMIN', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(forbidden() as never)
+
     const response = await POST(
-      buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true, reason: 'damaged' })
+      buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true })
+    )
+
+    expect(response.status).toBe(403)
+    expect(createRefund).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 for a CUSTOMER', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(
+      NextResponse.json({ error: 'SUPER_ADMIN access required' }, { status: 403 }) as never
+    )
+
+    const response = await POST(
+      buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true })
     )
     const body = await response.json()
 
-    expect(response.status).toBe(200)
-    expect(body.message).toBe('Refund processed successfully')
-    expect(body.orderRefunded).toBe(true)
+    expect(response.status).toBe(403)
+    expect(body.requiresSuperAdmin ?? body.error).toBeDefined()
+    expect(createRefund).not.toHaveBeenCalled()
+  })
 
-    expect(createRefund).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderId: 'order_1',
-        source: 'MANUAL',
-        // The client UUID is used verbatim as the idempotency key.
-        reference: UUID,
-        reason: 'damaged',
-        actor: { triggeredByUserId: 'admin_1', triggeredByRole: 'SUPER_ADMIN' },
-      })
+  it('returns 403 for a VENDOR', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(forbidden() as never)
+
+    const response = await POST(
+      buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true })
     )
+
+    expect(response.status).toBe(403)
+    expect(createRefund).not.toHaveBeenCalled()
+  })
+
+  it('never falls back to requireAdmin', async () => {
+    // A caller that only passes requireAdmin (a plain ADMIN) must not get in.
+    auth.requireSuperAdmin.mockResolvedValue(forbidden() as never)
+
+    await POST(buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true }))
+
+    expect(auth.requireAdmin).not.toHaveBeenCalled()
   })
 
   it('passes an explicit item list through', async () => {
@@ -200,15 +260,10 @@ describe('POST /api/admin/refunds', () => {
 describe('GET /api/admin/refunds', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockRequireAdmin.mockResolvedValue({ userId: 'admin_1', role: 'SUPER_ADMIN' } as never)
+    auth.requireSuperAdmin.mockResolvedValue(SUPER_ADMIN as never)
   })
 
-  it('requires orderId', async () => {
-    const response = await GET(new NextRequest('http://localhost/api/admin/refunds'))
-    expect(response.status).toBe(400)
-  })
-
-  it('returns the refund history for the order', async () => {
+  it('lets a SUPER_ADMIN read the refund history for the order', async () => {
     vi.mocked(getRefundHistory).mockResolvedValue([{ id: 'refund_1' }] as never)
 
     const response = await GET(
@@ -219,5 +274,42 @@ describe('GET /api/admin/refunds', () => {
     expect(response.status).toBe(200)
     expect(body.refunds).toEqual([{ id: 'refund_1' }])
     expect(getRefundHistory).toHaveBeenCalledWith('order_1')
+  })
+
+  it('requires orderId', async () => {
+    const response = await GET(new NextRequest('http://localhost/api/admin/refunds'))
+    expect(response.status).toBe(400)
+  })
+
+  it('returns 401 when the caller is not authenticated', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(unauth() as never)
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/admin/refunds?orderId=order_1')
+    )
+
+    expect(response.status).toBe(401)
+    expect(getRefundHistory).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 for a plain ADMIN', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(forbidden() as never)
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/admin/refunds?orderId=order_1')
+    )
+
+    expect(response.status).toBe(403)
+    expect(getRefundHistory).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 for a VENDOR', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(forbidden() as never)
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/admin/refunds?orderId=order_1')
+    )
+
+    expect(response.status).toBe(403)
   })
 })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireSuperAdmin } from '@/lib/adminAuth'
 import { rateLimit } from '@/lib/rate-limit'
-import { createRefund, getRefundHistory, RefundError } from '@/lib/refunds'
+import { createRefund, getRefundHistory, RefundError, toRefundTriggeredByRole } from '@/lib/refunds'
 import { logError } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
@@ -12,6 +12,10 @@ export const dynamic = 'force-dynamic'
  * Manual refund entry point. A client-supplied requestId (UUID) is REQUIRED
  * and is used verbatim as the Refund idempotency key, so a double submit can
  * never issue two Paystack refunds. The UI must send confirmRefund: true.
+ *
+ * Refunds move real money through Paystack, so this endpoint - and every
+ * other refund endpoint - is restricted to SUPER_ADMIN. A plain ADMIN, a
+ * CUSTOMER or a VENDOR gets 403; an unauthenticated caller gets 401.
  *
  * Wallet-assisted and wallet-only orders are refused with 409 and must be
  * refunded manually - there is no wallet credit logic here.
@@ -33,9 +37,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const admin = await requireAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const superAdmin = await requireSuperAdmin()
+    if (superAdmin instanceof NextResponse) {
+      return superAdmin
     }
 
     let body: Record<string, unknown>
@@ -98,8 +102,9 @@ export async function POST(request: NextRequest) {
       source: 'MANUAL',
       reference: requestId,
       actor: {
-        triggeredByUserId: admin.userId,
-        triggeredByRole: 'SUPER_ADMIN',
+        triggeredByUserId: superAdmin.userId,
+        // Taken from the verified session, never hardcoded.
+        triggeredByRole: toRefundTriggeredByRole(superAdmin.role),
       },
     })
 
@@ -122,7 +127,8 @@ export async function POST(request: NextRequest) {
  * GET /api/admin/refunds?orderId=<id>
  *
  * Refund history for an order. Used by the admin order detail page so the
- * confirmation dialog can show what has already been refunded.
+ * confirmation dialog can show what has already been refunded. Restricted to
+ * SUPER_ADMIN together with the POST above.
  */
 export async function GET(request: NextRequest) {
   const rateLimitCheck = rateLimit('admin-orders')(request)
@@ -131,9 +137,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const admin = await requireAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const superAdmin = await requireSuperAdmin()
+    if (superAdmin instanceof NextResponse) {
+      return superAdmin
     }
 
     const { searchParams } = new URL(request.url)

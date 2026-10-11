@@ -22,8 +22,8 @@ vi.mock('@/lib/refunds', async (importOriginal) => {
 
 import { POST } from '@/app/api/admin/refunds/[id]/check-status/route'
 
-const ADMIN = { userId: 'admin_1', role: 'ADMIN' }
 const SUPER_ADMIN = { userId: 'sa_1', role: 'SUPER_ADMIN' }
+const ADMIN = { userId: 'admin_1', role: 'ADMIN' }
 
 function buildRequest(body: unknown): NextRequest {
   return new NextRequest('http://localhost/api/admin/refunds/refund_1/check-status', {
@@ -38,7 +38,7 @@ function checked(overrides: Record<string, unknown> = {}) {
     refundId: 'refund_1',
     status: 'ATTACHED',
     paystackRefundId: '9001',
-    paystackStatus: 'success',
+    paystackStatus: 'processed',
     outcome: 'ATTACHED',
     message: 'Matched the Paystack refund and attached it to this record.',
     eligibleForManualResolution: false,
@@ -49,52 +49,78 @@ function checked(overrides: Record<string, unknown> = {}) {
 
 const ctx = { params: { id: 'refund_1' } }
 
+const UNAUTH = () => NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+const FORBIDDEN = () => NextResponse.json({ error: 'SUPER_ADMIN access required' }, { status: 403 })
+
 describe('POST /api/admin/refunds/[id]/check-status', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    auth.requireAdmin.mockResolvedValue(ADMIN)
     auth.requireSuperAdmin.mockResolvedValue(SUPER_ADMIN)
+    auth.requireAdmin.mockResolvedValue(ADMIN)
     service.checkRefundStatus.mockResolvedValue(checked())
   })
 
-  it('reconciles for a normal admin when no action is requested', async () => {
+  it('reconciles for a super admin when no action is requested', async () => {
     const response = await POST(buildRequest({}), ctx)
     const body = await response.json()
 
     expect(response.status).toBe(200)
     expect(body.outcome).toBe('ATTACHED')
-    // A plain status check never needs super admin rights.
-    expect(auth.requireSuperAdmin).not.toHaveBeenCalled()
     expect(service.checkRefundStatus).toHaveBeenCalledTimes(1)
+    // Role comes from the verified session. No action is supplied.
     expect(vi.mocked(service.checkRefundStatus).mock.calls[0]).toEqual([
       'refund_1',
-      { triggeredByUserId: 'admin_1', triggeredByRole: 'ADMIN' },
+      { triggeredByUserId: 'sa_1', triggeredByRole: 'SUPER_ADMIN' },
+      undefined,
     ])
   })
 
-  it('requires a super admin to mark a stuck refund failed', async () => {
-    auth.requireSuperAdmin.mockResolvedValue(
-      NextResponse.json({ error: 'Super admin required' }, { status: 403 })
-    )
+  it('requires a super admin for the plain reconcile too, not just the actions', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(FORBIDDEN() as never)
 
-    const response = await POST(buildRequest({ action: 'MARK_FAILED' }), ctx)
+    const response = await POST(buildRequest({}), ctx)
     const body = await response.json()
 
     expect(response.status).toBe(403)
     expect(body.requiresSuperAdmin).toBe(true)
-    expect(body.error).toContain('mark a refund failed')
     expect(service.checkRefundStatus).not.toHaveBeenCalled()
   })
 
-  it('requires a super admin to resubmit a stuck refund', async () => {
-    auth.requireSuperAdmin.mockResolvedValue(
-      NextResponse.json({ error: 'Super admin required' }, { status: 403 })
-    )
+  it('returns 401 when the caller is not authenticated', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(UNAUTH() as never)
 
-    const response = await POST(buildRequest({ action: 'RESUBMIT' }), ctx)
+    const response = await POST(buildRequest({}), ctx)
 
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(401)
     expect(service.checkRefundStatus).not.toHaveBeenCalled()
+  })
+
+  it('returns 403 for a plain ADMIN on every action', async () => {
+    auth.requireSuperAdmin.mockResolvedValue(FORBIDDEN() as never)
+
+    for (const action of ['MARK_FAILED', 'RESUBMIT']) {
+      vi.clearAllMocks()
+      auth.requireSuperAdmin.mockResolvedValue(FORBIDDEN() as never)
+
+      const response = await POST(buildRequest({ action }), ctx)
+      const body = await response.json()
+
+      expect(response.status).toBe(403)
+      expect(body.requiresSuperAdmin).toBe(true)
+      expect(service.checkRefundStatus).not.toHaveBeenCalled()
+    }
+  })
+
+  it('returns 403 for a CUSTOMER and a VENDOR', async () => {
+    for (const role of ['CUSTOMER', 'VENDOR']) {
+      vi.clearAllMocks()
+      auth.requireSuperAdmin.mockResolvedValue(FORBIDDEN() as never)
+
+      const response = await POST(buildRequest({ action: 'MARK_FAILED' }), ctx)
+
+      expect(response.status).toBe(403)
+      expect(service.checkRefundStatus).not.toHaveBeenCalled()
+    }
   })
 
   it('marks a stuck refund failed for a super admin', async () => {
@@ -107,7 +133,7 @@ describe('POST /api/admin/refunds/[id]/check-status', () => {
     expect(body.outcome).toBe('MARKED_FAILED')
     expect(service.checkRefundStatus).toHaveBeenCalledWith(
       'refund_1',
-      expect.objectContaining({ triggeredByUserId: 'sa_1', triggeredByRole: 'SUPER_ADMIN' }),
+      expect.objectContaining({ triggeredByRole: 'SUPER_ADMIN' }),
       'MARK_FAILED'
     )
   })

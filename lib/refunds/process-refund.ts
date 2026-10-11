@@ -19,6 +19,23 @@ import type { Prisma, RefundStatus, OrderItem } from '@prisma/client'
 export type RefundSource = 'MANUAL' | 'RETURN' | 'VENDOR_REJECTION' | 'CUSTOMER_CANCEL'
 export type RefundTriggeredByRole = 'SUPER_ADMIN' | 'ADMIN' | 'SUPPORT' | 'SYSTEM'
 
+/**
+ * Narrow a session role to one the Refund audit trail accepts.
+ *
+ * The refund endpoints are SUPER_ADMIN only, so in practice this always
+ * returns 'SUPER_ADMIN'. It exists so the recorded role is the role from the
+ * verified session rather than a hardcoded string, while keeping roles that can
+ * never trigger a refund (INFLUENCER, VENDOR, CUSTOMER) out of the enum.
+ */
+export function toRefundTriggeredByRole(role: string): RefundTriggeredByRole {
+  return role === 'SUPER_ADMIN' ||
+    role === 'ADMIN' ||
+    role === 'SUPPORT' ||
+    role === 'SYSTEM'
+    ? role
+    : 'ADMIN'
+}
+
 export type RefundActor = {
   triggeredByUserId?: string | null
   triggeredByRole?: RefundTriggeredByRole

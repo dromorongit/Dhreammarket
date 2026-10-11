@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin, requireSuperAdmin } from '@/lib/adminAuth'
+import { requireSuperAdmin } from '@/lib/adminAuth'
 import { rateLimit } from '@/lib/rate-limit'
-import { checkRefundStatus, RefundError, STUCK_REFUND_MIN_AGE_MS } from '@/lib/refunds'
+import { checkRefundStatus, RefundError, STUCK_REFUND_MIN_AGE_MS, toRefundTriggeredByRole } from '@/lib/refunds'
 import { logError } from '@/lib/logger'
 import type { CheckStatusAction } from '@/lib/refunds'
 
@@ -25,6 +25,10 @@ type RouteContext = { params: { id: string } }
  * Without an action the endpoint only reconciles (it attaches a unique Paystack
  * match to a PENDING row that has no Paystack id yet; it never invents a
  * match). Both manual actions are idempotent.
+ *
+ * Every path here - reconcile, MARK_FAILED and RESUBMIT - touches refund state,
+ * so the whole endpoint is SUPER_ADMIN only. A plain ADMIN, a CUSTOMER or a
+ * VENDOR gets 403; an unauthenticated caller gets 401.
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const rateLimitCheck = rateLimit('admin-orders')(request)
@@ -56,38 +60,34 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         )
       }
       action = actionRaw
+    }
 
-      // Manual resolution is a super-admin capability. The 10 minute grace
-      // period is enforced inside the service.
-      const superAdmin = await requireSuperAdmin()
-      if (superAdmin instanceof NextResponse) {
-        return NextResponse.json(
-          {
-            error: `Only a super admin can ${action === 'MARK_FAILED' ? 'mark a refund failed' : 'resubmit a refund'}.`,
-            requiresSuperAdmin: true,
-          },
-          { status: 403 }
-        )
+    // Super-admin only, for every action and for the plain reconcile. The 10
+    // minute grace period on manual resolution is enforced inside the service.
+    const superAdmin = await requireSuperAdmin()
+    if (superAdmin instanceof NextResponse) {
+      // 401 keeps its own message; only the 403 is rewritten to explain why.
+      if (superAdmin.status === 401) {
+        return superAdmin
       }
-
-      const result = await checkRefundStatus(
-        id,
-        { triggeredByUserId: superAdmin.userId, triggeredByRole: 'SUPER_ADMIN' },
-        action
+      return NextResponse.json(
+        {
+          error: `Only a super admin can ${action === 'MARK_FAILED' ? 'mark a refund failed' : action === 'RESUBMIT' ? 'resubmit a refund' : 'check a refund'}.`,
+          requiresSuperAdmin: true,
+        },
+        { status: superAdmin.status }
       )
-      return NextResponse.json(result)
     }
 
-    const admin = await requireAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
-    }
-
-    const result = await checkRefundStatus(id, {
-      triggeredByUserId: admin.userId,
-      triggeredByRole: admin.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN',
-    })
-
+    const result = await checkRefundStatus(
+      id,
+      // Roles come from the verified session, never hardcoded.
+      {
+        triggeredByUserId: superAdmin.userId,
+        triggeredByRole: toRefundTriggeredByRole(superAdmin.role),
+      },
+      action
+    )
     return NextResponse.json(result)
   } catch (error) {
     if (error instanceof RefundError) {

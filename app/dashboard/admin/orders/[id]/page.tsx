@@ -114,12 +114,38 @@ export default function AdminOrderDetailPage() {
   const [refundLoading, setRefundLoading] = useState(false)
   const [refundError, setRefundError] = useState<string | null>(null)
   const [refundSuccess, setRefundSuccess] = useState<string | null>(null)
+  // Minted once when the dialog opens and reused for every confirm attempt, so a
+  // retry replays the same idempotency key instead of a fresh one.
+  const [refundRequestId, setRefundRequestId] = useState<string | null>(null)
+  // Whether the signed-in user may refund at all. Unknown until /api/auth/me
+  // answers, so the button stays hidden rather than flashing for a non-admin.
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+  const [roleLoaded, setRoleLoaded] = useState(false)
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetail()
     }
   }, [orderId])
+
+  useEffect(() => {
+    // The refund endpoint is SUPER_ADMIN only. Read the role from the existing
+    // session endpoint rather than adding a new one.
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentUserRole(data.user?.role ?? null)
+        }
+      } catch (err) {
+        console.error('Error fetching current user:', err)
+      } finally {
+        setRoleLoaded(true)
+      }
+    }
+    fetchCurrentUser()
+  }, [])
 
   const fetchOrderDetail = async () => {
     try {
@@ -156,9 +182,15 @@ export default function AdminOrderDetailPage() {
     })
   }
 
+  const canRefund = roleLoaded && currentUserRole === 'SUPER_ADMIN'
+
   const openRefundDialog = () => {
     setRefundError(null)
     setRefundSuccess(null)
+    setRefundReason('')
+    // Minted exactly once per dialog, NOT per confirm click: a retry must
+    // replay the same key so it stays idempotent.
+    setRefundRequestId(generateRequestId())
     setShowRefundDialog(true)
   }
 
@@ -169,7 +201,7 @@ export default function AdminOrderDetailPage() {
   }
 
   const confirmRefund = async () => {
-    if (!order) return
+    if (!order || !refundRequestId) return
     try {
       setRefundLoading(true)
       setRefundError(null)
@@ -180,13 +212,23 @@ export default function AdminOrderDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: order.id,
-          requestId: generateRequestId(),
+          requestId: refundRequestId,
           confirmRefund: true,
           reason: refundReason.trim() || undefined,
         }),
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        setRefundError('Your session has expired. Please sign in again as a super admin to refund this order.')
+        return
+      }
+
+      if (response.status === 403) {
+        setRefundError('Only a super admin can refund an order. Your account does not have permission to do this.')
+        return
+      }
 
       if (!response.ok) {
         setRefundError(data.error || 'Failed to process refund')
@@ -538,7 +580,7 @@ export default function AdminOrderDetailPage() {
                 )}
               </div>
 
-              {order.paymentStatus === 'PAID' && (
+              {order.paymentStatus === 'PAID' && canRefund && (
                 <div className="mt-4 border-t border-gray-100 pt-4">
                   <Button variant="outline" onClick={openRefundDialog}>
                     Refund Order
@@ -626,7 +668,8 @@ export default function AdminOrderDetailPage() {
                     value={refundReason}
                     onChange={(e) => setRefundReason(e.target.value)}
                     rows={3}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                    disabled={refundLoading}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
                     placeholder="Reason for the refund"
                   />
                 </div>
@@ -635,7 +678,8 @@ export default function AdminOrderDetailPage() {
                   <Button variant="outline" onClick={closeRefundDialog} disabled={refundLoading}>
                     Cancel
                   </Button>
-                  <Button onClick={confirmRefund} disabled={refundLoading}>
+                  {/* Disabled in flight so one dialog cannot fire two refunds. */}
+                  <Button onClick={confirmRefund} disabled={refundLoading || !refundRequestId}>
                     {refundLoading ? 'Processing...' : 'Confirm Refund'}
                   </Button>
                 </div>
