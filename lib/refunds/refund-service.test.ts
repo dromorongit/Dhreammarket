@@ -199,6 +199,17 @@ describe('createRefund', () => {
 
     expect(result.refunds).toHaveLength(1)
     expect(result.refunds[0].status).toBe('PROCESSED')
+
+    // The DHV- transaction reference is the identifier Paystack expects for the
+    // create call, converted from GHS to integer pesewas by exact decimal
+    // arithmetic. Payment.paystackRef stores the same value (checkout writes it
+    // from the initialize response's reference), but Payment.reference is the
+    // source of truth and is what the refund webhook matches on.
+    expect(mockCreateRefund).toHaveBeenCalledWith(
+      'DHV-REF1',
+      3000,
+      expect.objectContaining({ currency: 'GHS' })
+    )
     expect(result.refunds[0].paystackRefundId).toBe('9001')
     expect(result.orderRefunded).toBe(false)
 
@@ -1048,5 +1059,40 @@ describe('checkRefundStatus', () => {
     expect(row.failureReason).toBeNull()
     // The customer is told now that the refund is confirmed.
     expect(mockSendRefundEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it('queries Paystack with the DHV- reference, not the stored paystackRef', async () => {
+    const row = makeRefundRow({
+      status: 'PENDING',
+      paystackRefundId: null,
+      amount: 30,
+      createdAt: new Date(),
+    })
+    prisma.__state.refunds.push(row)
+    mockListRefunds.mockImplementation(async () => {
+      void 0
+      return { success: true, refunds: [paystackRefund({ id: 9001, amount: 3000 })] } as never
+    })
+
+    await checkRefundStatus('refund_1', ADMIN)
+
+    // Payment.reference, the same string a refund webhook carries in
+    // data.transaction_reference / data.transaction.reference.
+    expect(mockListRefunds).toHaveBeenCalledWith('DHV-REF1')
+  })
+
+  it('resubmits with the DHV- reference', async () => {
+    const row = makeRefundRow({
+      status: 'PENDING',
+      paystackRefundId: null,
+      amount: 30,
+      createdAt: new Date(Date.now() - 15 * 60 * 1000),
+    })
+    prisma.__state.refunds.push(row)
+    mockListRefunds.mockResolvedValue({ success: true, refunds: [] } as never)
+
+    await checkRefundStatus('refund_1', ADMIN, 'RESUBMIT')
+
+    expect(mockCreateRefund).toHaveBeenCalledWith('DHV-REF1', 3000, expect.anything())
   })
 })

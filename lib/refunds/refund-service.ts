@@ -371,10 +371,16 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
   for (const row of pending) {
     if (row.alreadyExisted) continue
 
-    const paystackResult = await createPaystackRefund(payment.paystackRef, toPesewas(row.amount), {
-      currency: 'GHS',
-      merchantNote: input.reason,
-    })
+  // Paystack does not expose its numeric transaction id when a transaction is
+  // initiated by reference, so the DHV- reference is our identifier on both
+  // the create call and the list filter. This matches the refund webhook, whose
+  // data.transaction_reference / data.transaction.reference is also this value.
+  const paystackTransactionReference = payment.reference
+
+  const paystackResult = await createPaystackRefund(paystackTransactionReference, toPesewas(row.amount), {
+    currency: 'GHS',
+    merchantNote: input.reason,
+  })
 
     // A definite Paystack rejection is the only failure that settles the row.
     // It frees the caps because that money will never move.
@@ -627,7 +633,7 @@ export async function checkRefundStatus(
     }
   }
 
-  const listResult = await listPaystackRefunds(refund.payment.paystackRef)
+  const listResult = await listPaystackRefunds(refund.payment.reference)
   if (!listResult.success) {
     throw new RefundError(
       502,
@@ -819,7 +825,7 @@ export async function checkRefundStatus(
     }
 
     const paystackResult = await createPaystackRefund(
-      refund.payment.paystackRef as string,
+      refund.payment.reference,
       toPesewas(fresh.amount),
       { merchantNote: fresh.reason ?? undefined }
     )

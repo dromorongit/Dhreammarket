@@ -7,6 +7,7 @@ const TEST_KEY = 'sk_test_unit_test_key_never_logged_0001'
 let listPaystackRefunds: typeof import('@/lib/paystack').listPaystackRefunds
 let createPaystackRefund: typeof import('@/lib/paystack').createPaystackRefund
 let fetchPaystackRefund: typeof import('@/lib/paystack').fetchPaystackRefund
+let retryPaystackRefundWithCustomerDetails: typeof import('@/lib/paystack').retryPaystackRefundWithCustomerDetails
 
 beforeAll(async () => {
   process.env.PAYSTACK_SECRET_KEY = TEST_KEY
@@ -14,6 +15,7 @@ beforeAll(async () => {
   listPaystackRefunds = mod.listPaystackRefunds
   createPaystackRefund = mod.createPaystackRefund
   fetchPaystackRefund = mod.fetchPaystackRefund
+  retryPaystackRefundWithCustomerDetails = mod.retryPaystackRefundWithCustomerDetails
 })
 
 describe('Paystack refund client', () => {
@@ -263,6 +265,109 @@ describe('Paystack refund client', () => {
       expect(url).toBe('https://api.paystack.co/refund/77')
       expect(init.method).toBe('GET')
       expect(result.refund?.id).toBe(77)
+    })
+  })
+
+  describe('retryPaystackRefundWithCustomerDetails', () => {
+    const accountDetails = {
+      accountNumber: '1234567890',
+      bankId: '9',
+      currency: 'GHS',
+    }
+
+    it('POSTs /refund/retry_with_customer_details/<id> with the documented body shape', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          status: true,
+          message: 'Refund retried and has been queued for processing',
+          data: { id: 901, amount: 3000, currency: 'GHS', status: 'processing' },
+        }),
+      })
+
+      const result = await retryPaystackRefundWithCustomerDetails(901, accountDetails)
+
+      const [url, init] = fetchMock.mock.calls[0]
+      // Path per https://paystack.com/docs/api/refund/ - the refund id, not the
+      // transaction reference, and no /retry suffix.
+      expect(url).toBe('https://api.paystack.co/refund/retry_with_customer_details/901')
+      expect(init.method).toBe('POST')
+      // One wrapping object with Paystack's own field names.
+      expect(JSON.parse(init.body as string)).toEqual({
+        refund_account_details: {
+          currency: 'GHS',
+          account_number: '1234567890',
+          bank_id: '9',
+        },
+      })
+      expect(result.refund?.id).toBe(901)
+      expect(result.refund?.status).toBe('processing')
+    })
+
+    it('URL-encodes the refund id', async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ status: true, data: { id: 1 } }),
+      })
+
+      await retryPaystackRefundWithCustomerDetails('a/b c', accountDetails)
+
+      expect(fetchMock.mock.calls[0][0]).toBe('https://api.paystack.co/refund/retry_with_customer_details/a%2Fb%20c')
+    })
+
+    it('surfaces a 422 as a definite rejection with the Paystack message', async () => {
+      // Paystack returns 422 when the refund is not at needs-attention.
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status: 422,
+        json: async () => ({ status: false, message: 'Refund is not in needs-attention status' }),
+      })
+
+      const result = await retryPaystackRefundWithCustomerDetails(902, accountDetails)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('API_ERROR')
+      expect(result.error?.httpStatus).toBe(422)
+      expect(result.error?.messageSource).toBe('PAYSTACK')
+      expect(result.error?.message).toBe('Refund is not in needs-attention status')
+    })
+
+    it('returns NOT_CONFIGURED without calling fetch when the key is missing', async () => {
+      vi.resetModules()
+      const previous = process.env.PAYSTACK_SECRET_KEY
+      delete process.env.PAYSTACK_SECRET_KEY
+      const mod = await import('@/lib/paystack')
+      process.env.PAYSTACK_SECRET_KEY = previous
+
+      const result = await mod.retryPaystackRefundWithCustomerDetails(903, accountDetails)
+
+      expect(result.success).toBe(false)
+      expect(result.error?.code).toBe('NOT_CONFIGURED')
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('does not time out before 15s', async () => {
+      vi.useFakeTimers()
+      try {
+        fetchMock.mockImplementation((_url: string, init: { signal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            init.signal.addEventListener('abort', () =>
+              reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+            )
+          })
+        )
+        const pending = retryPaystackRefundWithCustomerDetails(904, accountDetails)
+        const assertion = expect(pending).resolves.toMatchObject({
+          success: false,
+          error: { code: 'TIMEOUT' },
+        })
+        await vi.advanceTimersByTimeAsync(16_000)
+        await assertion
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 

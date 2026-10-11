@@ -81,6 +81,21 @@ export interface PaystackRetryRefundOptions {
   merchantNote?: string
 }
 
+/**
+ * The customer's bank details for retrying a needs-attention refund.
+ *
+ * Shape and field names follow Paystack's Retry Refund API exactly:
+ * https://paystack.com/docs/api/refund/
+ */
+export interface PaystackRefundAccountDetails {
+  /** The customer's bank account number. */
+  accountNumber: string
+  /** The Paystack bank id. Get the list from the List Banks endpoint. */
+  bankId: string
+  /** Must match the currency the original payment was made in. */
+  currency: string
+}
+
 const PAYSTACK_TIMEOUT_MS = 15000
 
 /**
@@ -396,13 +411,26 @@ export async function fetchPaystackRefund(refundId: number | string): Promise<Pa
 }
 
 /**
-  * Retry a needs-attention Paystack refund with corrected customer account
-  * details. The details are passed straight to Paystack and are never logged
-  * or stored. Uses a 15s timeout with no automatic retries.
-  */
+ * Retry a refund that is stuck at needs-attention by supplying the customer's
+ * bank account details.
+ *
+ * Docs checked: https://paystack.com/docs/api/refund/ and
+ * https://paystack.com/docs/payments/refunds
+ *
+ *   POST https://api.paystack.co/refund/retry_with_customer_details/{id}
+ *
+ * {id} is the Paystack refund id, not the transaction reference. The body is a
+ * single `refund_account_details` object with `currency`, `account_number` and
+ * `bank_id`. Paystack says to use this endpoint only for a refund that is at
+ * needs-attention; anything else returns a 422. The customer's bank details are
+ * passed through and never logged or stored.
+ *
+ * Uses a 15s timeout with no automatic retries. Kept unwired: there is no
+ * admin endpoint that submits corrected bank details yet.
+ */
 export async function retryPaystackRefundWithCustomerDetails(
   refundId: number | string,
-  customerDetails: Record<string, any>
+  accountDetails: PaystackRefundAccountDetails
 ): Promise<PaystackRefundResult> {
   logConfigurationOnce()
   if (!PAYSTACK_SECRET_KEY) {
@@ -413,14 +441,20 @@ export async function retryPaystackRefundWithCustomerDetails(
   const timeout = setTimeout(() => controller.abort(), PAYSTACK_TIMEOUT_MS)
 
   try {
-    const url = `${PAYSTACK_BASE_URL}/refund/${encodeURIComponent(String(refundId))}/retry`
+    const url = `${PAYSTACK_BASE_URL}/refund/retry_with_customer_details/${encodeURIComponent(String(refundId))}`
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(customerDetails),
+      body: JSON.stringify({
+        refund_account_details: {
+          currency: accountDetails.currency,
+          account_number: accountDetails.accountNumber,
+          bank_id: accountDetails.bankId,
+        },
+      }),
       signal: controller.signal,
     })
 

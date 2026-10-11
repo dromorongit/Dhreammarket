@@ -264,6 +264,47 @@ describe('handleRefundWebhook', () => {
     expect(mocks.listPaystackRefunds).toHaveBeenCalledWith('DHV-NESTED')
   })
 
+  it('passes the same DHV- reference to Payment lookup and the list filter', async () => {
+    // The value Paystack sends in data.transaction_reference is our own
+    // Payment.reference, which is also what createRefund sends to Paystack.
+    const body = payload('refund.processed', {
+      id: 9001,
+      transaction_reference: 'DHV-ABC123',
+      status: 'processed',
+    })
+
+    await handleRefundWebhook(body, sign(body))
+
+    expect(mocks.listPaystackRefunds).toHaveBeenCalledWith('DHV-ABC123')
+    const listArgs = mocks.listPaystackRefunds.mock.calls[0]
+    const paymentLookup = mocks.paymentFindUnique.mock.calls[0]
+    expect(listArgs[0]).toBe('DHV-ABC123')
+    expect(paymentLookup[0].where.reference).toBe('DHV-ABC123')
+    // Same identifier on both sides of the lookup.
+    expect(listArgs[0]).toBe(paymentLookup[0].where.reference)
+  })
+
+  it('does not consult paystackRef for the filter - reference is the source of truth', async () => {
+    mocks.paymentFindUnique.mockResolvedValue({
+      id: 'pay_1',
+      orderId: 'order_1',
+      amount: 100,
+      // A deliberately different value must never be used.
+      paystackRef: 'unused-different-value',
+    })
+    const body = payload('refund.processed', {
+      id: 9001,
+      transaction_reference: 'DHV-ABC123',
+      status: 'processed',
+    })
+
+    await handleRefundWebhook(body, sign(body))
+
+    const filterArg = mocks.listPaystackRefunds.mock.calls[0][0]
+    expect(filterArg).not.toBe('unused-different-value')
+    expect(filterArg).toBe('DHV-ABC123')
+  })
+
   it('returns 400 when no transaction reference can be read', async () => {
     const body = payload('refund.processed', { id: 9001, status: 'processed' })
 
