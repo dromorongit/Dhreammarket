@@ -1,4 +1,4 @@
-import type { SupportEngineConfig, SupportChatRequest, SupportChatResponse } from './types'
+import type { SupportEngineConfig, SupportChatRequest, SupportChatResponse, SupportIntent } from './types'
 import { DEFAULT_SUPPORT_ENGINE_CONFIG } from './types'
 import { matchIntent, CONFIDENCE_THRESHOLD } from './intent-matcher'
 import { supportKnowledgeBase, WHATSAPP_SUPPORT_LINK, SUPPORT_EMAIL } from './knowledge-base'
@@ -9,6 +9,10 @@ import { supportAICache, SupportAICache } from './cache'
 
 function generateSessionId(): string {
   return `sup_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+}
+
+function isCacheableIntent(intent: SupportIntent | null): boolean {
+  return intent !== null && !intent.isDynamic
 }
 
 export class SupportEngine {
@@ -40,22 +44,33 @@ export class SupportEngine {
       }
     }
 
-    const cacheKey = SupportAICache.generateCacheKey(userRole, message)
-    const cached = supportAICache.get<SupportChatResponse>('chat', { cacheKey })
-    if (cached) return cached
+    // Match intent first to determine cacheability
+    const { intent, confidence } = matchIntent(message, userRole as any)
+    const cacheable = isCacheableIntent(intent)
 
-    const result = await this.processMessage(message, userRole, userId)
+    if (cacheable) {
+      const cacheKey = SupportAICache.generateCacheKey(userRole, message)
+      const cached = supportAICache.get<SupportChatResponse>('chat', { cacheKey })
+      if (cached) return cached
+    }
 
-    supportAICache.set('chat', { cacheKey }, result)
+    const result = await this.processMessage(message, userRole, userId, intent, confidence)
+
+    if (cacheable && intent) {
+      const cacheKey = SupportAICache.generateCacheKey(userRole, message)
+      supportAICache.set('chat', { cacheKey }, result)
+    }
+
     return result
   }
 
   private async processMessage(
     message: string,
     userRole: string,
-    userId?: string
+    userId: string | undefined,
+    intent: SupportIntent | null,
+    confidence: number
   ): Promise<SupportChatResponse> {
-    const { intent, confidence } = matchIntent(message, userRole as any)
 
     if (!intent || confidence < CONFIDENCE_THRESHOLD) {
       return {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupportEngine } from '@/lib/support-ai/engine'
 import { rateLimit } from '@/lib/rate-limit'
-import { createHash } from 'crypto'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
