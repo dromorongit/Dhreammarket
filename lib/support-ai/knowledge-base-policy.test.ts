@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { supportKnowledgeBase } from './knowledge-base'
+import * as fs from 'fs'
+import * as path from 'path'
 
 describe('Support AI Knowledge Base Policy Alignment', () => {
   const refundIntent = supportKnowledgeBase.find(i => i.id === 'refund-policy')
@@ -58,6 +60,19 @@ describe('Support AI Knowledge Base Policy Alignment', () => {
     expect(deleteAccountIntent!.response).not.toContain('all your data')
   })
 
+  it('account deletion uses neutral wording without enumerated list', () => {
+    expect(deleteAccountIntent).toBeDefined()
+    expect(deleteAccountIntent!.response).toContain('permanent')
+    expect(deleteAccountIntent!.response).toContain('Your personal data is removed where permitted')
+    expect(deleteAccountIntent!.response).toContain('Audit logs and records the platform is legally required to keep are retained')
+    expect(deleteAccountIntent!.response).toContain('contact support')
+    expect(deleteAccountIntent!.response).not.toContain('order history')
+    expect(deleteAccountIntent!.response).not.toContain('saved addresses')
+    expect(deleteAccountIntent!.response).not.toContain('wishlist')
+    expect(deleteAccountIntent!.response).not.toContain('vendor')
+    expect(deleteAccountIntent!.response).not.toContain('30 days')
+  })
+
   it('no response contains stale 7-day or 5-7 business day values', () => {
     for (const intent of supportKnowledgeBase) {
       expect(intent.response).not.toMatch(/7 days/i)
@@ -65,5 +80,70 @@ describe('Support AI Knowledge Base Policy Alignment', () => {
       expect(intent.response).not.toMatch(/5-7 business/i)
       expect(intent.response).not.toMatch(/5 to 7/i)
     }
+  })
+})
+
+describe('Help Pages Policy Alignment', () => {
+  const returnsPagePath = path.resolve(__dirname, '../../app/help/returns/page.tsx')
+  const refundsPagePath = path.resolve(__dirname, '../../app/help/refunds/page.tsx')
+  const helpClientPath = path.resolve(__dirname, '../../app/help/help-client.tsx')
+
+  it('returns page does not contain 7 days return window', () => {
+    const content = fs.readFileSync(returnsPagePath, 'utf-8')
+    expect(content).not.toContain('within 7 days')
+    expect(content).not.toContain('7-day window')
+  })
+
+  it('returns page mentions 3 days return window', () => {
+    const content = fs.readFileSync(returnsPagePath, 'utf-8')
+    expect(content).toContain('within 3 days')
+  })
+
+  it('returns page does not contain 5-7 business days', () => {
+    const content = fs.readFileSync(returnsPagePath, 'utf-8')
+    expect(content).not.toContain('5-7 business days')
+    expect(content).not.toContain('5 to 7')
+  })
+
+  it('returns page mentions 3-5 business days processing', () => {
+    const content = fs.readFileSync(returnsPagePath, 'utf-8')
+    expect(content).toContain('3-5 business days')
+  })
+
+  it('returns page includes bank credit note (10-14 business days)', () => {
+    const content = fs.readFileSync(returnsPagePath, 'utf-8')
+    expect(content).toContain('10-14 business days')
+  })
+
+  it('refunds page does not contain 5-7 business days', () => {
+    const content = fs.readFileSync(refundsPagePath, 'utf-8')
+    expect(content).not.toContain('5-7 business days')
+    expect(content).not.toContain('5 to 7')
+  })
+
+  it('refunds page mentions 3-5 business days processing', () => {
+    const content = fs.readFileSync(refundsPagePath, 'utf-8')
+    expect(content).toContain('3-5 business days')
+  })
+
+  it('refunds page includes bank credit note (10-14 business days)', () => {
+    const content = fs.readFileSync(refundsPagePath, 'utf-8')
+    expect(content).toContain('10-14 business days')
+  })
+
+  it('help client does not contain 5-7 business days', () => {
+    const content = fs.readFileSync(helpClientPath, 'utf-8')
+    expect(content).not.toContain('5-7 business days')
+    expect(content).not.toContain('5 to 7')
+  })
+
+  it('help client mentions 3-5 business days processing', () => {
+    const content = fs.readFileSync(helpClientPath, 'utf-8')
+    expect(content).toContain('3-5 business days')
+  })
+
+  it('help client includes bank credit note (10-14 business days)', () => {
+    const content = fs.readFileSync(helpClientPath, 'utf-8')
+    expect(content).toContain('10-14 business days')
   })
 })

@@ -65,8 +65,8 @@ export default function RefundsGuide() {
                 </h2>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Request Review:</strong> 1-3 business days</span></li>
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Return Processing:</strong> 5-7 business days after receipt</span></li>
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Bank Processing:</strong> 5-10 business days for refund to appear</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Return Processing:</strong> 3-5 business days after receipt</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Bank Processing:</strong> 10-14 business days for refund to appear</span></li>
                 </ul>
               </section>
 
@@ -91,7 +91,7 @@ export default function RefundsGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long does a refund take?</h3>
-                <p className="text-slate-600">Refunds are processed within 5-7 business days after the vendor receives returned items.</p>
+                <p className="text-slate-600">Refunds are processed within 3-5 business days after the vendor receives returned items. Depending on your bank, the credit may take 10-14 business days to appear in your account.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Will I get a full refund?</h3>

@@ -147,7 +147,7 @@ const faqData: FAQ[] = [
     category: "Account & Security",
     question: "How do I delete my account?",
     answer:
-      "Contact our support team to request account deletion. Please note that account deletion is permanent and audit logs and data the platform is legally required to retain are kept. Your personal data, order history, reviews, saved addresses, and wishlist items will be removed.",
+      "Deleting your account is permanent. Your personal data is removed where permitted. Audit logs and records the platform is legally required to keep are retained. To request deletion, contact support.",
   },
   {
     id: "20",

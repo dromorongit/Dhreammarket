@@ -211,7 +211,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/faq/faq-client.tsx (FAQ #19)',
-    response: 'To request account deletion: contact our support team with your account email and a brief explanation. Please note: account deletion is permanent and irreversible. Audit logs and data the platform is legally required to retain are kept. Your personal data, order history, reviews, saved addresses, and wishlist items will be removed. Any content you\'ve created as a vendor (store, listings) will also be removed. Before proceeding, download any order history or data you wish to keep. The deletion process is completed within 30 days of your request being verified.',
+    response: 'Deleting your account is permanent. Your personal data is removed where permitted. Audit logs and records the platform is legally required to keep are retained. To request deletion, contact support.',
   },
   {
     id: 'website-loading-issue',
