@@ -121,10 +121,21 @@ export default function AdminOrderDetailPage() {
   // answers, so the button stays hidden rather than flashing for a non-admin.
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [roleLoaded, setRoleLoaded] = useState(false)
+  // Read-only refund history shown in the Refunds panel.
+  const [refundHistory, setRefundHistory] = useState<any[]>([])
+  const [checkingRefundId, setCheckingRefundId] = useState<string | null>(null)
+  const [checkRefundError, setCheckRefundError] = useState<string | null>(null)
+  const [checkRefundMessage, setCheckRefundMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (orderId) {
       fetchOrderDetail()
+    }
+  }, [orderId])
+
+  useEffect(() => {
+    if (orderId) {
+      fetchRefundHistory()
     }
   }, [orderId])
 
@@ -166,6 +177,53 @@ export default function AdminOrderDetailPage() {
       setError('An error occurred while loading the order')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Refund history for the Refunds panel. Read-only: it only GETs, and the
+  // "Check status" button re-reads the status from Paystack without changing
+  // the refund.
+  const fetchRefundHistory = async () => {
+    if (!orderId) return
+    try {
+      const response = await fetch(`/api/admin/refunds?orderId=${orderId}`)
+      if (response.status === 401 || response.status === 403) {
+        setRefundHistory([])
+        return
+      }
+      if (!response.ok) return
+      const data = await response.json()
+      setRefundHistory(data.refunds ?? [])
+    } catch (err) {
+      console.error('Error fetching refund history:', err)
+    }
+  }
+
+  // Ask Paystack for the current status of one refund row. Never changes the
+  // refund: it only attaches or refreshes what Paystack already reports.
+  const checkRefundStatus = async (refundId: string) => {
+    setCheckingRefundId(refundId)
+    setCheckRefundError(null)
+    try {
+      const response = await fetch(`/api/admin/refunds/${refundId}/check-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        setCheckRefundError(data.error || 'Failed to check the refund status')
+        return
+      }
+      const data = await response.json()
+      // Show whatever the check concluded, without guessing.
+      setCheckRefundMessage(data.message ?? null)
+      await fetchRefundHistory()
+    } catch (err) {
+      console.error('Error checking refund status:', err)
+      setCheckRefundError('An error occurred while checking the refund status')
+    } finally {
+      setCheckingRefundId(null)
     }
   }
 
@@ -235,10 +293,15 @@ export default function AdminOrderDetailPage() {
         return
       }
 
-      setRefundSuccess(`Refund processed for order #${order.id.slice(0, 8)}...`)
+      // A refund is PROCESSING until Paystack confirms it, so the confirmation
+      // says "submitted" rather than "processed". The live status appears in the
+      // Refunds panel, which reconciles against Paystack.
+      setRefundSuccess(
+        'Refund submitted. Paystack processes refunds asynchronously; the status will update on this page.'
+      )
       setShowRefundDialog(false)
       setRefundReason('')
-      await fetchOrderDetail()
+      await Promise.all([fetchOrderDetail(), fetchRefundHistory()])
     } catch (err) {
       console.error('Error processing refund:', err)
       setRefundError('An error occurred while processing the refund')
@@ -589,6 +652,81 @@ export default function AdminOrderDetailPage() {
                     Refunds are issued through Paystack and recorded against each order item.
                   </p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Refunds panel. Read-only: it lists what has been refunded and lets a
+            super admin reconcile one row against Paystack. Nothing here issues
+            a refund - that only happens through the dialog above. */}
+        {canRefund && (
+          <Card className="mb-6">
+            <CardHeader>
+              <h2 className="text-lg font-semibold text-gray-900">Refunds</h2>
+            </CardHeader>
+            <CardContent>
+              {refundHistory.length === 0 ? (
+                <p className="text-sm text-gray-500">No refunds have been made against this order.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500">
+                        <th className="py-2 pr-4 font-medium">Amount</th>
+                        <th className="py-2 pr-4 font-medium">Status</th>
+                        <th className="py-2 pr-4 font-medium">Paystack status</th>
+                        <th className="py-2 pr-4 font-medium">Requested</th>
+                        <th className="py-2 pr-4 font-medium">Note</th>
+                        <th className="py-2 pr-4 font-medium" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {refundHistory.map((refund: any) => {
+                        // PROCESSED and FAILED are terminal, so there is nothing
+                        // to reconcile on them.
+                        const isFinal = refund.status === 'PROCESSED' || refund.status === 'FAILED'
+                        return (
+                          <tr key={refund.id}>
+                            <td className="py-2 pr-4 font-medium text-gray-900">
+                              {formatCurrency(refund.amount)}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-700">{refund.status}</td>
+                            <td className="py-2 pr-4 text-gray-700">
+                              {refund.paystackStatus ?? '-'}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-700">
+                              {refund.createdAt
+                                ? new Date(refund.createdAt).toLocaleString()
+                                : '-'}
+                            </td>
+                            <td className="py-2 pr-4 text-gray-700">
+                              {refund.failureReason ?? '-'}
+                            </td>
+                            <td className="py-2 pr-4">
+                              {!isFinal && (
+                                <Button
+                                  variant="outline"
+                                  className="px-2 py-1 text-xs"
+                                  disabled={checkingRefundId === refund.id}
+                                  onClick={() => checkRefundStatus(refund.id)}
+                                >
+                                  {checkingRefundId === refund.id ? 'Checking...' : 'Check status'}
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {checkRefundMessage && (
+                <p className="mt-3 text-sm text-gray-700">{checkRefundMessage}</p>
+              )}
+              {checkRefundError && (
+                <p className="mt-3 text-sm text-red-700">{checkRefundError}</p>
               )}
             </CardContent>
           </Card>
