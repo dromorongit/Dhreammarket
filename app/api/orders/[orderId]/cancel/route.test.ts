@@ -87,6 +87,8 @@ function buildOrder(overrides: Record<string, unknown> = {}) {
     paymentStatus: 'PAID',
     fulfillmentStatus: 'PROCESSING',
     orderType: 'NORMAL',
+    total: 100,
+    walletAmountApplied: 0,
     items: [
       {
         product: {
@@ -251,7 +253,9 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     })
   })
 
-  it('cancels an unpaid order without touching paymentStatus', async () => {
+  it('cancels an unpaid order without recording any refund request', async () => {
+    // CHANGED in the Stage 1.5 commit: requestRefund no longer controls
+    // anything, so even with the flag set an unpaid order records no request.
     prismaMock.order.findFirst.mockResolvedValue(
       buildOrder({ status: 'PENDING', paymentStatus: 'PENDING' })
     )
@@ -268,26 +272,25 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     })
     const body = await response.json()
     expect(body.refundRequested).toBe(false)
+    expect(recordFulfillmentEventMock).not.toHaveBeenCalledWith(
+      'order_1',
+      'REFUND_REQUESTED',
+      'buyer_1'
+    )
+    expect(createAuditLogMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'ORDER_REFUND_REQUESTED' })
+    )
   })
 
-  it('records a pending refund request instead of marking paymentStatus REFUNDED', async () => {
-    // CHANGED in the fix commit: previously this wrote paymentStatus
-    // 'REFUNDED' straight to the order (database-only, no Paystack call, no
-    // Refund row). The order now stays PAID and the request is recorded as a
-    // fulfillment event plus an audit log entry for admin approval.
+  it('records a pending refund request for every paid cancellation, flag or not', async () => {
+    // CHANGED in the Stage 1.5 commit: previously the request was only
+    // recorded when requestRefund was true. It is now automatic for every
+    // paid order; the body flag is accepted but ignored.
     prismaMock.order.findFirst.mockResolvedValue(buildOrder())
 
-    const response = await PATCH(
-      buildRequest({ reason: 'x', requestRefund: true }),
-      PARAMS
-    )
+    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: NORMAL_WHERE,
-      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
-    })
-    expect(prismaMock.order.update).not.toHaveBeenCalled()
     expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
       'order_1',
       'REFUND_REQUESTED',
@@ -298,7 +301,11 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
         action: 'ORDER_REFUND_REQUESTED',
         entityType: 'ORDER',
         entityId: 'order_1',
-        afterData: expect.objectContaining({ source: 'CUSTOMER_CANCEL' }),
+        afterData: expect.objectContaining({
+          source: 'CUSTOMER_CANCEL',
+          total: 100,
+          walletAssisted: false,
+        }),
       })
     )
     const body = await response.json()
@@ -306,25 +313,51 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     expect(body.order.paymentStatus).toBe('PAID')
   })
 
-  it('does not mark paymentStatus REFUNDED when requestRefund is not set', async () => {
-    // CHANGED in the fix commit: refundRequested is now always an explicit
-    // boolean (it used to be undefined and dropped from the JSON).
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: NORMAL_WHERE,
-      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
-    })
-    const body = await response.json()
-    expect(body.refundRequested).toBe(false)
-    expect(recordFulfillmentEventMock).not.toHaveBeenCalledWith(
-      'order_1',
-      'REFUND_REQUESTED',
-      'buyer_1'
+  it('flags wallet-assisted orders in the refund request metadata', async () => {
+    prismaMock.order.findFirst.mockResolvedValue(
+      buildOrder({ walletAmountApplied: 25 })
     )
+
+    await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ORDER_REFUND_REQUESTED',
+        afterData: expect.objectContaining({
+          source: 'CUSTOMER_CANCEL',
+          walletAssisted: true,
+        }),
+      })
+    )
+  })
+
+  it('records exactly one refund request when the buyer double submits', async () => {
+    // The atomic conditional update from the integrity branch makes the
+    // second submit fail, so the request is recorded exactly once.
+    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
+    prismaMock.order.updateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 })
+    prismaMock.order.findFirst
+      .mockResolvedValueOnce(buildOrder())
+      .mockResolvedValueOnce(buildOrder())
+      .mockResolvedValueOnce({ id: 'order_1', status: 'CANCELLED' })
+
+    const first = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+    const second = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(first.status).toBe(200)
+    expect(second.status).toBe(400)
+    expect(
+      createAuditLogMock.mock.calls.filter(
+        call => (call[0] as { action?: string }).action === 'ORDER_REFUND_REQUESTED'
+      )
+    ).toHaveLength(1)
+    expect(
+      recordFulfillmentEventMock.mock.calls.filter(
+        call => call[1] === 'REFUND_REQUESTED'
+      )
+    ).toHaveLength(1)
   })
 
   it('treats a lost race as not cancellable and runs no side effects', async () => {

@@ -120,6 +120,8 @@ function mockExistingOrder(overrides: Record<string, unknown> = {}) {
     paymentStatus: 'PAID',
     fulfillmentStatus: 'PROCESSING',
     orderType: 'NORMAL',
+    total: 100,
+    walletAmountApplied: 0,
     vendorAccepted: false,
     vendorRejected: false,
     vendorRejectionReason: null,
@@ -341,7 +343,32 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
         action: 'ORDER_REFUND_REQUESTED',
         entityType: 'ORDER',
         entityId: 'order_1',
-        afterData: expect.objectContaining({ source: 'VENDOR_REJECTION' }),
+        afterData: expect.objectContaining({
+          source: 'VENDOR_REJECTION',
+          total: 100,
+          walletAssisted: false,
+        }),
+      })
+    )
+  })
+
+  it('flags wallet-assisted orders in the rejection refund request metadata', async () => {
+    // CHANGED in the Stage 1.5 commit: the audit metadata now carries the
+    // wallet flag so admins know manual handling is required.
+    mockExistingOrder({ walletAmountApplied: 25 })
+
+    await PATCH(
+      buildRequest({ action: 'reject', rejectionReason: 'out of stock' }),
+      PARAMS
+    )
+
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ORDER_REFUND_REQUESTED',
+        afterData: expect.objectContaining({
+          source: 'VENDOR_REJECTION',
+          walletAssisted: true,
+        }),
       })
     )
   })

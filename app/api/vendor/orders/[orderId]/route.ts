@@ -312,6 +312,8 @@ export async function PATCH(
             afterData: {
               source: 'VENDOR_REJECTION',
               paymentStatus: existingOrder.paymentStatus,
+              total: existingOrder.total,
+              walletAssisted: (existingOrder.walletAmountApplied ?? 0) > 0,
             },
           }).catch(err => console.error('Failed to create refund request audit log:', err))
         }

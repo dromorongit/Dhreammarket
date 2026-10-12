@@ -69,7 +69,10 @@ export async function PATCH(
 
     const orderId = params.orderId
     const body = await request.json()
-    const { reason, requestRefund } = body
+    // requestRefund is still accepted in the body for backward compatibility
+    // but no longer controls anything: every paid cancellation creates a
+    // refund request automatically.
+    const { reason } = body
 
     const existingOrder = await getPrisma().order.findFirst({
       where: {
@@ -169,11 +172,11 @@ export async function PATCH(
     }
 
     // From here on the cancellation is committed, so side effects run exactly
-    // once. A paid order keeps paymentStatus PAID: the refund is recorded as a
-    // request for admin approval and money only ever moves through
-    // POST /api/admin/refunds -> createRefund (SUPER_ADMIN), never from here.
-    const refundRequested =
-      requestRefund === true && existingOrder.paymentStatus === 'PAID'
+    // once. A paid order keeps paymentStatus PAID: every paid cancellation
+    // creates a refund request for admin approval, and money only ever moves
+    // through POST /api/admin/refunds -> createRefund (SUPER_ADMIN), never
+    // from here.
+    const refundRequested = existingOrder.paymentStatus === 'PAID'
 
     try {
       await reverseInfluencerOrderCashback(orderId)
@@ -256,6 +259,8 @@ export async function PATCH(
         afterData: {
           source: 'CUSTOMER_CANCEL',
           paymentStatus: existingOrder.paymentStatus,
+          total: existingOrder.total,
+          walletAssisted: (existingOrder.walletAmountApplied ?? 0) > 0,
           reason,
         },
         ipAddress:

@@ -159,7 +159,6 @@ export default function CustomerOrderDetailPage() {
   const [refundReason, setRefundReason] = useState('')
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
-  const [cancelWithRefund, setCancelWithRefund] = useState(false)
   const [cancellingOrder, setCancellingOrder] = useState(false)
 
   useEffect(() => {
@@ -274,7 +273,6 @@ export default function CustomerOrderDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reason: cancelReason,
-          requestRefund: cancelWithRefund && order?.paymentStatus === 'PAID',
         }),
       })
 
@@ -290,8 +288,7 @@ export default function CustomerOrderDetailPage() {
       setOrder(prev => prev ? { ...prev, status: 'CANCELLED', fulfillmentStatus: 'CANCELLED', vendorRejected: true } : null)
       setShowCancelDialog(false)
       setCancelReason('')
-      setCancelWithRefund(false)
-      alert(data.refundRequested ? 'Order cancelled. Your refund request has been submitted and is pending review by our team.' : 'Order cancelled successfully')
+      alert(data.refundRequested ? 'Order cancelled. A refund request has been created automatically and is pending review by our team.' : 'Order cancelled successfully')
     } catch (err) {
       console.error('Error cancelling order:', err)
       alert('Failed to cancel order')
@@ -856,6 +853,7 @@ export default function CustomerOrderDetailPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancel Order</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   Please provide a reason for cancelling this order. Orders can only be cancelled before they are shipped.
+                  {order.paymentStatus === 'PAID' && ' A refund request will be created automatically and is pending review by our team.'}
                 </p>
                 <Textarea
                   value={cancelReason}
@@ -863,26 +861,11 @@ export default function CustomerOrderDetailPage() {
                   placeholder="Reason for cancellation (e.g., changed my mind, ordered wrong item, etc.)"
                   rows={3}
                 />
-                {order.paymentStatus === 'PAID' && (
-                  <div className="mt-3 flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      id="cancel-with-refund"
-                      checked={cancelWithRefund}
-                      onChange={(e) => setCancelWithRefund(e.target.checked)}
-                      className="mt-1"
-                    />
-                    <label htmlFor="cancel-with-refund" className="text-sm text-gray-600">
-                      Request a refund for this cancelled order (only available for paid orders). Refund requests are reviewed by our team before any money moves.
-                    </label>
-                  </div>
-                )}
                 <div className="flex gap-3 justify-end mt-4">
                   <Button
                     onClick={() => {
                       setShowCancelDialog(false)
                       setCancelReason('')
-                      setCancelWithRefund(false)
                     }}
                     variant="outline"
                     disabled={cancellingOrder}
@@ -894,7 +877,7 @@ export default function CustomerOrderDetailPage() {
                     disabled={cancellingOrder || !cancelReason.trim()}
                     variant="danger"
                   >
-                    {cancellingOrder ? 'Cancelling...' : cancelWithRefund ? 'Cancel & Request Refund' : 'Cancel Order'}
+                    {cancellingOrder ? 'Cancelling...' : 'Cancel Order'}
                   </Button>
                 </div>
               </CardContent>
