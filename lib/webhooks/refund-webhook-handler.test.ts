@@ -33,7 +33,19 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/lib/paystack', () => ({ listPaystackRefunds: mocks.listPaystackRefunds }))
 vi.mock('@/lib/audit-log', () => ({ createAuditLog: mocks.createAuditLog }))
 vi.mock('@/lib/notifications', () => ({ createNotification: mocks.createNotification }))
-vi.mock('@/lib/logger', () => ({ logError: vi.fn(), logWarn: vi.fn(), logInfo: vi.fn() }))
+const logger = vi.hoisted(() => ({ warnings: [] as string[], infos: [] as string[] }))
+
+vi.mock('@/lib/logger', () => ({
+  logError: vi.fn(),
+  // Capture the message AND its meta so the truncated-reference test can assert
+  // that the full reference never reaches the log.
+  logWarn: vi.fn((message: string, meta?: Record<string, unknown>) => {
+    logger.warnings.push([String(message), JSON.stringify(meta ?? {})].join(' '))
+  }),
+  logInfo: vi.fn((message: string, meta?: Record<string, unknown>) => {
+    logger.infos.push([String(message), JSON.stringify(meta ?? {})].join(' '))
+  }),
+}))
 vi.mock('@/lib/refunds/refund-email', () => ({ notifyRefundProcessed: mocks.notifyRefundProcessed }))
 
 const SECRET = 'sk_test_refund_webhook_key_0001'
@@ -181,6 +193,9 @@ describe('mapPaystackRefundStatus', () => {
 describe('handleRefundWebhook', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Clear the captured log messages so each test sees only its own.
+    logger.warnings.length = 0
+    logger.infos.length = 0
     mocks.paymentFindUnique.mockResolvedValue({ id: 'pay_1', orderId: 'order_1', amount: 100 })
     mocks.orderFindUnique.mockResolvedValue({
       id: 'order_1',
@@ -230,12 +245,48 @@ describe('handleRefundWebhook', () => {
     expect(response.status).toBe(401)
   })
 
-  it('rejects malformed JSON with 400', async () => {
-    const body = '{not json'
+  it('acknowledges an unparseable body with 200 once the signature is verified', async () => {
+    // The signature is valid over the raw bytes; only the body is not JSON.
+    // That is an unprocessable event, not a rejection, so Paystack is told it
+    // was received and does not retry it.
+    const body = 'this is not json at all'
 
     const response = await handleRefundWebhook(body, sign(body))
+    const json = await response.json()
 
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(200)
+    expect(json).toEqual({ received: true, reconciled: 0 })
+    expect(mocks.listPaystackRefunds).not.toHaveBeenCalled()
+  })
+
+  it('acknowledges a refund event with no readable transaction reference', async () => {
+    const body = payload('refund.processed', { id: 9001, status: 'processed' })
+
+    const response = await handleRefundWebhook(body, sign(body))
+    const json = await response.json()
+
+    // F7b: a missing reference is acknowledged with 200, not 400, so Paystack
+    // does not retry an event we can never act on.
+    expect(response.status).toBe(200)
+    expect(json).toEqual({ received: true, reconciled: 0 })
+    expect(mocks.listPaystackRefunds).not.toHaveBeenCalled()
+    expect(mocks.paymentFindUnique).not.toHaveBeenCalled()
+    expect(mocks.refundUpdate).not.toHaveBeenCalled()
+  })
+
+  it('logs a truncated reference, never the full one, when a payment is missing', async () => {
+    const truncated = 'DHV-LONGPRE'
+    const full = truncated + 'FIX-NOT-IN-LOGS'
+    mocks.paymentFindUnique.mockResolvedValue(null)
+    const body = payload('refund.processed', { id: 9001, transaction_reference: full })
+
+    await handleRefundWebhook(body, sign(body))
+
+    // The reference is truncated, so the full value is not in the log.
+    const logged = logger.warnings.join('\n')
+    expect(logged).toContain('No payment row')
+    expect(logged).toContain(truncated)
+    expect(logged).not.toContain(full)
   })
 
   it('reads the transaction reference from data.transaction_reference', async () => {
@@ -309,20 +360,75 @@ describe('handleRefundWebhook', () => {
     const body = payload('refund.processed', { id: 9001, status: 'processed' })
 
     const response = await handleRefundWebhook(body, sign(body))
-    const json = await response.json()
 
-    expect(response.status).toBe(400)
-    expect(json.error).toContain('reference')
+    // F7b: a missing reference is acknowledged with 200 rather than 400.
+    expect(response.status).toBe(200)
   })
 
-  it('returns 404 for an unknown transaction', async () => {
+  it('acknowledges with 200 when no payment row matches the reference', async () => {
     mocks.paymentFindUnique.mockResolvedValue(null)
     const body = payload('refund.processed', { transaction_reference: 'DHV-UNKNOWN' })
 
     const response = await handleRefundWebhook(body, sign(body))
+    const json = await response.json()
 
-    expect(response.status).toBe(404)
+    // F7b: an unknown reference is an unprocessable event, not a rejection, so
+    // it is acknowledged and nothing changes.
+    expect(response.status).toBe(200)
+    expect(json).toEqual({ received: true, reconciled: 0 })
     expect(mocks.listPaystackRefunds).not.toHaveBeenCalled()
+  })
+
+  it('acknowledges with 200 for a SUB- reference that has no Payment row', async () => {
+    // A subscription reference can legitimately reach the refund handler, and
+    // there is no payment row for it. It must not be treated as an error.
+    mocks.paymentFindUnique.mockResolvedValue(null)
+    const body = payload('refund.processed', { transaction_reference: 'SUB-9f0c1a2b' })
+
+    const response = await handleRefundWebhook(body, sign(body))
+    const json = await response.json()
+
+    expect(mocks.paymentFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { reference: 'SUB-9f0c1a2b' } })
+    )
+    expect(response.status).toBe(200)
+    expect(json.reconciled).toBe(0)
+    expect(mocks.listPaystackRefunds).not.toHaveBeenCalled()
+    expect(mocks.refundUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns 200 for an empty Paystack refund list without touching rows', async () => {
+    setRows([refundRow()])
+    mocks.listPaystackRefunds.mockResolvedValue({ success: true, refunds: [] })
+    const body = payload('refund.pending', { transaction_reference: 'DHV-ABC123' })
+
+    const response = await handleRefundWebhook(body, sign(body))
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json.reconciled).toBe(0)
+    expect(mocks.refundUpdate).not.toHaveBeenCalled()
+    expect(mocks.orderUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns 500 when the payment lookup throws, so Paystack retries', async () => {
+    mocks.paymentFindUnique.mockRejectedValue(new Error('database unavailable'))
+    const body = payload('refund.processed', { transaction_reference: 'DHV-ABC123' })
+
+    const response = await handleRefundWebhook(body, sign(body))
+
+    expect(response.status).toBe(500)
+    expect(mocks.listPaystackRefunds).not.toHaveBeenCalled()
+  })
+
+  it('returns 500 when reconciliation throws, so Paystack retries', async () => {
+    setRows([refundRow()])
+    mocks.refundFindMany.mockRejectedValue(new Error('database unavailable'))
+    const body = payload('refund.processed', { transaction_reference: 'DHV-ABC123' })
+
+    const response = await handleRefundWebhook(body, sign(body))
+
+    expect(response.status).toBe(500)
   })
 
   it('returns 502 so Paystack retries when the refund list cannot be read', async () => {

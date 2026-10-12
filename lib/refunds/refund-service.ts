@@ -90,6 +90,28 @@ const UNKNOWN_STATUS_NOTE = 'UNKNOWN_PAYSTACK_STATUS'
 
 export const REFUNDABLE_ORDER_STATUS = 'PAID'
 
+/**
+ * Compare a stored Refund row against the item a replay is asking for.
+ *
+ * A replay must describe the same refund, not merely reuse the idempotency key.
+ * If the order item or the requested amount differs, honouring the key would
+ * return one refund's result for a request that asked about another, so it is
+ * a conflict instead. Returns null when the row matches, or a human-readable
+ * reason when it does not. The messages carry no amounts or personal data.
+ */
+function describeReplayMismatch(
+  stored: { orderItemId: string | null; amount: Prisma.Decimal | number | null },
+  requested: { orderItemId: string; amount?: number }
+): string | null {
+  if (stored.orderItemId !== requested.orderItemId) {
+    return 'This request id was already used for a different order item. Use a new request id to refund another item.'
+  }
+  if (requested.amount !== undefined && toPesewas(stored.amount) !== toPesewas(requested.amount)) {
+    return 'This request id was already used for a different refund amount. Use a new request id to refund a different amount.'
+  }
+  return null
+}
+
 export type RefundItemInput = {
   orderItemId: string
   amount?: number
@@ -235,10 +257,13 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
     throw new RefundError(400, 'This order has nothing left to refund', 'NOTHING_TO_REFUND')
   }
 
+  // The settled amount for each item, with the caller's intent preserved:
+  // when the caller gave an explicit amount it is kept, and when it did not the
+  // remaining cap is used. `amountGiven` records which, so a replay can tell a
+  // deliberate amount from a filled-in one.
   const settled = requested.map((item) => ({
     orderItemId: item.orderItemId,
-    // The remaining cap is already an exact 2-decimal GHS figure derived from
-    // integer pesewas, so no rounding repair is needed here.
+    amountGiven: item.amount !== undefined,
     amount: item.amount ?? caps.itemRemaining(item.orderItemId),
   }))
 
@@ -261,18 +286,28 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
     ),
   }))
 
-  // Idempotency is checked BEFORE the caps, so repeating a requestId can never
+  // Idempotency is checked BEFORE the lock, so repeating a requestId can never
   // be rejected as "over the remaining cap" simply because the first attempt
-  // already consumed it. The key is never derived from a refund count.
+  // already consumed it. This is only a shortcut for pure replays: the
+  // authoritative check is the one made inside the transaction, under the
+  // Payment row lock. The key is never derived from a refund count.
   const existingRows = await prisma.refund.findMany({
     where: { idempotencyKey: { in: keys.map((entry) => entry.idempotencyKey) } },
   })
   const existingByKey = new Map(existingRows.map((row) => [row.idempotencyKey, row]))
 
   if (existingByKey.size === keys.length) {
+    // A replay must describe the same refund, not just reuse the key.
+    for (const { item, idempotencyKey } of keys) {
+      const stored = existingByKey.get(idempotencyKey)!
+      const mismatch = describeReplayMismatch(stored, item.amountGiven ? item : { orderItemId: item.orderItemId })
+      if (mismatch) {
+        throw new RefundError(409, mismatch, 'REFUND_REQUEST_MISMATCH')
+      }
+    }
     return {
       orderId: order.id,
-      refunds: keys.map(({ item, idempotencyKey }) => {
+      refunds: keys.map(({ idempotencyKey }) => {
         const row = existingByKey.get(idempotencyKey)!
         return {
           id: row.id,
@@ -291,9 +326,6 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
     }
   }
 
-  // Only rows that do not exist yet consume the cap.
-  caps.validate(keys.filter((entry) => !existingByKey.has(entry.idempotencyKey)).map((entry) => entry.item))
-
   const results: RefundRowResult[] = []
   const pending: RefundRowResult[] = []
 
@@ -302,6 +334,30 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
   try {
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM payments WHERE id = ${payment.id} FOR UPDATE`
+
+      // Re-read the refunds and the order items THROUGH the transaction client
+      // now that the Payment row is locked. The pre-lock read above can be
+      // stale: another request may have committed a refund between our read and
+      // this lock, and the lock is the only thing that makes the numbers safe.
+      const lockedRefunds = await tx.refund.findMany({ where: { paymentId: payment.id } })
+      const lockedItems = await tx.orderItem.findMany({ where: { orderId: order.id } })
+      const lockedPayment = await tx.payment.findUnique({ where: { id: payment.id } })
+      const lockedPaymentAmount = lockedPayment?.amount ?? payment.amount
+
+      const lockedCaps = Caps.forOrder({
+        id: order.id,
+        total: order.total,
+        payment: { id: payment.id, amount: lockedPaymentAmount },
+        // Prefer the freshly-read items; fall back to the pre-lock read.
+        items: lockedItems.length > 0 ? lockedItems : order.items,
+        refunds: lockedRefunds,
+      })
+
+      // Validate against the fresh caps, counting only rows that still need to
+      // be created. A replay row already exists inside lockedRefunds, so it is
+      // accounted for by the caps and must not be double-counted here.
+      const notYetCreated = keys.filter((entry) => !existingByKey.has(entry.idempotencyKey))
+      lockedCaps.validate(notYetCreated.map((entry) => entry.item))
 
       for (const { item, idempotencyKey } of keys) {
         const existing = existingByKey.get(idempotencyKey) ?? (await tx.refund.findUnique({ where: { idempotencyKey } }))
@@ -823,6 +879,32 @@ export async function checkRefundStatus(
         eligibleAt,
       }
     }
+
+    // Recompute the caps from data read through the transaction client, under
+    // the Payment row lock, exactly as createRefund does. A refund that was
+    // merely PENDING because Paystack was inconclusive has not consumed any
+    // money, so it must not count against the caps on a resubmit - only the
+    // rows that have actually claimed money (everything except FAILED) do.
+    const lockedRefunds = await tx.refund.findMany({ where: { paymentId: refund.paymentId } })
+    const lockedOthers = lockedRefunds.filter((row) => row.id !== refundId)
+    const lockedItems = await tx.orderItem.findMany({ where: { orderId: refund.payment.orderId } })
+    const lockedPayment = await tx.payment.findUnique({ where: { id: refund.paymentId } })
+    const lockedPaymentAmount = lockedPayment?.amount ?? toPesewas(fresh.amount)
+
+    const resubmitCaps = Caps.forOrder({
+      id: refund.payment.orderId,
+      // The order total only matters for scaling the item grosses, which the
+      // caps derive from the items themselves.
+      total: lockedPaymentAmount,
+      payment: { id: refund.paymentId, amount: lockedPaymentAmount },
+      items: lockedItems.length > 0 ? lockedItems : [],
+      refunds: lockedOthers,
+    })
+
+    // validate works in GHS, so convert the row's exact pesewa amount back.
+    resubmitCaps.validate([
+      { orderItemId: fresh.orderItemId ?? '', amount: pesewasToGhs(toPesewas(fresh.amount)) },
+    ])
 
     const paystackResult = await createPaystackRefund(
       refund.payment.reference,

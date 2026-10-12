@@ -255,6 +255,21 @@ describe('POST /api/admin/refunds', () => {
     expect(body.message).toBe('This refund was already processed.')
     expect(body.alreadyProcessed).toBe(true)
   })
+
+  it("returns 409 when a request id was reused for a different item or amount", async () => {
+    mockCreateRefund.mockRejectedValue(
+      new RefundError(409, 'This request id was already used for a different refund amount. Use a new request id to refund a different amount.', 'REFUND_REQUEST_MISMATCH')
+    )
+
+    const response = await POST(
+      buildRequest({ orderId: 'order_1', requestId: UUID, confirmRefund: true })
+    )
+    const body = await response.json()
+
+    expect(response.status).toBe(409)
+    expect(body.code).toBe('REFUND_REQUEST_MISMATCH')
+    expect(body.error).toContain('different refund amount')
+  })
 })
 
 describe('GET /api/admin/refunds', () => {

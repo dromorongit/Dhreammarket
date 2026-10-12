@@ -75,6 +75,26 @@ function buildPrisma(order: Record<string, any>) {
     return found ?? null
   })
 
+  // Shared by the transaction client and the root client so a test that mocks
+  // one applies to both.
+  //
+  // Prisma calls arrive as { where: {...} }, so unwrap the where clause before
+  // reading filters. Reading it off the argument directly made every findMany
+  // return every row and hid the idempotency check entirely.
+  const refundFindMany = vi.fn(async (arg: any = {}) => {
+    const where = arg?.where ?? {}
+    if (where.idempotencyKey?.in) {
+      const inList = where.idempotencyKey.in as string[]
+      return state.refunds.filter((r) => inList.includes(r.idempotencyKey))
+    }
+    if (!where.status) return state.refunds
+    return state.refunds.filter((r) =>
+      typeof where.status === 'object' && where.status !== null && 'in' in where.status
+        ? (where.status as { in: string[] }).in.includes(r.status)
+        : r.status === where.status
+    )
+  })
+
   const refundCreate = vi.fn(async ({ data }: any) => {
     state.nextId += 1
     const row = {
@@ -99,8 +119,23 @@ function buildPrisma(order: Record<string, any>) {
   })
 
   const tx = {
+    // The in-transaction Payment row lock.
     $queryRaw: vi.fn().mockResolvedValue([]),
-    refund: { findUnique: refundFindUnique, create: refundCreate, update: refundUpdate },
+    refund: { findUnique: refundFindUnique, findMany: refundFindMany, create: refundCreate, update: refundUpdate },
+    // F7a: createRefund and the RESUBMIT path re-read the order's items, the
+    // payment and the refunds through the transaction client so the caps are
+    // computed from data that is fresh under the lock. A test can override any
+    // of these to simulate a row committed by a concurrent request.
+    orderItem: {
+      findMany: vi.fn(async ({ where }: any = {}) =>
+        order.items.filter((item: any) => !where?.orderId || where.orderId === order.id)
+      ),
+    },
+    payment: {
+      findUnique: vi.fn(async ({ where }: any = {}) =>
+        where?.id && where.id === order.payment.id ? order.payment : null
+      ),
+    },
   }
 
   const prisma = {
@@ -122,22 +157,7 @@ function buildPrisma(order: Record<string, any>) {
       findUnique: refundFindUnique,
       create: refundCreate,
       update: refundUpdate,
-      findMany: vi.fn(async (arg: any = {}) => {
-        // Prisma calls arrive as { where: {...} }, so unwrap the where clause
-        // before reading filters. Reading it off the argument directly makes
-        // every findMany return every row and hides the idempotency check.
-        const where = arg?.where ?? {}
-        if (where.idempotencyKey?.in) {
-          const inList = where.idempotencyKey.in as string[]
-          return state.refunds.filter((r) => inList.includes(r.idempotencyKey))
-        }
-        if (!where.status) return state.refunds
-        return state.refunds.filter((r) =>
-          typeof where.status === 'object' && where.status !== null && 'in' in where.status
-            ? (where.status as { in: string[] }).in.includes(r.status)
-            : r.status === where.status
-        )
-      }),
+      findMany: refundFindMany,
     },
     orderItem: { findMany: vi.fn().mockResolvedValue([]) },
     notification: { create: vi.fn().mockResolvedValue({}) },
@@ -707,6 +727,207 @@ function makeRefundRow(overrides: Record<string, unknown> = {}) {
     ...overrides,
   }
 }
+
+describe('createRefund caps under the Payment row lock (F7a)', () => {
+  let prisma: ReturnType<typeof buildPrisma>
+  const ONE = {
+    orderId: 'order_1',
+    items: [{ orderItemId: 'item_a', amount: 30 }],
+    source: 'MANUAL' as const,
+    reference: 'f0a1b2c3-d4e5-4f67-8899-aabbccddeeff',
+    actor: ADMIN,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resetRefundEmailsForTest()
+    prisma = buildPrisma(baseOrder())
+    vi.mocked(getPrisma).mockReturnValue(prisma as never)
+    mockCreateRefund.mockResolvedValue({
+      success: true,
+      refund: {
+        id: 9001,
+        reference: null,
+        amount: 3000,
+        currency: 'GHS',
+        status: 'processed',
+        transactionReference: 'DHV-REF1',
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+      },
+    } as never)
+    mockListRefunds.mockResolvedValue({ success: true, refunds: [] } as never)
+  })
+
+  it('takes the Payment row lock before creating rows', async () => {
+    await createRefund(ONE)
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1)
+    expect(prisma.refund.create).toHaveBeenCalledTimes(1)
+    expect(prisma.__state.refunds).toHaveLength(1)
+  })
+
+  it('rejects a request that only the in-transaction refund read can see', async () => {
+    // A row that the pre-lock refund.findMany did NOT return: its idempotency
+    // key is unrelated, so the pre-lock idempotency shortcut misses it, but the
+    // transaction-time read by paymentId MUST see it and refuse the over-cap.
+    const hidden = {
+      id: 'refund_hidden',
+      paymentId: 'pay_1',
+      orderItemId: 'item_a',
+      orderId: 'order_1',
+      amount: 30,
+      currency: 'GHS',
+      status: 'PENDING',
+      idempotencyKey: 'MANUAL:hidden-row',
+      paystackRefundId: null,
+      paystackStatus: null,
+      failureReason: null,
+      processedAt: null,
+      retryCount: 0,
+      createdAt: new Date(),
+    }
+
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      refund: {
+        findUnique: prisma.refund.findUnique,
+        // The pre-lock read filters by idempotency key, so it misses this row.
+        findMany: vi.fn(async (arg: any = {}) => {
+          if (arg?.where?.paymentId) return [hidden]
+          return [hidden]
+        }),
+        create: prisma.refund.create,
+        update: prisma.refund.update,
+      },
+      orderItem: { findMany: vi.fn(async () => baseOrder().items) },
+      payment: { findUnique: vi.fn(async () => baseOrder().payment) },
+    }
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) => fn(tx))
+
+    // item_a's cap is 30.60 of the 102 GHS payment and this row already claims
+    // 30, so a further 30 exceeds it.
+    await expect(createRefund(ONE)).rejects.toMatchObject({ code: 'ITEM_CAP_EXCEEDED' })
+    expect(tx.refund.findMany).toHaveBeenCalledWith({ where: { paymentId: 'pay_1' } })
+    // Nothing was created and no Paystack call was made.
+    expect(prisma.refund.create).not.toHaveBeenCalled()
+    expect(mockCreateRefund).not.toHaveBeenCalled()
+  })
+
+  it('cannot let two different requestIds together exceed the cap', async () => {
+    // Simulate the interleaving: the transaction sees the other request's row
+    // even though this request's pre-lock read did not.
+    const concurrent = {
+      id: 'refund_concurrent',
+      paymentId: 'pay_1',
+      orderItemId: 'item_a',
+      orderId: 'order_1',
+      // 70 of the 102 GHS payment already claimed.
+      amount: 70,
+      currency: 'GHS',
+      status: 'PENDING',
+      idempotencyKey: 'MANUAL:other-request',
+      paystackRefundId: null,
+      paystackStatus: null,
+      failureReason: null,
+      processedAt: null,
+      retryCount: 0,
+      createdAt: new Date(),
+    }
+
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      refund: {
+        findUnique: prisma.refund.findUnique,
+        findMany: vi.fn(async (arg: any = {}) =>
+          arg?.where?.paymentId ? [concurrent] : []
+        ),
+        create: prisma.refund.create,
+        update: prisma.refund.update,
+      },
+      orderItem: { findMany: vi.fn(async () => baseOrder().items) },
+      payment: { findUnique: vi.fn(async () => baseOrder().payment) },
+    }
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) => fn(tx))
+
+    // item_a's cap is 30.60; 70 is already claimed, so 30 more cannot be.
+    await expect(createRefund(ONE)).rejects.toMatchObject({ code: 'ITEM_CAP_EXCEEDED' })
+    expect(prisma.refund.create).not.toHaveBeenCalled()
+    expect(mockCreateRefund).not.toHaveBeenCalled()
+  })
+
+  it('still replays the same requestId exactly once with a single Paystack call', async () => {
+    const first = await createRefund(ONE)
+    expect(first.refunds[0].status).toBe('PROCESSED')
+
+    const second = await createRefund(ONE)
+
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+    expect(second.alreadyProcessed).toBe(true)
+    expect(second.refunds[0].alreadyExisted).toBe(true)
+    expect(prisma.__state.refunds).toHaveLength(1)
+  })
+})
+
+describe('createRefund replay validation (F7c)', () => {
+  let prisma: ReturnType<typeof buildPrisma>
+  const BASE = {
+    orderId: 'order_1',
+    items: [{ orderItemId: 'item_a', amount: 30 }],
+    source: 'MANUAL' as const,
+    reference: 'f0a1b2c3-d4e5-4f67-8899-aabbccddeeff',
+    actor: ADMIN,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resetRefundEmailsForTest()
+    prisma = buildPrisma(baseOrder({ payment: { id: 'pay_1', amount: 102, status: 'PAID', paystackRef: 'DHV-REF1', reference: 'DHV-REF1' } }))
+    vi.mocked(getPrisma).mockReturnValue(prisma as never)
+    mockCreateRefund.mockResolvedValue({
+      success: true,
+      refund: {
+        id: 9001,
+        reference: null,
+        amount: 3000,
+        currency: 'GHS',
+        status: 'processed',
+        transactionReference: 'DHV-REF1',
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+      },
+    } as never)
+    mockListRefunds.mockResolvedValue({ success: true, refunds: [] } as never)
+  })
+
+  it('returns 409 when a replay reuses the key for a different order item', async () => {
+    await createRefund(BASE)
+
+    await expect(
+      createRefund({ ...BASE, items: [{ orderItemId: 'item_b', amount: 30 }] })
+    ).rejects.toMatchObject({ status: 409, code: 'REFUND_REQUEST_MISMATCH' })
+    // Paystack is never called for a mismatched replay.
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns 409 when a replay reuses the key for a different amount', async () => {
+    await createRefund(BASE)
+
+    await expect(
+      createRefund({ ...BASE, items: [{ orderItemId: 'item_a', amount: 20 }] })
+    ).rejects.toMatchObject({ status: 409, code: 'REFUND_REQUEST_MISMATCH' })
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not compare amounts when the request omits one', async () => {
+    await createRefund({ ...BASE, items: [{ orderItemId: 'item_a' }] })
+
+    const again = await createRefund({ ...BASE, items: [{ orderItemId: 'item_a' }] })
+
+    expect(again.alreadyProcessed).toBe(true)
+    expect(mockCreateRefund).toHaveBeenCalledTimes(1)
+  })
+})
 
 function paystackRefund(overrides: Record<string, unknown> = {}) {
   return {

@@ -94,6 +94,16 @@ function creationTimeMatches(stored: Date | null, paystackCreatedAt: string | nu
 }
 
 /**
+ * A reference truncated for logging. A Paystack transaction reference is a
+ * business identifier, so it is shortened before it reaches the logs and no
+ * payload, amount or customer data is logged with it.
+ */
+function truncateReference(reference: string): string {
+  const compact = reference.length > 12 ? reference.slice(0, 12) + '...' : reference
+  return compact
+}
+
+/**
  * Reconcile every Refund row attached to a payment against Paystack's
  * authoritative refund list for that transaction.
  */
@@ -208,7 +218,9 @@ export async function handleRefundWebhook(
   body: string,
   signature: string | undefined
 ): Promise<NextResponse> {
-  // 1. Verify the signature on the RAW body first.
+  // 1. Verify the signature on the RAW body first. This is the ONLY rejection
+  //    path: everything below is an unprocessable but successfully received
+  //    event, which Paystack must not retry.
   if (!verifyPaystackSignature(body, signature)) {
     logWarn('[Refund Webhook] Invalid signature - rejecting webhook')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
@@ -218,43 +230,68 @@ export async function handleRefundWebhook(
   try {
     parsedBody = JSON.parse(body)
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    logWarn('[Refund Webhook] Unparseable refund event body', { event: undefined })
+    return NextResponse.json({ received: true, reconciled: 0 }, { status: 200 })
   }
 
   // 2. Read the transaction reference defensively.
   const transactionReference = readTransactionReference(parsedBody.data)
   if (!transactionReference) {
-    logWarn('[Refund Webhook] Missing transaction reference on refund event', { event: parsedBody.event })
-    return NextResponse.json({ error: 'Transaction reference is required' }, { status: 400 })
+    logWarn('[Refund Webhook] Missing or unreadable transaction reference; acknowledging', {
+      event: parsedBody.event,
+    })
+    return NextResponse.json({ received: true, reconciled: 0 }, { status: 200 })
   }
 
   const prisma = getPrisma()
-  const payment = await prisma.payment.findUnique({
-    where: { reference: transactionReference },
-    select: { id: true, orderId: true, amount: true },
-  })
-
-  if (!payment) {
-    logWarn('[Refund Webhook] Payment not found for refund event', { transactionReference })
-    return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+  let payment: { id: string; orderId: string | null; amount: number | string | null } | null
+  try {
+    payment = await prisma.payment.findUnique({
+      where: { reference: transactionReference },
+      select: { id: true, orderId: true, amount: true },
+    })
+  } catch (error) {
+    // A database failure is the only unexpected error worth retrying.
+    logError('[Refund Webhook] Payment lookup failed', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 
-  // 3. Re-fetch the authoritative refund list.
+  if (!payment) {
+    logWarn('[Refund Webhook] No payment row for the refund event reference; acknowledging', {
+      event: parsedBody.event,
+      referencePrefix: truncateReference(transactionReference),
+    })
+    return NextResponse.json({ received: true, reconciled: 0 }, { status: 200 })
+  }
+
+  // Captured so the later order update has a plain string id.
+  const paymentOrderId = payment.orderId ?? ''
+
+  // 3. Re-fetch the authoritative refund list. A Paystack failure here is an
+  //    upstream error, not a rejection: tell Paystack to retry.
   const listResult = await listPaystackRefunds(transactionReference)
   if (!listResult.success) {
-    // Return non-2xx so Paystack retries the webhook.
     logError('[Refund Webhook] Unable to list Paystack refunds', new Error(listResult.error?.message ?? 'unknown'))
     return NextResponse.json({ error: listResult.error?.message ?? 'Failed to list refunds' }, { status: 502 })
   }
 
   const paystackRefunds = listResult.refunds
   if (paystackRefunds.length === 0) {
-    logInfo('[Refund Webhook] No refunds reported by Paystack', { transactionReference })
+    logInfo('[Refund Webhook] No refunds reported by Paystack', {
+      referencePrefix: truncateReference(transactionReference),
+    })
     return NextResponse.json({ received: true, reconciled: 0 })
   }
 
   // 4. Reconcile every row for this payment.
-  const summary = await reconcileRefundsForPayment(payment.id, paystackRefunds)
+  let summary: ReconcileSummary
+  try {
+    summary = await reconcileRefundsForPayment(payment.id, paystackRefunds)
+  } catch (error) {
+    // A database failure mid-reconciliation is retryable.
+    logError('[Refund Webhook] Reconciliation failed', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 
   if (summary.ambiguous.length > 0) {
     await notifyAdmins(
@@ -273,11 +310,11 @@ export async function handleRefundWebhook(
 
   if (summary.reconciled > 0 || summary.ambiguous.length > 0 || summary.unknown.length > 0) {
     await createAuditLog({
-      userId: payment.orderId,
+      userId: paymentOrderId,
       userRole: 'SYSTEM',
       action: 'ORDER_REFUNDED',
       entityType: 'ORDER',
-      entityId: payment.orderId,
+      entityId: paymentOrderId,
       afterData: {
         source: 'PAYSTACK_REFUND_WEBHOOK',
         event: parsedBody.event,
@@ -305,7 +342,7 @@ export async function handleRefundWebhook(
     )
     if (outstanding.length === 0 && processedPesewas >= paymentAmountPesewas) {
       await prisma.order.update({
-        where: { id: payment.orderId },
+        where: { id: paymentOrderId },
         data: { paymentStatus: 'REFUNDED' },
       })
       paymentStatusUpdated = true
