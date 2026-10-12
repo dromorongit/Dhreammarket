@@ -49,6 +49,11 @@ vi.mock('@/lib/fulfillment-events', () => ({
   recordFulfillmentEvent: recordFulfillmentEventMock,
 }))
 
+const createAuditLogMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
+vi.mock('@/lib/audit-log', () => ({
+  createAuditLog: createAuditLogMock,
+}))
+
 const consumeInventoryMock = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ success: true, consumedItems: [] })
 )
@@ -259,9 +264,11 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
     expect(prismaMock.order.update).not.toHaveBeenCalled()
   })
 
-  it('cancels and marks paymentStatus REFUNDED when rejecting a PAID NORMAL order (current behaviour)', async () => {
-    // PINNED CURRENT BEHAVIOUR - updated in the fix commit: this is the false
-    // REFUNDED flag (database-only, no Paystack call, no Refund row).
+  it('cancels a PAID NORMAL order, keeps it PAID and records a pending refund request', async () => {
+    // CHANGED in the fix commit: previously this wrote paymentStatus
+    // 'REFUNDED' straight to the order (database-only, no Paystack call, no
+    // Refund row). The order now stays PAID and the refund is recorded as a
+    // request for admin approval.
     mockExistingOrder()
 
     const response = await PATCH(
@@ -278,11 +285,65 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
         vendorRejectionReason: 'out of stock',
         status: 'CANCELLED',
         fulfillmentStatus: 'CANCELLED',
-        paymentStatus: 'REFUNDED',
       },
     })
     expect(releaseStockMock).toHaveBeenCalledWith('order_1', 'vendor_1', ['prod_1'])
     expect(reverseInfluencerOrderCashbackMock).toHaveBeenCalledWith('order_1')
+  })
+
+  it('records the cancellation itself with an audit log and fulfillment event', async () => {
+    // CHANGED in the fix commit: the reject previously wrote neither.
+    mockExistingOrder()
+
+    await PATCH(
+      buildRequest({ action: 'reject', rejectionReason: 'out of stock' }),
+      PARAMS
+    )
+
+    expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
+      'order_1',
+      'CANCELLED',
+      'vendor_1',
+      { description: 'out of stock' }
+    )
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'vendor_1',
+        userRole: 'VENDOR',
+        action: 'ORDER_CANCELLED',
+        entityType: 'ORDER',
+        entityId: 'order_1',
+        afterData: expect.objectContaining({
+          status: 'CANCELLED',
+          vendorRejected: true,
+          vendorRejectionReason: 'out of stock',
+        }),
+      })
+    )
+  })
+
+  it('records a VENDOR_REJECTION refund request for a paid rejection', async () => {
+    // CHANGED in the fix commit: replaces the false paymentStatus REFUNDED.
+    mockExistingOrder()
+
+    await PATCH(
+      buildRequest({ action: 'reject', rejectionReason: 'out of stock' }),
+      PARAMS
+    )
+
+    expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
+      'order_1',
+      'REFUND_REQUESTED',
+      'vendor_1'
+    )
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ORDER_REFUND_REQUESTED',
+        entityType: 'ORDER',
+        entityId: 'order_1',
+        afterData: expect.objectContaining({ source: 'VENDOR_REJECTION' }),
+      })
+    )
   })
 
   it('rejects an unpaid order without touching paymentStatus', async () => {
@@ -327,7 +388,9 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
       'buyer_1',
       'ORDER_STATUS_UPDATED',
       'Order Rejected by Vendor',
-      expect.stringContaining('rejected by the vendor')
+      // CHANGED in the fix commit: the paid-order tail no longer claims a
+      // refund "is being processed"; it says the request is pending review.
+      expect.stringContaining('A refund has been requested and is pending review.')
     )
     expect(canSendCustomerEmailMock).toHaveBeenCalledWith('buyer_1')
     expect(sendOrderStatusUpdateEmailMock).toHaveBeenCalledWith(

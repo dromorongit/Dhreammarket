@@ -8,6 +8,7 @@ import { recordFulfillmentEvent, FulfillmentEventType } from '@/lib/fulfillment-
 import { consumeInventory, releaseStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
 import { creditInfluencerOrderCashback, reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
+import { createAuditLog } from '@/lib/audit-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -246,10 +247,6 @@ export async function PATCH(
         updateData.vendorRejectionReason = rejectionReason.trim()
         updateData.status = 'CANCELLED'
         updateData.fulfillmentStatus = 'CANCELLED'
-        const shouldRefund = existingOrder.paymentStatus === 'PAID'
-        if (shouldRefund) {
-          updateData.paymentStatus = 'REFUNDED'
-        }
 
         if (existingOrder.orderType === 'NORMAL') {
           const stockReleaseResult = await releaseStock(orderId, payload.userId, productIds)
@@ -272,6 +269,53 @@ export async function PATCH(
           console.error('Failed to reverse influencer cashback on rejection:', reverseErr)
         }
 
+        // A vendor reject is a cancellation, so record it the same way buyer
+        // and admin cancellations are recorded. Both were missing here.
+        recordFulfillmentEvent(orderId, 'CANCELLED', payload.userId, {
+          description: rejectionReason.trim() || 'Order rejected by vendor',
+        }).catch(err => console.error('Failed to record rejection event:', err))
+
+        await createAuditLog({
+          userId: payload.userId,
+          userRole: payload.role,
+          action: 'ORDER_CANCELLED',
+          entityType: 'ORDER',
+          entityId: orderId,
+          beforeData: {
+            status: existingOrder.status,
+            paymentStatus: existingOrder.paymentStatus,
+          },
+          afterData: {
+            status: 'CANCELLED',
+            vendorRejected: true,
+            vendorRejectionReason: rejectionReason.trim(),
+            paymentStatus: existingOrder.paymentStatus,
+          },
+        }).catch(err => console.error('Failed to create rejection audit log:', err))
+
+        // A paid order keeps paymentStatus PAID: the refund becomes a
+        // pending-approval request, and money only moves through
+        // POST /api/admin/refunds -> createRefund (SUPER_ADMIN). No Paystack
+        // call is made here, and no Refund row is created, because a row
+        // would consume the item's refundable cap and block the approval.
+        const refundRequested = existingOrder.paymentStatus === 'PAID'
+        if (refundRequested) {
+          recordFulfillmentEvent(orderId, 'REFUND_REQUESTED', payload.userId).catch(
+            err => console.error('Failed to record refund request event:', err)
+          )
+          createAuditLog({
+            userId: payload.userId,
+            userRole: payload.role,
+            action: 'ORDER_REFUND_REQUESTED',
+            entityType: 'ORDER',
+            entityId: orderId,
+            afterData: {
+              source: 'VENDOR_REJECTION',
+              paymentStatus: existingOrder.paymentStatus,
+            },
+          }).catch(err => console.error('Failed to create refund request audit log:', err))
+        }
+
         const orderWithUser = await getPrisma().order.findUnique({
           where: { id: orderId },
           include: {
@@ -287,7 +331,7 @@ export async function PATCH(
             orderWithUser.userId,
             'ORDER_STATUS_UPDATED',
             'Order Rejected by Vendor',
-            `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund is being processed.' : ''}`
+            `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${refundRequested ? ' A refund has been requested and is pending review.' : ''}`
           ).catch(err => console.error('Failed to create rejection notification:', err))
 
           if (await canSendCustomerEmail(orderWithUser.userId)) {
@@ -465,7 +509,7 @@ export async function PATCH(
           orderWithUser.userId,
           'ORDER_STATUS_UPDATED',
           'Order Rejected by Vendor',
-          `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund is being processed.' : ''}`
+          `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund has been requested and is pending review.' : ''}`
         ).catch(err => console.error('Failed to create rejection notification:', err))
 
         if (await canSendCustomerEmail(orderWithUser.userId)) {
