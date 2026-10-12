@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { OrderFulfillmentStatus, OrderStatus } from '@prisma/client'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
@@ -9,8 +10,37 @@ import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 
 export const dynamic = 'force-dynamic'
 
-const VALID_CANCEL_STATUSES = ['PENDING', 'PROCESSING']
-const VALID_PAYMENT_STATUSES_FOR_REFUND = ['PAID']
+// Only an order that has not moved past payment/processing may be cancelled.
+const VALID_CANCEL_STATUSES: OrderStatus[] = ['PENDING', 'PROCESSING']
+// A non-NORMAL order may additionally only be cancelled while it is still
+// waiting on stock or fulfillment. NORMAL orders skip this check entirely
+// (unchanged, report-only: see audit note on the NORMAL bypass).
+const CANCELLABLE_FULFILLMENT_STATUSES: OrderFulfillmentStatus[] = [
+  'PENDING',
+  'PROCESSING',
+  'AWAITING_STOCK',
+  'AWAITING_RESTOCK',
+]
+
+/**
+ * A non-NORMAL order is cancellable while it has no fulfillment status yet or
+ * while it is still in one of the waiting/processing stages. NORMAL orders are
+ * always cancellable from this stage guard's point of view.
+ */
+function isFulfillmentStageCancellable(order: {
+  orderType: string
+  fulfillmentStatus: string | null
+}): boolean {
+  if (order.orderType === 'NORMAL') {
+    return true
+  }
+  if (!order.fulfillmentStatus) {
+    return true
+  }
+  return (CANCELLABLE_FULFILLMENT_STATUSES as readonly string[]).includes(
+    order.fulfillmentStatus
+  )
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -32,8 +62,9 @@ export async function PATCH(
     }
 
     const payload = outcome
+
     if (payload.role !== 'CUSTOMER') {
-      return NextResponse.json({ error: 'Forbidden - Customer access required' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const orderId = params.orderId
@@ -47,28 +78,28 @@ export async function PATCH(
         deletedAt: null,
       },
       include: {
+        payment: true,
         items: {
           include: {
             product: {
               select: {
-                id: true,
-                name: true,
                 store: {
                   select: {
                     userId: true,
-                    name: true,
                   },
                 },
               },
             },
           },
         },
-        payment: true,
       },
     })
 
     if (!existingOrder) {
-      return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Order not found or access denied' },
+        { status: 404 }
+      )
     }
 
     if (!VALID_CANCEL_STATUSES.includes(existingOrder.status)) {
@@ -78,49 +109,79 @@ export async function PATCH(
       )
     }
 
-    if (!['PENDING', 'PROCESSING'].includes(existingOrder.fulfillmentStatus) && existingOrder.orderType !== 'NORMAL') {
-      if (existingOrder.fulfillmentStatus && existingOrder.fulfillmentStatus !== 'PENDING' && existingOrder.fulfillmentStatus !== 'AWAITING_STOCK' && existingOrder.fulfillmentStatus !== 'AWAITING_RESTOCK') {
+    if (!isFulfillmentStageCancellable(existingOrder)) {
+      return NextResponse.json(
+        { error: 'This order cannot be cancelled at its current fulfillment stage.' },
+        { status: 400 }
+      )
+    }
+
+    // Atomic conditional update: the where clause re-checks ownership and every
+    // guard that decided this order is cancellable, so only one of two rapid
+    // cancels can win. A count of 0 means the order was already cancelled or
+    // moved on between the read above and this update, and its side effects
+    // below must not run a second time.
+    const cancelledCount = await getPrisma().$transaction(async (tx) => {
+      const result = await tx.order.updateMany({
+        where: {
+          id: orderId,
+          userId: payload.userId,
+          deletedAt: null,
+          status: { in: VALID_CANCEL_STATUSES },
+          ...(existingOrder.orderType !== 'NORMAL'
+            ? { fulfillmentStatus: { in: CANCELLABLE_FULFILLMENT_STATUSES } }
+            : {}),
+        },
+        data: {
+          status: 'CANCELLED',
+          fulfillmentStatus: 'CANCELLED',
+        },
+      })
+      return result.count
+    })
+
+    if (cancelledCount === 0) {
+      // Re-read so the error reports the order's real current status rather
+      // than the possibly stale one from above.
+      const current = await getPrisma().order.findFirst({
+        where: { id: orderId, userId: payload.userId, deletedAt: null },
+        select: { status: true },
+      })
+
+      if (!current) {
         return NextResponse.json(
-          { error: 'This order cannot be cancelled at its current fulfillment stage.' },
+          { error: 'Order not found or access denied' },
+          { status: 404 }
+        )
+      }
+
+      if (!VALID_CANCEL_STATUSES.includes(current.status)) {
+        return NextResponse.json(
+          { error: `Cannot cancel order with status: ${current.status}. Only orders pending or processing can be cancelled.` },
           { status: 400 }
         )
       }
+
+      return NextResponse.json(
+        { error: 'This order cannot be cancelled at its current fulfillment stage.' },
+        { status: 400 }
+      )
     }
 
-    const updateData: any = {
-      status: 'CANCELLED',
-      fulfillmentStatus: 'CANCELLED',
-    }
-
-    const shouldProcessRefund = requestRefund && existingOrder.paymentStatus === 'PAID'
-    if (shouldProcessRefund) {
-      updateData.paymentStatus = 'REFUNDED'
-    }
-
-    const updatedOrder = await getPrisma().order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                store: {
-                  select: {
-                    userId: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
+    // From here on the cancellation is committed, so side effects run exactly
+    // once. A paid order keeps paymentStatus PAID: the refund is recorded as a
+    // request for admin approval and money only ever moves through
+    // POST /api/admin/refunds -> createRefund (SUPER_ADMIN), never from here.
+    const refundRequested =
+      requestRefund === true && existingOrder.paymentStatus === 'PAID'
 
     try {
       await reverseInfluencerOrderCashback(orderId)
     } catch (reverseErr) {
-      console.error('Failed to reverse influencer cashback on cancellation:', reverseErr)
+      console.error(
+        `Failed to reverse influencer cashback on cancelled order ${orderId}:`,
+        reverseErr instanceof Error ? reverseErr.message : reverseErr
+      )
     }
 
     recordFulfillmentEvent(orderId, 'CANCELLED', payload.userId, {
@@ -133,40 +194,114 @@ export async function PATCH(
       action: 'ORDER_CANCELLED',
       entityType: 'ORDER',
       entityId: orderId,
-      beforeData: { status: existingOrder.status, fulfillmentStatus: existingOrder.fulfillmentStatus, paymentStatus: existingOrder.paymentStatus },
-      afterData: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED', paymentStatus: shouldProcessRefund ? 'REFUNDED' : existingOrder.paymentStatus, reason },
-      ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
-    }).catch(err => console.error('Failed to create audit log:', err))
+      beforeData: {
+        status: existingOrder.status,
+        fulfillmentStatus: existingOrder.fulfillmentStatus,
+        paymentStatus: existingOrder.paymentStatus,
+      },
+      afterData: {
+        status: 'CANCELLED',
+        fulfillmentStatus: 'CANCELLED',
+        paymentStatus: existingOrder.paymentStatus,
+        refundRequested,
+        reason,
+      },
+      ipAddress:
+        request.headers.get('x-forwarded-for')?.split(',')[0] ||
+        request.headers.get('x-real-ip') ||
+        null,
+    }).catch(err => console.error('Failed to create cancellation audit log:', err))
 
     if (existingOrder.orderType === 'NORMAL') {
-      releaseStock(orderId, payload.userId).catch(err => {
-        console.error('Failed to release stock:', err)
-      })
+      try {
+        const release = await releaseStock(orderId, payload.userId)
+        if (!release.success) {
+          throw new Error(release.error || 'Stock release failed')
+        }
+      } catch (stockErr) {
+        // The cancellation itself stands; flag it for follow-up instead.
+        console.error(
+          `Failed to release stock for cancelled order ${orderId}:`,
+          stockErr instanceof Error ? stockErr.message : stockErr
+        )
+        await createAuditLog({
+          userId: payload.userId,
+          userRole: payload.role,
+          action: 'ORDER_CANCELLED',
+          entityType: 'ORDER',
+          entityId: orderId,
+          afterData: {
+            status: 'CANCELLED',
+            stockReleaseFailed: true,
+          },
+        }).catch(err => console.error('Failed to create stock release audit log:', err))
+      }
     }
 
-    const vendorIds = Array.from(new Set(updatedOrder.items.map(item => item.product.store.userId).filter(Boolean)))
+    if (refundRequested) {
+      // Pending-approval refund request. No Refund row and no Paystack call:
+      // a Refund row would consume the item's refundable cap and block the
+      // super admin's approval, and no RefundStatus value means "requested".
+      // The SUPER_ADMIN approves by issuing the real refund from the admin
+      // panel (POST /api/admin/refunds -> createRefund).
+      recordFulfillmentEvent(orderId, 'REFUND_REQUESTED', payload.userId).catch(
+        err => console.error('Failed to record refund request event:', err)
+      )
+      createAuditLog({
+        userId: payload.userId,
+        userRole: payload.role,
+        action: 'ORDER_REFUND_REQUESTED',
+        entityType: 'ORDER',
+        entityId: orderId,
+        afterData: {
+          source: 'CUSTOMER_CANCEL',
+          paymentStatus: existingOrder.paymentStatus,
+          reason,
+        },
+        ipAddress:
+          request.headers.get('x-forwarded-for')?.split(',')[0] ||
+          request.headers.get('x-real-ip') ||
+          null,
+      }).catch(err => console.error('Failed to create refund request audit log:', err))
+    }
+
+    // Notify vendors (existing behaviour, unchanged). We cannot access updatedOrder
+    // after a conditional updateMany, so the already-loaded order is used.
+    const vendorIds = Array.from(
+      new Set(
+        existingOrder.items
+          .map(item => item.product.store.userId)
+          .filter(Boolean)
+      )
+    )
+
     for (const vendorId of vendorIds) {
       createNotification(
         vendorId,
         'ORDER_STATUS_UPDATED',
         'Order Cancelled by Customer',
-        `Customer has cancelled order #${orderId.slice(-8).toUpperCase()}.${shouldProcessRefund ? ' Refund requested.' : ''}`
-      ).catch(err => console.error('Failed to notify vendor:', err))
+        `An order has been cancelled by the customer${refundRequested ? ' with a refund request that is pending review' : ''}.`
+      ).catch(err =>
+        console.error('Failed to create vendor cancellation notification:', err)
+      )
     }
 
     return NextResponse.json({
       success: true,
       order: {
-        id: updatedOrder.id,
-        status: updatedOrder.status,
-        fulfillmentStatus: updatedOrder.fulfillmentStatus,
-        paymentStatus: updatedOrder.paymentStatus,
-        vendorRejected: true,
+        id: existingOrder.id,
+        status: 'CANCELLED',
+        fulfillmentStatus: 'CANCELLED',
+        paymentStatus: existingOrder.paymentStatus,
+        vendorRejected: true, // response-only flag, see README - never persisted
       },
-      refundRequested: shouldProcessRefund,
+      refundRequested,
     })
   } catch (error) {
     console.error('Error cancelling order:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to cancel order' },
+      { status: 500 }
+    )
   }
 }

@@ -285,11 +285,13 @@ export default function CustomerOrderDetailPage() {
       }
 
       const data = await response.json()
-      setOrder(prev => prev ? { ...prev, status: 'CANCELLED', fulfillmentStatus: 'CANCELLED', paymentStatus: data.refundRequested ? 'REFUNDED' : prev.paymentStatus, vendorRejected: true } : null)
+      // paymentStatus intentionally stays PAID after a cancellation: a refund
+      // request is reviewed by an admin before any money moves.
+      setOrder(prev => prev ? { ...prev, status: 'CANCELLED', fulfillmentStatus: 'CANCELLED', vendorRejected: true } : null)
       setShowCancelDialog(false)
       setCancelReason('')
       setCancelWithRefund(false)
-      alert(data.refundRequested ? 'Order cancelled and refund requested successfully' : 'Order cancelled successfully')
+      alert(data.refundRequested ? 'Order cancelled. Your refund request has been submitted and is pending review by our team.' : 'Order cancelled successfully')
     } catch (err) {
       console.error('Error cancelling order:', err)
       alert('Failed to cancel order')
@@ -871,7 +873,7 @@ export default function CustomerOrderDetailPage() {
                       className="mt-1"
                     />
                     <label htmlFor="cancel-with-refund" className="text-sm text-gray-600">
-                      Request refund for this cancelled order (only available for paid orders)
+                      Request a refund for this cancelled order (only available for paid orders). Refund requests are reviewed by our team before any money moves.
                     </label>
                   </div>
                 )}

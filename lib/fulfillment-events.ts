@@ -17,6 +17,7 @@ export type FulfillmentEventType =
   | 'DELIVERED'
   | 'COMPLETED'
   | 'CANCELLED'
+  | 'REFUND_REQUESTED'
   | 'REFUNDED'
   | 'STOCK_RESERVED'
   | 'STOCK_RELEASED'
@@ -52,6 +53,7 @@ const EVENT_TITLES: Record<FulfillmentEventType, string> = {
   DELIVERED: 'Delivered',
   COMPLETED: 'Completed',
   CANCELLED: 'Cancelled',
+  REFUND_REQUESTED: 'Refund Requested',
   REFUNDED: 'Refunded',
   STOCK_RESERVED: 'Stock Reserved',
   STOCK_RELEASED: 'Stock Released',
@@ -77,6 +79,7 @@ const EVENT_DESCRIPTIONS: Record<FulfillmentEventType, string> = {
   DELIVERED: 'Order has been delivered.',
   COMPLETED: 'Order has been completed.',
   CANCELLED: 'Order has been cancelled.',
+  REFUND_REQUESTED: 'A refund has been requested for this order and is pending review.',
   REFUNDED: 'Order has been refunded and stock released.',
   STOCK_RESERVED: 'Stock has been reserved for your order.',
   STOCK_RELEASED: 'Reserved stock has been released.',
@@ -123,6 +126,7 @@ const EMAIL_TEMPLATES: Record<FulfillmentEventType, { subject: string; message: 
     message: 'Your order #{orderId} has been completed.',
   },
   CANCELLED: null,
+  REFUND_REQUESTED: null,
   REFUNDED: null,
   STOCK_RESERVED: null,
   STOCK_RELEASED: null,
@@ -242,6 +246,7 @@ async function sendEventNotification(
     DELIVERED: 'ORDER_STATUS_UPDATED',
     COMPLETED: 'ORDER_STATUS_UPDATED',
     CANCELLED: 'ORDER_STATUS_UPDATED',
+    REFUND_REQUESTED: 'ORDER_STATUS_UPDATED',
     REFUNDED: 'ORDER_STATUS_UPDATED',
     STOCK_RESERVED: 'ORDER_STATUS_UPDATED',
     STOCK_RELEASED: 'ORDER_STATUS_UPDATED',

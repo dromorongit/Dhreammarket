@@ -1,15 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
-// Characterization tests for PATCH /api/orders/[orderId]/cancel.
-// These pin the CURRENT behaviour before the integrity fix, so the fix commit
-// can show exactly what changed. All data below is obviously fake.
+// Tests for PATCH /api/orders/[orderId]/cancel.
+//
+// Started as characterization tests pinning the pre-fix behaviour; the tests
+// that pinned behaviour this task intentionally changed were updated in the
+// fix commit (app/api/orders/[orderId]/cancel/route.ts) and carry a comment
+// explaining why. All data below is obviously fake.
 
 const prismaMock = vi.hoisted(() => ({
   order: {
     findFirst: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   },
+  $transaction: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -98,35 +103,20 @@ function buildOrder(overrides: Record<string, unknown> = {}) {
 
 const PARAMS = { params: { orderId: 'order_1' } }
 
-// The current route re-reads the order with vendor store owners after the
-// update, so every order.update assertion must include this include clause.
-const UPDATE_INCLUDE = {
-  items: {
-    include: {
-      product: {
-        select: {
-          store: {
-            select: {
-              userId: true,
-            },
-          },
-        },
-      },
-    },
-  },
+// The base where clause of the atomic conditional update for a NORMAL order.
+const NORMAL_WHERE = {
+  id: 'order_1',
+  userId: 'buyer_1',
+  deletedAt: null,
+  status: { in: ['PENDING', 'PROCESSING'] },
 }
 
 describe('PATCH /api/orders/[orderId]/cancel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     verifyTokenMock.mockResolvedValue(BUYER)
-    prismaMock.order.update.mockResolvedValue({
-      id: 'order_1',
-      status: 'CANCELLED',
-      fulfillmentStatus: 'CANCELLED',
-      paymentStatus: 'PAID',
-      items: [{ product: { store: { userId: 'vendor_1' } } }],
-    })
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
+    prismaMock.order.updateMany.mockResolvedValue({ count: 1 })
   })
 
   it('returns 401 when no token cookie is present', async () => {
@@ -162,7 +152,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     expect(response.status).toBe(404)
     const body = await response.json()
     expect(body.error).toBe('Order not found or access denied')
-    expect(prismaMock.order.update).not.toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
   })
 
   it('scopes the order lookup to the authenticated buyer', async () => {
@@ -191,7 +181,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     expect(body.error).toBe(
       'Cannot cancel order with status: SHIPPED. Only orders pending or processing can be cancelled.'
     )
-    expect(prismaMock.order.update).not.toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
   })
 
   it('refuses to cancel a DELIVERED order', async () => {
@@ -200,7 +190,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
 
     expect(response.status).toBe(400)
-    expect(prismaMock.order.update).not.toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
   })
 
   it('refuses to cancel an already CANCELLED order', async () => {
@@ -209,7 +199,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
 
     expect(response.status).toBe(400)
-    expect(prismaMock.order.update).not.toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
   })
 
   it('refuses a non-NORMAL order at a late fulfillment stage', async () => {
@@ -222,7 +212,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     expect(response.status).toBe(400)
     const body = await response.json()
     expect(body.error).toBe('This order cannot be cancelled at its current fulfillment stage.')
-    expect(prismaMock.order.update).not.toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
   })
 
   it('allows a non-NORMAL order that is still awaiting stock', async () => {
@@ -233,13 +223,21 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
+      where: {
+        ...NORMAL_WHERE,
+        id: 'order_1',
+        fulfillmentStatus: {
+          in: ['PENDING', 'PROCESSING', 'AWAITING_STOCK', 'AWAITING_RESTOCK'],
+        },
+      },
+      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
+    })
   })
 
   it('allows a NORMAL order even at a late fulfillment stage (current bypass)', async () => {
     // Current behaviour: the fulfillment-stage guard is skipped entirely for
-    // NORMAL orders (cancel route lines 81-88). Pinned here; not changed by
-    // this task (report-only).
+    // NORMAL orders. Pinned here; not changed by this task (report-only).
     prismaMock.order.findFirst.mockResolvedValue(
       buildOrder({ orderType: 'NORMAL', fulfillmentStatus: 'SHIPPED' })
     )
@@ -247,20 +245,16 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalled()
+    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
+      where: NORMAL_WHERE,
+      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
+    })
   })
 
   it('cancels an unpaid order without touching paymentStatus', async () => {
     prismaMock.order.findFirst.mockResolvedValue(
       buildOrder({ status: 'PENDING', paymentStatus: 'PENDING' })
     )
-    prismaMock.order.update.mockResolvedValue({
-      id: 'order_1',
-      status: 'CANCELLED',
-      fulfillmentStatus: 'CANCELLED',
-      paymentStatus: 'PENDING',
-      items: [{ product: { store: { userId: 'vendor_1' } } }],
-    })
 
     const response = await PATCH(
       buildRequest({ reason: 'x', requestRefund: true }),
@@ -268,18 +262,19 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     )
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalledWith({
-      where: { id: 'order_1' },
+    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
+      where: { ...NORMAL_WHERE, status: { in: ['PENDING', 'PROCESSING'] } },
       data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
-      include: UPDATE_INCLUDE,
     })
     const body = await response.json()
     expect(body.refundRequested).toBe(false)
   })
 
-  it('marks paymentStatus REFUNDED when a paid order is cancelled with requestRefund (current behaviour)', async () => {
-    // PINNED CURRENT BEHAVIOUR - updated in the fix commit: this is the false
-    // REFUNDED flag (database-only, no Paystack call, no Refund row).
+  it('records a pending refund request instead of marking paymentStatus REFUNDED', async () => {
+    // CHANGED in the fix commit: previously this wrote paymentStatus
+    // 'REFUNDED' straight to the order (database-only, no Paystack call, no
+    // Refund row). The order now stays PAID and the request is recorded as a
+    // fulfillment event plus an audit log entry for admin approval.
     prismaMock.order.findFirst.mockResolvedValue(buildOrder())
 
     const response = await PATCH(
@@ -288,34 +283,88 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     )
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalledWith({
-      where: { id: 'order_1' },
-      data: {
-        status: 'CANCELLED',
-        fulfillmentStatus: 'CANCELLED',
-        paymentStatus: 'REFUNDED',
-      },
-      include: UPDATE_INCLUDE,
+    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
+      where: NORMAL_WHERE,
+      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
     })
+    expect(prismaMock.order.update).not.toHaveBeenCalled()
+    expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
+      'order_1',
+      'REFUND_REQUESTED',
+      'buyer_1'
+    )
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ORDER_REFUND_REQUESTED',
+        entityType: 'ORDER',
+        entityId: 'order_1',
+        afterData: expect.objectContaining({ source: 'CUSTOMER_CANCEL' }),
+      })
+    )
     const body = await response.json()
     expect(body.refundRequested).toBe(true)
+    expect(body.order.paymentStatus).toBe('PAID')
   })
 
   it('does not mark paymentStatus REFUNDED when requestRefund is not set', async () => {
+    // CHANGED in the fix commit: refundRequested is now always an explicit
+    // boolean (it used to be undefined and dropped from the JSON).
     prismaMock.order.findFirst.mockResolvedValue(buildOrder())
 
     const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalledWith({
-      where: { id: 'order_1' },
+    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
+      where: NORMAL_WHERE,
       data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
-      include: UPDATE_INCLUDE,
     })
     const body = await response.json()
-    // Current behaviour: shouldProcessRefund is `undefined && ...` when the
-    // field is absent, so the key is dropped from the JSON entirely.
-    expect(body.refundRequested).toBeUndefined()
+    expect(body.refundRequested).toBe(false)
+    expect(recordFulfillmentEventMock).not.toHaveBeenCalledWith(
+      'order_1',
+      'REFUND_REQUESTED',
+      'buyer_1'
+    )
+  })
+
+  it('treats a lost race as not cancellable and runs no side effects', async () => {
+    // CHANGED in the fix commit: the conditional updateMany replaced the
+    // check-then-update, so a second rapid cancel loses the race.
+    prismaMock.order.findFirst
+      .mockResolvedValueOnce(buildOrder())
+      .mockResolvedValueOnce({ id: 'order_1', status: 'CANCELLED' })
+    prismaMock.order.updateMany.mockResolvedValue({ count: 0 })
+
+    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(response.status).toBe(400)
+    const body = await response.json()
+    expect(body.error).toBe(
+      'Cannot cancel order with status: CANCELLED. Only orders pending or processing can be cancelled.'
+    )
+    expect(reverseInfluencerOrderCashbackMock).not.toHaveBeenCalled()
+    expect(recordFulfillmentEventMock).not.toHaveBeenCalled()
+    expect(createAuditLogMock).not.toHaveBeenCalled()
+    expect(releaseStockMock).not.toHaveBeenCalled()
+    expect(createNotificationMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps the cancellation and flags it when stock release fails', async () => {
+    // CHANGED in the fix commit: releaseStock is now awaited and its failure
+    // is recorded in the audit log instead of being a silent fire-and-forget.
+    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
+    releaseStockMock.mockResolvedValue({ success: false, error: 'db down' })
+
+    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(releaseStockMock).toHaveBeenCalledWith('order_1', 'buyer_1')
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'ORDER_CANCELLED',
+        afterData: expect.objectContaining({ stockReleaseFailed: true }),
+      })
+    )
   })
 
   it('records the cancellation side effects', async () => {
