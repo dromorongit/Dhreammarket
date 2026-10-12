@@ -19,7 +19,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/refund/page.tsx (Sections 2-7)',
-    response: 'Products may be returned within 7 days of receiving them if they do not match the description, are damaged or defective on arrival, or if you received the wrong item. Returns must be initiated by contacting the vendor through your order. The vendor reviews requests within 3 business days. Refunds are processed within 5-7 business days after approval, credited to your original payment method. Items that cannot be returned include opened personal care products, digital goods, final sale items, and products returned after the 7-day window. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility.',
+    response: 'Products may be returned within 3 days of receiving them if they do not match the description, are damaged or defective on arrival, or if you received the wrong item. Returns must be initiated by contacting the vendor through your order. The vendor reviews requests within 3 business days. Refunds are processed within 3-5 business days after approval, credited to your original payment method. Depending on your bank, the credit may take 10-14 business days to appear in your account. Items that cannot be returned include opened personal care products, digital goods, final sale items, and products returned after the 3-day window. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility.',
   },
   {
     id: 'delivery-shipping',
@@ -59,7 +59,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/terms/page.tsx (Section 16: Marketplace Payment Processing & Vendor Payout Policy) and app/faq/faq-client.tsx (FAQ #6)',
-    response: 'All customer payments are processed through Dhream Market\'s centralized Paystack account. Vendors do NOT receive payments directly from customers. Dhream Market aggregates and reconciles completed sales before payouts are made. Vendors receive 100% of the product price minus platform commission (if applicable) and payment processing fees. Payouts are processed monthly via bank transfer. Dhream Market reserves the right to determine payout schedules, holding periods, and settlement timelines. Payouts may be temporarily held in cases of suspicious activity, fraud investigation, disputes, policy violations, or compliance reviews. It is the vendor\'s responsibility to ensure their payout banking details are accurate.',
+    response: 'All customer payments are processed through Dhream Market\'s centralized Paystack account. Vendors do NOT receive payments directly from customers. Dhream Market aggregates and reconciles completed sales before payouts are made. Vendors receive 100% of the product price minus platform commission (if applicable) and payment processing fees. When there is no open dispute, vendors receive payouts within 2 business days. If a dispute is being settled, the platform decides when the payout is released. Dhream Market reserves the right to determine payout schedules, holding periods, and settlement timelines. Payouts may be temporarily held in cases of suspicious activity, fraud investigation, disputes, policy violations, or compliance reviews. It is the vendor\'s responsibility to ensure their payout banking details are accurate.',
   },
   {
     id: 'how-to-contact-support',
@@ -141,7 +141,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: true,
     isDynamic: false,
     sourceFile: 'app/faq/faq-client.tsx (FAQ #11)',
-    response: 'Orders can only be modified or cancelled within 1 hour of placement, and only if they haven\'t already entered processing or shipping. To request changes: go to your Dashboard > Orders, find the relevant order, and if the timeframe allows, select "Cancel Order" or contact the seller directly through the order page. After 1 hour or once the order is in processing, cancellation requests must go through the support team for review. Refunds for approved cancellations are processed within 5-7 business days.',
+    response: 'Orders can only be modified or cancelled within 1 hour of placement, and only if they haven\'t already entered processing or shipping. To request changes: go to your Dashboard > Orders, find the relevant order, and if the timeframe allows, select "Cancel Order" or contact the seller directly through the order page. After 1 hour or once the order is in processing, cancellation requests must go through the support team for review. Refunds for approved cancellations are processed within 3-5 business days.',
   },
   {
     id: 'damaged-order',
@@ -211,7 +211,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/faq/faq-client.tsx (FAQ #19)',
-    response: 'To request account deletion: contact our support team with your account email and a brief explanation. Please note: account deletion is permanent and irreversible. It will remove all your personal data, order history, reviews, saved addresses, and wishlist items. Any content you\'ve created as a vendor (store, listings) will also be removed. Before proceeding, download any order history or data you wish to keep. The deletion process is completed within 30 days of your request being verified.',
+    response: 'Deleting your account is permanent. Your personal data is removed where permitted. Audit logs and records the platform is legally required to keep are retained. To request deletion, contact support.',
   },
   {
     id: 'website-loading-issue',

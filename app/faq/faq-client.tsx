@@ -56,7 +56,7 @@ const faqData: FAQ[] = [
     category: "Vendor FAQs",
     question: "How are vendor payouts calculated?",
     answer:
-      "Vendors receive 100% of the product price minus platform commission (if applicable) and payment processing fees. Payouts are processed monthly via bank transfer.",
+      "Vendors receive 100% of the product price minus platform commission (if applicable) and payment processing fees. When there is no open dispute, vendors receive payouts within 2 business days. If a dispute is being settled, the platform decides when the payout is released.",
   },
   {
     id: "7",
@@ -70,7 +70,7 @@ const faqData: FAQ[] = [
     category: "Payments & Refunds",
     question: "How do I request a refund?",
     answer:
-      "Contact the seller directly through your order page to initiate a refund request. If unresolved, our support team can assist. Refunds are processed within 5-7 business days.",
+      "Contact the seller directly through your order page to initiate a refund request. If unresolved, our support team can assist. Refunds are processed within 3-5 business days after approval. Depending on your bank, the credit may take 10-14 business days to appear in your account.",
   },
   {
     id: "9",
@@ -147,7 +147,7 @@ const faqData: FAQ[] = [
     category: "Account & Security",
     question: "How do I delete my account?",
     answer:
-      "Contact our support team to request account deletion. Please note that account deletion is permanent and will remove all your data, order history, and reviews.",
+      "Deleting your account is permanent. Your personal data is removed where permitted. Audit logs and records the platform is legally required to keep are retained. To request deletion, contact support.",
   },
   {
     id: "20",

@@ -132,7 +132,7 @@ export function formatVendorPayoutMessage(data: {
   }
 
   if (data.recentPayouts.length === 0) {
-    parts.push('No payouts have been processed yet. Payouts are typically processed monthly after sales are reconciled.')
+    parts.push('No payouts have been processed yet. When there is no open dispute, vendors receive payouts within 2 business days. If a dispute is being settled, the platform decides when the payout is released.')
   } else {
     parts.push(`Recent payouts (${data.recentPayouts.length}):`)
     for (const p of data.recentPayouts) {
