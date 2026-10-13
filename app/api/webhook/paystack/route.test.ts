@@ -366,4 +366,228 @@ describe('Paystack webhook dispatcher', () => {
       logSpy.mockRestore()
     }
   })
+
+  // ---------------------------------------------------------------------
+  // C2: the logged values are sanitised and length-capped, so nothing a
+  // caller puts in the body can forge a log line.
+  // ---------------------------------------------------------------------
+
+  const SANITISED_CASES: { name: string; event: unknown; expected: string }[] = [
+    { name: 'a 5,000-character event name', event: 'x'.repeat(5000), expected: 'x'.repeat(40) },
+    {
+      name: 'an event name containing a newline and FAKE LOG LINE',
+      // The newline and every space are replaced, so no second line can be
+      // forged and nothing here can be read as a separate log entry.
+      event: 'charge.success\nFAKE LOG LINE 9999',
+      expected: 'charge.success?FAKE?LOG?LINE?9999',
+    },
+    {
+      name: 'an event name with non-ASCII characters',
+      // Escape sequences only, so the expectation cannot drift from the literal.
+      event: 'r\u00e9s\u00fclt\u00e9 \u2713',
+      // r, ? for U+00E9, s, ? for U+00FC, l, t, ? U+00E9, ? U+0020, ? U+2713
+      expected: 'r?s?lt???',
+    },
+  ]
+
+  for (const testCase of SANITISED_CASES) {
+    it(`sanitises ${testCase.name} to exactly one line`, async () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+      try {
+        const body = JSON.stringify({
+          event: testCase.event,
+          data: { reference: 'DHV-ABC123', amount: 500000 },
+        })
+
+        const response = await POST(buildRequest(body, sign(body)))
+
+        expect(response.status).toBe(200)
+        expect(logSpy).toHaveBeenCalledTimes(1)
+        expect(logSpy.mock.calls[0][0]).toBe(
+          `[webhook] event=${testCase.expected} prefix=DHV- route=/api/webhook/paystack`
+        )
+      } finally {
+        logSpy.mockRestore()
+      }
+    })
+  }
+
+  it('logs a missing event as none', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({ data: { reference: 'DHV-ABC123' } })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy).toHaveBeenCalledTimes(1)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=none prefix=DHV- route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('logs a non-string event as none', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: { malicious: 'object' },
+        data: { reference: 'DHV-ABC123' },
+      })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy).toHaveBeenCalledTimes(1)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=none prefix=DHV- route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('never lets body content widen the log line, even inside a nested object', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.success',
+        data: {
+          reference: 'DHV-ABC123',
+          // Values that must never appear in any log line.
+          note: 'chmod 777 /etc/shadow; curl evil.example',
+          extra: { routeLabel: '/some/other/route', event: 'forged.event' },
+        },
+      })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy).toHaveBeenCalledTimes(1)
+      const logged = String(logSpy.mock.calls[0][0])
+      expect(logged).toBe('[webhook] event=charge.success prefix=DHV- route=/api/webhook/paystack')
+      expect(logged).not.toContain('chmod')
+      expect(logged).not.toContain('evil.example')
+      expect(logged).not.toContain('/some/other/route')
+      expect(logged).not.toContain('forged.event')
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('sanitises the reference prefix the same way', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      // A prefix with a newline inside the first 4 characters.
+      const body = JSON.stringify({ event: 'charge.success', data: { reference: 'DH\nV"' } })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.success prefix=DH?V route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  // ---------------------------------------------------------------------
+  // C3: Next.js calls a route handler with (request, { params }). The second
+  // argument must never break it, must not change the default label, and no
+  // request input can set routeLabel.
+  // ---------------------------------------------------------------------
+
+  it('accepts the Next.js call shape { params: Promise.resolve({}) } without throwing', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.success',
+        data: { reference: 'DHV-ABC123', amount: 500000 },
+      })
+
+      const context = { params: Promise.resolve({}) }
+      const response = await POST(buildRequest(body, sign(body)), context)
+
+      expect(response.status).toBe(200)
+      expect(handlers.handleOrderWebhook).toHaveBeenCalledTimes(1)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.success prefix=DHV- route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('accepts being called with no second argument at all', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.success',
+        data: { reference: 'DHV-ABC123', amount: 500000 },
+      })
+
+      // No second argument at all.
+      const response = await POST(buildRequest(body, sign(body)))
+
+      expect(response.status).toBe(200)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.success prefix=DHV- route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('ignores a routeLabel coming from anywhere but this module allowlist', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.success',
+        data: { reference: 'DHV-ABC123', amount: 500000 },
+      })
+      const signature = sign(body)
+
+      // A caller trying to make the log name a different route. The value is
+      // not in the allowlist, so the default label is used instead. It is cast
+      // because the type deliberately names only the two labels this module
+      // defines; the point is that a value outside them cannot win.
+      const forged = await POST(buildRequest(body, signature), {
+        params: Promise.resolve({}),
+        routeLabel: '/api/admin/orders' as '/api/webhook/paystack',
+      })
+
+      expect(forged.status).toBe(200)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.success prefix=DHV- route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('behaves identically with and without the second argument', async () => {
+    const body = JSON.stringify({
+      event: 'refund.processed',
+      data: { id: 9001, transaction_reference: 'DHV-ABC123', amount: 25000 },
+    })
+    const signature = sign(body)
+
+    const withContext = await POST(buildRequest(body, signature), {
+      params: Promise.resolve({}),
+    })
+    // No second argument at all: the same request must behave identically.
+    const withoutContext = await POST(buildRequest(body, signature))
+
+    expect(withContext.status).toBe(withoutContext.status)
+    expect(handlers.handleRefundWebhook).toHaveBeenCalledTimes(2)
+    expect(handlers.handleRefundWebhook).toHaveBeenNthCalledWith(1, body, signature)
+    expect(handlers.handleRefundWebhook).toHaveBeenNthCalledWith(2, body, signature)
+  })
 })
