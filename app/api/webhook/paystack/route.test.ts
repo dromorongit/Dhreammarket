@@ -249,4 +249,121 @@ describe('Paystack webhook dispatcher', () => {
 
     expect(response.status).toBe(400)
   })
+
+  // ---------------------------------------------------------------------
+  // The single per-request log line: only event, prefix and route path.
+  // ---------------------------------------------------------------------
+
+  it('logs exactly one line per request with the event, the 4-character prefix and its own route', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.success',
+        data: { reference: 'DHV-ABC123', amount: 500000 },
+      })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy).toHaveBeenCalledTimes(1)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.success prefix=DHV- route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('takes the prefix from data.transaction_reference for a refund event and never logs the full reference', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'refund.processed',
+        data: { id: 9001, transaction_reference: 'DHV-ABC123456789', amount: 25000 },
+      })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy).toHaveBeenCalledTimes(1)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=refund.processed prefix=DHV- route=/api/webhook/paystack'
+      )
+      expect(String(logSpy.mock.calls[0][0])).not.toContain('ABC123456789')
+      expect(String(logSpy.mock.calls[0][0])).not.toContain('25000')
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('logs prefix=none when the event carries no reference of any kind', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({ event: 'charge.failed', data: {} })
+
+      await POST(buildRequest(body, sign(body)))
+
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.failed prefix=none route=/api/webhook/paystack'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('honours a caller-supplied route label so a delegated path is distinguishable', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.success',
+        data: { reference: 'DHV-ABC123', amount: 500000 },
+      })
+
+      await POST(buildRequest(body, sign(body)), {
+        routeLabel: '/api/payment/webhook (delegated)',
+      })
+
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.success prefix=DHV- route=/api/payment/webhook (delegated)'
+      )
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('logs nothing when the body is not parseable JSON', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      await POST(buildRequest('not json at all', sign('not json at all')))
+
+      expect(logSpy).not.toHaveBeenCalled()
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
+
+  it('logs only the single per-request line for an unrecognized reference, never the full reference', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    try {
+      const body = JSON.stringify({
+        event: 'charge.dispute.create',
+        data: { reference: 'ZZZ-UNKNOWN12345', amount: 1000 },
+      })
+
+      await POST(buildRequest(body))
+
+      expect(logSpy).toHaveBeenCalledTimes(1)
+      expect(logSpy.mock.calls[0][0]).toBe(
+        '[webhook] event=charge.dispute.create prefix=ZZZ- route=/api/webhook/paystack'
+      )
+      expect(String(logSpy.mock.calls[0][0])).not.toContain('ZZZ-UNKNOWN12345')
+      expect(String(logSpy.mock.calls[0][0])).not.toContain('1000')
+    } finally {
+      logSpy.mockRestore()
+    }
+  })
 })

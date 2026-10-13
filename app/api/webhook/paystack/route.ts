@@ -35,7 +35,50 @@ function verifyWebhookSignature(body: string, signature: string | undefined): bo
   }
 }
 
-export async function POST(request: NextRequest) {
+/**
+ * The route path this request was received on, used only as a log label.
+ *
+ * The legacy /api/payment/webhook path delegates to POST below, and without
+ * this label an operator reading the logs could not tell which configured URL
+ * the event arrived on.
+ */
+const ROUTE_LABEL = '/api/webhook/paystack'
+
+/**
+ * First 4 characters of the transaction reference, or 'none'.
+ *
+ * The prefix alone identifies which handler a reference will be routed to
+ * (DHV-/VER-/SUB-/ADV-) without recording the full reference, which our own
+ * id is embedded in. A refund event carries no data.reference at all, so its
+ * prefix is taken from data.transaction_reference.
+ */
+function referencePrefix(parsedBody: any): string {
+  const data = parsedBody?.data ?? {}
+  const reference =
+    typeof data.reference === 'string'
+      ? data.reference
+      : typeof data.transaction_reference === 'string'
+        ? data.transaction_reference
+        : data?.transaction && typeof data.transaction.reference === 'string'
+          ? data.transaction.reference
+          : ''
+  return reference.length >= 4 ? reference.slice(0, 4) : 'none'
+}
+
+/**
+ * Exactly one line per request, logged after the body has been parsed.
+ *
+ * Only the event name, the 4-character reference prefix and this route's own
+ * path are ever written. The payload, the full reference, amounts, emails and
+ * the signature are never logged.
+ */
+function logWebhookRoute(parsedBody: any, routeLabel: string): void {
+  console.log(
+    `[webhook] event=${parsedBody?.event ?? 'unknown'} prefix=${referencePrefix(parsedBody)} route=${routeLabel}`
+  )
+}
+
+export async function POST(request: NextRequest, { routeLabel }: { routeLabel?: string } = {}) {
   try {
     const signature = request.headers.get('x-paystack-signature')
     const body = await request.text()
@@ -50,6 +93,8 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
+
+    logWebhookRoute(parsedBody, routeLabel ?? ROUTE_LABEL)
 
     // Refund lifecycle events carry the transaction in
     // data.transaction_reference or data.transaction.reference rather than
@@ -80,7 +125,9 @@ export async function POST(request: NextRequest) {
     } else if (reference.startsWith('ADV-')) {
       handler = handleAdvertisingWebhook
     } else {
-      console.log(`[Paystack Webhook] Unrecognized reference prefix for reference: ${reference}`)
+      // No handler for this prefix. The single per-request log line above
+      // already recorded the event and the prefix, so nothing further is
+      // logged: exactly one console.log per request.
       return NextResponse.json({ received: true, message: 'Event acknowledged but not handled' })
     }
 
