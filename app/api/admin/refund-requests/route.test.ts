@@ -117,7 +117,7 @@ describe('GET /api/admin/refund-requests', () => {
           },
         },
         orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-        skip: 0,
+        take: 500,
       })
     )
   })
@@ -358,8 +358,9 @@ describe('GET /api/admin/refund-requests', () => {
     const clampedBody = await clamped.json()
     expect(clampedBody.pagination).toEqual({ page: 1, limit: 100, hasMore: true })
     expect(clampedBody.items).toHaveLength(100)
+    // We now fetch all candidates (capped at 500) and paginate in memory.
     expect(prismaMock.order.findMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ take: 101 })
+      expect.objectContaining({ take: 500 })
     )
 
     const badLimit = await GET(buildRequest('http://localhost/api/admin/refund-requests?limit=abc'))
@@ -369,12 +370,13 @@ describe('GET /api/admin/refund-requests', () => {
     expect(badPage.status).toBe(400)
   })
 
-  it('pages with skip', async () => {
+  it('fetches all candidates (capped at 500) and paginates in memory', async () => {
     await GET(buildRequest('http://localhost/api/admin/refund-requests?page=3&limit=10'))
 
     expect(prismaMock.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: 20, take: 11 })
+      expect.objectContaining({ take: 500 })
     )
+    // No skip/take at DB level - pagination happens in memory after filtering.
   })
 
   it('returns 500 when the queue query fails', async () => {

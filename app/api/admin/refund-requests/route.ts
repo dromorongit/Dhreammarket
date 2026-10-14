@@ -118,9 +118,11 @@ export async function GET(request: NextRequest) {
       limit = Math.min(parsed, MAX_PAGE_SIZE)
     }
 
+    // Fetch ALL candidate orders (capped at 500) so the "refunded covers payment"
+    // filter can be applied correctly before pagination. Refund requests are
+    // typically few; 500 is a safe ceiling that keeps memory bounded.
     const prisma = getPrisma()
-
-    const orders = await prisma.order.findMany({
+    const ALL_CANDIDATES = await prisma.order.findMany({
       where: {
         status: 'CANCELLED',
         paymentStatus: 'PAID',
@@ -142,12 +144,29 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-      skip: (page - 1) * limit,
-      take: limit + 1,
+      take: 500,
     })
 
-    const hasMore = orders.length > limit
-    const pageOrders = hasMore ? orders.slice(0, limit) : orders
+    // Refunded so far per order, in integer pesewas.
+    const refundedPesewasByOrder = new Map<string, number>()
+    for (const order of ALL_CANDIDATES) {
+      const refundedPesewas = order.refunds
+        .filter(refund => refund.status === 'PROCESSED')
+        .reduce((sum, refund) => sum + toPesewas(refund.amount), 0)
+      refundedPesewasByOrder.set(order.id, refundedPesewas)
+    }
+
+    // Filter out orders whose PROCESSED refunds already cover the payment.
+    const filteredOrders = ALL_CANDIDATES.filter(order => {
+      const paymentPesewas = toPesewas(order.payment?.amount ?? order.total)
+      const refundedPesewas = refundedPesewasByOrder.get(order.id) ?? 0
+      return refundedPesewas < paymentPesewas
+    })
+
+    // Paginate the filtered list.
+    const start = (page - 1) * limit
+    const pageOrders = filteredOrders.slice(start, start + limit)
+    const hasMore = start + limit < filteredOrders.length
 
     const orderIds = pageOrders.map((order) => order.id)
 
@@ -198,16 +217,6 @@ export async function GET(request: NextRequest) {
     }
 
     const now = Date.now()
-
-    // Refunded so far per order, in integer pesewas. Only PROCESSED rows have
-    // actually moved money, so only those count towards covering the payment.
-    const refundedPesewasByOrder = new Map<string, number>()
-    for (const order of pageOrders) {
-      const refundedPesewas = order.refunds
-        .filter(refund => refund.status === 'PROCESSED')
-        .reduce((sum, refund) => sum + toPesewas(refund.amount), 0)
-      refundedPesewasByOrder.set(order.id, refundedPesewas)
-    }
 
     const items: RefundRequestItem[] = pageOrders
       .map((order) => {
