@@ -8,6 +8,7 @@
 // scoping the key with the item id only when more than one item is refunded.
 import { getPrisma } from '@/lib/prisma'
 import { createPaystackRefund, listPaystackRefunds, type PaystackRefund, type PaystackRefundError } from '@/lib/paystack'
+import { sendRefundConfirmationEmail } from '@/lib/email'
 import {
   Caps,
   RefundError,
@@ -20,7 +21,7 @@ import {
   type RefundActor,
   type RefundSource,
 } from './process-refund'
-import { notifyRefundProcessed, notifyOrderRefunded } from './refund-email'
+import { notifyRefundProcessed } from './refund-email'
 import { createAuditLog } from '@/lib/audit-log'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { releaseStock } from '@/lib/stock-reservation'
@@ -28,6 +29,68 @@ import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { createNotification } from '@/lib/notifications'
 import { logError, logInfo, logWarn } from '@/lib/logger'
 import type { Prisma, RefundStatus } from '@prisma/client'
+
+/**
+ * Send ONE order-level receipt when a whole-order refund settles.
+ *
+ * This is an internal function called ONLY by settleOrderIfFullyRefunded when
+ * its conditional update (updateMany where paymentStatus='PAID') succeeds.
+ * It is not exported and must not be called from anywhere else.
+ *
+ * The once-only guarantee comes from the CONDITIONAL UPDATE in
+ * settleOrderIfFullyRefunded. Only the first call that finds the order still
+ * PAID performs the state change to REFUNDED and returns true; that call then
+ * invokes this function. All concurrent calls find paymentStatus already
+ * REFUNDED, return false, and never call this function. No in-memory set is needed.
+ *
+ * A partial refund never settles the order, so it keeps using the per-row
+ * email from notifyRefundProcessed. The two are mutually exclusive.
+ *
+ * Never throws: a failing mail provider must not break the refund.
+ */
+async function notifyOrderRefunded(orderId: string): Promise<void> {
+  try {
+    const prisma = getPrisma()
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        paymentStatus: true,
+        total: true,
+        refunds: {
+          where: { status: 'PROCESSED' },
+          select: { amount: true },
+        },
+        user: {
+          select: { email: true, profile: { select: { firstName: true } } },
+        },
+      },
+    })
+
+    // Both halves of "fully refunded" must hold: the order itself has settled,
+    // and the PROCESSED refunds actually cover the amount charged. An order
+    // whose refunds are still in flight stays silent.
+    if (!order || order.paymentStatus !== 'REFUNDED') return
+
+    const refundedPesewas = order.refunds.reduce((sum, refund) => sum + toPesewas(refund.amount), 0)
+    const paymentPesewas = toPesewas(order.total)
+    if (paymentPesewas <= 0 || refundedPesewas < paymentPesewas) return
+
+    const email = order.user?.email
+    if (!email) return
+
+    const name = order.user?.profile?.firstName || email.split('@')[0] || 'Customer'
+    await sendRefundConfirmationEmail(
+      email,
+      name,
+      order.id,
+      pesewasToGhs(refundedPesewas),
+      'GHS'
+    )
+  } catch (error) {
+    logError('Failed to send the order refund receipt', error)
+  }
+}
 
 /** A stuck PENDING refund with no Paystack id is eligible for manual resolution
   * only after this long, so a slow webhook always gets its chance first. */
@@ -540,14 +603,12 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
   const orderRefunded = await settleOrderIfFullyRefunded(order.id)
 
   // Announce the refunds now that the order's final state is known. A wholly
-  // refunded order gets ONE order-level receipt; a partly refunded order gets
-  // one email per PROCESSED row. Never the same order as both.
+  // refunded order gets ONE order-level receipt (sent by settleOrderIfFullyRefunded);
+  // a partly refunded order gets one email per PROCESSED row. Never the same order as both.
   //
   // Best-effort: a mail failure must never undo the refund work above.
   try {
-    if (orderRefunded) {
-      await notifyOrderRefunded(order.id)
-    } else {
+    if (!orderRefunded) {
       for (const refundId of processedRefundIds) {
         await notifyRefundProcessed(refundId)
       }
@@ -591,10 +652,24 @@ async function settleOrderIfFullyRefunded(orderId: string): Promise<boolean> {
   const refundedTotal = pesewasToGhs(refundedPesewas)
   const paymentTotal = pesewasToGhs(paymentPesewas)
 
-  await prisma.order.update({
-    where: { id: orderId },
+  // CONDITIONAL UPDATE: only the first caller that finds the order still PAID
+  // and whose refunds cover the payment will succeed. This is the single
+  // source of truth for "this order settled now" and the trigger for the
+  // order-level receipt. Any concurrent call will find paymentStatus != PAID
+  // and return false, so no duplicate receipt is sent.
+  const updated = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      paymentStatus: 'PAID',
+    },
     data: { paymentStatus: 'REFUNDED' },
   })
+
+  if (updated.count === 0) {
+    // Another call already settled it.
+    return false
+  }
+
   await prisma.payment.update({
     where: { id: latest.payment.id },
     data: { status: 'REFUNDED' },
@@ -602,11 +677,9 @@ async function settleOrderIfFullyRefunded(orderId: string): Promise<boolean> {
 
   logInfo('Order fully refunded', { orderId, refundedTotal, paymentTotal })
 
-  // One order-level receipt. A whole-order refund settles here, so the
-  // per-item rows from notifyRefundProcessed would otherwise produce one
-  // email per item for what the customer experienced as one cancellation.
-  // A partial refund never reaches this function, so it keeps using the
-  // per-row email and the two never overlap.
+  // The order-level receipt is sent ONLY by the call that performed the
+  // conditional update above. This is the single database-backed guard;
+  // no in-memory set is needed.
   try {
     await notifyOrderRefunded(orderId)
   } catch (error) {
@@ -794,11 +867,9 @@ export async function checkRefundStatus(
     const attached = !refund.paystackRefundId
     const becameProcessed = nextStatus === 'PROCESSED' && previousStatus !== 'PROCESSED'
 
-    if (nextStatus === 'PROCESSED' || nextStatus === 'FAILED') {
-      await settleOrderIfFullyRefunded(refund.payment.orderId)
-    }
+    const orderRefunded = await settleOrderIfFullyRefunded(refund.payment.orderId)
 
-    if (becameProcessed) {
+    if (becameProcessed && !orderRefunded) {
       await notifyRefundProcessed(refundId)
     }
 
@@ -1052,9 +1123,9 @@ export async function checkRefundStatus(
       },
     })
 
-    await settleOrderIfFullyRefunded(refund.payment.orderId)
+    const orderRefunded = await settleOrderIfFullyRefunded(refund.payment.orderId)
 
-    if (nextStatus === 'PROCESSED' && previousFreshStatus !== 'PROCESSED') {
+    if (nextStatus === 'PROCESSED' && previousFreshStatus !== 'PROCESSED' && !orderRefunded) {
       await notifyRefundProcessed(refundId)
     }
 

@@ -19,9 +19,6 @@ import { Prisma } from '@prisma/client'
 /** Refund ids whose confirmation email has already been sent by this process. */
 const sentRefundEmails = new Set<string>()
 
-/** Order ids whose whole-order receipt has already been sent by this process. */
-const sentOrderRefundEmails = new Set<string>()
-
 /**
  * True when every pesewa charged has come back, so the order as a whole is
  * settled and the customer needs one receipt rather than one per item.
@@ -90,11 +87,12 @@ export async function notifyRefundProcessed(refundId: string): Promise<void> {
     const email = refund.order?.user?.email
     if (!email) return
 
-    // A whole-order refund is announced once, by the order-level receipt.
-    if (refund.order && orderIsFullyRefunded(refund.order)) {
-      await notifyOrderRefunded(refund.orderId ?? refund.id)
-      return
-    }
+    // If the order has already settled as a whole, the order-level receipt
+    // was already sent by settleOrderIfFullyRefunded (which holds the single
+    // database-backed guard via its conditional update). We send nothing here
+    // to avoid a duplicate receipt. A partial refund keeps using this per-row
+    // email because the order never settles.
+    if (refund.order && orderIsFullyRefunded(refund.order)) return
 
     // Recorded before the await so a concurrent caller cannot slip a second
     // email in while this one is still in flight.
@@ -116,71 +114,4 @@ export async function notifyRefundProcessed(refundId: string): Promise<void> {
 /** Test seam: forget that this refund was already announced. */
 export function resetRefundEmailsForTest(): void {
   sentRefundEmails.clear()
-  sentOrderRefundEmails.clear()
-}
-
-/**
- * Send ONE order-level receipt when a whole-order refund settles.
- *
- * Why this exists: a cancelled multi-item order creates one Refund row per
- * item, and notifyRefundProcessed fires per row. The customer would therefore
- * receive one email per item for a single cancellation, which reads as several
- * separate refunds. This helper fires once per order, when the order as a
- * whole has settled to REFUNDED.
- *
- * A partial refund never settles the order, so it keeps using the per-row
- * email from notifyRefundProcessed. The two are mutually exclusive: the
- * in-process order set is only populated when the order is fully refunded.
- *
- * Never throws, for the same reason as the per-row helper: a failing mail
- * provider must not break the refund.
- */
-export async function notifyOrderRefunded(orderId: string): Promise<void> {
-  if (sentOrderRefundEmails.has(orderId)) return
-
-  try {
-    const prisma = getPrisma()
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: {
-        id: true,
-        paymentStatus: true,
-        total: true,
-        refunds: {
-          where: { status: 'PROCESSED' },
-          select: { amount: true },
-        },
-        user: {
-          select: { email: true, profile: { select: { firstName: true } } },
-        },
-      },
-    })
-
-    // Both halves of "fully refunded" must hold: the order itself has settled,
-    // and the PROCESSED refunds actually cover the amount charged. An order
-    // whose refunds are still in flight stays silent.
-    if (!order || order.paymentStatus !== 'REFUNDED') return
-
-    const refundedPesewas = order.refunds.reduce((sum, refund) => sum + toPesewas(refund.amount), 0)
-    const paymentPesewas = toPesewas(order.total)
-    if (paymentPesewas <= 0 || refundedPesewas < paymentPesewas) return
-
-    const email = order.user?.email
-    if (!email) return
-
-    // Recorded before the await, exactly as the per-row helper does, so two
-    // racing callers cannot send two receipts.
-    sentOrderRefundEmails.add(order.id)
-
-    const name = order.user?.profile?.firstName || email.split('@')[0] || 'Customer'
-    await sendRefundConfirmationEmail(
-      email,
-      name,
-      order.id,
-      pesewasToGhs(refundedPesewas),
-      'GHS'
-    )
-  } catch (error) {
-    logError('Failed to send the order refund receipt', error)
-  }
 }

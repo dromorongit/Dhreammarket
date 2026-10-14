@@ -151,6 +151,15 @@ function buildPrisma(order: Record<string, any>) {
         state.orders.push({ id: order.id, ...data })
         return order
       }),
+updateMany: vi.fn(async ({ where, data }: any) => {
+        // Only match if the order's actual paymentStatus is PAID (stateful)
+        if (order.paymentStatus === "PAID" && (where?.paymentStatus === "PAID" || where?.paymentStatus?.in?.includes("PAID"))) {
+          Object.assign(order, data)
+          state.orders.push({ id: order.id, ...data })
+          return { count: 1 }
+        }
+        return { count: 0 }
+      }),
     },
     payment: { update: vi.fn().mockResolvedValue({}) },
     refund: {
@@ -164,6 +173,7 @@ function buildPrisma(order: Record<string, any>) {
     user: { findMany: vi.fn().mockResolvedValue([{ id: 'admin_1' }]) },
     $transaction: vi.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
     __state: state,
+    __internal: { getOrder: () => order },
   }
 
   return prisma
@@ -390,7 +400,7 @@ describe('createRefund', () => {
     const statuses = result.refunds.map((r) => r.status)
     expect(statuses).toEqual(['PROCESSED', 'PROCESSED'])
     // Every item was refunded, so the order settles to REFUNDED.
-    const orderUpdates = (prisma.order.update as any).mock.calls.map((call: any[]) => call[0].data)
+    const orderUpdates = (prisma.order.updateMany as any).mock.calls.map((call: any[]) => call[0].data)
     expect(orderUpdates).toEqual(
       expect.arrayContaining([expect.objectContaining({ paymentStatus: 'REFUNDED' })])
     )
@@ -431,7 +441,7 @@ describe('createRefund', () => {
     // order is only partially refunded and stays PAID.
     expect(mockSendRefundEmail).toHaveBeenCalledTimes(1)
     expect(result.orderRefunded).toBe(false)
-    const orderUpdates = (prisma.order.update as any).mock.calls.map((call: any[]) => call[0].data)
+    const orderUpdates = (prisma.order.updateMany as any).mock.calls.map((call: any[]) => call[0].data)
     expect(orderUpdates).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ paymentStatus: 'REFUNDED' })])
     )
@@ -1152,7 +1162,7 @@ describe('checkRefundStatus', () => {
 
     await checkRefundStatus('refund_1', ADMIN)
 
-    const orderUpdates = (prisma.order.update as any).mock.calls.map((call: any[]) => call[0].data)
+    const orderUpdates = (prisma.order.updateMany as any).mock.calls.map((call: any[]) => call[0].data)
     expect(orderUpdates).toEqual(
       expect.arrayContaining([expect.objectContaining({ paymentStatus: 'REFUNDED' })])
     )
@@ -1318,4 +1328,126 @@ describe('checkRefundStatus', () => {
 
     expect(mockCreateRefund).toHaveBeenCalledWith('DHV-REF1', 3000, expect.anything())
   })
+
+  // ---------------------------------------------------------------------------
+  // settleOrderIfFullyRefunded tests (F-K3 part 2)
+  // ---------------------------------------------------------------------------
+
+  it("duplicate refund.processed webhook after order is already REFUNDED sends no receipt", async () => {
+    // Order already settled by a previous call (paymentStatus = REFUNDED).
+    const order = prisma.__internal.getOrder()
+    order.paymentStatus = "REFUNDED"
+    order.status = "COMPLETED"
+    order.fulfillmentStatus = "DELIVERED"
+    order.payment = { id: "pay_1", amount: 100, currency: "GHS", status: "REFUNDED", reference: "DHV-REF1" }
+    const refundRow = makeRefundRow({
+      id: "refund_1",
+      orderId: "order_1",
+      amount: 100,
+      status: "PROCESSED",
+      paystackRefundId: "9001",
+    })
+    order.refunds = [refundRow]
+    prisma.__state.refunds.push(refundRow)
+    mockListRefunds.mockResolvedValue(
+      { success: true, refunds: [paystackRefund({ id: 9001, amount: 10_000, status: "processed" })] } as never
+    )
+
+    // First call settles the order and sends the receipt.
+    await checkRefundStatus("refund_1", ADMIN)
+    const firstEmailCalls = mockSendRefundEmail.mock.calls.length
+
+    // Second call (duplicate webhook) sees order already REFUNDED.
+    await checkRefundStatus("refund_1", ADMIN)
+    const secondEmailCalls = mockSendRefundEmail.mock.calls.length
+
+    expect(secondEmailCalls).toBe(firstEmailCalls)
+  })
+
+  it("check-status after settlement sends no receipt", async () => {
+    const order = prisma.__internal.getOrder()
+    order.paymentStatus = "REFUNDED"
+    order.status = "COMPLETED"
+    order.fulfillmentStatus = "DELIVERED"
+    order.payment = { id: "pay_1", amount: 100, currency: "GHS", status: "REFUNDED", reference: "DHV-REF1" }
+    const refundRow = makeRefundRow({
+      id: "refund_1",
+      orderId: "order_1",
+      amount: 100,
+      status: "PROCESSED",
+      paystackRefundId: "9001",
+    })
+    order.refunds = [refundRow]
+    prisma.__state.refunds.push(refundRow)
+    mockListRefunds.mockResolvedValue(
+      { success: true, refunds: [paystackRefund({ id: 9001, amount: 10_000, status: "processed" })] } as never
+    )
+
+    await checkRefundStatus("refund_1", ADMIN)
+
+    // checkRefundStatus should not call updateMany again, and should not send a receipt.
+    expect(prisma.order.updateMany).not.toHaveBeenCalled()
+    expect(mockSendRefundEmail).not.toHaveBeenCalled()
+  })
+
+  it("two concurrent settle calls (second sees count 0) produce exactly one receipt", async () => {
+    const order = prisma.__internal.getOrder()
+    order.paymentStatus = "PAID"
+    order.status = "COMPLETED"
+    order.fulfillmentStatus = "DELIVERED"
+    order.payment = { id: "pay_1", amount: 100, currency: "GHS", status: "PAID", reference: "DHV-REF1" }
+    const refundRow = makeRefundRow({
+      id: "refund_1",
+      orderId: "order_1",
+      amount: 100,
+      status: "PROCESSING",
+      paystackRefundId: "9001",
+    })
+    order.refunds = [refundRow]
+    prisma.__state.refunds.push(refundRow)
+    mockListRefunds.mockResolvedValue(
+      { success: true, refunds: [paystackRefund({ id: 9001, amount: 10_000, status: "processed" })] } as never
+    )
+
+    // Two concurrent calls to checkRefundStatus (simulated sequentially here).
+    // The first should settle and send the receipt; the second should see
+    // paymentStatus already REFUNDED and do nothing.
+    await checkRefundStatus("refund_1", ADMIN)
+    await checkRefundStatus("refund_1", ADMIN)
+
+    // Only one conditional update should succeed (count === 1).
+    expect(prisma.order.updateMany).toHaveBeenCalledTimes(1)
+    expect(prisma.order.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ paymentStatus: "PAID" }),
+      })
+    )
+    expect(mockSendRefundEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it("if receipt email fails, the order stays REFUNDED and no exception escapes", async () => {
+    // The order from baseOrder() is already in the mock'"'"'s closure (paymentStatus: '"'"'PAID'"'"').
+    // Add the payment and refunds that the settle logic needs.
+    const order = prisma.__internal.getOrder()
+    order.payment = { id: "pay_1", amount: 100, currency: "GHS", status: "PAID", reference: "DHV-REF1" }
+    const refundRow = makeRefundRow({
+      orderId: "order_1",
+      amount: 100,
+      status: "PROCESSING",
+      paystackRefundId: "9001",
+    })
+    order.refunds = [refundRow]
+    prisma.__state.refunds.push(refundRow)
+    mockListRefunds.mockResolvedValue(
+      { success: true, refunds: [paystackRefund({ id: 9001, amount: 10_000, status: "processed" })] } as never
+    )
+    mockSendRefundEmail.mockRejectedValueOnce(new Error("smtp down"))
+
+    // The email failure should not throw.
+    await expect(checkRefundStatus(refundRow.id, ADMIN)).resolves.toBeDefined()
+
+    // Order should still be REFUNDED (conditional update succeeded).
+    expect(prisma.__internal.getOrder().paymentStatus).toBe("REFUNDED")
+  })
+
 })
