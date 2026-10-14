@@ -53,3 +53,25 @@ export function countAttributableVendorCancelledOrders(
 
   return attributableCount
 }
+
+/**
+ * Prisma where clause for vendor-rejected orders attributable to a store.
+ *
+ * Includes:
+ * - vendorRejected: true
+ * - paymentStatus in ['PAID', 'REFUNDED'] (covers both pending and settled refunds)
+ * - items.every.product.storeId = storeId (single-store attribution: all items must belong to this store)
+ */
+export function vendorRejectedOrdersWhere(storeId: string) {
+  return {
+    vendorRejected: true,
+    paymentStatus: { in: ['PAID', 'REFUNDED'] },
+    items: {
+      every: {
+        product: {
+          storeId,
+        },
+      },
+    },
+  }
+}

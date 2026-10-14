@@ -11,15 +11,27 @@ vi.mock('@/lib/auth-middleware', () => ({
 
 vi.mock('@/lib/trust-metrics', () => ({
   countAttributableVendorCancelledOrders: vi.fn(),
+  vendorRejectedOrdersWhere: vi.fn((storeId: string) => ({
+    vendorRejected: true,
+    paymentStatus: { in: ['PAID', 'REFUNDED'] },
+    items: {
+      every: {
+        product: {
+          storeId,
+        },
+      },
+    },
+  })),
 }))
 
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
-import { countAttributableVendorCancelledOrders } from '@/lib/trust-metrics'
+import { countAttributableVendorCancelledOrders, vendorRejectedOrdersWhere } from '@/lib/trust-metrics'
 
 const mockGetPrisma = vi.mocked(getPrisma)
 const mockVerifyToken = vi.mocked(verifyToken)
 const mockCountAttributableVendorCancelledOrders = vi.mocked(countAttributableVendorCancelledOrders)
+const mockVendorRejectedOrdersWhere = vi.mocked(vendorRejectedOrdersWhere)
 
 function buildMockPrisma() {
   const mockPrisma = {

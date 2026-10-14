@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { PaymentStatus } from '@prisma/client'
-import { countAttributableVendorCancelledOrders } from '@/lib/trust-metrics'
+import { countAttributableVendorCancelledOrders, vendorRejectedOrdersWhere } from '@/lib/trust-metrics'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -200,12 +200,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         // request is pending, or REFUNDED once it has been paid back. Both
         // count, exactly once, and the single-store attribution rule below is
         // unchanged.
-        const rejectedWhere = {
-          vendorRejected: true,
-          // A rejected order sits in PAID while its refund request is pending
-          // and in REFUNDED once the money has gone back, so both count.
-          paymentStatus: { in: ['PAID', 'REFUNDED'] as PaymentStatus[] },
-        }
+        const rejectedWhere = vendorRejectedOrdersWhere(actualStoreId)
         const [orders, orderItems, products] = await Promise.all([
           getPrisma().order.findMany({
             where: rejectedWhere,
