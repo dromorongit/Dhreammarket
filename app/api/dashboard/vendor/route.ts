@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { SALE_ORDER_FILTER } from '@/lib/order-sale-filter'
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,8 +26,14 @@ export async function GET(request: NextRequest) {
     }
 
     const [revenue, bookings, topProducts, topServices, couponUsages, followers, analytics] = await Promise.all([
+      // This aggregate had no order filter at all, so it summed cancelled and
+      // unpaid orders into the store's revenue. The shared sale filter is the
+      // single definition of what counts.
       getPrisma().orderItem.aggregate({
-        where: { product: { storeId: store.id } },
+        where: {
+          product: { storeId: store.id },
+          order: { ...SALE_ORDER_FILTER },
+        },
         _sum: { grossAmount: true, netAmount: true, vendorEarnings: true },
         _count: { id: true },
       }),

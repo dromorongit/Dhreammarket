@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 
 interface OrderItem {
   id: string
@@ -51,6 +52,8 @@ const ORDER_STATUS_CONFIG = {
   SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-800' },
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-800' },
   COMPLETED: { label: 'Completed', color: 'bg-green-100 text-green-800' },
+  // A cancelled order that is still PAID has a refund request waiting, and
+  // reads 'Cancelled, refund pending review' until it settles to Refunded.
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800' },
 }
 
@@ -248,6 +251,12 @@ export default function VendorOrdersPageClient() {
               {orders.map((order) => {
                 const statusConfig = ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]
                 const acceptanceConfig = VENDOR_ACCEPTANCE_CONFIG[order.vendorAccepted ? 'ACCEPTED' : order.vendorRejected ? 'REJECTED' : 'PENDING']
+                // Same helper the customer sees, so the vendor never reads a
+                // different sentence about the same cancellation.
+                const statusLabel =
+                  order.status === 'CANCELLED'
+                    ? cancelledOrderLabel(order)
+                    : statusConfig?.label || order.status
 
                 return (
                   <Card key={order.id} className="hover:shadow-md transition-shadow">
@@ -257,7 +266,7 @@ export default function VendorOrdersPageClient() {
                           <div className="flex items-center gap-3 mb-2">
                             <span className="text-sm font-medium text-gray-500">Order #{order.id.slice(-8).toUpperCase()}</span>
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig?.color || 'bg-gray-100 text-gray-800'}`}>
-                              {statusConfig?.label || order.status}
+                              {statusLabel}
                             </span>
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${acceptanceConfig?.color || 'bg-gray-100 text-gray-800'}`}>
                               {acceptanceConfig?.label || 'Pending'}

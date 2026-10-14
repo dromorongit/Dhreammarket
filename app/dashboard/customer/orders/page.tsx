@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
+import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 import NeedHelpButton from '@/components/NeedHelpButton'
 
 interface OrderItem {
@@ -65,6 +66,9 @@ const ORDER_STATUS_CONFIG = {
   SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-700' },
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-700' },
   COMPLETED: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700' },
+  // The cancellation wording is decided by cancelledOrderLabel, so the list
+  // and the order detail page never disagree: 'Cancelled, refund pending
+  // review' while the refund request waits, 'Refunded' only once settled.
   CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-700' },
 }
 
@@ -237,7 +241,7 @@ export default function CustomerOrdersPage() {
                           Order #{order.id.slice(-8).toUpperCase()}
                         </span>
                         <Badge variant="default" size="sm" className={`flex-shrink-0 ${order.orderType === 'PREORDER' ? 'bg-cyan-100 text-cyan-800' : order.orderType === 'BACKORDER' ? 'bg-orange-100 text-orange-800' : orderStatus.color}`}>
-                          {order.orderType === 'PREORDER' ? 'Pre-Order' : order.orderType === 'BACKORDER' ? 'Back-Order' : orderStatus.label}
+                          {order.orderType === 'PREORDER' ? 'Pre-Order' : order.orderType === 'BACKORDER' ? 'Back-Order' : order.status === 'CANCELLED' ? cancelledOrderLabel(order) : orderStatus.label}
                         </Badge>
                         {order.orderType !== 'NORMAL' && (
                           <Badge variant="default" size="sm" className={`flex-shrink-0 ${FULFILLMENT_STATUS_CONFIG[order.fulfillmentStatus as keyof typeof FULFILLMENT_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'}`}>

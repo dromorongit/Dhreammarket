@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { isSaleOrder } from '@/lib/order-sale-filter'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { getVendorStockMetrics, getProductReservationMetrics } from '@/lib/stock-reservation'
 import { getVendorDemandAnalytics, getAvailableStock } from '@/lib/demand-forecast'
@@ -123,6 +124,10 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
     const completedOrders = vendorOrders.filter((o: any) => o.status === 'COMPLETED' || o.status === 'DELIVERED').length
     const pendingOrders = vendorOrders.filter((o: any) => ['PENDING', 'PROCESSING', 'SHIPPED'].includes(o.status)).length
     const cancelledOrders = vendorOrders.filter((o: any) => o.status === 'CANCELLED').length
+    // A cancelled order awaiting its refund is not a sale, and it used to be
+    // counted in these totals because only paymentStatus was checked.
+    const saleOrders = vendorOrders.filter((o: any) => isSaleOrder(o))
+    const totalOrdersSale = saleOrders.length
 
     // Get active orders (PENDING, PROCESSING, SHIPPED, DELIVERED) that contain vendor's products - only paid
     const activeOrders = await getPrisma().order.findMany({
@@ -143,14 +148,17 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
     const activeOrderCount = activeOrders.length
 
     // Get completed orders that contain vendor's products and calculate revenue and vendor earnings - only paid orders
-    const completedOrderItems = await getPrisma().orderItem.findMany({
-      where: {
-        productId: { in: productIds },
-        order: {
-          status: { in: ['COMPLETED', 'DELIVERED'] },
-          paymentStatus: 'PAID' // Only count paid orders in revenue
-        }
-      },
+      // Already status-filtered to COMPLETED/DELIVERED, so cancelled orders
+      // never reached this. The shared filter makes that explicit and keeps
+      // the reader honest if the status list is ever widened.
+      const completedOrderItems = await getPrisma().orderItem.findMany({
+        where: {
+          productId: { in: productIds },
+          order: {
+            status: { in: ['COMPLETED', 'DELIVERED'] },
+            paymentStatus: { in: ['PAID'] },
+          }
+        },
       select: {
         vendorEarnings: true,
         price: true,
@@ -277,10 +285,13 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
       averageRating: productReviews._avg.rating || 0,
       totalReviews: productReviews._count.rating || 0,
       bestSellers: bestSellersWithNames,
-      totalPaidOrders: totalOrders,
+      totalPaidOrders: totalOrdersSale,
       hasStore,
       hasCategory,
       totalOrders,
+      // Exposed separately so the dashboard can show both the raw order count
+      // and the count that represents actual sales.
+      paidOrdersExcludingCancelled: totalOrdersSale,
       completedOrders,
       pendingOrders,
       cancelledOrders,

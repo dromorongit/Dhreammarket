@@ -83,6 +83,13 @@ vi.mock('@/lib/influencer/order-cashback', () => ({
   reverseInfluencerOrderCashback: reverseInfluencerOrderCashbackMock,
 }))
 
+const notifySuperAdminsRefundRequestedMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+)
+vi.mock('@/lib/refunds/admin-notify', () => ({
+  notifySuperAdminsRefundRequested: notifySuperAdminsRefundRequestedMock,
+}))
+
 import { PATCH } from '@/app/api/vendor/orders/[orderId]/route'
 
 const VENDOR = {
@@ -109,6 +116,7 @@ function mockVendorStore() {
   prismaMock.store.findUnique.mockResolvedValue({
     id: 'store_1',
     userId: 'vendor_1',
+    name: 'Fake Store',
     products: [{ id: 'prod_1' }],
   })
 }
@@ -371,6 +379,55 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
         }),
       })
     )
+  })
+
+  it('notifies the super admins that a refund request is waiting', async () => {
+    await PATCH(
+      buildRequest({ action: 'reject', rejectionReason: 'out of stock' }),
+      PARAMS
+    )
+
+    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledTimes(1)
+    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledWith({
+      orderId: 'order_1',
+      total: 100,
+      storeName: 'Fake Store',
+      source: 'VENDOR_REJECTION',
+    })
+  })
+
+  it('does not notify super admins when the rejected order was not paid', async () => {
+    mockExistingOrder({ status: 'PENDING', paymentStatus: 'PENDING' })
+    prismaMock.order.update.mockResolvedValue({
+      id: 'order_1',
+      status: 'CANCELLED',
+      fulfillmentStatus: 'CANCELLED',
+      vendorAccepted: false,
+      vendorRejected: true,
+      vendorRejectionReason: 'out of stock',
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    })
+
+    await PATCH(
+      buildRequest({ action: 'reject', rejectionReason: 'out of stock' }),
+      PARAMS
+    )
+
+    expect(notifySuperAdminsRefundRequestedMock).not.toHaveBeenCalled()
+  })
+
+  it('still rejects when the super admin notification fails', async () => {
+    notifySuperAdminsRefundRequestedMock.mockRejectedValueOnce(new Error('mail down'))
+
+    const response = await PATCH(
+      buildRequest({ action: 'reject', rejectionReason: 'out of stock' }),
+      PARAMS
+    )
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.order.vendorRejected).toBe(true)
+    expect(body.order.status).toBe('CANCELLED')
   })
 
   it('rejects an unpaid order without touching paymentStatus', async () => {

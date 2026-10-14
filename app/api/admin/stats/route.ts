@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { getAdminDemandAnalytics } from '@/lib/demand-forecast'
 import { PerformanceLogger } from '@/lib/performance'
+import { SALE_ORDER_FILTER } from '@/lib/order-sale-filter'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,22 +97,21 @@ export async function GET(request: NextRequest) {
           ],
         },
       }),
-      prisma.$queryRaw<Array<{
-        total_gross: number | null
-        total_processor: number | null
-        total_net: number | null
-        total_platform: number | null
-        total_vendor: number | null
-      }>>`
-        SELECT
-          SUM(COALESCE("grossAmount", "total")) as total_gross,
-          SUM("processorFee") as total_processor,
-          SUM("netAmount") as total_net,
-          SUM("platformCommission") as total_platform,
-          SUM("vendorEarnings") as total_vendor
-        FROM "orders"
-        WHERE "paymentStatus" = 'PAID'
-      `,
+      // Revenue used to be raw SQL over every PAID order, so a cancelled
+      // order awaiting its refund was still summed as money taken. The shared
+      // sale filter is the PRISMA equivalent, kept here for the same reason:
+      // one definition of a sale across every reader.
+      prisma.order.aggregate({
+        where: { ...SALE_ORDER_FILTER },
+        _sum: {
+          total: true,
+          grossAmount: true,
+          processorFee: true,
+          netAmount: true,
+          platformCommission: true,
+          vendorEarnings: true,
+        },
+      }),
       prisma.$queryRaw<Array<{ avg_days: number | null }>>`
         SELECT ROUND(SUM(FLOOR(EXTRACT(EPOCH FROM now() - "createdAt") / 86400)) / NULLIF(COUNT(*), 0)) as avg_days
         FROM "orders"
@@ -192,12 +192,15 @@ export async function GET(request: NextRequest) {
     let totalPlatformCommission = 0
     let totalVendorEarnings = 0
     let totalRevenue = 0
-    if (revenueAgg[0]) {
-      totalGrossAmount = revenueAgg[0].total_gross || 0
-      totalProcessorFee = revenueAgg[0].total_processor || 0
-      totalNetAmount = revenueAgg[0].total_net || 0
-      totalPlatformCommission = revenueAgg[0].total_platform || 0
-      totalVendorEarnings = revenueAgg[0].total_vendor || 0
+    // `total` is kept as the gross fallback for orders created before the
+    // grossAmount backfill, which is what the raw SQL COALESCE did.
+    if (revenueAgg._sum) {
+      totalGrossAmount =
+        revenueAgg._sum.grossAmount ?? revenueAgg._sum.total ?? 0
+      totalProcessorFee = revenueAgg._sum.processorFee || 0
+      totalNetAmount = revenueAgg._sum.netAmount || 0
+      totalPlatformCommission = revenueAgg._sum.platformCommission || 0
+      totalVendorEarnings = revenueAgg._sum.vendorEarnings || 0
       totalRevenue = totalPlatformCommission
     }
 

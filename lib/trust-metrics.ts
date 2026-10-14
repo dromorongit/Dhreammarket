@@ -1,22 +1,39 @@
+/**
+ * Count the cancellations a store is responsible for.
+ *
+ * A vendor rejection is a cancellation the customer did not ask for, so it is
+ * the store's cancellation and it goes into the storefront cancellation rate.
+ *
+ * The state rule: a rejected order leaves its refund going through the
+ * pipeline, so it can legitimately sit in EITHER payment state - PAID while
+ * the refund request is still pending, or REFUNDED once the money has gone
+ * back. Both count. Filtering on PAID alone under-counted every order whose
+ * refund had already been settled.
+ *
+ * The attribution rule: an order is only attributable to this store when every
+ * one of its items belongs to this store, so a multi-store order is excluded
+ * rather than charged to whichever store happens to share it.
+ */
 export function countAttributableVendorCancelledOrders(
   orders: any[],
   orderItems: any[],
   products: any[],
   storeId: string
 ): number {
-  const rejectedPaidOrderIds = new Set(
+  const rejectedOrderIds = new Set(
     orders
-      .filter(o => o.paymentStatus === 'PAID' && o.vendorRejected === true)
+      .filter(o => o.vendorRejected === true)
+      .filter(o => o.paymentStatus === 'PAID' || o.paymentStatus === 'REFUNDED')
       .map(o => o.id)
   )
 
-  if (rejectedPaidOrderIds.size === 0) {
+  if (rejectedOrderIds.size === 0) {
     return 0
   }
 
   const orderVendorMap = new Map<string, Set<string>>()
   for (const item of orderItems) {
-    if (!rejectedPaidOrderIds.has(item.orderId)) continue
+    if (!rejectedOrderIds.has(item.orderId)) continue
     const product = products.find(p => p.id === item.productId)
     if (!product) continue
     const itemStoreId = product.storeId

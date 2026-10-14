@@ -2,14 +2,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   refundFindUnique: vi.fn(),
+  orderFindUnique: vi.fn(),
   sendRefundConfirmationEmail: vi.fn(),
 }))
 
-vi.mock('@/lib/prisma', () => ({ getPrisma: () => ({ refund: { findUnique: mocks.refundFindUnique } }) }))
+vi.mock('@/lib/prisma', () => ({
+  getPrisma: () => ({
+    refund: { findUnique: mocks.refundFindUnique },
+    order: { findUnique: mocks.orderFindUnique },
+  }),
+}))
 vi.mock('@/lib/email', () => ({ sendRefundConfirmationEmail: mocks.sendRefundConfirmationEmail }))
 vi.mock('@/lib/logger', () => ({ logError: vi.fn(), logWarn: vi.fn(), logInfo: vi.fn() }))
 
-import { notifyRefundProcessed, resetRefundEmailsForTest } from '@/lib/refunds/refund-email'
+import {
+  notifyRefundProcessed,
+  notifyOrderRefunded,
+  resetRefundEmailsForTest,
+} from '@/lib/refunds/refund-email'
 
 function refundRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -20,9 +30,25 @@ function refundRow(overrides: Record<string, unknown> = {}) {
     status: 'PROCESSED',
     order: {
       user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+      paymentStatus: 'PAID',
+      total: 100,
+      refunds: [{ amount: 30 }],
     },
     ...overrides,
   }
+}
+
+/** A refund row on an order whose refunds cover the payment. */
+function fullyRefundedRow(overrides: Record<string, unknown> = {}) {
+  return refundRow({
+    order: {
+      user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+      paymentStatus: 'REFUNDED',
+      total: 100,
+      refunds: [{ amount: 30 }, { amount: 70 }],
+    },
+    ...overrides,
+  })
 }
 
 describe('notifyRefundProcessed', () => {
@@ -112,6 +138,179 @@ describe('notifyRefundProcessed', () => {
       'grace',
       'order_1',
       30,
+      'GHS'
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// notifyOrderRefunded: ONE receipt when the whole order settles to REFUNDED.
+// A multi-item cancellation creates one Refund row per item, so without this
+// the customer would get one email per item for a single cancellation.
+// ---------------------------------------------------------------------------
+
+describe('notifyOrderRefunded', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resetRefundEmailsForTest()
+    mocks.sendRefundConfirmationEmail.mockResolvedValue(undefined)
+    mocks.orderFindUnique.mockResolvedValue({
+      id: 'order_1',
+      paymentStatus: 'REFUNDED',
+      total: 100,
+      // Two PROCESSED refund rows summing to the full amount.
+      refunds: [{ amount: 30 }, { amount: 70 }],
+      user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+    })
+  })
+
+  it('sends exactly one receipt for a whole-order refund', async () => {
+    await notifyOrderRefunded('order_1')
+
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledWith(
+      'customer@example.test',
+      'Ada',
+      'order_1',
+      100,
+      'GHS'
+    )
+  })
+
+  it('never sends twice for the same order', async () => {
+    await notifyOrderRefunded('order_1')
+    await notifyOrderRefunded('order_1')
+    await notifyOrderRefunded('order_1')
+
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not send when the order is not yet REFUNDED', async () => {
+    mocks.orderFindUnique.mockResolvedValue({
+      id: 'order_1',
+      paymentStatus: 'PAID',
+      total: 100,
+      refunds: [{ amount: 30 }, { amount: 70 }],
+      user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+    })
+
+    await notifyOrderRefunded('order_1')
+
+    expect(mocks.sendRefundConfirmationEmail).not.toHaveBeenCalled()
+  })
+
+  it('compares the cover in integer pesewas, so one pesewa short is not covered', async () => {
+    // 100.00 charged, 99.99 refunded.
+    mocks.orderFindUnique.mockResolvedValue({
+      id: 'order_1',
+      paymentStatus: 'PAID',
+      total: 100,
+      refunds: [{ amount: 99.99 }],
+      user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+    })
+
+    await notifyOrderRefunded('order_1')
+
+    expect(mocks.sendRefundConfirmationEmail).not.toHaveBeenCalled()
+  })
+
+  it('does not send when the order cannot be found', async () => {
+    mocks.orderFindUnique.mockResolvedValue(null)
+
+    await notifyOrderRefunded('missing')
+
+    expect(mocks.sendRefundConfirmationEmail).not.toHaveBeenCalled()
+  })
+
+  it('does not send when the customer has no email address', async () => {
+    mocks.orderFindUnique.mockResolvedValue({
+      id: 'order_1',
+      paymentStatus: 'REFUNDED',
+      total: 100,
+      refunds: [{ amount: 100 }],
+      user: { email: null, profile: null },
+    })
+
+    await notifyOrderRefunded('order_1')
+
+    expect(mocks.sendRefundConfirmationEmail).not.toHaveBeenCalled()
+  })
+
+  it('swallows a mail provider failure so the refund itself is not broken', async () => {
+    mocks.sendRefundConfirmationEmail.mockRejectedValue(new Error('smtp down'))
+
+    await expect(notifyOrderRefunded('order_1')).resolves.toBeUndefined()
+  })
+
+  it('does not duplicate with the per-row helper for the same settled order', async () => {
+    // The whole-order refund settled, so the order-level receipt fires once;
+    // a replay of the same order is suppressed by the in-process set.
+    await notifyOrderRefunded('order_1')
+    await notifyOrderRefunded('order_1')
+
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the per-row emails alone for a partial refund', async () => {
+    // A partial refund never settles the order, so notifyOrderRefunded stays
+    // silent and the per-row emails from notifyRefundProcessed remain the
+    // only ones sent.
+    mocks.orderFindUnique.mockResolvedValue({
+      id: 'order_1',
+      paymentStatus: 'PAID',
+      total: 100,
+      refunds: [{ amount: 30 }],
+      user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+    })
+
+    await notifyOrderRefunded('order_1')
+    mocks.refundFindUnique.mockResolvedValue(refundRow())
+    await notifyRefundProcessed('refund_1')
+
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledWith(
+      'customer@example.test',
+      'Ada',
+      'order_1',
+      30,
+      'GHS'
+    )
+  })
+
+  it('sends no per-row email when the order settled as a whole', async () => {
+    // The whole-order refund already produced its single receipt, so the
+    // per-row emails must not fire on top of it.
+    mocks.orderFindUnique.mockResolvedValue({
+      id: 'order_1',
+      paymentStatus: 'REFUNDED',
+      total: 100,
+      refunds: [{ amount: 30 }, { amount: 70 }],
+      user: { email: 'customer@example.test', profile: { firstName: 'Ada' } },
+    })
+    await notifyOrderRefunded('order_1')
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+
+    // Now replay the per-row call for one of those rows. It must recognise
+    // that the order already settled and contribute nothing further.
+    mocks.refundFindUnique.mockResolvedValue(fullyRefundedRow())
+    await notifyRefundProcessed('refund_1')
+
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends the order receipt, not a per-row email, when a whole order settles first', async () => {
+    // Order settles, THEN a per-row notification for one of its rows arrives.
+    // Only the single receipt exists in total.
+    mocks.refundFindUnique.mockResolvedValue(fullyRefundedRow())
+
+    await notifyRefundProcessed('refund_1')
+
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledTimes(1)
+    expect(mocks.sendRefundConfirmationEmail).toHaveBeenCalledWith(
+      'customer@example.test',
+      'Ada',
+      'order_1',
+      100,
       'GHS'
     )
   })

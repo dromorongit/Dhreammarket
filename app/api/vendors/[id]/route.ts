@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
+import { PaymentStatus } from '@prisma/client'
 import { countAttributableVendorCancelledOrders } from '@/lib/trust-metrics'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -192,12 +193,22 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         },
       }),
       (async () => {
+        // A rejected order used to be written to paymentStatus REFUNDED on
+        // the spot, so it left the PAID bucket and the cancellation count was
+        // effectively zero. The refund is now settled by the pipeline, so a
+        // rejected order can sit in EITHER state: PAID while the refund
+        // request is pending, or REFUNDED once it has been paid back. Both
+        // count, exactly once, and the single-store attribution rule below is
+        // unchanged.
+        const rejectedWhere = {
+          vendorRejected: true,
+          // A rejected order sits in PAID while its refund request is pending
+          // and in REFUNDED once the money has gone back, so both count.
+          paymentStatus: { in: ['PAID', 'REFUNDED'] as PaymentStatus[] },
+        }
         const [orders, orderItems, products] = await Promise.all([
           getPrisma().order.findMany({
-            where: {
-              paymentStatus: 'PAID',
-              vendorRejected: true,
-            },
+            where: rejectedWhere,
             select: {
               id: true,
               paymentStatus: true,
@@ -215,10 +226,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           }),
           getPrisma().orderItem.findMany({
             where: {
-              order: {
-                paymentStatus: 'PAID',
-                vendorRejected: true,
-              },
+              order: rejectedWhere,
             },
             select: {
               orderId: true,

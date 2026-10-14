@@ -28,6 +28,7 @@ interface OrderItemEarnings {
     id: string
     createdAt: string
     paymentStatus: string
+    status?: string
   }
 }
 
@@ -114,6 +115,16 @@ export default function VendorEarningsPageClient() {
   const totalPaid = payoutSummary?.totalPaid ?? 0
   const totalPending = payoutSummary?.totalPending ?? 0
 
+  // The API already excludes non-sale orders, and this is the second half of
+  // the same rule: a row that somehow slipped through with a cancelled order
+  // must not be summed into the totals.
+  const saleEarnings = earnings.filter(item =>
+    item.order.paymentStatus === 'PAID' && item.order.status !== 'CANCELLED'
+  )
+  const totalGrossSale = saleEarnings.reduce((sum, item) => sum + item.grossAmount, 0)
+  const totalCommissionSale = saleEarnings.reduce((sum, item) => sum + item.platformCommission, 0)
+  const totalEarningsSale = saleEarnings.reduce((sum, item) => sum + item.vendorEarnings, 0)
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 py-8">
@@ -160,19 +171,19 @@ export default function VendorEarningsPageClient() {
           <Card variant="elevated">
             <CardContent className="p-6">
               <p className="text-sm text-slate-500 mb-1">Total Gross Sales</p>
-              <p className="text-2xl font-bold text-deep-navy">{formatPrice(totalGross)}</p>
+              <p className="text-2xl font-bold text-deep-navy">{formatPrice(totalGrossSale)}</p>
             </CardContent>
           </Card>
           <Card variant="elevated">
             <CardContent className="p-6">
               <p className="text-sm text-slate-500 mb-1">Platform Commission</p>
-              <p className="text-2xl font-bold text-royal-blue">{formatPrice(totalCommission)}</p>
+              <p className="text-2xl font-bold text-royal-blue">{formatPrice(totalCommissionSale)}</p>
             </CardContent>
           </Card>
           <Card variant="elevated">
             <CardContent className="p-6">
               <p className="text-sm text-slate-500 mb-1">Your Earnings</p>
-              <p className="text-2xl font-bold text-emerald-600">{formatPrice(totalEarnings)}</p>
+              <p className="text-2xl font-bold text-emerald-600">{formatPrice(totalEarningsSale)}</p>
             </CardContent>
           </Card>
         </div>

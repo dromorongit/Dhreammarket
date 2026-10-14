@@ -396,7 +396,7 @@ describe('createRefund', () => {
     )
   })
 
-  it('sends one refund confirmation email per Refund row that becomes PROCESSED', async () => {
+  it('sends ONE order-level receipt when every item is refunded', async () => {
     const result = await createRefund({
       orderId: 'order_1',
       items: [
@@ -408,12 +408,14 @@ describe('createRefund', () => {
       actor: ADMIN,
     })
 
-    // One email per refund row, not one per order.
-    expect(mockSendRefundEmail).toHaveBeenCalledTimes(2)
-    expect(mockSendRefundEmail.mock.calls.map((call: any[]) => call[3])).toEqual([30, 70])
+    // A whole cancellation is one email carrying the full amount, NOT one email
+    // per item: the per-row emails are suppressed once the order settles.
+    expect(mockSendRefundEmail).toHaveBeenCalledTimes(1)
+    expect(mockSendRefundEmail.mock.calls.map((call: any[]) => call[3])).toEqual([100])
     expect(mockSendRefundEmail.mock.calls.every((call: any[]) => call[0] === 'customer@example.test')).toBe(true)
-    // Both rows reached PROCESSED.
+    // Both rows still reached PROCESSED.
     expect(result.refunds.map((r) => r.status)).toEqual(['PROCESSED', 'PROCESSED'])
+    expect(result.orderRefunded).toBe(true)
   })
 
   it('leaves the order PAID and still emails when only part of the payment is refunded', async () => {

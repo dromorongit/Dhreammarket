@@ -3,6 +3,7 @@ import { requireSuperAdmin } from '@/lib/adminAuth'
 import { rateLimit } from '@/lib/rate-limit'
 import { getPrisma } from '@/lib/prisma'
 import { logError } from '@/lib/logger'
+import { toPesewas } from '@/lib/refunds/process-refund'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,17 @@ type RefundRequestItem = {
   cancelledAt: string
   requestSource: RefundRequestSource
   total: number
+  /**
+   * Refunded so far, in integer pesewas. Reported alongside the order total so
+   * a partly refunded order shows how much of its money has gone back.
+   */
+  refundedPesewas: number
+  /**
+   * The order's charged amount in integer pesewas. The comparison
+   * "refundedPesewas >= paymentPesewas" is how a reader tells whether the
+   * refunds cover the payment, without ever trusting floating-point money.
+   */
+  paymentPesewas: number
   currency: string | null
   walletAssisted: boolean
   orderType: string
@@ -46,6 +58,18 @@ type RefundRequestItem = {
  * flipped to paymentStatus REFUNDED by settleOrderIfFullyRefunded, so PAID
  * here also means "not fully refunded". Orders whose only Refund rows are
  * FAILED or NEEDS_ATTENTION remain in the queue with refundStatus visible.
+ *
+ * The query therefore already keeps an order visible until its PROCESSED
+ * refunds cover the payment, because a PROCESSED refund row is what removes
+ * it. The one case the query cannot see on its own is an order whose refunds
+ * are all PROCESSED but whose paymentStatus has not yet been flipped, which
+ * settleOrderIfFullyRefunded does on the same path; the post-filter below
+ * handles it independently so a lag between the two can never double-report
+ * an order as still waiting.
+ *
+ * Every item carries refundedPesewas and paymentPesewas so a partly refunded
+ * order shows how much of its money has gone back, compared in integer
+ * pesewas rather than floating point.
  *
  * Sorted oldest cancellation first. updatedAt is bumped by the cancellation
  * update itself, so for a cancelled order it is the cancellation time.
@@ -104,7 +128,7 @@ export async function GET(request: NextRequest) {
         refunds: { none: { status: { in: [...ACTIVE_REFUND_STATUSES] } } },
       },
       include: {
-        payment: { select: { currency: true } },
+        payment: { select: { currency: true, amount: true } },
         items: {
           include: {
             product: {
@@ -113,7 +137,7 @@ export async function GET(request: NextRequest) {
           },
         },
         refunds: {
-          select: { status: true, createdAt: true },
+          select: { status: true, createdAt: true, amount: true },
           orderBy: { createdAt: 'desc' },
         },
       },
@@ -174,29 +198,51 @@ export async function GET(request: NextRequest) {
     }
 
     const now = Date.now()
-    const items: RefundRequestItem[] = pageOrders.map((order) => {
-      const cancelledAt = cancelledAtByOrder.get(order.id) ?? order.updatedAt
-      const storeName =
-        order.items.find(item => item.product?.store?.name)?.product.store.name ??
-        null
 
-      return {
-        orderId: order.id,
-        orderRef: `#${order.id.slice(-8).toUpperCase()}`,
-        cancelledAt: cancelledAt.toISOString(),
-        requestSource: requestSourceByOrder.get(order.id) ?? 'NONE_RECORDED',
-        total: order.total,
-        currency: order.payment?.currency ?? null,
-        walletAssisted: (order.walletAmountApplied ?? 0) > 0,
-        orderType: order.orderType,
-        storeName,
-        ageDays: Math.max(
-          0,
-          Math.floor((now - cancelledAt.getTime()) / (24 * 60 * 60 * 1000))
-        ),
-        refundStatus: order.refunds[0]?.status ?? null,
-      }
-    })
+    // Refunded so far per order, in integer pesewas. Only PROCESSED rows have
+    // actually moved money, so only those count towards covering the payment.
+    const refundedPesewasByOrder = new Map<string, number>()
+    for (const order of pageOrders) {
+      const refundedPesewas = order.refunds
+        .filter(refund => refund.status === 'PROCESSED')
+        .reduce((sum, refund) => sum + toPesewas(refund.amount), 0)
+      refundedPesewasByOrder.set(order.id, refundedPesewas)
+    }
+
+    const items: RefundRequestItem[] = pageOrders
+      .map((order) => {
+        const cancelledAt = cancelledAtByOrder.get(order.id) ?? order.updatedAt
+        const storeName =
+          order.items.find(item => item.product?.store?.name)?.product.store.name ??
+          null
+
+        const paymentPesewas = toPesewas(order.payment?.amount ?? order.total)
+        const refundedPesewas = refundedPesewasByOrder.get(order.id) ?? 0
+
+        return {
+          orderId: order.id,
+          orderRef: `#${order.id.slice(-8).toUpperCase()}`,
+          cancelledAt: cancelledAt.toISOString(),
+          requestSource: requestSourceByOrder.get(order.id) ?? 'NONE_RECORDED',
+          total: order.total,
+          refundedPesewas,
+          paymentPesewas,
+          currency: order.payment?.currency ?? null,
+          walletAssisted: (order.walletAmountApplied ?? 0) > 0,
+          orderType: order.orderType,
+          storeName,
+          ageDays: Math.max(
+            0,
+            Math.floor((now - cancelledAt.getTime()) / (24 * 60 * 60 * 1000))
+          ),
+          refundStatus: order.refunds[0]?.status ?? null,
+        }
+      })
+      // An order whose refunds already cover the payment is not waiting for a
+      // decision, even if settleOrderIfFullyRefunded has not flipped its
+      // paymentStatus yet. The comparison is in integer pesewas, so a
+      // one-pesewa gap is never decided by floating-point noise.
+      .filter(item => item.refundedPesewas < item.paymentPesewas)
 
     return NextResponse.json({
       items,

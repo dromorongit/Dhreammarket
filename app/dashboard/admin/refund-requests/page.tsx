@@ -11,6 +11,10 @@ interface RefundRequestItem {
   cancelledAt: string
   requestSource: 'CUSTOMER_CANCEL' | 'VENDOR_REJECTION' | 'NONE_RECORDED'
   total: number
+  /** Refunded so far, in integer pesewas. */
+  refundedPesewas?: number
+  /** The charged amount in integer pesewas, for the cover comparison. */
+  paymentPesewas?: number
   currency: string | null
   walletAssisted: boolean
   orderType: string
@@ -40,6 +44,17 @@ function formatAmount(total: number, currency: string | null) {
   } catch {
     return `${currency || 'GHS'} ${total}`
   }
+}
+
+/**
+ * Render the refunded-so-far figure for an order, or null when nothing has
+ * been refunded yet. The pesewa values are converted only for display; the
+ * "covers the payment" decision is made server-side in integer pesewas.
+ */
+function refundedLabel(item: RefundRequestItem): string | null {
+  const refundedPesewas = item.refundedPesewas ?? 0
+  if (refundedPesewas <= 0) return null
+  return `${formatAmount(refundedPesewas / 100, item.currency)} of ${formatAmount(item.paymentPesewas ? item.paymentPesewas / 100 : item.total, item.currency)} refunded`
 }
 
 function getSourceBadge(source: RefundRequestItem['requestSource']) {
@@ -173,6 +188,7 @@ export default function RefundRequestsPage() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cancelled</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Age (days)</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Refunded</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Page</th>
                     </tr>
                   </thead>
@@ -207,6 +223,13 @@ export default function RefundRequestsPage() {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          {refundedLabel(item) ? (
+                            <span className="text-sm text-purple-700">{refundedLabel(item)}</span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-4">
                           <Link

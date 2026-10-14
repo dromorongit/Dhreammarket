@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { SALE_ORDER_FILTER } from '@/lib/order-sale-filter'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,13 +46,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ earnings: [] })
     }
 
-    // Get order items for this vendor's products from paid orders
+    // Get order items for this vendor's products from paid orders. This used
+    // to filter only on paymentStatus 'PAID', so a cancelled order whose
+    // refund was still pending appeared here as earnings.
     const earnings = await getPrisma().orderItem.findMany({
       where: {
         productId: { in: productIds },
-        order: {
-          paymentStatus: 'PAID'
-        }
+        order: { ...SALE_ORDER_FILTER },
       },
       select: {
         id: true,
@@ -73,7 +74,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             createdAt: true,
-            paymentStatus: true
+            paymentStatus: true,
+            status: true,
           }
         }
       },

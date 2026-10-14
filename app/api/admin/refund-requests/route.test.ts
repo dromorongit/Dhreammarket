@@ -48,7 +48,7 @@ function buildOrder(overrides: Record<string, unknown> = {}) {
     total: 120,
     walletAmountApplied: 0,
     orderType: 'NORMAL',
-    payment: { currency: 'GHS' },
+    payment: { currency: 'GHS', amount: 120 },
     items: [{ product: { store: { name: 'Fake Store' } } }],
     refunds: [],
     ...overrides,
@@ -62,6 +62,8 @@ const ITEM_KEYS = [
   'cancelledAt',
   'requestSource',
   'total',
+  'refundedPesewas',
+  'paymentPesewas',
   'currency',
   'walletAssisted',
   'orderType',
@@ -239,6 +241,112 @@ describe('GET /api/admin/refund-requests', () => {
     const body = await response.json()
 
     expect(body.items[0].cancelledAt).toBe('2026-10-01T00:00:00.000Z')
+  })
+
+  it('keeps an order visible until its PROCESSED refunds cover the payment', async () => {
+    // Partly refunded: 40 of 120 charged has gone back. The order stays in
+    // the queue, because the decision on the remaining 80 is still pending.
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({
+        refunds: [
+          { status: 'PROCESSED', amount: 40, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+        ],
+      }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0].refundedPesewas).toBe(4000)
+    expect(body.items[0].paymentPesewas).toBe(12000)
+  })
+
+  it('hides an order whose PROCESSED refunds cover the payment', async () => {
+    // This is the S1b rule: once the refunded amount covers the payment, the
+    // order is no longer waiting for a decision.
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({
+        refunds: [
+          { status: 'PROCESSED', amount: 60, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+          { status: 'PROCESSED', amount: 60, createdAt: new Date('2026-10-03T00:00:00.000Z') },
+        ],
+      }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items).toHaveLength(0)
+  })
+
+  it('decides the cover in integer pesewas, so one pesewa short is still visible', async () => {
+    // 120.00 charged, 119.99 refunded: a single pesewa gap must not be lost.
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({
+        refunds: [
+          { status: 'PROCESSED', amount: 119.99, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+        ],
+      }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0].refundedPesewas).toBe(11999)
+    expect(body.items[0].paymentPesewas).toBe(12000)
+  })
+
+  it('does not count FAILED refunds towards the cover', async () => {
+    // A FAILED row never moved money, so it cannot reduce what is still owed.
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({
+        refunds: [
+          { status: 'FAILED', amount: 120, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+        ],
+      }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0].refundedPesewas).toBe(0)
+    expect(body.items[0].refundStatus).toBe('FAILED')
+  })
+
+  it('does not count PENDING refunds towards the cover either', async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({
+        refunds: [
+          { status: 'PENDING', amount: 120, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+        ],
+      }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0].refundedPesewas).toBe(0)
+  })
+
+  it('sums only PROCESSED rows across several refunds', async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({
+        refunds: [
+          { status: 'PROCESSED', amount: 10, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+          { status: 'FAILED', amount: 200, createdAt: new Date('2026-10-02T00:00:00.000Z') },
+          { status: 'PROCESSED', amount: 20.5, createdAt: new Date('2026-10-03T00:00:00.000Z') },
+        ],
+      }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items[0].refundedPesewas).toBe(3050)
   })
 
   it('clamps the page size and validates the pagination params', async () => {

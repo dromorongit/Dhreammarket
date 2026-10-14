@@ -20,7 +20,7 @@ import {
   type RefundActor,
   type RefundSource,
 } from './process-refund'
-import { notifyRefundProcessed } from './refund-email'
+import { notifyRefundProcessed, notifyOrderRefunded } from './refund-email'
 import { createAuditLog } from '@/lib/audit-log'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { releaseStock } from '@/lib/stock-reservation'
@@ -424,6 +424,15 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
     unknownPaystackStatus?: string
   }[] = []
 
+  /**
+   * Refund rows that reached PROCESSED in this call.
+   *
+   * Their emails are deferred until after settleOrderIfFullyRefunded, because
+   * whether the customer hears about them one-by-one or through a single
+   * order-level receipt depends on whether the order settled as a whole.
+   */
+  const processedRefundIds: string[] = []
+
   for (const row of pending) {
     if (row.alreadyExisted) continue
 
@@ -497,7 +506,10 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
       row.paystackStatus = paystackStatus
 
       if (nextStatus === 'PROCESSED') {
-        await notifyRefundProcessed(row.id)
+        // Collected, not sent here: whether the customer gets one email per
+        // row or a single receipt for the order can only be decided once the
+        // order has settled below.
+        processedRefundIds.push(row.id)
       }
       continue
     }
@@ -526,6 +538,23 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
   }
 
   const orderRefunded = await settleOrderIfFullyRefunded(order.id)
+
+  // Announce the refunds now that the order's final state is known. A wholly
+  // refunded order gets ONE order-level receipt; a partly refunded order gets
+  // one email per PROCESSED row. Never the same order as both.
+  //
+  // Best-effort: a mail failure must never undo the refund work above.
+  try {
+    if (orderRefunded) {
+      await notifyOrderRefunded(order.id)
+    } else {
+      for (const refundId of processedRefundIds) {
+        await notifyRefundProcessed(refundId)
+      }
+    }
+  } catch (error) {
+    logError('Failed to announce the processed refunds', error)
+  }
 
   return {
     orderId: order.id,
@@ -572,6 +601,17 @@ async function settleOrderIfFullyRefunded(orderId: string): Promise<boolean> {
   })
 
   logInfo('Order fully refunded', { orderId, refundedTotal, paymentTotal })
+
+  // One order-level receipt. A whole-order refund settles here, so the
+  // per-item rows from notifyRefundProcessed would otherwise produce one
+  // email per item for what the customer experienced as one cancellation.
+  // A partial refund never reaches this function, so it keeps using the
+  // per-row email and the two never overlap.
+  try {
+    await notifyOrderRefunded(orderId)
+  } catch (error) {
+    logError('Failed to send the order refund receipt', error)
+  }
 
   // Reverse influencer cashback (idempotent) and put stock back.
   try {

@@ -52,6 +52,13 @@ vi.mock('@/lib/notifications', () => ({
   createNotification: createNotificationMock,
 }))
 
+const notifySuperAdminsRefundRequestedMock = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined)
+)
+vi.mock('@/lib/refunds/admin-notify', () => ({
+  notifySuperAdminsRefundRequested: notifySuperAdminsRefundRequestedMock,
+}))
+
 const reverseInfluencerOrderCashbackMock = vi.hoisted(() =>
   vi.fn().mockResolvedValue(undefined)
 )
@@ -119,6 +126,9 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     verifyTokenMock.mockResolvedValue(BUYER)
     prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
     prismaMock.order.updateMany.mockResolvedValue({ count: 1 })
+    // clearAllMocks also clears implementations, so the default resolution is
+    // re-established here.
+    notifySuperAdminsRefundRequestedMock.mockResolvedValue(undefined)
   })
 
   it('returns 401 when no token cookie is present', async () => {
@@ -311,6 +321,62 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     const body = await response.json()
     expect(body.refundRequested).toBe(true)
     expect(body.order.paymentStatus).toBe('PAID')
+  })
+
+  it('notifies the super admins that a refund request is waiting', async () => {
+    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
+
+    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledTimes(1)
+    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledWith({
+      orderId: 'order_1',
+      total: 100,
+      storeName: 'Fake Store',
+      source: 'CUSTOMER_CANCEL',
+    })
+  })
+
+  it('names no store when the cancelled order spans several stores', async () => {
+    prismaMock.order.findFirst.mockResolvedValue(
+      buildOrder({
+        items: [
+          { product: { store: { userId: 'vendor_1', name: 'Store One' } } },
+          { product: { store: { userId: 'vendor_2', name: 'Store Two' } } },
+        ],
+      })
+    )
+
+    await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledWith(
+      expect.objectContaining({ storeName: null, source: 'CUSTOMER_CANCEL' })
+    )
+  })
+
+  it('does not notify super admins when nothing was charged', async () => {
+    prismaMock.order.findFirst.mockResolvedValue(
+      buildOrder({ status: 'PENDING', paymentStatus: 'PENDING' })
+    )
+    prismaMock.order.updateMany.mockResolvedValue({ count: 1 })
+
+    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(notifySuperAdminsRefundRequestedMock).not.toHaveBeenCalled()
+  })
+
+  it('still cancels when the super admin notification fails', async () => {
+    notifySuperAdminsRefundRequestedMock.mockRejectedValueOnce(new Error('mail down'))
+    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
+
+    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.success).toBe(true)
+    expect(body.order.status).toBe('CANCELLED')
   })
 
   it('flags wallet-assisted orders in the refund request metadata', async () => {

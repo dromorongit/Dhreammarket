@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
+import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 import { Textarea } from '@/components/Textarea'
 import NeedHelpButton from '@/components/NeedHelpButton'
 
@@ -102,6 +103,13 @@ const ORDER_STATUS_CONFIG = {
   DELIVERED: { label: 'Delivered', description: 'Out for delivery', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
   COMPLETED: { label: 'Completed', description: 'Order complete', color: 'bg-green-100 text-green-800 border-green-300' },
   CANCELLED: { label: 'Cancelled', description: 'Order cancelled', color: 'bg-red-100 text-red-800 border-red-300' },
+}
+
+// A vendor sees the same cancellation wording as the customer: a rejected or
+// cancelled order that is still PAID is waiting on its refund and reads
+// 'Cancelled, refund pending review'; 'Refunded' once it has settled.
+function vendorCancelledLabel(order: { status?: string; paymentStatus?: string }): string {
+  return order.status === 'CANCELLED' ? cancelledOrderLabel(order) : ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.label ?? 'Pending'
 }
 
 const VENDOR_ACCEPTANCE_CONFIG = {
@@ -728,7 +736,7 @@ export default function VendorOrderDetailPageClient() {
                 <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
                   ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.color || 'bg-gray-100 text-gray-800'
                 }`}>
-                  {ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG]?.label || order.status}
+                  {vendorCancelledLabel(order)}
                 </span>
                 {order.orderType === 'NORMAL' && ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status) && (
                   <select

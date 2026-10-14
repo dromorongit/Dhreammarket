@@ -9,6 +9,7 @@ import { consumeInventory, releaseStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
 import { creditInfluencerOrderCashback, reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { createAuditLog } from '@/lib/audit-log'
+import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 
 export const dynamic = 'force-dynamic'
 
@@ -316,6 +317,18 @@ export async function PATCH(
               walletAssisted: (existingOrder.walletAmountApplied ?? 0) > 0,
             },
           }).catch(err => console.error('Failed to create refund request audit log:', err))
+
+          // Tell the super admins a request is waiting. Best-effort: the
+          // rejection above is already committed, so a failure here must
+          // never undo or block it, and the vendor is told nothing about money.
+          notifySuperAdminsRefundRequested({
+            orderId,
+            total: existingOrder.total,
+            storeName: store.name,
+            source: 'VENDOR_REJECTION',
+          }).catch(err =>
+            console.error('Failed to notify super admins about the refund request:', err)
+          )
         }
 
         const orderWithUser = await getPrisma().order.findUnique({

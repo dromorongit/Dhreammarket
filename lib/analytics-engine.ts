@@ -1,5 +1,6 @@
 import { getPrisma } from './prisma'
 import { PrismaClient } from '@prisma/client'
+import { SALE_ORDER_FILTER } from './order-sale-filter'
 
 export type DateRange = {
   from: Date
@@ -101,7 +102,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
     prisma.order.aggregate({
       where: {
         createdAt: { gte: from, lte: to },
-        paymentStatus: 'PAID',
+        ...SALE_ORDER_FILTER,
         deletedAt: null,
       },
       _sum: { total: true },
@@ -109,7 +110,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
     prisma.order.aggregate({
       where: {
         createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)), lte: new Date() },
-        paymentStatus: 'PAID',
+        ...SALE_ORDER_FILTER,
         deletedAt: null,
       },
       _sum: { total: true },
@@ -117,7 +118,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
     prisma.order.aggregate({
       where: {
         createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), lte: new Date() },
-        paymentStatus: 'PAID',
+        ...SALE_ORDER_FILTER,
         deletedAt: null,
       },
       _sum: { total: true },
@@ -125,7 +126,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
     prisma.order.aggregate({
       where: {
         createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1), lte: new Date() },
-        paymentStatus: 'PAID',
+        ...SALE_ORDER_FILTER,
         deletedAt: null,
       },
       _sum: { total: true },
@@ -133,7 +134,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
     prisma.order.aggregate({
       where: {
         createdAt: { gte: new Date(new Date().getFullYear(), 0, 1), lte: new Date() },
-        paymentStatus: 'PAID',
+        ...SALE_ORDER_FILTER,
         deletedAt: null,
       },
       _sum: { total: true },
@@ -230,7 +231,7 @@ export async function getSuperAdminAnalytics(filter: AnalyticsFilter) {
       where: {
         order: {
           createdAt: { gte: from, lte: to },
-          paymentStatus: 'PAID',
+          ...SALE_ORDER_FILTER,
           deletedAt: null,
         },
       },
@@ -483,7 +484,7 @@ export async function getVendorAnalytics(vendorId: string, filter: AnalyticsFilt
         product: { storeId: store.id },
         order: {
           createdAt: { gte: from, lte: to },
-          paymentStatus: 'PAID',
+          ...SALE_ORDER_FILTER,
           deletedAt: null,
         },
       },
@@ -508,7 +509,7 @@ export async function getVendorAnalytics(vendorId: string, filter: AnalyticsFilt
         product: { storeId: store.id },
         order: {
           createdAt: { gte: from, lte: to },
-          paymentStatus: 'PAID',
+          ...SALE_ORDER_FILTER,
           deletedAt: null,
         },
       },

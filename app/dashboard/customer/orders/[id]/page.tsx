@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { formatPrice } from '@/lib/currency'
+import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import { EventTimeline } from '@/components/OrderTimeline'
 import { Textarea } from '@/components/Textarea'
@@ -109,6 +110,10 @@ const ORDER_STATUS_CONFIG = {
   SHIPPED: { label: 'Shipped', color: 'bg-purple-100 text-purple-700', step: 2 },
   DELIVERED: { label: 'Delivered', color: 'bg-indigo-100 text-indigo-700', step: 3 },
   COMPLETED: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700', step: 4 },
+  // The order status badge is a flat label map, so the customer-facing wording
+  // for a cancellation is applied on top of it below: a cancelled order that
+  // is still PAID has a refund request waiting, and reads
+  // 'Cancelled, refund pending review' until the refund settles.
   CANCELLED: { label: 'Cancelled', color: 'bg-rose-100 text-rose-800', step: -1 },
 }
 
@@ -488,6 +493,10 @@ export default function CustomerOrderDetailPage() {
 
   const paymentConfig = PAYMENT_STATUS_CONFIG[order.paymentStatus as keyof typeof PAYMENT_STATUS_CONFIG] || PAYMENT_STATUS_CONFIG.PENDING
   const statusConfig = ORDER_STATUS_CONFIG[order.status as keyof typeof ORDER_STATUS_CONFIG] || ORDER_STATUS_CONFIG.PENDING
+  // One place decides the wording, so the customer sees the same sentence on
+  // this page and in the order list: 'Cancelled, refund pending review' while
+  // the refund request waits, 'Refunded' only once the order is REFUNDED.
+  const cancellationLabel = cancelledOrderLabel(order)
 
   const orderDate = new Date(order.createdAt)
   const formattedDate = orderDate.toLocaleDateString('en-GH', {
@@ -550,8 +559,12 @@ export default function CustomerOrderDetailPage() {
                 <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mr-2">
                   {order.orderType === 'PREORDER' ? 'Pre-Order' : order.orderType === 'BACKORDER' ? 'Back-Order' : 'Normal'}
                 </span>
-                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
-                  {statusConfig.label}
+                <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                  order.status === 'CANCELLED' && order.paymentStatus === 'REFUNDED'
+                    ? PAYMENT_STATUS_CONFIG.REFUNDED.color
+                    : statusConfig.color
+                }`}>
+                  {order.status === 'CANCELLED' ? cancellationLabel : statusConfig.label}
                 </span>
               </div>
               <div>

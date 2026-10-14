@@ -7,6 +7,7 @@ import { createAuditLog } from '@/lib/audit-log'
 import { releaseStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
 import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
+import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,6 +90,7 @@ export async function PATCH(
                 store: {
                   select: {
                     userId: true,
+                    name: true,
                   },
                 },
               },
@@ -268,6 +270,25 @@ export async function PATCH(
           request.headers.get('x-real-ip') ||
           null,
       }).catch(err => console.error('Failed to create refund request audit log:', err))
+
+      // Tell the super admins a request is waiting. Best-effort: a failure
+      // here must never undo or block the cancellation above, which is
+      // already committed.
+      const storeNames = Array.from(
+        new Set(
+          existingOrder.items
+            .map((item) => item?.product?.store?.name)
+            .filter((name): name is string => Boolean(name))
+        )
+      )
+      notifySuperAdminsRefundRequested({
+        orderId,
+        total: existingOrder.total,
+        storeName: storeNames.length === 1 ? storeNames[0] : null,
+        source: 'CUSTOMER_CANCEL',
+      }).catch(err =>
+        console.error('Failed to notify super admins about the refund request:', err)
+      )
     }
 
     // Notify vendors (existing behaviour, unchanged). We cannot access updatedOrder
