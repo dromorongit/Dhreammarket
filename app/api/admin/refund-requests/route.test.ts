@@ -356,7 +356,7 @@ describe('GET /api/admin/refund-requests', () => {
 
     const clamped = await GET(buildRequest('http://localhost/api/admin/refund-requests?limit=500'))
     const clampedBody = await clamped.json()
-    expect(clampedBody.pagination).toEqual({ page: 1, limit: 100, hasMore: true })
+    expect(clampedBody.pagination).toEqual({ page: 1, limit: 100, hasMore: true, truncated: false })
     expect(clampedBody.items).toHaveLength(100)
     // We now fetch all candidates (capped at 500) and paginate in memory.
     expect(prismaMock.order.findMany).toHaveBeenLastCalledWith(
@@ -377,6 +377,32 @@ describe('GET /api/admin/refund-requests', () => {
       expect.objectContaining({ take: 500 })
     )
     // No skip/take at DB level - pagination happens in memory after filtering.
+  })
+
+  it('returns truncated=true and notice when more than 500 candidates', async () => {
+    prismaMock.order.findMany.mockResolvedValue(
+      Array.from({ length: 500 }, (_, index) => buildOrder({ id: `order_${index}` }))
+    )
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.pagination.truncated).toBe(true)
+    expect(body.notice).toBeDefined()
+    expect(body.notice).toContain('500')
+    expect(body.items).toHaveLength(25) // default page size
+  })
+
+  it('returns truncated=false when candidates are fewer than 500', async () => {
+    prismaMock.order.findMany.mockResolvedValue(
+      Array.from({ length: 10 }, (_, index) => buildOrder({ id: `order_${index}` }))
+    )
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.pagination.truncated).toBe(false)
+    expect(body.notice).toBeUndefined()
   })
 
   it('returns 500 when the queue query fails', async () => {

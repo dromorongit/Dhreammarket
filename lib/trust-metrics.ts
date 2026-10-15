@@ -1,3 +1,5 @@
+import { PaymentStatus } from '@prisma/client'
+
 /**
  * Count the cancellations a store is responsible for.
  *
@@ -60,13 +62,19 @@ export function countAttributableVendorCancelledOrders(
  * Includes:
  * - vendorRejected: true
  * - paymentStatus in ['PAID', 'REFUNDED'] (covers both pending and settled refunds)
- * - items.every.product.storeId = storeId (single-store attribution: all items must belong to this store)
+ * - items.some.product.storeId = storeId (the store has at least one item)
+ * - items.every.product.storeId = storeId (all items belong to this store; excludes multi-store orders)
  */
 export function vendorRejectedOrdersWhere(storeId: string) {
   return {
     vendorRejected: true,
-    paymentStatus: { in: ['PAID', 'REFUNDED'] },
+    paymentStatus: { in: ['PAID', 'REFUNDED'] as PaymentStatus[] },
     items: {
+      some: {
+        product: {
+          storeId,
+        },
+      },
       every: {
         product: {
           storeId,

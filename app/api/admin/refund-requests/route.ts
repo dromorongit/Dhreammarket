@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 
 const DEFAULT_PAGE_SIZE = 25
 const MAX_PAGE_SIZE = 100
+const MAX_CANDIDATES = 500
 
 /**
  * Refund rows in these states mean money is already moving or has moved, so
@@ -118,9 +119,9 @@ export async function GET(request: NextRequest) {
       limit = Math.min(parsed, MAX_PAGE_SIZE)
     }
 
-    // Fetch ALL candidate orders (capped at 500) so the "refunded covers payment"
+    // Fetch ALL candidate orders (capped at MAX_CANDIDATES) so the "refunded covers payment"
     // filter can be applied correctly before pagination. Refund requests are
-    // typically few; 500 is a safe ceiling that keeps memory bounded.
+    // typically few; MAX_CANDIDATES is a safe ceiling that keeps memory bounded.
     const prisma = getPrisma()
     const ALL_CANDIDATES = await prisma.order.findMany({
       where: {
@@ -144,8 +145,10 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
-      take: 500,
+      take: MAX_CANDIDATES,
     })
+
+    const isTruncated = ALL_CANDIDATES.length === MAX_CANDIDATES
 
     // Refunded so far per order, in integer pesewas.
     const refundedPesewasByOrder = new Map<string, number>()
@@ -255,7 +258,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       items,
-      pagination: { page, limit, hasMore },
+      pagination: { page, limit, hasMore, truncated: isTruncated },
+      notice: isTruncated
+        ? `Only the first ${MAX_CANDIDATES} refund requests are shown. Refine your filters or use pagination to view more.`
+        : undefined,
     })
   } catch (error) {
     logError('Refund request queue failed', error)
