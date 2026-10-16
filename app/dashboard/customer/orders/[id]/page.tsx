@@ -22,6 +22,8 @@ interface OrderItem {
   availabilityType?: string | null
   expectedArrivalDate?: string | null
   expectedRestockDate?: string | null
+  deliveredAt?: string | null
+  deliveryConfirmedAt?: string | null
   product: {
     id: string
     name: string
@@ -165,6 +167,7 @@ export default function CustomerOrderDetailPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [cancellingOrder, setCancellingOrder] = useState(false)
+  const [confirmingDelivery, setConfirmingDelivery] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (orderId) {
@@ -299,6 +302,38 @@ export default function CustomerOrderDetailPage() {
       alert('Failed to cancel order')
     } finally {
       setCancellingOrder(false)
+    }
+  }
+
+  const handleConfirmDelivery = async (itemId: string) => {
+    setConfirmingDelivery(prev => ({ ...prev, [itemId]: true }))
+    try {
+      const response = await fetch(`/api/orders/${orderId}/items/${itemId}/confirm-delivery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to confirm delivery')
+        return
+      }
+
+      const data = await response.json()
+      // Update the item in the order state
+      setOrder(prev => prev ? {
+        ...prev,
+        items: prev.items.map(item =>
+          item.id === itemId
+            ? { ...item, deliveryConfirmedAt: data.item.deliveryConfirmedAt }
+            : item
+        )
+      } : null)
+    } catch (err) {
+      console.error('Error confirming delivery:', err)
+      alert('Failed to confirm delivery')
+    } finally {
+      setConfirmingDelivery(prev => ({ ...prev, [itemId]: false }))
     }
   }
 
@@ -684,6 +719,27 @@ export default function CustomerOrderDetailPage() {
                         <p className="text-sm text-gray-600">
                           Quantity: {item.quantity} × {formatPrice(item.price)}
                         </p>
+                        {item.deliveredAt && !item.deliveryConfirmedAt && (
+                          <div className="mt-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleConfirmDelivery(item.id)}
+                              disabled={confirmingDelivery[item.id]}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {confirmingDelivery[item.id] ? 'Confirming...' : 'I received this item'}
+                            </Button>
+                          </div>
+                        )}
+                        {item.deliveryConfirmedAt && (
+                          <p className="mt-2 text-sm text-green-700">
+                            Delivery confirmed on {new Date(item.deliveryConfirmedAt).toLocaleDateString('en-GH', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-gray-900">
