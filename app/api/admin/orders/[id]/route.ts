@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/adminAuth'
 import { releaseStock, consumeInventory } from '@/lib/stock-reservation'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
+import { stampOrderItems } from '@/lib/order-delivery-stamps'
 
 const prisma = getPrisma()
 
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const storeGroups = Object.values(itemsByStore)
 
-return NextResponse.json({
+    return NextResponse.json({
       order: {
         id: order.id,
         total: order.total,
@@ -189,9 +190,41 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: updateData,
+    // Determine what to stamp based on the values actually written
+    const newStatus = updateData.status ?? existingOrder.status
+    const statusChanged = updateData.status !== undefined && updateData.status !== existingOrder.status
+
+    const now = new Date()
+    let updatedOrder: typeof existingOrder & { id: string }
+
+    await prisma.$transaction(async (tx) => {
+      // Check if this is a single-store order (all items belong to the same store)
+      const itemsWithStores = await tx.orderItem.findMany({
+        where: { orderId },
+        select: { product: { select: { storeId: true } } },
+      })
+      const storeIds = Array.from(new Set(itemsWithStores.map(i => i.product.storeId).filter(Boolean)))
+      const isSingleStore = storeIds.length === 1
+      const storeId = isSingleStore ? storeIds[0] : null
+
+      updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: updateData,
+      })
+
+      // Admin can stamp shippedAt/deliveredAt for single-store orders
+      if (isSingleStore && storeId) {
+        // Stamp shippedAt when transitioning to SHIPPED
+        if (statusChanged && newStatus === 'SHIPPED') {
+          await stampOrderItems({ orderId, storeId, field: 'shippedAt', now, tx })
+        }
+
+        // Stamp deliveredAt (and shippedAt if still null) when transitioning to DELIVERED
+        if (statusChanged && newStatus === 'DELIVERED') {
+          await stampOrderItems({ orderId, storeId, field: 'deliveredAt', now, tx })
+        }
+        // COMPLETED alone stamps nothing
+      }
     })
 
     // Create audit log for order cancellation
@@ -203,7 +236,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         entityType: 'ORDER',
         entityId: orderId,
         beforeData: { status: existingOrder.status },
-        afterData: { status: updatedOrder.status, reason },
+        afterData: { status: updatedOrder!.status, reason },
         ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
       })
     }
@@ -232,9 +265,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({
       success: true,
       order: {
-        id: updatedOrder.id,
-        status: updatedOrder.status,
-        paymentStatus: updatedOrder.paymentStatus,
+        id: updatedOrder!.id,
+        status: updatedOrder!.status,
+        paymentStatus: updatedOrder!.paymentStatus,
       },
     })
   } catch (error) {

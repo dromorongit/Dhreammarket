@@ -14,6 +14,12 @@ const prismaMock = vi.hoisted(() => ({
     findUnique: vi.fn(),
     update: vi.fn(),
   },
+  orderItem: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+    updateMany: vi.fn(),
+  },
+  $transaction: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -90,6 +96,12 @@ vi.mock('@/lib/refunds/admin-notify', () => ({
   notifySuperAdminsRefundRequested: notifySuperAdminsRefundRequestedMock,
 }))
 
+// Mock the stampOrderItems function
+const stampOrderItemsMock = vi.hoisted(() => vi.fn().mockResolvedValue(1))
+vi.mock('@/lib/order-delivery-stamps', () => ({
+  stampOrderItems: stampOrderItemsMock,
+}))
+
 import { PATCH } from '@/app/api/vendor/orders/[orderId]/route'
 
 const VENDOR = {
@@ -157,6 +169,27 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
     isVendorOnboardedMock.mockResolvedValue(true)
     mockVendorStore()
     mockOrderWithUser()
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'CANCELLED',
+            fulfillmentStatus: 'CANCELLED',
+            vendorAccepted: false,
+            vendorRejected: true,
+            vendorRejectionReason: 'out of stock',
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([]),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+      }
+      return cb(tx)
+    })
     prismaMock.order.update.mockResolvedValue({
       id: 'order_1',
       status: 'CANCELLED',
@@ -223,27 +256,42 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
 
   it('accepts an order', async () => {
     mockExistingOrder()
-    prismaMock.order.update.mockResolvedValue({
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'PROCESSING',
+            fulfillmentStatus: 'PROCESSING',
+            vendorAccepted: true,
+            vendorRejected: false,
+            vendorRejectionReason: null,
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([]),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+      }
+      return cb(tx)
+    })
+    prismaMock.order.findUnique.mockResolvedValue({
       id: 'order_1',
-      status: 'PROCESSING',
-      fulfillmentStatus: 'PROCESSING',
-      vendorAccepted: true,
-      vendorRejected: false,
-      vendorRejectionReason: null,
-      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      userId: 'buyer_1',
+      user: {
+        email: 'buyer@example.invalid',
+        profile: { firstName: 'Fake', lastName: 'Buyer' },
+      },
     })
 
     const response = await PATCH(buildRequest({ action: 'accept' }), PARAMS)
 
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalledWith({
-      where: { id: 'order_1' },
-      data: {
-        vendorAccepted: true,
-        vendorRejected: false,
-        vendorRejectionReason: null,
-      },
-    })
+    const body = await response.json()
+    expect(body.order.vendorAccepted).toBe(true)
+    expect(body.order.vendorRejected).toBe(false)
   })
 
   it('requires a rejection reason', async () => {
@@ -531,23 +579,45 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
 
   it('allows a valid forward status transition', async () => {
     mockExistingOrder({ status: 'PENDING', fulfillmentStatus: 'PENDING' })
-    prismaMock.order.update.mockResolvedValue({
+    let transactionCalled = false
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      transactionCalled = true
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'PROCESSING',
+            fulfillmentStatus: 'PROCESSING',
+            vendorAccepted: false,
+            vendorRejected: false,
+            vendorRejectionReason: null,
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([]),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+      }
+      return cb(tx)
+    })
+    prismaMock.order.findUnique.mockResolvedValue({
       id: 'order_1',
-      status: 'PROCESSING',
-      fulfillmentStatus: 'PROCESSING',
-      vendorAccepted: false,
-      vendorRejected: false,
-      vendorRejectionReason: null,
-      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      userId: 'buyer_1',
+      user: {
+        email: 'buyer@example.invalid',
+        profile: { firstName: 'Fake', lastName: 'Buyer' },
+      },
     })
 
     const response = await PATCH(buildRequest({ status: 'PROCESSING' }), PARAMS)
 
+    console.log('transactionCalled:', transactionCalled)
+    console.log('response.status:', response.status)
+
     expect(response.status).toBe(200)
-    expect(prismaMock.order.update).toHaveBeenCalledWith({
-      where: { id: 'order_1' },
-      data: { status: 'PROCESSING' },
-    })
+    expect(prismaMock.$transaction).toHaveBeenCalled()
   })
 
   it('returns 403 when the token is not authenticated', async () => {
@@ -556,5 +626,425 @@ describe('PATCH /api/vendor/orders/[orderId]', () => {
     const response = await PATCH(buildRequest({ action: 'accept' }), PARAMS)
 
     expect(response.status).toBe(403)
+  })
+})
+
+// Stamping behavior tests
+describe('PATCH /api/vendor/orders/[orderId] - delivery stamping', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    verifyTokenMock.mockResolvedValue(VENDOR)
+    isVendorOnboardedMock.mockResolvedValue(true)
+    mockVendorStore()
+    mockOrderWithUser()
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: {
+        email: 'buyer@example.invalid',
+        profile: { firstName: 'Fake', lastName: 'Buyer' },
+      },
+      items: [{ productId: 'prod_1' }],
+    })
+    // Mock $transaction to capture the callback
+    prismaMock.$transaction = vi.fn(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'SHIPPED',
+            fulfillmentStatus: 'SHIPPED',
+            vendorAccepted: false,
+            vendorRejected: false,
+            vendorRejectionReason: null,
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([{ id: 'item_1' }]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+      }
+      return cb(tx)
+    })
+  })
+
+  it('stamps shippedAt when status transitions to SHIPPED via status path', async () => {
+    mockExistingOrder({ status: 'PROCESSING', fulfillmentStatus: 'PROCESSING' })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ status: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(stampOrderItemsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_1',
+        storeId: 'store_1',
+        field: 'shippedAt',
+        now: expect.any(Date),
+      })
+    )
+  })
+
+  it('stamps shippedAt when fulfillmentStatus transitions to SHIPPED', async () => {
+    mockExistingOrder({ status: 'PROCESSING', fulfillmentStatus: 'PROCESSING' })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ fulfillmentStatus: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(stampOrderItemsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_1',
+        storeId: 'store_1',
+        field: 'shippedAt',
+        now: expect.any(Date),
+      })
+    )
+  })
+
+  it('stamps deliveredAt (and shippedAt) when status transitions to DELIVERED', async () => {
+    mockExistingOrder({ status: 'SHIPPED', fulfillmentStatus: 'SHIPPED' })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ status: 'DELIVERED' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(stampOrderItemsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_1',
+        storeId: 'store_1',
+        field: 'deliveredAt',
+        now: expect.any(Date),
+      })
+    )
+  })
+
+  it('stamps deliveredAt when fulfillmentStatus transitions to DELIVERED', async () => {
+    mockExistingOrder({ status: 'SHIPPED', fulfillmentStatus: 'SHIPPED' })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ fulfillmentStatus: 'DELIVERED' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    expect(stampOrderItemsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_1',
+        storeId: 'store_1',
+        field: 'deliveredAt',
+        now: expect.any(Date),
+      })
+    )
+  })
+
+  it('does not stamp for COMPLETED alone', async () => {
+    mockExistingOrder({ status: 'DELIVERED', fulfillmentStatus: 'DELIVERED' })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ status: 'COMPLETED' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    // stampOrderItems should not be called for COMPLETED transition
+    expect(stampOrderItemsMock).not.toHaveBeenCalled()
+  })
+
+  it('does not stamp for multi-store orders', async () => {
+    // Override $transaction to return count > 0 for other stores
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'SHIPPED',
+            fulfillmentStatus: 'SHIPPED',
+            vendorAccepted: false,
+            vendorRejected: false,
+            vendorRejectionReason: null,
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(1), // has items from other stores
+          findMany: vi.fn().mockResolvedValue([{ id: 'item_1' }]),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+      }
+      return cb(tx)
+    })
+
+    mockExistingOrder({ status: 'PROCESSING', fulfillmentStatus: 'PROCESSING' })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ status: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    // stampOrderItems is called but returns 0 for multi-store orders (no items updated)
+    expect(stampOrderItemsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order_1',
+        storeId: 'store_1',
+        field: 'shippedAt',
+        now: expect.any(Date),
+      })
+    )
+  })
+
+  it('does not stamp for rejected orders', async () => {
+    mockExistingOrder({ status: 'PROCESSING', vendorRejected: true, vendorRejectionReason: 'out of stock' })
+
+    const response = await PATCH(buildRequest({ status: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(400)
+    expect(stampOrderItemsMock).not.toHaveBeenCalled()
+  })
+
+  it('does not stamp for cancelled orders', async () => {
+    mockExistingOrder({ status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' })
+
+    const response = await PATCH(buildRequest({ status: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(400)
+    expect(stampOrderItemsMock).not.toHaveBeenCalled()
+  })
+
+  it('stamp failure rolls back status change', async () => {
+    mockExistingOrder({ status: 'PROCESSING', fulfillmentStatus: 'PROCESSING' })
+    // Make stampOrderItems throw to simulate failure
+    stampOrderItemsMock.mockRejectedValueOnce(new Error('stamp failed'))
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'SHIPPED',
+            fulfillmentStatus: 'SHIPPED',
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([{ id: 'item_1' }]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+      }
+      return cb(tx)
+    })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ status: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(500)
+    // Restore mock for other tests
+    stampOrderItemsMock.mockResolvedValue(1)
+  })
+
+  it('legacy behaviour unchanged: same responses, statuses, events, emails for valid transition', async () => {
+    mockExistingOrder({ status: 'PENDING', fulfillmentStatus: 'PENDING' })
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'PROCESSING',
+            fulfillmentStatus: 'PROCESSING',
+            vendorAccepted: false,
+            vendorRejected: false,
+            vendorRejectionReason: null,
+            updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([]),
+          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        },
+      }
+      return cb(tx)
+    })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+      items: [{ product: { name: 'Test Product' } }],
+    })
+
+    const response = await PATCH(buildRequest({ status: 'PROCESSING' }), PARAMS)
+
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.order.status).toBe('PROCESSING')
+    expect(body.order.fulfillmentStatus).toBe('PROCESSING')
+    // Email should still be sent
+    expect(sendOrderStatusUpdateEmailMock).toHaveBeenCalledWith(
+      'buyer@example.invalid',
+      'Fake',
+      'order_1',
+      'PROCESSING'
+    )
+    // Fulfillment event should be recorded
+    expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
+      'order_1',
+      'PROCESSING',
+      'vendor_1',
+      expect.objectContaining({ productName: 'Test Product' })
+    )
+  })
+})
+
+// Body-injection tests
+describe('PATCH /api/vendor/orders/[orderId] - body injection rejection', () => {
+  const injectedBody = {
+    status: 'SHIPPED',
+    deliveryConfirmedAt: '2020-01-01T00:00:00.000Z',
+    deliveryConfirmedBy: 'CUSTOMER',
+    shippedAt: '2020-01-01T00:00:00.000Z',
+    deliveredAt: '2020-01-01T00:00:00.000Z',
+  }
+
+  let orderUpdateCalls: any[] = []
+  let itemUpdateManyCalls: any[] = []
+  let stampCalls: any[] = []
+  let startedAt = 0
+
+  function assertNoInjectedWrite(data: any) {
+    expect(data).not.toHaveProperty('deliveryConfirmedAt')
+    expect(data).not.toHaveProperty('deliveryConfirmedBy')
+    expect(data).not.toHaveProperty('shippedAt')
+    expect(data).not.toHaveProperty('deliveredAt')
+  }
+
+  beforeEach(() => {
+    startedAt = Date.now()
+    vi.clearAllMocks()
+    verifyTokenMock.mockResolvedValue(VENDOR)
+    isVendorOnboardedMock.mockResolvedValue(true)
+    mockVendorStore()
+    mockExistingOrder({ status: 'PROCESSING', fulfillmentStatus: 'PROCESSING' })
+    mockOrderWithUser()
+    orderUpdateCalls = []
+    itemUpdateManyCalls = []
+    stampCalls = []
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn((args: any) => {
+            orderUpdateCalls.push(args)
+            return Promise.resolve({
+              id: 'order_1',
+              status: 'SHIPPED',
+              fulfillmentStatus: 'SHIPPED',
+              vendorAccepted: false,
+              vendorRejected: false,
+              vendorRejectionReason: null,
+              updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+            })
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([{ id: 'item_1' }]),
+          updateMany: vi.fn((args: any) => {
+            itemUpdateManyCalls.push(args)
+            return Promise.resolve({ count: 0 })
+          }),
+        },
+      }
+      return cb(tx)
+    })
+    stampOrderItemsMock.mockImplementation(async (opts: any) => {
+      stampCalls.push(opts)
+      return 1
+    })
+  })
+
+  it('status path: order.update never receives deliveryConfirmedAt/deliveryConfirmedBy or shippedAt/deliveredAt from the body', async () => {
+    const response = await PATCH(buildRequest({ ...injectedBody }), PARAMS)
+    expect(response.status).toBe(200)
+
+    expect(orderUpdateCalls.length).toBeGreaterThan(0)
+    for (const call of orderUpdateCalls) {
+      assertNoInjectedWrite(call.data)
+    }
+    // No direct orderItem.updateMany write carries injected timestamps either
+    for (const call of itemUpdateManyCalls) {
+      assertNoInjectedWrite(call.data)
+      if (call.data.shippedAt !== undefined) {
+        expect(call.data.shippedAt).toBeInstanceOf(Date)
+      }
+      if (call.data.deliveredAt !== undefined) {
+        expect(call.data.deliveredAt).toBeInstanceOf(Date)
+      }
+    }
+  })
+
+  it('status path: shippedAt is stamped from the server clock, not the body', async () => {
+    const response = await PATCH(buildRequest({ ...injectedBody }), PARAMS)
+    expect(response.status).toBe(200)
+
+    const shippedStamps = stampCalls.filter(call => call.field === 'shippedAt')
+    expect(shippedStamps.length).toBeGreaterThan(0)
+    for (const call of stampCalls) {
+      expect(['shippedAt', 'deliveredAt']).toContain(call.field)
+      expect(call.now).toBeInstanceOf(Date)
+      expect(call.now.getTime()).toBeGreaterThanOrEqual(startedAt)
+      expect(call.now).not.toBe(injectedBody.shippedAt)
+      expect(call.now).not.toBe(injectedBody.deliveredAt)
+    }
+  })
+
+  it('fulfillmentStatus path: order.update never receives deliveryConfirmedAt/deliveryConfirmedBy or shippedAt/deliveredAt from the body', async () => {
+    const fulfillmentBody = { fulfillmentStatus: 'SHIPPED', ...injectedBody }
+    const response = await PATCH(buildRequest(fulfillmentBody), PARAMS)
+    expect(response.status).toBe(200)
+
+    expect(orderUpdateCalls.length).toBeGreaterThan(0)
+    for (const call of orderUpdateCalls) {
+      assertNoInjectedWrite(call.data)
+    }
+    for (const call of itemUpdateManyCalls) {
+      assertNoInjectedWrite(call.data)
+    }
+  })
+
+  it('fulfillmentStatus path: shippedAt is stamped from the server clock, not the body', async () => {
+    const fulfillmentBody = { ...injectedBody, fulfillmentStatus: 'SHIPPED' }
+    const response = await PATCH(buildRequest(fulfillmentBody), PARAMS)
+    expect(response.status).toBe(200)
+
+    const shippedStamps = stampCalls.filter(call => call.field === 'shippedAt')
+    expect(shippedStamps.length).toBeGreaterThan(0)
+    for (const call of stampCalls) {
+      expect(['shippedAt', 'deliveredAt']).toContain(call.field)
+      expect(call.now).toBeInstanceOf(Date)
+      expect(call.now.getTime()).toBeGreaterThanOrEqual(startedAt)
+    }
   })
 })

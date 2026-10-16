@@ -10,6 +10,7 @@ import { createNotification } from '@/lib/notifications'
 import { creditInfluencerOrderCashback, reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { createAuditLog } from '@/lib/audit-log'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
+import { stampOrderItems } from '@/lib/order-delivery-stamps'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,7 +63,7 @@ export async function GET(
 
     const productIds = store.products.map((p: { id: string }) => p.id)
 
-// Fetch the order ensuring it contains vendor's products and is paid
+    // Fetch the order ensuring it contains vendor's products and is paid
     const order = await getPrisma().order.findFirst({
       where: {
         id: orderId,
@@ -433,9 +434,34 @@ export async function PATCH(
       updateData.fulfillmentStatus = fulfillmentStatus
     }
 
-    const updatedOrder = await getPrisma().order.update({
-      where: { id: orderId },
-      data: updateData,
+    const prisma = getPrisma()
+    const now = new Date()
+    const storeId = store.id
+
+    // Determine what to stamp based on the values actually written
+    const newStatus = updateData.status ?? existingOrder.status
+    const newFulfillmentStatus = updateData.fulfillmentStatus ?? existingOrder.fulfillmentStatus
+    const statusChanged = updateData.status !== undefined && updateData.status !== existingOrder.status
+    const fulfillmentStatusChanged = updateData.fulfillmentStatus !== undefined && updateData.fulfillmentStatus !== existingOrder.fulfillmentStatus
+
+    let updatedOrder: typeof existingOrder
+
+    await prisma.$transaction(async (tx) => {
+      updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: updateData,
+      })
+
+      // Stamp shippedAt when transitioning to SHIPPED via either path
+      if ((statusChanged && newStatus === 'SHIPPED') || (fulfillmentStatusChanged && newFulfillmentStatus === 'SHIPPED')) {
+        await stampOrderItems({ orderId, storeId, field: 'shippedAt', now, tx })
+      }
+
+      // Stamp deliveredAt (and shippedAt if still null) when transitioning to DELIVERED via either path
+      if ((statusChanged && newStatus === 'DELIVERED') || (fulfillmentStatusChanged && newFulfillmentStatus === 'DELIVERED')) {
+        await stampOrderItems({ orderId, storeId, field: 'deliveredAt', now, tx })
+      }
+      // COMPLETED alone stamps nothing (but may have already stamped deliveredAt via transition)
     })
 
     if (isConsumptionStatus && existingOrder.orderType === 'NORMAL') {
@@ -509,7 +535,7 @@ export async function PATCH(
 
     if (orderWithUser?.user) {
       const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
-      const statusToUpdate = status || updatedOrder.status
+      const statusToUpdate = status || updatedOrder!.status
       if (await canSendCustomerEmail(orderWithUser.userId)) {
         sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, statusToUpdate).catch(err => {
           console.error('Failed to send order status update email:', err)
@@ -537,13 +563,13 @@ export async function PATCH(
 
     return NextResponse.json({
       order: {
-        id: updatedOrder.id,
-        status: updatedOrder.status,
-        fulfillmentStatus: updatedOrder.fulfillmentStatus,
-        vendorAccepted: updatedOrder.vendorAccepted,
-        vendorRejected: updatedOrder.vendorRejected,
-        vendorRejectionReason: updatedOrder.vendorRejectionReason,
-        updatedAt: updatedOrder.updatedAt,
+        id: updatedOrder!.id,
+        status: updatedOrder!.status,
+        fulfillmentStatus: updatedOrder!.fulfillmentStatus,
+        vendorAccepted: updatedOrder!.vendorAccepted,
+        vendorRejected: updatedOrder!.vendorRejected,
+        vendorRejectionReason: updatedOrder!.vendorRejectionReason,
+        updatedAt: updatedOrder!.updatedAt,
       },
     })
   } catch (error) {
