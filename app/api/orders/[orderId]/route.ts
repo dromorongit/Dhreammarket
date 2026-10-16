@@ -84,9 +84,17 @@ export async function GET(
       )
     }
 
+    // Include delivery timestamps for customer's own items only
+    const itemsWithDelivery = order.items.map(item => ({
+      ...item,
+      deliveredAt: item.deliveredAt,
+      deliveryConfirmedAt: item.deliveryConfirmedAt,
+    }))
+
     return NextResponse.json({
       order: {
         ...order,
+        items: itemsWithDelivery,
         vendorAccepted: order.vendorAccepted,
         vendorRejected: order.vendorRejected,
         vendorRejectionReason: order.vendorRejectionReason,
