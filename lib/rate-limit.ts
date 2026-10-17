@@ -37,6 +37,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'admin-upload': { windowMs: 60 * 60 * 1000, maxRequests: 50 },
   'verification-payment-verify': { windowMs: 60 * 60 * 1000, maxRequests: 10 },
   'vendor-verification-apply': { windowMs: 60 * 60 * 1000, maxRequests: 5 },
+  'manual-orders': { windowMs: 60 * 1000, maxRequests: 30 },
   'admin-users': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-products': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-orders': { windowMs: 60 * 1000, maxRequests: 100 },

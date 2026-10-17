@@ -528,7 +528,7 @@ export interface ManualSaleConsumeResult {
  * Sets Order.inventoryConsumedAt and writes audit log entries.
  */
 export async function consumeManualSaleStock(
-  tx: PrismaClient,
+  tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">,
   items: Array<{ productId: string; productVariantId?: string; quantity: number }>,
   orderId: string
 ): Promise<ManualSaleConsumeResult> {
