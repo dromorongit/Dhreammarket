@@ -10,6 +10,15 @@ export async function creditInfluencerOrderCashback(
 ): Promise<void> {
   const prisma = getPrisma()
 
+  // Manual orders never enter platform money flows (cashback).
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { source: true },
+  })
+  if (order?.source === 'MANUAL') {
+    return
+  }
+
   const existing = await prisma.influencerCashback.findUnique({
     where: { orderId },
   })
@@ -97,6 +106,15 @@ export async function creditInfluencerOrderCashback(
 
 export async function reverseInfluencerOrderCashback(orderId: string): Promise<void> {
   const prisma = getPrisma()
+
+  // Manual orders never earned cashback, so nothing to reverse.
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { source: true },
+  })
+  if (order?.source === 'MANUAL') {
+    return
+  }
 
   const cashbackRecord = await prisma.influencerCashback.findUnique({
     where: { orderId },

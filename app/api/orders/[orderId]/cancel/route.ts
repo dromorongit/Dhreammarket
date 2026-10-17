@@ -5,9 +5,11 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createAuditLog } from '@/lib/audit-log'
 import { releaseStock } from '@/lib/stock-reservation'
+import { restoreManualSaleStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
 import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
+import { isManualOrder } from '@/lib/order-source'
 
 export const dynamic = 'force-dynamic'
 
@@ -173,6 +175,18 @@ export async function PATCH(
       )
     }
 
+    // Manual cancellation is atomic: restore consumed stock via the manual-sale
+    // path. releaseStock is never called for manual orders.
+    if (isManualOrder(existingOrder)) {
+      await getPrisma().$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "orders" WHERE id = ${orderId} FOR UPDATE`
+        const restoreResult = await restoreManualSaleStock(tx, orderId)
+        if (!restoreResult.success) {
+          throw new Error(restoreResult.error || 'Failed to restore stock')
+        }
+      })
+    }
+
     // From here on the cancellation is committed, so side effects run exactly
     // once. A paid order keeps paymentStatus PAID: every paid cancellation
     // creates a refund request for admin approval, and money only ever moves
@@ -217,7 +231,7 @@ export async function PATCH(
         null,
     }).catch(err => console.error('Failed to create cancellation audit log:', err))
 
-    if (existingOrder.orderType === 'NORMAL') {
+    if (existingOrder.orderType === 'NORMAL' && !isManualOrder(existingOrder)) {
       try {
         const release = await releaseStock(orderId, payload.userId)
         if (!release.success) {

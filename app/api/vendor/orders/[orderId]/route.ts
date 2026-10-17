@@ -5,12 +5,13 @@ import { sendOrderStatusUpdateEmail } from '@/lib/email'
 import { canSendCustomerEmail } from '@/lib/notification-preferences'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { recordFulfillmentEvent, FulfillmentEventType } from '@/lib/fulfillment-events'
-import { consumeInventory, releaseStock } from '@/lib/stock-reservation'
+import { consumeInventory, releaseStock, restoreManualSaleStock } from '@/lib/stock-reservation'
 import { createNotification } from '@/lib/notifications'
 import { creditInfluencerOrderCashback, reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { createAuditLog } from '@/lib/audit-log'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 import { stampOrderItems } from '@/lib/order-delivery-stamps'
+import { isManualOrder } from '@/lib/order-source'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,12 +64,15 @@ export async function GET(
 
     const productIds = store.products.map((p: { id: string }) => p.id)
 
-    // Fetch the order ensuring it contains vendor's products and is paid
+    // Fetch the order ensuring it contains vendor's products and is paid or manual
     const order = await getPrisma().order.findFirst({
       where: {
         id: orderId,
         deletedAt: null, // Exclude soft-deleted orders
-        paymentStatus: 'PAID', // Only paid orders
+        OR: [
+          { paymentStatus: 'PAID' },
+          { source: 'MANUAL' },
+        ],
         items: {
           some: {
             productId: { in: productIds },
@@ -194,7 +198,10 @@ export async function PATCH(
       where: {
         id: orderId,
         deletedAt: null,
-        paymentStatus: 'PAID',
+        OR: [
+          { paymentStatus: 'PAID' },
+          { source: 'MANUAL' },
+        ],
         items: {
           some: {
             productId: { in: productIds },
@@ -209,6 +216,8 @@ export async function PATCH(
         { status: 404 }
       )
     }
+
+    const manual = isManualOrder(existingOrder)
 
     const updateData: any = {}
 
@@ -244,13 +253,39 @@ export async function PATCH(
             { status: 400 }
           )
         }
-        updateData.vendorAccepted = false
-        updateData.vendorRejected = true
-        updateData.vendorRejectionReason = rejectionReason.trim()
+        if (!manual) {
+          updateData.vendorAccepted = false
+          updateData.vendorRejected = true
+          updateData.vendorRejectionReason = rejectionReason.trim()
+        }
         updateData.status = 'CANCELLED'
         updateData.fulfillmentStatus = 'CANCELLED'
 
-        if (existingOrder.orderType === 'NORMAL') {
+        let updatedOrder: typeof existingOrder | null = null
+
+        if (manual) {
+          // Manual cancellation is atomic: lock the order row, restore stock,
+          // and set status CANCELLED in a single transaction.
+          try {
+            updatedOrder = await getPrisma().$transaction(async (tx) => {
+              // Lock the order row to prevent concurrent cancels.
+              await tx.$queryRaw`SELECT id FROM "orders" WHERE id = ${orderId} FOR UPDATE`
+              const restoreResult = await restoreManualSaleStock(tx, orderId)
+              if (!restoreResult.success) {
+                throw new Error(restoreResult.error || 'Failed to restore stock')
+              }
+              return tx.order.update({
+                where: { id: orderId },
+                data: updateData,
+              })
+            })
+          } catch (err) {
+            return NextResponse.json(
+              { error: `Failed to cancel manual order: ${err instanceof Error ? err.message : 'Unknown error'}` },
+              { status: 500 }
+            )
+          }
+        } else if (existingOrder.orderType === 'NORMAL') {
           const stockReleaseResult = await releaseStock(orderId, payload.userId, productIds)
           if (!stockReleaseResult.success) {
             return NextResponse.json(
@@ -258,21 +293,53 @@ export async function PATCH(
               { status: 500 }
             )
           }
+          updatedOrder = await getPrisma().order.update({
+            where: { id: orderId },
+            data: updateData,
+          })
+        } else {
+          updatedOrder = await getPrisma().order.update({
+            where: { id: orderId },
+            data: updateData,
+          })
         }
 
-        const updatedOrder = await getPrisma().order.update({
-          where: { id: orderId },
-          data: updateData,
-        })
+        const refundRequested = existingOrder.paymentStatus === 'PAID'
 
-        try {
-          await reverseInfluencerOrderCashback(orderId)
-        } catch (reverseErr) {
-          console.error('Failed to reverse influencer cashback on rejection:', reverseErr)
+        if (!manual) {
+          try {
+            await reverseInfluencerOrderCashback(orderId)
+          } catch (reverseErr) {
+            console.error('Failed to reverse influencer cashback on rejection:', reverseErr)
+          }
+
+          if (refundRequested) {
+            recordFulfillmentEvent(orderId, 'REFUND_REQUESTED', payload.userId).catch(
+              err => console.error('Failed to record refund request event:', err)
+            )
+            createAuditLog({
+              userId: payload.userId,
+              userRole: payload.role,
+              action: 'ORDER_REFUND_REQUESTED',
+              entityType: 'ORDER',
+              entityId: orderId,
+              afterData: {
+                source: 'VENDOR_REJECTION',
+                paymentStatus: existingOrder.paymentStatus,
+                total: existingOrder.total,
+                walletAssisted: (existingOrder.walletAmountApplied ?? 0) > 0,
+              },
+            }).catch(err => console.error('Failed to create refund request audit log:', err))
+
+            notifySuperAdminsRefundRequested({
+              orderId,
+              total: existingOrder.total,
+              storeName: store.name,
+              source: 'VENDOR_REJECTION',
+            }).catch(err => console.error('Failed to notify super admins:', err))
+          }
         }
 
-        // A vendor reject is a cancellation, so record it the same way buyer
-        // and admin cancellations are recorded. Both were missing here.
         recordFulfillmentEvent(orderId, 'CANCELLED', payload.userId, {
           description: rejectionReason.trim() || 'Order rejected by vendor',
         }).catch(err => console.error('Failed to record rejection event:', err))
@@ -289,54 +356,16 @@ export async function PATCH(
           },
           afterData: {
             status: 'CANCELLED',
-            vendorRejected: true,
-            vendorRejectionReason: rejectionReason.trim(),
+            ...(!manual && { vendorRejected: true, vendorRejectionReason: rejectionReason.trim() }),
             paymentStatus: existingOrder.paymentStatus,
           },
         }).catch(err => console.error('Failed to create rejection audit log:', err))
-
-        // A paid order keeps paymentStatus PAID: the refund becomes a
-        // pending-approval request, and money only moves through
-        // POST /api/admin/refunds -> createRefund (SUPER_ADMIN). No Paystack
-        // call is made here, and no Refund row is created, because a row
-        // would consume the item's refundable cap and block the approval.
-        const refundRequested = existingOrder.paymentStatus === 'PAID'
-        if (refundRequested) {
-          recordFulfillmentEvent(orderId, 'REFUND_REQUESTED', payload.userId).catch(
-            err => console.error('Failed to record refund request event:', err)
-          )
-          createAuditLog({
-            userId: payload.userId,
-            userRole: payload.role,
-            action: 'ORDER_REFUND_REQUESTED',
-            entityType: 'ORDER',
-            entityId: orderId,
-            afterData: {
-              source: 'VENDOR_REJECTION',
-              paymentStatus: existingOrder.paymentStatus,
-              total: existingOrder.total,
-              walletAssisted: (existingOrder.walletAmountApplied ?? 0) > 0,
-            },
-          }).catch(err => console.error('Failed to create refund request audit log:', err))
-
-          // Tell the super admins a request is waiting. Best-effort: the
-          // rejection above is already committed, so a failure here must
-          // never undo or block it, and the vendor is told nothing about money.
-          notifySuperAdminsRefundRequested({
-            orderId,
-            total: existingOrder.total,
-            storeName: store.name,
-            source: 'VENDOR_REJECTION',
-          }).catch(err =>
-            console.error('Failed to notify super admins about the refund request:', err)
-          )
-        }
 
         const orderWithUser = await getPrisma().order.findUnique({
           where: { id: orderId },
           include: {
             user: {
-              select: { email: true, profile: true },
+              select: { id: true, email: true, profile: true },
             },
           },
         })
@@ -344,13 +373,13 @@ export async function PATCH(
         if (orderWithUser?.user) {
           const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
           createNotification(
-            orderWithUser.userId,
+            orderWithUser.user.id,
             'ORDER_STATUS_UPDATED',
             'Order Rejected by Vendor',
             `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${refundRequested ? ' A refund has been requested and is pending review.' : ''}`
           ).catch(err => console.error('Failed to create rejection notification:', err))
 
-          if (await canSendCustomerEmail(orderWithUser.userId)) {
+          if (await canSendCustomerEmail(orderWithUser.user.id)) {
             sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, 'CANCELLED').catch(err => {
               console.error('Failed to send rejection email:', err)
             })
@@ -464,7 +493,7 @@ export async function PATCH(
       // COMPLETED alone stamps nothing (but may have already stamped deliveredAt via transition)
     })
 
-    if (isConsumptionStatus && existingOrder.orderType === 'NORMAL') {
+    if (isConsumptionStatus && existingOrder.orderType === 'NORMAL' && !manual) {
       const consumptionResult = await consumeInventory(orderId, payload.userId)
       if (!consumptionResult.success && consumptionResult.error) {
         console.error('Inventory consumption failed:', consumptionResult.error)
@@ -478,15 +507,15 @@ export async function PATCH(
       }
     }
 
-    if (isConsumptionStatus && existingOrder.paymentStatus === 'PAID') {
+    if (isConsumptionStatus && existingOrder.paymentStatus === 'PAID' && !manual) {
       try {
         const orderForCashback = await getPrisma().order.findUnique({
           where: { id: orderId },
-          select: { subtotal: true, userId: true, user: { select: { influencerAttributionCode: true } } },
+          select: { subtotal: true, userId: true, user: { select: { id: true, influencerAttributionCode: true } } },
         })
         if (orderForCashback?.user?.influencerAttributionCode && orderForCashback.subtotal && orderForCashback.subtotal > 0) {
           await creditInfluencerOrderCashback(
-            orderForCashback.userId,
+            orderForCashback.user.id,
             orderId,
             orderForCashback.user.influencerAttributionCode,
             orderForCashback.subtotal
@@ -528,7 +557,7 @@ export async function PATCH(
       where: { id: orderId },
       include: {
         user: {
-          select: { email: true, profile: true },
+          select: { id: true, email: true, profile: true },
         },
       },
     })
@@ -536,7 +565,7 @@ export async function PATCH(
     if (orderWithUser?.user) {
       const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
       const statusToUpdate = status || updatedOrder!.status
-      if (await canSendCustomerEmail(orderWithUser.userId)) {
+      if (await canSendCustomerEmail(orderWithUser.user.id)) {
         sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, statusToUpdate).catch(err => {
           console.error('Failed to send order status update email:', err)
         })
@@ -547,13 +576,13 @@ export async function PATCH(
       if (orderWithUser?.user) {
         const customerName = orderWithUser.user.profile?.firstName || orderWithUser.user.email.split('@')[0] || 'Customer'
         createNotification(
-          orderWithUser.userId,
+          orderWithUser.user.id,
           'ORDER_STATUS_UPDATED',
           'Order Rejected by Vendor',
           `Your order #${orderId.slice(-8).toUpperCase()} was rejected by the vendor.${existingOrder.paymentStatus === 'PAID' ? ' A refund has been requested and is pending review.' : ''}`
         ).catch(err => console.error('Failed to create rejection notification:', err))
 
-        if (await canSendCustomerEmail(orderWithUser.userId)) {
+        if (await canSendCustomerEmail(orderWithUser.user.id)) {
           sendOrderStatusUpdateEmail(orderWithUser.user.email, customerName, orderId, 'CANCELLED').catch(err => {
             console.error('Failed to send rejection email:', err)
           })

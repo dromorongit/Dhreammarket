@@ -275,6 +275,12 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
     include: orderInclude,
   })
 
+  // Manual orders never enter platform money flows (commission, payouts,
+  // refunds, cashback, loyalty). Reject any refund attempt on a MANUAL order.
+  if (order?.source === 'MANUAL') {
+    throw new RefundError(409, 'Manual orders cannot be refunded through platform money flows', 'MANUAL_ORDER_NOT_REFUNDABLE')
+  }
+
   if (!order || !order.payment) {
     throw new RefundError(404, 'Order or payment not found', 'NOT_FOUND')
   }
@@ -703,7 +709,7 @@ async function settleOrderIfFullyRefunded(orderId: string): Promise<boolean> {
   }
 
   try {
-    await recordFulfillmentEvent(orderId, 'REFUNDED', latest.userId, {
+    await recordFulfillmentEvent(orderId, 'REFUNDED', latest.userId ?? undefined, {
       description: 'Order refunded in full via the super admin refund flow.',
     })
   } catch (error) {

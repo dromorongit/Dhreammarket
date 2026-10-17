@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       where: {
         status: 'PENDING',
         paymentStatus: 'PENDING',
+        source: 'ONLINE',
         vendorAccepted: false,
         vendorRejected: false,
         createdAt: { lt: twentyFourHoursAgo },

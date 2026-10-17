@@ -136,10 +136,12 @@ export async function GET(request: NextRequest) {
       return {
         id: order.id,
         orderNumber: order.id.slice(-8).toUpperCase(),
-        customer: order.user.profile?.firstName
-          ? `${order.user.profile.firstName} ${order.user.profile.lastName || ''}`.trim()
-          : order.user.email.split('@')[0],
-        customerEmail: order.user.email,
+        customer: order.user
+          ? (order.user.profile?.firstName
+            ? `${order.user.profile.firstName} ${order.user.profile.lastName || ''}`.trim()
+            : order.user.email.split('@')[0])
+          : order.customerFirstName || 'Customer',
+        customerEmail: order.user?.email || order.customerEmail || null,
         product: item.product.name,
         orderType: order.orderType,
         fulfillmentStatus: order.fulfillmentStatus,

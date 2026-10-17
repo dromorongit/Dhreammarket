@@ -269,12 +269,14 @@ async function sendEventNotification(
   )
 
   try {
-    await createNotification(
-      order.userId,
-      notificationTypeMap[eventType] as any,
-      title,
-      message
-    )
+    if (order.userId) {
+      await createNotification(
+        order.userId,
+        notificationTypeMap[eventType] as any,
+        title,
+        message
+      )
+    }
   } catch (error) {
     console.error('Failed to create notification:', error)
   }

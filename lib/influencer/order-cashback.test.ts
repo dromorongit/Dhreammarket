@@ -95,6 +95,9 @@ function buildMockPrisma() {
     user: {
       findUnique: vi.fn(async ({ where }: any) => users.find((u) => u.id === where.id) || null),
     },
+    order: {
+      findUnique: vi.fn(async ({ where }: any) => ({ id: where.id, source: 'ONLINE' })),
+    },
     influencer: {
       findUnique: vi.fn(async ({ where }: any) => influencers.find((i) => i.referralCode === where.referralCode) || null),
     },

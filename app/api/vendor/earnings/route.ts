@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { SALE_ORDER_FILTER } from '@/lib/order-sale-filter'
+import { ONLINE_SALE_ORDER_FILTER } from '@/lib/order-source'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     const earnings = await getPrisma().orderItem.findMany({
       where: {
         productId: { in: productIds },
-        order: { ...SALE_ORDER_FILTER },
+        order: { ...ONLINE_SALE_ORDER_FILTER },
       },
       select: {
         id: true,

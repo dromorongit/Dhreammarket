@@ -59,7 +59,11 @@ const skip = (page - 1) * limit
     // Build where clause for orders
     const orderWhere: Record<string, unknown> = {
       deletedAt: null, // Exclude soft-deleted orders
-      paymentStatus: 'PAID', // Only show paid orders to vendors
+      // Show paid online orders and all manual (off-platform) orders.
+      OR: [
+        { paymentStatus: 'PAID' },
+        { source: 'MANUAL' },
+      ],
     }
 
     // Filter by order status
@@ -137,15 +141,15 @@ const skip = (page - 1) * limit
          take: limit,
        }),
        getPrisma().order.count({
-         where: {
-           ...orderWhere,
-           items: {
-             some: {
-               productId: { in: productIds },
-             },
-           },
-         },
-       }),
+          where: {
+            ...orderWhere,
+            items: {
+              some: {
+                productId: { in: productIds },
+              },
+            },
+          },
+        }),
      ])
 
     // Calculate vendor totals for each order
@@ -167,6 +171,8 @@ const skip = (page - 1) * limit
       return {
         ...order,
         vendorTotal,
+        source: order.source,
+        channel: order.channel,
         hasOtherVendorItems: otherVendorOrderIds.has(order.id),
       }
     })

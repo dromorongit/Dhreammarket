@@ -1,4 +1,4 @@
-import { PaymentStatus } from '@prisma/client'
+import { OrderSource, PaymentStatus } from '@prisma/client'
 
 /**
  * Count the cancellations a store is responsible for.
@@ -69,6 +69,7 @@ export function vendorRejectedOrdersWhere(storeId: string) {
   return {
     vendorRejected: true,
     paymentStatus: { in: ['PAID', 'REFUNDED'] as PaymentStatus[] },
+    source: OrderSource.ONLINE,
     items: {
       some: {
         product: {

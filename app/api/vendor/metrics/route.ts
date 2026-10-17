@@ -157,6 +157,7 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
           order: {
             status: { in: ['COMPLETED', 'DELIVERED'] },
             paymentStatus: { in: ['PAID'] },
+            source: 'ONLINE',
           }
         },
       select: {

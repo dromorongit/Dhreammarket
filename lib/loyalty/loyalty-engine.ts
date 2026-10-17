@@ -62,6 +62,15 @@ export async function processPurchaseReward(
 ): Promise<void> {
   const prisma = getPrisma()
 
+  // Manual orders never enter platform money/trust flows (loyalty, cashback).
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { source: true },
+  })
+  if (order?.source === 'MANUAL') {
+    return
+  }
+
   const pointsEarned = Math.round(orderTotal * 10)
   const cashbackEarned = await getCashbackForOrder(orderTotal, userId)
 

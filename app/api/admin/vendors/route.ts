@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
               order: {
                 paymentStatus: 'PAID',
                 status: { in: ['COMPLETED', 'DELIVERED'] },
+                source: 'ONLINE',
               },
             },
             select: {

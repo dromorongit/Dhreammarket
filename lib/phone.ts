@@ -118,6 +118,8 @@ export function getWhatsAppLinks(phoneNumbers: string | null | undefined): strin
 export function getTelLink(phone: string | null | undefined): string | null {
   const normalized = normalizeGhanaPhoneNumber(phone)
   if (!normalized) return null
-  
+
   return `tel:${normalized}`
 }
+
+export const normalizeGhanaPhone = normalizeGhanaPhoneNumber

@@ -268,6 +268,27 @@ describe('createRefund', () => {
     expect(mockCreateRefund).not.toHaveBeenCalled()
   })
 
+  it('rejects MANUAL orders with a clear error', async () => {
+    prisma = buildPrisma(baseOrder({ source: 'MANUAL' }))
+    vi.mocked(getPrisma).mockReturnValue(prisma as never)
+
+    await expect(
+      createRefund({
+        orderId: 'order_1',
+        items: [{ orderItemId: 'item_a', amount: 30 }],
+        source: 'MANUAL',
+        reference: 'f0a1b2c3-d4e5-4f67-8899-aabbccddeeff',
+        actor: ADMIN,
+      })
+    ).rejects.toMatchObject({
+      status: 409,
+      message: 'Manual orders cannot be refunded through platform money flows',
+      code: 'MANUAL_ORDER_NOT_REFUNDABLE',
+    })
+
+    expect(mockCreateRefund).not.toHaveBeenCalled()
+  })
+
   it('refuses a wallet-only payment with no Paystack reference', async () => {
     prisma = buildPrisma(
       baseOrder({ payment: { id: 'pay_1', amount: 100, status: 'PAID', paystackRef: null, reference: 'no-ref' } })

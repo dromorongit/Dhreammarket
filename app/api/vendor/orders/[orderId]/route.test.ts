@@ -156,6 +156,7 @@ function mockOrderWithUser() {
     id: 'order_1',
     userId: 'buyer_1',
     user: {
+      id: 'buyer_1',
       email: 'buyer@example.invalid',
       profile: { firstName: 'Fake', lastName: 'Buyer' },
     },

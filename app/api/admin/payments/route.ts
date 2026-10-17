@@ -61,9 +61,13 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
-    // Calculate total revenue from paid payments using aggregation
+    // Calculate total revenue from paid payments using aggregation.
+    // Manual orders never enter platform money flows, so restrict to ONLINE orders.
     const totalRevenueResult = await prisma.payment.aggregate({
-      where: { status: 'PAID' },
+      where: {
+        status: 'PAID',
+        order: { source: 'ONLINE' },
+      },
       _sum: { amount: true },
     })
 

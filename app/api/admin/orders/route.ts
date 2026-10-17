@@ -129,10 +129,9 @@ return NextResponse.json({
         ))
         
         // Get customer name with fallback hierarchy
-        const customerName = [
-          order.user.profile?.firstName,
-          order.user.profile?.lastName,
-        ].filter(Boolean).join(' ') || order.user.email
+        const customerName = order.user
+          ? [order.user.profile?.firstName, order.user.profile?.lastName].filter(Boolean).join(' ') || order.user.email
+          : order.customerFirstName || order.customerEmail || 'Customer'
         
         // Get vendor contact from first item's store
         const vendorContact = order.items[0]?.product?.store?.mainPhoneNumber || null

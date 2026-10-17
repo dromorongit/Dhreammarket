@@ -169,6 +169,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         where: {
           paymentStatus: 'PAID',
           status: { in: ['DELIVERED', 'COMPLETED'] },
+          source: 'ONLINE',
           items: {
             some: {
               product: {

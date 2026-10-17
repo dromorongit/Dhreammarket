@@ -198,7 +198,7 @@ export async function POST(
         'New Order Message',
         `You have a new message about order #${orderId.slice(-8).toUpperCase()}`
       )
-    } else if (isVendor) {
+    } else if (isVendor && order.userId) {
       await createNotification(
         order.userId,
         'SUPPORT_TICKET_CREATED',

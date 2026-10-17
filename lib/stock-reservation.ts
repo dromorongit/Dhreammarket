@@ -1,6 +1,7 @@
 import { getPrisma } from '@/lib/prisma'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
+import { PrismaClient } from '@prisma/client'
 
 export interface ReservationItem {
   productId: string
@@ -511,5 +512,224 @@ export async function consumeInventory(
       success: false,
       error: error instanceof Error ? error.message : 'Failed to consume inventory',
     }
+  }
+}
+
+export interface ManualSaleConsumeResult {
+  success: boolean
+  error?: string
+  consumedItems?: Array<{ productId: string; productVariantId?: string; quantity: number; timestamp: Date }>
+}
+
+/**
+ * Consume stock for a vendor-recorded manual (off-platform) order.
+ * Reuses the SELECT ... FOR UPDATE pattern from consumeInventory.
+ * Manual orders never backorder: if any line is short, the whole sale is rejected.
+ * Sets Order.inventoryConsumedAt and writes audit log entries.
+ */
+export async function consumeManualSaleStock(
+  tx: PrismaClient,
+  items: Array<{ productId: string; productVariantId?: string; quantity: number }>,
+  orderId: string
+): Promise<ManualSaleConsumeResult> {
+  const timestamp = new Date()
+  const consumedItems: Array<{ productId: string; productVariantId?: string; quantity: number; timestamp: Date }> = []
+  const beforeProductData: Array<{ productId: string; stock: number; reservedQuantity: number }> = []
+  const beforeVariantData: Array<{ productVariantId: string; stock: number; reservedQuantity: number } | null> = []
+
+  try {
+    // Phase 1: validate stock for all items (all-or-nothing, no backorders)
+    for (const item of items) {
+      const productResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+        SELECT stock, "reservedQuantity" FROM products WHERE id = ${item.productId} FOR UPDATE
+      `
+      const product = productResult[0]
+      if (!product) {
+        throw new Error(`Product ${item.productId} not found`)
+      }
+      const available = product.stock - product.reservedQuantity
+      if (available < item.quantity) {
+        throw new Error(
+          `Insufficient stock for product ${item.productId}. Available: ${available}, Required: ${item.quantity}`
+        )
+      }
+      beforeProductData.push({ productId: item.productId, stock: product.stock, reservedQuantity: product.reservedQuantity })
+
+      if (item.productVariantId) {
+        const variantResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+          SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
+        `
+        const variant = variantResult[0]
+        if (!variant) {
+          throw new Error(`Variant ${item.productVariantId} not found`)
+        }
+        const variantAvailable = variant.stock - variant.reservedQuantity
+        if (variantAvailable < item.quantity) {
+          throw new Error(
+            `Insufficient variant stock for variant ${item.productVariantId}. Available: ${variantAvailable}, Required: ${item.quantity}`
+          )
+        }
+        beforeVariantData.push({ productVariantId: item.productVariantId, stock: variant.stock, reservedQuantity: variant.reservedQuantity })
+      } else {
+        beforeVariantData.push(null)
+      }
+    }
+
+    // Phase 2: all items have sufficient stock — decrement atomically
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      const pData = beforeProductData[i]
+      const vData = beforeVariantData[i]
+      const newStock = pData.stock - item.quantity
+      const newReserved = pData.reservedQuantity - item.quantity
+
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: newStock, reservedQuantity: newReserved },
+      })
+
+      if (item.productVariantId && vData) {
+        await tx.productVariant.update({
+          where: { id: item.productVariantId },
+          data: {
+            stock: vData.stock - item.quantity,
+            reservedQuantity: vData.reservedQuantity - item.quantity,
+          },
+        })
+      }
+
+      consumedItems.push({
+        productId: item.productId,
+        productVariantId: item.productVariantId || undefined,
+        quantity: item.quantity,
+        timestamp,
+      })
+    }
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: { inventoryConsumedAt: timestamp },
+    })
+
+    for (let i = 0; i < consumedItems.length; i++) {
+      const consumedItem = consumedItems[i]
+      const pData = beforeProductData[i]
+      createAuditLog({
+        userId: orderId,
+        userRole: 'SYSTEM',
+        action: 'INVENTORY_CONSUMED',
+        entityType: 'PRODUCT',
+        entityId: consumedItem.productId,
+        beforeData: { stock: pData.stock, reservedQuantity: pData.reservedQuantity },
+        afterData: { stock: pData.stock - consumedItem.quantity, reservedQuantity: pData.reservedQuantity - consumedItem.quantity },
+      }).catch(err => console.error('Failed to create audit log:', err))
+    }
+
+    return { success: true, consumedItems }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to consume manual sale stock' }
+  }
+}
+
+/**
+ * Restore stock for a cancelled manual order. Idempotent: no-op if
+ * inventoryConsumedAt is null (never consumed or already restored).
+ * Increments stock back and writes audit log entries.
+ */
+export async function restoreManualSaleStock(
+  tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$use" | "$extends"> | null,
+  orderId: string
+): Promise<{ success: boolean; error?: string }> {
+  const prisma = tx ?? getPrisma()
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: true,
+            productVariant: true,
+          },
+        },
+      },
+    })
+
+    if (!order) {
+      return { success: false, error: 'Order not found' }
+    }
+
+    // Idempotent: no-op if inventory was never consumed or already restored
+    if (!order.inventoryConsumedAt) {
+      return { success: true }
+    }
+
+    const run = async (t: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$use" | "$extends">) => {
+      for (const item of order.items) {
+        const availabilityType = item.availabilityType || 'IN_STOCK'
+        if (availabilityType !== 'IN_STOCK') {
+          continue
+        }
+
+        const productResult = await t.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+          SELECT stock, "reservedQuantity" FROM products WHERE id = ${item.productId} FOR UPDATE
+        `
+        const product = productResult[0]
+        if (!product) continue
+
+        await t.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: product.stock + item.quantity,
+            reservedQuantity: product.reservedQuantity + item.quantity,
+          },
+        })
+
+        if (item.productVariantId) {
+          const variantResult = await t.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+            SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
+          `
+          const variant = variantResult[0]
+          if (variant) {
+            await t.productVariant.update({
+              where: { id: item.productVariantId },
+              data: {
+                stock: variant.stock + item.quantity,
+                reservedQuantity: variant.reservedQuantity + item.quantity,
+              },
+            })
+          }
+        }
+      }
+
+      await t.order.update({
+        where: { id: orderId },
+        data: { inventoryConsumedAt: null },
+      })
+    }
+
+    if (tx) {
+      await run(tx)
+    } else {
+      await prisma.$transaction(run)
+    }
+
+    for (const item of order.items) {
+      const availabilityType = item.availabilityType || 'IN_STOCK'
+      if (availabilityType !== 'IN_STOCK') continue
+      createAuditLog({
+        userId: orderId,
+        userRole: 'SYSTEM',
+        action: 'STOCK_RELEASED',
+        entityType: 'PRODUCT',
+        entityId: item.productId,
+        beforeData: { restoredQuantity: item.quantity },
+        afterData: { restoredQuantity: item.quantity },
+      }).catch(err => console.error('Failed to create audit log:', err))
+    }
+
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to restore manual sale stock' }
   }
 }

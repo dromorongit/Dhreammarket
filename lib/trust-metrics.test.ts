@@ -8,6 +8,7 @@ describe('vendorRejectedOrdersWhere', () => {
     expect(where).toEqual({
       vendorRejected: true,
       paymentStatus: { in: ['PAID', 'REFUNDED'] },
+      source: 'ONLINE',
       items: {
         some: {
           product: {

@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/adminAuth'
 import { getAdminDemandAnalytics } from '@/lib/demand-forecast'
 import { PerformanceLogger } from '@/lib/performance'
 import { SALE_ORDER_FILTER } from '@/lib/order-sale-filter'
+import { ONLINE_SALE_ORDER_FILTER } from '@/lib/order-source'
 
 export const dynamic = 'force-dynamic'
 
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
       // sale filter is the PRISMA equivalent, kept here for the same reason:
       // one definition of a sale across every reader.
       prisma.order.aggregate({
-        where: { ...SALE_ORDER_FILTER },
+        where: { ...ONLINE_SALE_ORDER_FILTER },
         _sum: {
           total: true,
           grossAmount: true,

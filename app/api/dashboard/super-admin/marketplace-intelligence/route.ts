@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/adminAuth'
 import { SALE_ORDER_FILTER } from '@/lib/order-sale-filter'
+import { ONLINE_SALE_ORDER_FILTER } from '@/lib/order-source'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       // GMV counted every PAID order, including cancelled ones whose refund
       // was still pending. The shared sale filter excludes them.
       getPrisma().order.aggregate({
-        where: { createdAt: { gte: today }, ...SALE_ORDER_FILTER },
+        where: { createdAt: { gte: today }, ...ONLINE_SALE_ORDER_FILTER },
         _sum: { total: true },
       }),
       getPrisma().order.count({ where: { createdAt: { gte: today } } }),

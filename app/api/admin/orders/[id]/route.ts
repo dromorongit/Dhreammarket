@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
-import { releaseStock, consumeInventory } from '@/lib/stock-reservation'
+import { releaseStock, consumeInventory, restoreManualSaleStock } from '@/lib/stock-reservation'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 import { stampOrderItems } from '@/lib/order-delivery-stamps'
+import { isManualOrder } from '@/lib/order-source'
 
 const prisma = getPrisma()
 
@@ -68,10 +69,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Extract customer name with fallback hierarchy
-    const customerName = [
-      order.user.profile?.firstName,
-      order.user.profile?.lastName,
-    ].filter(Boolean).join(' ') || order.user.email
+    const customerName = order.user
+      ? [order.user.profile?.firstName, order.user.profile?.lastName].filter(Boolean).join(' ') || order.user.email
+      : order.customerFirstName || order.customerEmail || 'Customer'
 
     // Group items by store for easier display
     const itemsByStore = order.items.reduce((acc, item) => {
@@ -112,8 +112,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
         customerName,
-        customerEmail: order.user.email,
-        customerPhone: order.user.profile?.phone || null,
+        customerEmail: order.user?.email || order.customerEmail || null,
+        customerPhone: order.user?.profile?.phone || order.customerPhone || null,
         customerAddress: order.customerAddress,
         customerCity: order.customerCity,
         customerRegion: order.customerRegion,
@@ -164,7 +164,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     // Get existing order for before data
     const existingOrder = await prisma.order.findUnique({
       where: { id: orderId, deletedAt: null },
-      select: { orderType: true, status: true, paymentStatus: true },
+      select: { orderType: true, status: true, paymentStatus: true, source: true },
     })
 
     if (!existingOrder) {
@@ -229,6 +229,21 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     // Create audit log for order cancellation
     if (status === 'CANCELLED') {
+      // Manual order cancellation: restore consumed stock atomically.
+      if (isManualOrder(existingOrder)) {
+        try {
+          await getPrisma().$transaction(async (tx) => {
+            await tx.$queryRaw`SELECT id FROM "orders" WHERE id = ${orderId} FOR UPDATE`
+            const restoreResult = await restoreManualSaleStock(tx, orderId)
+            if (!restoreResult.success) {
+              throw new Error(restoreResult.error || 'Failed to restore stock')
+            }
+          })
+        } catch (restoreErr) {
+          console.error('Failed to restore stock for cancelled manual order:', restoreErr)
+        }
+      }
+
       await createAuditLog({
         userId: adminUser.userId,
         userRole: adminUser.role,
