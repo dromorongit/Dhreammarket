@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge, type TokenPayload } from './lib/auth-edge'
+import { rateLimit } from './lib/rate-limit'
 
 const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
 
@@ -11,6 +12,8 @@ const protectedRoutes: Record<string, string[]> = {
   '/dashboard/vendor': ['VENDOR', 'ADMIN', 'SUPER_ADMIN'],
   '/dashboard/customer': ['CUSTOMER', 'VENDOR', 'ADMIN', 'SUPER_ADMIN'],
 }
+
+const receiptRateLimit = rateLimit('receipt-page')
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -41,6 +44,21 @@ export async function middleware(request: NextRequest) {
         headers: requestHeaders,
       },
     })
+  }
+
+  // Public receipt routes: rate limited, no-store, no auth required.
+  if (pathname.startsWith('/receipt/')) {
+    const rateLimitResult = receiptRateLimit(request)
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response
+    }
+    const response = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+    response.headers.set('Cache-Control', 'no-store')
+    return response
   }
 
   if (!matchedRoute) {
@@ -87,5 +105,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/api/:path*'],
+  matcher: ['/dashboard/:path*', '/api/:path*', '/receipt/:path*'],
 }
