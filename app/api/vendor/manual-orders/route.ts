@@ -249,16 +249,20 @@ export async function POST(request: NextRequest) {
 
     const totals = computeOrderTotals(resolvedLines, shippingPesewas)
 
+    // Namespace the idempotency key so it cannot collide with online checkout
+    // keys or keys from other vendors: manual:${store.id}:${idempotencyKey}.
+    const namespacedIdempotencyKey = `manual:${store.id}:${idempotencyKeyValue}`
+
     const prisma = getPrisma()
     const now = new Date()
     const receiptToken = generateReceiptToken()
 
     const result = await prisma.$transaction(async (tx) => {
-      // Advisory lock on the idempotency key, held for the whole transaction.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${idempotencyKeyValue})::bigint)`
+      // Advisory lock on the namespaced idempotency key, held for the whole transaction.
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${namespacedIdempotencyKey})::bigint)`
 
       const existing = await tx.order.findFirst({
-        where: { idempotencyKey: idempotencyKeyValue },
+        where: { idempotencyKey: namespacedIdempotencyKey },
         include: {
           items: {
             include: { product: { select: { id: true, name: true, storeId: true } } },
@@ -318,7 +322,7 @@ export async function POST(request: NextRequest) {
           platformCommission: null,
           vendorEarnings: null,
           commissionRate: null,
-          idempotencyKey: idempotencyKeyValue,
+          idempotencyKey: namespacedIdempotencyKey,
           walletAmountApplied: null,
           orderType: 'NORMAL',
           tax: null,
