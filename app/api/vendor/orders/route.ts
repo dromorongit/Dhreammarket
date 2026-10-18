@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { buildReceiptUrl, orderDisplayNumber } from '@/lib/manual-orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,6 +54,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || ''
     const orderType = searchParams.get('orderType') || ''
     const fulfillmentStatus = searchParams.get('fulfillmentStatus') || ''
+    const source = searchParams.get('source') || ''
+    const unpaid = searchParams.get('unpaid') === 'true'
 
 const skip = (page - 1) * limit
 
@@ -69,6 +72,16 @@ const skip = (page - 1) * limit
     // Filter by order status
     if (status && status !== 'all') {
       orderWhere.status = status
+    }
+
+    // Filter by order source (ONLINE / MANUAL)
+    if (source && source !== 'all') {
+      orderWhere.source = source
+    }
+
+    // Filter by unpaid only
+    if (unpaid) {
+      orderWhere.paymentStatus = { not: 'PAID' }
     }
 
     // Filter by order type (PREORDER/BACKORDER)
@@ -168,13 +181,40 @@ const skip = (page - 1) * limit
         (sum, item) => sum + (item.price * item.quantity),
         0
       )
-      return {
-        ...order,
+      // Manual-only fields should not appear on ONLINE rows.
+      const {
+        customerFirstName: _cfn,
+        customerLastName: _cln,
+        customerPhone: _cpf,
+        paymentMethod: _pm,
+        receiptToken: _rt,
+        ...orderRest
+      } = order
+      const baseRow = {
+        ...orderRest,
         vendorTotal,
         source: order.source,
         channel: order.channel,
         hasOtherVendorItems: otherVendorOrderIds.has(order.id),
       }
+
+      // Additive fields for MANUAL orders only — ONLINE rows are unchanged.
+      if (order.source === 'MANUAL') {
+        const customerName = [order.customerFirstName, order.customerLastName]
+          .filter(Boolean)
+          .join(' ')
+        return {
+          ...baseRow,
+          displayNumber: orderDisplayNumber(order.id),
+          customerName,
+          customerPhone: order.customerPhone || null,
+          paymentMethod: order.paymentMethod || null,
+          receiptToken: order.receiptToken || null,
+          receiptUrl: order.receiptToken ? buildReceiptUrl(order.receiptToken) : null,
+        }
+      }
+
+      return baseRow
     })
 
     const totalPages = Math.ceil(total / limit)
