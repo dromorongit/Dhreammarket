@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyTokenEdge, type TokenPayload } from './lib/auth-edge'
-import { rateLimit } from './lib/rate-limit'
+import { checkEdgeRateLimit, getEdgeClientIP } from './lib/edge-rate-limit'
 
 const AUTH_ROUTES = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password']
 
@@ -13,7 +13,7 @@ const protectedRoutes: Record<string, string[]> = {
   '/dashboard/customer': ['CUSTOMER', 'VENDOR', 'ADMIN', 'SUPER_ADMIN'],
 }
 
-const receiptRateLimit = rateLimit('receipt-page')
+const RECEIPT_RATE_LIMIT = { windowMs: 60 * 1000, maxRequests: 60 }
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -48,9 +48,21 @@ export async function middleware(request: NextRequest) {
 
   // Public receipt routes: rate limited, no-store, no auth required.
   if (pathname.startsWith('/receipt/')) {
-    const rateLimitResult = receiptRateLimit(request)
+    const clientIP = getEdgeClientIP(request.headers)
+    const rateLimitResult = checkEdgeRateLimit(`${clientIP}:receipt-page`, RECEIPT_RATE_LIMIT)
     if (!rateLimitResult.success) {
-      return rateLimitResult.response
+      const response = NextResponse.json(
+        {
+          error: 'Too many requests. Please try again later.',
+          resetTime: new Date(rateLimitResult.resetTime!).toISOString(),
+        },
+        { status: 429 }
+      )
+      response.headers.set('X-RateLimit-Limit', String(rateLimitResult.limit))
+      response.headers.set('X-RateLimit-Remaining', '0')
+      response.headers.set('X-RateLimit-Reset', String(rateLimitResult.resetTime))
+      response.headers.set('Retry-After', String(Math.ceil((rateLimitResult.resetTime! - Date.now()) / 1000)))
+      return response
     }
     const response = NextResponse.next({
       request: {
