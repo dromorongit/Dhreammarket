@@ -863,6 +863,42 @@ describe('PATCH /api/vendor/orders/[orderId] - delivery stamping', () => {
     const response = await PATCH(buildRequest({ status: 'SHIPPED' }), PARAMS)
 
     expect(response.status).toBe(500)
+    await expect(prismaMock.$transaction.mock.results[0].value).rejects.toThrow()
+    // Restore mock for other tests
+    stampOrderItemsMock.mockResolvedValue(1)
+  })
+
+  it('stamp failure rolls back fulfillmentStatus change', async () => {
+    mockExistingOrder({ status: 'PROCESSING', fulfillmentStatus: 'PROCESSING' })
+    // Make stampOrderItems throw to simulate failure
+    stampOrderItemsMock.mockRejectedValueOnce(new Error('stamp failed'))
+    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+      const tx = {
+        order: {
+          update: vi.fn().mockResolvedValue({
+            id: 'order_1',
+            status: 'PROCESSING',
+            fulfillmentStatus: 'SHIPPED',
+          }),
+        },
+        orderItem: {
+          count: vi.fn().mockResolvedValue(0),
+          findMany: vi.fn().mockResolvedValue([{ id: 'item_1' }]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        },
+      }
+      return cb(tx)
+    })
+    prismaMock.order.findUnique.mockResolvedValue({
+      id: 'order_1',
+      userId: 'buyer_1',
+      user: { email: 'buyer@example.invalid', profile: { firstName: 'Fake', lastName: 'Buyer' } },
+    })
+
+    const response = await PATCH(buildRequest({ fulfillmentStatus: 'SHIPPED' }), PARAMS)
+
+    expect(response.status).toBe(500)
+    await expect(prismaMock.$transaction.mock.results[0].value).rejects.toThrow()
     // Restore mock for other tests
     stampOrderItemsMock.mockResolvedValue(1)
   })

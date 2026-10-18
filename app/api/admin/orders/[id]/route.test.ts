@@ -408,27 +408,24 @@ describe('PATCH /api/admin/orders/[id] - delivery stamping', () => {
       status: 'PROCESSING',
       paymentStatus: 'PAID',
     })
+    stampOrderItemsMock.mockRejectedValueOnce(new Error('stamp failed'))
     const failingTx = {
       order: {
         update: vi.fn().mockResolvedValue({ id: 'order_1', status: 'SHIPPED', paymentStatus: 'PAID' }),
       },
       orderItem: {
         count: vi.fn().mockResolvedValue(0),
-        findMany: vi.fn().mockRejectedValue(new Error('stamp failed')),
+        findMany: vi.fn().mockResolvedValue([{ product: { storeId: 'store_1' } }]),
         updateMany: vi.fn(),
       },
     }
-    prismaMock.$transaction = vi.fn(async (cb: any) => {
-      try {
-        return await cb(failingTx)
-      } catch (e) {
-        throw e
-      }
-    })
+    prismaMock.$transaction = vi.fn(async (cb: any) => cb(failingTx))
 
     const response = await PATCH(buildRequest({ status: 'SHIPPED' }), { params: { id: 'order_1' } })
 
     expect(response.status).toBe(500)
+    await expect(prismaMock.$transaction.mock.results[0].value).rejects.toThrow()
+    stampOrderItemsMock.mockResolvedValue(1)
   })
 })
 
