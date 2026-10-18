@@ -241,7 +241,7 @@ describe('POST /api/vendor/manual-orders', () => {
           commissionRate: null,
           walletAmountApplied: null,
           orderType: 'NORMAL',
-          idempotencyKey: 'key_1',
+          idempotencyKey: 'manual:store_1:key_1',
         }),
       })
     )
@@ -463,6 +463,36 @@ describe('POST /api/vendor/manual-orders', () => {
       expect(call[0].where.storeId_phone.phone).toBe('+233242222222')
       expect(call[0].where.storeId_phone.storeId).toBe('store_1')
     }
+  })
+
+  it('vendor B replaying vendor A key creates its own order and never receives A data', async () => {
+    const tx = mockTx()
+    // With namespacing, vendor B's key manual:store_2:key_1 does NOT match
+    // vendor A's manual:store_1:key_1, so findFirst returns null.
+    tx.order.findFirst.mockResolvedValue(null)
+
+    // Vendor B (store_2) sends the same raw key 'key_1'
+    mockStore({ id: 'store_2', userId: 'vendor_2', name: 'Store B' })
+    prismaMock.product.findMany.mockResolvedValue([{ ...productList[0], storeId: 'store_2' }])
+
+    const response = await POST(buildRequest(BASE_BODY))
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    expect(body.order.id).not.toBe('order_a')
+    expect(tx.order.create).toHaveBeenCalled()
+    expect(tx.order.create.mock.calls[0]?.[0].data.idempotencyKey).toBe('manual:store_2:key_1')
+  })
+
+  it('a key equal to an existing ONLINE order key does not return that order', async () => {
+    const tx = mockTx()
+    // With namespacing, manual:store_1:key_online_1 does NOT match an online
+    // order's key (no manual: prefix), so findFirst returns null.
+    tx.order.findFirst.mockResolvedValue(null)
+
+    const response = await POST(buildRequest({ ...BASE_BODY, idempotencyKey: 'key_online_1' }))
+    expect(response.status).toBe(201)
+    expect(tx.order.create).toHaveBeenCalled()
+    expect(tx.order.create.mock.calls[0]?.[0].data.idempotencyKey).toBe('manual:store_1:key_online_1')
   })
 })
 
