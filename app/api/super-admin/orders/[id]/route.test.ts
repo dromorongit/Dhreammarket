@@ -89,6 +89,7 @@ describe('DELETE /api/super-admin/orders/[id]', () => {
     requireSuperAdminMock.mockResolvedValue(SUPER_ADMIN)
     prismaMock.$transaction.mockImplementation(async (fn: any) => {
       const tx = {
+        payment: { deleteMany: prismaMock.payment.deleteMany },
         orderItem: { deleteMany: prismaMock.orderItem.deleteMany },
         productReview: { deleteMany: prismaMock.productReview.deleteMany },
         vendorReview: { deleteMany: prismaMock.vendorReview.deleteMany },
@@ -98,8 +99,9 @@ describe('DELETE /api/super-admin/orders/[id]', () => {
     })
   })
 
-  it('deletes an unpaid order, audits the deletion, and does not touch payments', async () => {
+  it('deletes an unpaid order, audits the deletion, and deletes only non-paid payments', async () => {
     prismaMock.order.findUnique.mockResolvedValue(anUnpaidOrder())
+    prismaMock.payment.deleteMany.mockResolvedValue({ count: 1 })
     prismaMock.orderItem.deleteMany.mockResolvedValue({ count: 1 })
     prismaMock.productReview.deleteMany.mockResolvedValue({ count: 0 })
     prismaMock.vendorReview.deleteMany.mockResolvedValue({ count: 0 })
@@ -110,11 +112,13 @@ describe('DELETE /api/super-admin/orders/[id]', () => {
     const body = await response.json()
     expect(body.success).toBe(true)
 
+    expect(prismaMock.payment.deleteMany).toHaveBeenCalledWith({
+      where: { orderId: ORDER_ID, status: { in: ['PENDING', 'FAILED', 'CANCELLED'] } },
+    })
     expect(prismaMock.orderItem.deleteMany).toHaveBeenCalledWith({ where: { orderId: ORDER_ID } })
     expect(prismaMock.productReview.deleteMany).toHaveBeenCalledWith({ where: { orderId: ORDER_ID } })
     expect(prismaMock.vendorReview.deleteMany).toHaveBeenCalledWith({ where: { orderId: ORDER_ID } })
     expect(prismaMock.order.delete).toHaveBeenCalledWith({ where: { id: ORDER_ID } })
-    expect(prismaMock.payment.deleteMany).not.toHaveBeenCalled()
 
     expect(createAuditLogMock).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -110,6 +110,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     await prisma.$transaction(async (tx) => {
+      await tx.payment.deleteMany({ where: { orderId, status: { in: ['PENDING', 'FAILED', 'CANCELLED'] } } })
       await tx.orderItem.deleteMany({ where: { orderId } })
       await tx.productReview.deleteMany({ where: { orderId } })
       await tx.vendorReview.deleteMany({ where: { orderId } })
