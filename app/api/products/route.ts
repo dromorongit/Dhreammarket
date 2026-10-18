@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     const minPrice = url.searchParams.get('minPrice')
     const maxPrice = url.searchParams.get('maxPrice')
     const availabilityType = url.searchParams.get('availabilityType')
+    const search = (url.searchParams.get('search') || '').trim()
 
     if (createdAtMin && isNaN(new Date(createdAtMin).getTime())) {
       return NextResponse.json({ error: 'Invalid createdAtMin date format' }, { status: 400 })
@@ -77,8 +78,16 @@ export async function GET(request: NextRequest) {
         return response
       }
 
+      const vendorWhere: any = { storeId: store.id }
+      if (availabilityType) {
+        vendorWhere.availabilityType = availabilityType
+      }
+      if (search) {
+        vendorWhere.name = { contains: search, mode: 'insensitive' }
+      }
+
       const vendorProducts = await getPrisma().product.findMany({
-        where: { storeId: store.id },
+        where: vendorWhere,
         skip,
         take: limit,
         orderBy: {
@@ -99,11 +108,22 @@ export async function GET(request: NextRequest) {
           lowStockThreshold: true,
           category: { select: { id: true, name: true, slug: true } },
           images: { take: 1, select: { id: true, url: true, alt: true } },
+          variants: {
+            select: {
+              id: true,
+              color: true,
+              size: true,
+              age: true,
+              price: true,
+              stock: true,
+              reservedQuantity: true,
+            },
+          },
           _count: { select: { variants: true } },
         },
       })
 
-      const vendorTotal = await getPrisma().product.count({ where: { storeId: store.id } })
+      const vendorTotal = await getPrisma().product.count({ where: vendorWhere })
       perf.markPrismaEnd(prismaPerfStart)
 
       const productsWithStock = vendorProducts.map((p) => ({
