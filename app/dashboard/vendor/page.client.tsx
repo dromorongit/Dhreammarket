@@ -287,16 +287,36 @@ export default function VendorDashboardPage() {
                     <span className="text-sm font-medium text-slate-700">View Bookings</span>
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
-                  <Link href="/dashboard/vendor/advertising">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">Advertising</span>
-                  </Link>
-                </Button>
+                  <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                    <Link href="/dashboard/vendor/advertising">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">Advertising</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                    <Link href="/dashboard/vendor/quick-sale">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">Quick Sale</span>
+                    </Link>
+                  </Button>
+                  <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                    <Link href="/dashboard/vendor/customers">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-slate-700">Customers</span>
+                    </Link>
+                  </Button>
                  <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
                    <Link href="/dashboard/vendor/subscription">
                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -323,7 +343,7 @@ export default function VendorDashboardPage() {
 
         <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-0 sm:px-0 mb-8 pb-2">
           <div className="flex gap-2 whitespace-nowrap flex-nowrap touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-             {['overview', 'analytics', 'products', 'services', 'coupons', 'followers', 'advertising'].map((tab) => (
+             {['overview', 'analytics', 'products', 'services', 'coupons', 'followers', 'advertising', 'quick-sale', 'customers'].map((tab) => (
                <button
                  key={tab}
                  onClick={() => {
