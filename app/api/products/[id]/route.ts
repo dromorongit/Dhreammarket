@@ -5,6 +5,7 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-allocation-engine'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
+import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
 
 export const runtime = 'nodejs'
 export const revalidate = 60
@@ -204,7 +205,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, lowStockThreshold, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes, isReturnable } = await request.json()
+    const body = await request.json()
+    const { name, description, price, stock, lowStockThreshold, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, costPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes, isReturnable } = body
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -277,6 +279,39 @@ export async function PUT(
       const dealsPriceNum = parseFloat(dealsPrice)
       if (isNaN(dealsPriceNum) || dealsPriceNum < 0) {
         return NextResponse.json({ error: 'Invalid deals price' }, { status: 400 })
+      }
+    }
+
+    // Cost price: only written when the caller sends the key, so an older
+    // client that does not know about costs can never wipe them.
+    const hasCostPrice = Object.prototype.hasOwnProperty.call(body, 'costPrice')
+    let productCostPrice: number | null | undefined = undefined
+    if (hasCostPrice) {
+      const costPriceResult = validateCostPrice(costPrice)
+      if ('error' in costPriceResult) {
+        return NextResponse.json({ error: costPriceResult.error }, { status: 400 })
+      }
+      productCostPrice = costPriceResult.provided ? fromPesewas(costPriceResult.pesewas) : null
+    }
+
+    // Variant cost prices are validated the same way. `undefined` means
+    // "leave this variant's cost alone".
+    const variantCostPrices = new Map<number, number | null | undefined>()
+    if (Array.isArray(variants)) {
+      for (let index = 0; index < variants.length; index += 1) {
+        const variant = variants[index]
+        if (!variant || !Object.prototype.hasOwnProperty.call(variant, 'costPrice')) {
+          variantCostPrices.set(index, undefined)
+          continue
+        }
+        const variantCostResult = validateCostPrice(variant.costPrice)
+        if ('error' in variantCostResult) {
+          return NextResponse.json({ error: variantCostResult.error }, { status: 400 })
+        }
+        variantCostPrices.set(
+          index,
+          variantCostResult.provided ? fromPesewas(variantCostResult.pesewas) : null,
+        )
       }
     }
 
@@ -360,6 +395,7 @@ if (finalAvailabilityType === 'PREORDER') {
         brandId: brandId || null,
         salesPrice: salesPrice ? parseFloat(salesPrice) : null,
         dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+        ...(productCostPrice !== undefined ? { costPrice: productCostPrice } : {}),
         availabilityType: finalAvailabilityType as any,
         expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
         estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays, 10) : null,
@@ -461,7 +497,11 @@ if (finalAvailabilityType === 'PREORDER') {
       }
 
       // Process updates and creates
-      for (const variant of incomingVariants) {
+      for (let variantIndex = 0; variantIndex < incomingVariants.length; variantIndex += 1) {
+        const variant = incomingVariants[variantIndex]
+        const variantCostPrice = variantCostPrices.get(variantIndex)
+        const variantCostData =
+          variantCostPrice === undefined ? {} : { costPrice: variantCostPrice }
         const variantStock = variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock, 10) : 0
 
         if (variant.id) {
@@ -479,6 +519,7 @@ if (finalAvailabilityType === 'PREORDER') {
                price: variant.price !== undefined && variant.price !== null && variant.price !== '' ? parseFloat(variant.price) : null,
                stock: variantStock,
                active: variant.active !== undefined ? variant.active : true,
+               ...variantCostData,
              },
            })
 
@@ -504,6 +545,7 @@ if (finalAvailabilityType === 'PREORDER') {
               price: variant.price !== undefined && variant.price !== null && variant.price !== '' ? parseFloat(variant.price) : null,
               stock: variantStock,
               active: variant.active !== undefined ? variant.active : true,
+              ...variantCostData,
             },
           })
         }

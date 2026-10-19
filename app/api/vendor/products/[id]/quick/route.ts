@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
+import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,13 +66,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const allowedFields = ['price', 'salesPrice', 'stock']
+    const allowedFields = ['price', 'salesPrice', 'stock', 'costPrice', 'variantCosts']
     const unknownFields = Object.keys(body).filter((key) => !allowedFields.includes(key))
     if (unknownFields.length > 0) {
       return NextResponse.json({ error: `Unknown fields: ${unknownFields.join(', ')}` }, { status: 400 })
     }
 
-    const { price, salesPrice, stock } = body
+    const { price, salesPrice, stock, costPrice, variantCosts } = body
 
     const hasVariants = product.variants && product.variants.length > 0
     if (hasVariants) {
@@ -121,7 +122,50 @@ export async function PATCH(
       updateData.stock = stock
     }
 
-    if (Object.keys(updateData).length === 0) {
+    // Cost price: what the vendor pays for the item. `null` clears it.
+    if (costPrice !== undefined) {
+      const costPriceResult = validateCostPrice(costPrice)
+      if ('error' in costPriceResult) {
+        return NextResponse.json({ error: costPriceResult.error }, { status: 400 })
+      }
+      updateData.costPrice = costPriceResult.provided
+        ? fromPesewas(costPriceResult.pesewas)
+        : null
+    }
+
+    // Variant cost prices, for the cost entry screen.
+    const variantCostUpdates: Array<{ id: string; costPrice: number | null }> = []
+    if (variantCosts !== undefined && variantCosts !== null) {
+      if (!Array.isArray(variantCosts)) {
+        return NextResponse.json({ error: 'variantCosts must be an array' }, { status: 400 })
+      }
+      for (const entry of variantCosts) {
+        if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || entry.id.length === 0) {
+          return NextResponse.json({ error: 'Each variant cost needs a variant id' }, { status: 400 })
+        }
+        const belongsToProduct = (product.variants || []).some(
+          (variant: any) => variant.id === entry.id
+        )
+        if (!belongsToProduct) {
+          return NextResponse.json(
+            { error: `Variant ${entry.id} does not belong to this product` },
+            { status: 400 }
+          )
+        }
+        const variantCostResult = validateCostPrice(entry.costPrice)
+        if ('error' in variantCostResult) {
+          return NextResponse.json({ error: variantCostResult.error }, { status: 400 })
+        }
+        variantCostUpdates.push({
+          id: entry.id,
+          costPrice: variantCostResult.provided
+            ? fromPesewas(variantCostResult.pesewas)
+            : null,
+        })
+      }
+    }
+
+    if (Object.keys(updateData).length === 0 && variantCostUpdates.length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
@@ -129,6 +173,7 @@ export async function PATCH(
       price: product.price,
       salesPrice: product.salesPrice,
       stock: product.stock,
+      costPrice: product.costPrice ?? null,
     }
 
     const updatedProduct = await getPrisma().product.update({
@@ -139,8 +184,17 @@ export async function PATCH(
         price: true,
         salesPrice: true,
         stock: true,
+        costPrice: true,
       },
     })
+
+    for (const variantUpdate of variantCostUpdates) {
+      await getPrisma().productVariant.update({
+        where: { id: variantUpdate.id },
+        data: { costPrice: variantUpdate.costPrice },
+        select: { id: true, costPrice: true },
+      })
+    }
 
     await createAuditLog({
       userId: payload.userId,
@@ -153,6 +207,8 @@ export async function PATCH(
         price: updatedProduct.price,
         salesPrice: updatedProduct.salesPrice,
         stock: updatedProduct.stock,
+        costPrice: updatedProduct.costPrice ?? null,
+        variantCosts: variantCostUpdates,
       },
       ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
     })
@@ -160,6 +216,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       product: updatedProduct,
+      variantCosts: variantCostUpdates,
     })
   } catch (error) {
     console.error('Error quick-updating product:', error)

@@ -9,6 +9,7 @@ import { PerformanceLogger } from '@/lib/performance'
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { canCreateProduct } from '@/lib/subscription/feature-restriction'
 import { getCategoryFilterIds } from '@/lib/categories'
+import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 120
@@ -328,7 +329,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes, isReturnable } = await request.json()
+    const { name, description, price, stock, categoryId, productCategoryId, categoryIds, imageUrls, brandId, salesPrice, dealsPrice, costPrice, variants, availabilityType, expectedArrivalDate, estimatedFulfillmentDays, preOrderNotes, expectedRestockDate, backOrderNotes, isReturnable } = await request.json()
 
     // Support both categoryId and productCategoryId for backward compatibility
     // Also support categoryIds array for multi-category selection
@@ -415,6 +416,34 @@ export async function POST(request: NextRequest) {
          perf.log()
          return NextResponse.json({ error: 'Invalid deals price' }, { status: 400 })
        }
+      }
+
+      // Cost price: what the vendor pays for the item. Optional, but when it
+      // is given it must be a sane money amount.
+      const costPriceResult = validateCostPrice(costPrice)
+      if ('error' in costPriceResult) {
+        perf.markPrismaEnd(prismaPerfStart)
+        perf.log()
+        return NextResponse.json({ error: costPriceResult.error }, { status: 400 })
+      }
+      const productCostPrice = costPriceResult.provided ? fromPesewas(costPriceResult.pesewas) : null
+
+      // Variant cost prices are validated the same way.
+      const variantCostPrices = new Map<number, number | null>()
+      if (Array.isArray(variants)) {
+        for (let index = 0; index < variants.length; index += 1) {
+          const variant = variants[index]
+          const variantCostResult = validateCostPrice(variant?.costPrice)
+          if ('error' in variantCostResult) {
+            perf.markPrismaEnd(prismaPerfStart)
+            perf.log()
+            return NextResponse.json({ error: variantCostResult.error }, { status: 400 })
+          }
+          variantCostPrices.set(
+            index,
+            variantCostResult.provided ? fromPesewas(variantCostResult.pesewas) : null,
+          )
+        }
       }
       if (estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null && estimatedFulfillmentDays !== '') {
         const daysNum = parseInt(estimatedFulfillmentDays, 10)
@@ -506,6 +535,7 @@ export async function POST(request: NextRequest) {
            brandId: brandId || null,
            salesPrice: salesPrice ? parseFloat(salesPrice) : null,
            dealsPrice: dealsPrice ? parseFloat(dealsPrice) : null,
+           costPrice: productCostPrice,
            availabilityType: finalAvailabilityType as any,
            expectedArrivalDate: expectedArrivalDate ? new Date(expectedArrivalDate) : null,
            estimatedFulfillmentDays: estimatedFulfillmentDays !== undefined && estimatedFulfillmentDays !== null ? parseInt(estimatedFulfillmentDays, 10) : null,
@@ -525,13 +555,14 @@ export async function POST(request: NextRequest) {
       // Create variants if provided
       if (variants && Array.isArray(variants) && variants.length > 0) {
         await getPrisma().productVariant.createMany({
-          data: variants.map((variant: any) => ({
+           data: variants.map((variant: any, index: number) => ({
             productId: product.id,
             color: variant.color || null,
             size: variant.size || null,
             age: variant.age || null,
             sku: variant.sku || null,
             price: variant.price !== undefined && variant.price !== null && variant.price !== '' ? parseFloat(variant.price) : null,
+            costPrice: variantCostPrices.get(index) ?? null,
             stock: variant.stock !== undefined && variant.stock !== null ? parseInt(variant.stock, 10) : 0,
             active: variant.active !== undefined ? variant.active : true,
           })),

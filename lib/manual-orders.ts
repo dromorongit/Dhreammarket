@@ -32,6 +32,13 @@ export interface ResolvedManualOrderLine {
   quantity: number
   unitPricePesewas: number
   overridden: boolean
+  /**
+   * The unit cost captured at sale time, in pesewas, or null when the
+   * product/variant has no cost price yet. Written to
+   * `OrderItem.costPriceSnapshot` so that editing a cost later never
+   * rewrites the profit of a past sale.
+   */
+  costPriceSnapshot?: number | null
 }
 
 export interface ManualOrderTotals {

@@ -20,6 +20,11 @@ import {
   type ManualOrderLineInput,
   type ResolvedManualOrderLine,
 } from '@/lib/manual-orders'
+import {
+  fromPesewas,
+  resolveUnitCostPesawas,
+  validateDeliveryCost,
+} from '@/lib/sales-summary'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,6 +56,7 @@ function buildOrderResponse(order: any) {
     subtotal: order.subtotal,
     shipping: order.shipping,
     total: order.total,
+    deliveryCost: order.deliveryCost ?? null,
     customer: {
       name: order.customerFirstName,
       phone: order.customerPhone,
@@ -113,6 +119,7 @@ export async function POST(request: NextRequest) {
       channel,
       items,
       deliveryFee,
+      deliveryCost,
       markPaid,
       paymentMethod,
       idempotencyKey,
@@ -157,6 +164,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: deliveryFeeResult.error }, { status: 400 })
     }
     const shippingPesewas = deliveryFeeResult.pesewas
+
+    // What the vendor actually paid the rider. Optional: when it is not
+    // given the order keeps a NULL delivery cost, which the money view
+    // reports as "unknown" rather than as a free delivery.
+    const deliveryCostResult = validateDeliveryCost(deliveryCost)
+    if ('error' in deliveryCostResult) {
+      return NextResponse.json({ error: deliveryCostResult.error }, { status: 400 })
+    }
+    const deliveryCostValue =
+      deliveryCostResult.provided ? fromPesewas(deliveryCostResult.pesewas) : null
 
     const markPaidFlag = markPaid === true
     let paymentMethodValue: string | null = null
@@ -208,7 +225,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Product ${product.name} is not available for manual sale` }, { status: 400 })
       }
 
-      let variant: { price?: number | null } | null = null
+      let variant: { price?: number | null; costPrice?: number | null } | null = null
       if (variantId) {
         if (typeof variantId !== 'string' || variantId.length === 0) {
           return NextResponse.json({ error: 'Invalid variantId' }, { status: 400 })
@@ -229,12 +246,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: priceResult.error }, { status: 400 })
       }
 
+      // Snapshot the cost of the line as it is right now, so that editing the
+      // product cost later never changes the profit of this sale.
+      const unitCostPesawas = resolveUnitCostPesawas(
+        { source: 'MANUAL' },
+        {
+          costPriceSnapshot: null,
+          variantCostPrice: variant?.costPrice ?? null,
+          productCostPrice: product.costPrice ?? null,
+        }
+      )
+
       resolvedLines.push({
         productId,
         variantId: variantId || null,
         quantity: quantityResult.quantity,
         unitPricePesewas: priceResult.unitPricePesewas,
         overridden: priceResult.overridden,
+        costPriceSnapshot: unitCostPesawas === null ? null : fromPesewas(unitCostPesawas),
       })
 
       if (priceResult.overridden) {
@@ -316,6 +345,7 @@ export async function POST(request: NextRequest) {
           shipping: totals.shipping,
           subtotal: totals.subtotal,
           total: totals.total,
+          deliveryCost: deliveryCostValue,
           grossAmount: null,
           processorFee: null,
           netAmount: null,
@@ -342,6 +372,7 @@ export async function POST(request: NextRequest) {
           productVariantId: line.variantId,
           quantity: line.quantity,
           price: line.unitPricePesewas / 100,
+          costPriceSnapshot: line.costPriceSnapshot ?? null,
           grossAmount: null,
           processorFee: null,
           netAmount: null,
@@ -389,6 +420,7 @@ export async function POST(request: NextRequest) {
           subtotal: totals.subtotal,
           shipping: totals.shipping,
           total: totals.total,
+          deliveryCost: deliveryCostValue,
           idempotencyKey: idempotencyKeyValue,
           vendorCustomerId: customerRecord.id,
           customer: { name, phone: normalizedPhone, email },

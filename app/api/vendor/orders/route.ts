@@ -3,6 +3,12 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { buildReceiptUrl, orderDisplayNumber } from '@/lib/manual-orders'
+import {
+  fromPesewas,
+  orderCogsPesawas,
+  toPesewas,
+  PROFIT_LABEL,
+} from '@/lib/sales-summary'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,15 +124,22 @@ const skip = (page - 1) * limit
              where: {
                productId: { in: productIds },
              },
-             include: {
-               product: {
-                 select: {
-                   id: true,
-                   name: true,
-                   availabilityType: true,
-                 },
-               },
-             },
+              include: {
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                    availabilityType: true,
+                    costPrice: true,
+                  },
+                },
+                productVariant: {
+                  select: {
+                    id: true,
+                    costPrice: true,
+                  },
+                },
+              },
            },
            user: {
              select: {
@@ -203,6 +216,44 @@ const skip = (page - 1) * limit
         const customerName = [order.customerFirstName, order.customerLastName]
           .filter(Boolean)
           .join(' ')
+
+        // Profit for a manual sale: the order total, minus what the items
+        // cost, minus what the vendor paid the rider. It is only reported
+        // when every line has a known cost, so the vendor is never shown a
+        // profit that silently ignores missing cost prices.
+        const cost = orderCogsPesawas({
+          id: order.id,
+          source: 'MANUAL',
+          channel: order.channel,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          createdAt: order.createdAt,
+          total: order.total,
+          vendorEarnings: null,
+          netAmount: null,
+          deliveryCost: order.deliveryCost ?? null,
+          items: (order.items || []).map((item: any) => ({
+            id: item.id,
+            productId: item.productId,
+            productVariantId: item.productVariantId ?? null,
+            productName: item.product?.name ?? 'Product',
+            variantLabel: null,
+            quantity: item.quantity,
+            price: item.price,
+            costPriceSnapshot: item.costPriceSnapshot ?? null,
+            variantCostPrice: item.productVariant?.costPrice ?? null,
+            productCostPrice: item.product?.costPrice ?? null,
+            vendorEarnings: null,
+          })),
+        })
+        const costComplete = cost.missingCostItems === 0
+        const deliveryCostKnown = order.deliveryCost !== null && order.deliveryCost !== undefined
+        const revenuePesawas = toPesewas(order.total)
+        const deliveryCostPesawas = deliveryCostKnown
+          ? toPesewas(order.deliveryCost as number)
+          : 0
+        const profitPesawas = revenuePesawas - cost.cogsPesawas - deliveryCostPesawas
+
         return {
           ...baseRow,
           displayNumber: orderDisplayNumber(order.id),
@@ -211,6 +262,12 @@ const skip = (page - 1) * limit
           paymentMethod: order.paymentMethod || null,
           receiptToken: order.receiptToken || null,
           receiptUrl: order.receiptToken ? buildReceiptUrl(order.receiptToken) : null,
+          deliveryCost: order.deliveryCost ?? null,
+          cost: costComplete ? fromPesewas(cost.cogsPesawas) : null,
+          profit: costComplete ? fromPesewas(profitPesawas) : null,
+          profitLabel: PROFIT_LABEL,
+          costComplete,
+          deliveryCostKnown,
         }
       }
 

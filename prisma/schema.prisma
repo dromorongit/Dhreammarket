@@ -294,6 +294,7 @@ model Product {
   dealsStart               DateTime?                   @db.Timestamp(6)
   dealsEnd                 DateTime?                   @db.Timestamp(6)
   isReturnable             Boolean                     @default(true)
+  costPrice                Float?
   advertisements           Advertisement[]
   advertisementCampaigns   AdvertisementCampaign[]
   cartItems                CartItem[]
@@ -394,6 +395,7 @@ model ProductVariant {
   stock            Int         @default(0)
   reservedQuantity Int         @default(0)
   active           Boolean     @default(true)
+  costPrice        Float?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   cartItems        CartItem[]
@@ -515,6 +517,7 @@ model Order {
   customerPhone         String?
   customerRegion        String?
   shipping              Float?
+  deliveryCost          Float?
   shippingDaysMax       Int?
   shippingDaysMin       Int?
   shippingZone          String?
@@ -570,6 +573,7 @@ model OrderItem {
   expectedArrivalDate DateTime?
   expectedRestockDate DateTime?
   allocatedQuantity   Int                       @default(0)
+  costPriceSnapshot   Float?
   shippedAt           DateTime?
   deliveredAt         DateTime?
   deliveryConfirmedAt DateTime?
