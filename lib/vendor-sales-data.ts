@@ -9,10 +9,16 @@
 // The loader returns plain data; every money decision is made by the pure
 // functions in lib/sales-summary.ts.
 
+import { OrderSource, OrderStatus, PaymentStatus } from '@prisma/client'
 import { getPrisma } from '@/lib/prisma'
 import {
+  accraDayCount,
   accraDayEndExclusive,
   accraDayStart,
+  fromPesewas,
+  toPesewas,
+  toReceivableOrderRow,
+  type ReceivablesSummary,
   type SalesSummaryItemInput,
   type SalesSummaryOrderInput,
   type SalesSummaryRefundInput,
@@ -64,6 +70,15 @@ export const SALES_BATCH_SIZE = 500
  * shorter period, because a longer one would take the process down.
  */
 export const MAX_ORDERS_PER_REPORT = 50_000
+
+/**
+ * The most receivable rows a single report may list.
+ *
+ * The total and the count still cover every unpaid manual sale; only the
+ * table of rows is capped, oldest first.
+ */
+export const MAX_RECEIVABLE_ROWS = 500
+
 /**
  * The report covers too many orders to be served.
  */
@@ -445,6 +460,71 @@ export async function loadVendorRefunds(
     status: refund.status,
     createdAt: refund.createdAt,
   }))
+}
+
+/**
+ * The vendor's receivables: the manual sales that were never paid for.
+ *
+ * These are what the vendor is still owed, so the period does NOT apply: the
+ * total and the count cover every unpaid manual sale, all time. Only the table
+ * of rows is capped, and it keeps the oldest ones.
+ */
+export async function loadVendorReceivables(
+  storeId: string,
+  now: Date,
+): Promise<ReceivablesSummary> {
+  const prisma = getPrisma()
+
+  const where = {
+    deletedAt: null,
+    source: OrderSource.MANUAL,
+    paymentStatus: PaymentStatus.PENDING,
+    status: { not: OrderStatus.CANCELLED },
+    items: { some: { product: { storeId } } },
+  }
+
+  const [count, aggregate, oldest, rows] = await Promise.all([
+    prisma.order.count({ where }),
+    prisma.order.aggregate({ where, _sum: { total: true } }),
+    prisma.order.findFirst({
+      where,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { id: true, createdAt: true },
+    }),
+    prisma.order.findMany({
+      where,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: MAX_RECEIVABLE_ROWS,
+      select: {
+        id: true,
+        source: true,
+        channel: true,
+        status: true,
+        paymentStatus: true,
+        createdAt: true,
+        total: true,
+        customerFirstName: true,
+        customerLastName: true,
+        customerPhone: true,
+        receiptToken: true,
+      },
+    }),
+  ])
+
+  const orders = (rows as any[]).map((row) => toReceivableOrderRow(toVendorOrderInput(row), now))
+  const amountPesawas = toPesewas(decimalToNumber((aggregate as any)?._sum?.total ?? 0))
+  const oldestAgeDays = oldest
+    ? Math.max(0, accraDayCount(oldest.createdAt, now) - 1)
+    : 0
+
+  return {
+    amount: fromPesewas(amountPesawas),
+    amountPesawas,
+    count,
+    oldestAgeDays,
+    oldestCreatedAt: oldest ? oldest.createdAt.toISOString() : null,
+    orders: orders.sort((a, b) => b.ageDays - a.ageDays || b.totalPesawas - a.totalPesawas),
+  }
 }
 
 /**

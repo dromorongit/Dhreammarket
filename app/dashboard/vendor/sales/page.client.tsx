@@ -258,7 +258,7 @@ export default function VendorSalesPageClient() {
           </Card>
           <Card>
             <CardContent className="p-5">
-              <p className="text-sm text-slate-500">Unpaid (manual)</p>
+              <p className="text-sm text-slate-500">Unpaid (all time)</p>
               <p className="text-2xl font-bold text-amber-600">
                 {loading ? 'GH₵ 0.00' : formatCurrency(summary?.receivables?.amount ?? 0)}
               </p>
@@ -414,7 +414,7 @@ export default function VendorSalesPageClient() {
               <h2 className="text-lg font-semibold text-deep-navy">Money still owed to you</h2>
               <p className="text-sm text-slate-600">
                 {formatCurrency(summary?.receivables?.amount ?? 0)} ·{' '}
-                {summary?.receivables?.count ?? 0} order(s)
+                {summary?.receivables?.count ?? 0} order(s) · all time
               </p>
             </div>
             {actionError ? <p className="text-sm text-rose-600 mb-3">{actionError}</p> : null}

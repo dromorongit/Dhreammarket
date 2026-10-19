@@ -11,6 +11,7 @@ import {
 } from '@/lib/vendor-sales-data'
 import {
   accraDayKey,
+  countsInTotals,
   fromPesewas,
   orderCogsPesawas,
   orderRevenuePesawas,
@@ -20,6 +21,7 @@ import {
   validateDateRange,
   validateSourceFilter,
   type SalesSummaryOrderInput,
+  type SalesSourceFilter,
 } from '@/lib/sales-summary'
 import { CSV_BOM, buildCsvRow, csvFileName } from '@/lib/csv'
 
@@ -37,6 +39,7 @@ const CSV_HEADERS = [
   'profit',
   'payment status',
   'payment method',
+  'counted_in_totals',
 ]
 
 /**
@@ -53,7 +56,7 @@ function describeItems(order: SalesSummaryOrderInput): string {
     .join('; ')
 }
 
-function buildCsvValues(order: SalesSummaryOrderInput): unknown[] {
+function buildCsvValues(order: SalesSummaryOrderInput, source: SalesSourceFilter): unknown[] {
   const revenuePesawas = orderRevenuePesawas(order)
   const cogsPesawas = orderCogsPesawas(order).cogsPesawas
   const deliveryCostPesawas =
@@ -74,6 +77,10 @@ function buildCsvValues(order: SalesSummaryOrderInput): unknown[] {
     fromPesewas(profitPesawas),
     order.paymentStatus,
     order.paymentMethod ?? null,
+    // Whether the summary counts this row. The rows that are not counted
+    // (an unpaid manual sale, a cancelled order, an order of the other
+    // source) are still listed, but they are not part of the totals.
+    countsInTotals(order, source) ? 'Yes' : 'No',
   ]
 }
 
@@ -166,7 +173,7 @@ export async function GET(request: NextRequest) {
           for await (const order of iterateVendorOrders(store.id, from, to)) {
             if (source !== 'ALL' && order.source !== source) continue
             controller.enqueue(
-              encoder.encode(`${buildCsvRow(buildCsvValues(order))}\r\n`),
+              encoder.encode(`${buildCsvRow(buildCsvValues(order, source))}\r\n`),
             )
           }
 

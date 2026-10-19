@@ -304,10 +304,27 @@ describe('GET /api/vendor/sales-summary', () => {
     expect(body.totals.revenue).toBe(40)
   })
 
-  it('reports the receivables of the period', async () => {
+  it('reports the receivables of all time, not just the period', async () => {
+    useFakeDb([
+      {
+        ...ORDERS[0],
+        id: 'order_old',
+        createdAt: new Date('2025-01-05T12:00:00.000Z'),
+        total: 75,
+        paymentStatus: 'PENDING',
+      },
+    ])
+
     const response = await GET(buildRequest())
     const body = await response.json()
-    expect(body.receivables.count).toBe(0)
+
+    // The order is outside the period, so it is not revenue, but the vendor
+    // is still owed the money.
+    expect(body.totals.orders).toBe(0)
+    expect(body.totals.revenue).toBe(0)
+    expect(body.receivables.count).toBe(1)
+    expect(body.receivables.amount).toBe(75)
+    expect(body.receivables.oldestAgeDays).toBeGreaterThan(300)
   })
 })
 

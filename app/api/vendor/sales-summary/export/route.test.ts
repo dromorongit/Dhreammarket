@@ -195,7 +195,7 @@ describe('GET /api/vendor/sales-summary/export', () => {
 
     const text = new TextDecoder('utf-8').decode(bytes.slice(3))
     expect(text.split('\r\n')[0]).toBe(
-      'date,order number,channel,customer name,items,revenue,cost,delivery cost,profit,payment status,payment method',
+      'date,order number,channel,customer name,items,revenue,cost,delivery cost,profit,payment status,payment method,counted_in_totals',
     )
   })
 
@@ -218,6 +218,29 @@ describe('GET /api/vendor/sales-summary/export', () => {
     expect(cells[8]).toBe('25')
     expect(cells[9]).toBe('PAID')
     expect(cells[10]).toBe('CASH')
+    expect(cells[11]).toBe('Yes')
+  })
+
+  it('marks the rows the summary does not count', async () => {
+    prismaMock.order.findMany.mockImplementation(async () => [
+      buildOrder({ paymentStatus: 'PENDING' }),
+    ])
+
+    const response = await GET(buildRequest())
+    const text = await response.text()
+    const lines = text.trim().split('\r\n')
+    expect(lines[1].split(',')[11]).toBe('No')
+  })
+
+  it('marks a cancelled order as not counted', async () => {
+    prismaMock.order.findMany.mockImplementation(async () => [
+      buildOrder({ status: 'CANCELLED' }),
+    ])
+
+    const response = await GET(buildRequest('from=2026-10-01&to=2026-10-31&source=MANUAL'))
+    const text = await response.text()
+    const lines = text.trim().split('\r\n')
+    expect(lines[1].split(',')[11]).toBe('No')
   })
 
   it('never exports another vendor\'s data', async () => {

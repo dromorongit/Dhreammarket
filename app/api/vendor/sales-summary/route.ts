@@ -9,6 +9,7 @@ import {
   countMissingCostProducts,
   countVendorOrders,
   iterateVendorOrders,
+  loadVendorReceivables,
   loadVendorRefunds,
 } from '@/lib/vendor-sales-data'
 import {
@@ -115,15 +116,21 @@ export async function GET(request: NextRequest) {
       now,
       source,
       missingCostProducts,
+      // The receivables are read all-time below, so the period must not
+      // collect them again.
+      collectPeriodReceivables: false,
     })
 
     for await (const order of iterateVendorOrders(store.id, from, to)) {
       accumulator.add(order)
     }
 
-    const refunds = await loadVendorRefunds(store.id, from, to)
+    const [refunds, receivables] = await Promise.all([
+      loadVendorRefunds(store.id, from, to),
+      loadVendorReceivables(store.id, now),
+    ])
 
-    const summary = accumulator.build(refunds)
+    const summary = accumulator.build(refunds, receivables)
 
     setCachedSalesSummary(cacheKey, summary)
 

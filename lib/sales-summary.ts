@@ -491,6 +491,14 @@ export interface SalesSummaryInput {
   source: SalesSourceFilter
   /** How many of the vendor's products/variants still have no cost price. */
   missingCostProducts: number
+  /**
+   * The receivables to report, when they are known.
+   *
+   * Receivables are what the vendor is still owed, so they are NOT limited by
+   * the period: the routes read them with an all-time query and pass them
+   * here. When this is omitted the receivables of the period orders are used.
+   */
+  receivables?: ReceivablesSummary | null
 }
 
 /* -------------------------------------------------------------------------- */
@@ -951,6 +959,22 @@ export function buildReceivablesSummary(rows: ReceivableOrderRow[]): Receivables
 }
 
 /**
+ * True when the order is one of the rows the summary counts.
+ *
+ * A counted sale is a charged, not cancelled order that passes the source
+ * filter. Everything else (an unpaid manual sale, a cancelled order, an order
+ * of the other source) is shown but not counted.
+ */
+export function countsInTotals(
+  order: { paymentStatus?: string | null; status?: string | null; source?: string | null },
+  source: SalesSourceFilter,
+): boolean {
+  if (!isCountedSale(order)) return false
+  if (source !== 'ALL' && order.source !== source) return false
+  return true
+}
+
+/**
  * The context a summary is built in: the period, the clock and the source
  * filter. The same context always produces the same summary.
  */
@@ -1234,5 +1258,5 @@ export function buildSalesSummary(input: SalesSummaryInput): SalesSummaryResult 
     accumulator.add(order)
   }
 
-  return accumulator.build(input.refunds)
+  return accumulator.build(input.refunds, input.receivables)
 }

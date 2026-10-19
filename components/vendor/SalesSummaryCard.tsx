@@ -137,7 +137,9 @@ export default function SalesSummaryCard({ className }: SalesSummaryCardProps) {
                 href="/dashboard/vendor/orders?unpaid=true"
                 className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 min-h-[44px] hover:bg-amber-100 transition-colors"
               >
-                <span className="text-sm font-medium text-amber-900">Unpaid</span>
+                <span className="text-sm font-medium text-amber-900">
+                  Unpaid (all time)
+                </span>
                 <span className="text-sm font-semibold text-amber-900">
                   {loading
                     ? 'GH₵ 0.00 (0)'
