@@ -154,3 +154,16 @@ describe('GET /api/vendor/customers', () => {
     expect(where.storeId).toBe('store_1')
   })
 })
+
+describe('vendor-customers rate limit', () => {
+  it('returns 429 on the 61st request in a minute', async () => {
+    const { GET } = await import('@/app/api/vendor/customers/route')
+    const headers = { cookie: 'token=test-token', 'x-forwarded-for': '198.51.100.50' }
+    for (let i = 0; i < 60; i += 1) {
+      const response = await GET(new NextRequest('http://localhost/api/vendor/customers', { headers }))
+      expect(response.status).not.toBe(429)
+    }
+    const blocked = await GET(new NextRequest('http://localhost/api/vendor/customers', { headers }))
+    expect(blocked.status).toBe(429)
+  })
+})

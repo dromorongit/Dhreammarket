@@ -112,6 +112,7 @@ describe('GET /api/admin/refund-requests', () => {
           status: 'CANCELLED',
           paymentStatus: 'PAID',
           deletedAt: null,
+          source: { not: 'MANUAL' },
           refunds: {
             none: { status: { in: ['PENDING', 'PROCESSING', 'PROCESSED'] } },
           },

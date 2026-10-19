@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 
 const prismaMock = vi.hoisted(() => ({
   store: { findUnique: vi.fn() },
-  vendorCustomer: { findFirst: vi.fn(), update: vi.fn() },
+  vendorCustomer: { findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
   order: { groupBy: vi.fn(), findFirst: vi.fn() },
   orderItem: { findMany: vi.fn() },
 }))
@@ -62,18 +62,36 @@ beforeEach(() => {
   mockAuth()
   mockOnboarded()
   mockStore()
-  prismaMock.vendorCustomer.findFirst.mockResolvedValue({
-    id: 'vc_1',
-    storeId: 'store_1',
-    name: 'Ada',
-    phone: '+233242222222',
-    email: 'ada@example.com',
-    tags: [],
-    notes: null,
-    firstChannel: 'WHATSAPP',
-    createdAt: new Date('2026-01-01T00:00:00.000Z'),
-    updatedAt: new Date('2026-01-03T00:00:00.000Z'),
+  let customerFindFirstCall = 0
+  prismaMock.vendorCustomer.findFirst.mockImplementation(() => {
+    customerFindFirstCall += 1
+    if (customerFindFirstCall % 2 === 0) {
+      return Promise.resolve({
+        id: 'vc_1',
+        name: 'Ada Updated',
+        phone: '+233242222222',
+        email: 'ada2@example.com',
+        tags: ['vip'],
+        notes: 'cash buyer',
+        firstChannel: 'WHATSAPP',
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-03T00:00:00.000Z'),
+      })
+    }
+    return Promise.resolve({
+      id: 'vc_1',
+      storeId: 'store_1',
+      name: 'Ada',
+      phone: '+233242222222',
+      email: 'ada@example.com',
+      tags: [],
+      notes: null,
+      firstChannel: 'WHATSAPP',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-03T00:00:00.000Z'),
+    })
   })
+  prismaMock.vendorCustomer.updateMany.mockResolvedValue({ count: 1 })
   prismaMock.order.groupBy
     .mockResolvedValueOnce([{ vendorCustomerId: 'vc_1', _count: { id: 2 }, _max: { createdAt: new Date('2026-01-05T00:00:00.000Z') } }])
     .mockResolvedValueOnce([{ vendorCustomerId: 'vc_1', _sum: { total: 120 } }])
@@ -178,15 +196,14 @@ describe('PATCH /api/vendor/customers/[id]', () => {
     expect(body.customer.notes).toBe('cash buyer')
     expect(body.customer.phone).toBe('+233242222222')
 
-    expect(prismaMock.vendorCustomer.update).toHaveBeenCalledWith({
-      where: { id: 'vc_1' },
+    expect(prismaMock.vendorCustomer.updateMany).toHaveBeenCalledWith({
+      where: { id: 'vc_1', storeId: 'store_1' },
       data: {
         name: 'Ada Updated',
         email: 'ada2@example.com',
         tags: ['vip'],
         notes: 'cash buyer',
       },
-      select: expect.any(Object),
     })
   })
 
@@ -205,5 +222,20 @@ describe('PATCH /api/vendor/customers/[id]', () => {
       PARAMS
     )
     expect(response.status).toBe(404)
+  })
+})
+
+describe('PATCH /api/vendor/customers/[id] store scoping', () => {
+  it('uses a store-scoped updateMany and returns 404 when count is 0', async () => {
+    prismaMock.vendorCustomer.updateMany.mockResolvedValue({ count: 0 })
+    const response = await PATCH(
+      buildRequest('http://localhost/api/vendor/customers/vc_1', { name: 'Ada Updated' }),
+      PARAMS
+    )
+    expect(response.status).toBe(404)
+    expect(prismaMock.vendorCustomer.updateMany).toHaveBeenCalledWith({
+      where: { id: 'vc_1', storeId: 'store_1' },
+      data: { name: 'Ada Updated' },
+    })
   })
 })
