@@ -5,6 +5,7 @@ import { formatCurrency } from '@/lib/currency'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/Button'
+import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,7 @@ export default async function ReceiptPage({ params }: { params: { token: string 
   const receipt = await getReceiptByToken(params.token)
 
   if (!receipt) {
-    return <NotFound />
+    notFound()
   }
 
   return (

@@ -192,7 +192,7 @@ export async function PATCH(
     // creates a refund request for admin approval, and money only ever moves
     // through POST /api/admin/refunds -> createRefund (SUPER_ADMIN), never
     // from here.
-    const refundRequested = existingOrder.paymentStatus === 'PAID'
+    const refundRequested = existingOrder.paymentStatus === 'PAID' && !isManualOrder(existingOrder)
 
     try {
       await reverseInfluencerOrderCashback(orderId)

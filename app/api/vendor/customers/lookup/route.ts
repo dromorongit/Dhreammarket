@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { normalizeGhanaPhone } from '@/lib/phone'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const rateLimitCheck = rateLimit('vendor-customers')(request)
+  if (!rateLimitCheck.success) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {

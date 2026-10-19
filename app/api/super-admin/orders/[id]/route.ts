@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { requireSuperAdmin } from '@/lib/adminAuth'
 import { createAuditLog } from '@/lib/audit-log'
+import { isManualOrder } from '@/lib/order-source'
+import { restoreManualSaleStock } from '@/lib/stock-reservation'
 
 const prisma = getPrisma()
 
@@ -110,6 +112,12 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     await prisma.$transaction(async (tx) => {
+      if (isManualOrder(order) && order.inventoryConsumedAt) {
+        const restoreResult = await restoreManualSaleStock(tx, orderId)
+        if (!restoreResult.success) {
+          throw new Error(restoreResult.error || 'Failed to restore stock')
+        }
+      }
       await tx.payment.deleteMany({ where: { orderId, status: { in: ['PENDING', 'FAILED', 'CANCELLED'] } } })
       await tx.orderItem.deleteMany({ where: { orderId } })
       await tx.productReview.deleteMany({ where: { orderId } })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
 import { isVendorOnboarded } from '@/lib/onboarding'
 
 export const dynamic = 'force-dynamic'
@@ -50,6 +51,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rateLimitCheck = rateLimit('vendor-customers')(request)
+  if (!rateLimitCheck.success) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -127,6 +133,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const rateLimitCheck = rateLimit('vendor-customers')(request)
+  if (!rateLimitCheck.success) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -210,11 +221,23 @@ export async function PATCH(
       }
     }
 
-    const updated = await getPrisma().vendorCustomer.update({
-      where: { id: params.id },
+    const updateResult = await getPrisma().vendorCustomer.updateMany({
+      where: { id: params.id, storeId: store.id },
       data: updateData,
+    })
+
+    if (updateResult.count === 0) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+    }
+
+    const updated = await getPrisma().vendorCustomer.findFirst({
+      where: { id: params.id, storeId: store.id },
       select: { id: true, name: true, phone: true, email: true, tags: true, notes: true, firstChannel: true, createdAt: true, updatedAt: true },
     })
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+    }
 
     return NextResponse.json({ customer: updated })
   } catch (error) {

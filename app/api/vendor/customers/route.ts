@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import { rateLimit } from '@/lib/rate-limit'
 import { isVendorOnboarded } from '@/lib/onboarding'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,11 @@ function toTwoDecimals(value: number | null): number {
 }
 
 export async function GET(request: NextRequest) {
+  const rateLimitCheck = rateLimit('vendor-customers')(request)
+  if (!rateLimitCheck.success) {
+    return rateLimitCheck.response
+  }
+
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {

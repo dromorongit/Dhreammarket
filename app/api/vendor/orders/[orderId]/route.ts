@@ -304,7 +304,7 @@ export async function PATCH(
           })
         }
 
-        const refundRequested = existingOrder.paymentStatus === 'PAID'
+        const refundRequested = existingOrder.paymentStatus === 'PAID' && !manual
 
         if (!manual) {
           try {

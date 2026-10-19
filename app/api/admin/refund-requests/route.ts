@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
         status: 'CANCELLED',
         paymentStatus: 'PAID',
         deletedAt: null,
+        source: { not: 'MANUAL' },
         refunds: { none: { status: { in: [...ACTIVE_REFUND_STATUSES] } } },
       },
       include: {

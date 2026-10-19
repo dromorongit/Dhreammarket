@@ -112,17 +112,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const [vendor, store] = await Promise.all([
-      getPrisma().user.findUnique({ where: { id: vendorId, role: 'VENDOR' } }),
-      getPrisma().store.findUnique({ where: { id: storeId } }),
-    ])
-
-    if (!vendor) {
-      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
-    }
+    const store = storeId
+      ? await getPrisma().store.findUnique({ where: { id: storeId } })
+      : await getPrisma().store.findUnique({ where: { userId: vendorId } })
 
     if (!store) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+    }
+
+    if (store.userId !== vendorId) {
+      return NextResponse.json(
+        { error: 'Store does not belong to the specified vendor' },
+        { status: 400 }
+      )
+    }
+
+    const vendor = await getPrisma().user.findUnique({ where: { id: vendorId, role: 'VENDOR' } })
+
+    if (!vendor) {
+      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
     }
 
     const eligibleEarnings = await getVendorUnpaidEligibleEarnings(vendorId)
@@ -141,7 +149,7 @@ export async function POST(request: NextRequest) {
     const payout = await getPrisma().vendorPayout.create({
       data: {
         vendorId,
-        storeId,
+        storeId: store.id,
         amount,
         status: 'PENDING',
         reference,
