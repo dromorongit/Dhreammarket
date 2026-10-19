@@ -49,6 +49,8 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'support-ai-chat': { windowMs: 60 * 1000, maxRequests: 20 },
   'support-stream': { windowMs: 60 * 1000, maxRequests: 5 },
   'admin-support-stream': { windowMs: 60 * 1000, maxRequests: 10 },
+  'vendor-sales-summary': { windowMs: 60 * 1000, maxRequests: 30 },
+  'vendor-sales-export': { windowMs: 60 * 1000, maxRequests: 5 },
 }
 
 function enforceRateLimitCap(): void {

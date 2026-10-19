@@ -909,81 +909,150 @@ function breakdownRow(
 }
 
 /**
- * Build the whole sales summary from raw orders.
- *
- * Pure: the same input always produces the same output, and the only clock
- * involved is the `now` the caller passes in.
+ * A receivable order as a row of the receivables table.
  */
-export function buildSalesSummary(input: SalesSummaryInput): SalesSummaryResult {
-  const { orders, refunds, from, to, now, source, missingCostProducts } = input
+export function toReceivableOrderRow(order: SalesSummaryOrderInput, now: Date): ReceivableOrderRow {
+  const createdAt = order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt)
+  // Whole Accra calendar days between the sale day and today. An order made
+  // today is 0 days old.
+  const ageDays = Math.max(0, accraDayCount(createdAt, now) - 1)
+  const channel = resolveChannel(order)
+  return {
+    id: order.id,
+    displayNumber: salesDisplayNumber(order.id),
+    customerName: salesCustomerName(order),
+    customerPhone: order.customerPhone ?? null,
+    channel,
+    channelLabel: CHANNEL_LABELS[channel],
+    total: fromPesewas(toPesewas(order.total)),
+    totalPesawas: toPesewas(order.total),
+    createdAt: createdAt.toISOString(),
+    ageDays,
+    receiptToken: order.receiptToken ?? null,
+  }
+}
 
-  const rangeStart = accraDayStart(from)
-  const rangeEnd = accraDayEndExclusive(to)
+/**
+ * The receivables summary of a list of receivable rows.
+ */
+export function buildReceivablesSummary(rows: ReceivableOrderRow[]): ReceivablesSummary {
+  const sorted = [...rows].sort((a, b) => b.ageDays - a.ageDays || b.totalPesawas - a.totalPesawas)
+  const amountPesawas = sorted.reduce((sum, row) => sum + row.totalPesawas, 0)
+  const oldest = sorted.length > 0 ? sorted[0] : null
 
-  const totalsAcc = emptyAccumulator()
-  const sourceAcc: Record<SalesSource, Accumulator> = {
+  return {
+    amount: fromPesewas(amountPesawas),
+    amountPesawas,
+    count: sorted.length,
+    oldestAgeDays: oldest ? oldest.ageDays : 0,
+    oldestCreatedAt: oldest ? oldest.createdAt : null,
+    orders: sorted,
+  }
+}
+
+/**
+ * The context a summary is built in: the period, the clock and the source
+ * filter. The same context always produces the same summary.
+ */
+export interface SalesSummaryContext {
+  from: Date
+  to: Date
+  now: Date
+  source: SalesSourceFilter
+  missingCostProducts: number
+}
+
+export interface SalesSummaryAccumulatorOptions extends SalesSummaryContext {
+  /**
+   * Collect the unpaid manual sales that fall in the period.
+   *
+   * Off for the streaming path: there the receivables come from an all-time
+   * query, so a period must never limit what a vendor is still owed.
+   */
+  collectPeriodReceivables?: boolean
+}
+
+interface ProductAccumulator extends Accumulator {
+  productId: string
+  productVariantId: string | null
+  productName: string
+  variantLabel: string | null
+}
+
+/**
+ * Build a sales summary from orders that arrive one at a time.
+ *
+ * The accumulator keeps running totals, so a report over 50,000 orders never
+ * holds more than one order at a time. The product buckets are bounded by the
+ * shop's catalogue, not by the number of orders.
+ */
+export class SalesSummaryAccumulator {
+  private readonly context: SalesSummaryContext
+  private readonly collectPeriodReceivables: boolean
+  private readonly rangeStart: Date
+  private readonly rangeEnd: Date
+  private readonly totalsAcc: Accumulator = emptyAccumulator()
+  private readonly sourceAcc: Record<SalesSource, Accumulator> = {
     ONLINE: emptyAccumulator(),
     MANUAL: emptyAccumulator(),
   }
-  const channelAcc = new Map<SalesChannel, Accumulator>()
-  const dailyAcc = new Map<string, Accumulator>()
-  const productAcc = new Map<string, Accumulator & {
-    productId: string
-    productVariantId: string | null
-    productName: string
-    variantLabel: string | null
-  }>()
+  private readonly channelAcc = new Map<SalesChannel, Accumulator>()
+  private readonly dailyAcc = new Map<string, Accumulator>()
+  private readonly productAcc = new Map<string, ProductAccumulator>()
+  private readonly periodReceivables: ReceivableOrderRow[] = []
 
-  const receivables: ReceivableOrderRow[] = []
+  constructor(options: SalesSummaryAccumulatorOptions) {
+    this.context = {
+      from: options.from,
+      to: options.to,
+      now: options.now,
+      source: options.source,
+      missingCostProducts: options.missingCostProducts,
+    }
+    this.collectPeriodReceivables = options.collectPeriodReceivables ?? true
+    this.rangeStart = accraDayStart(options.from)
+    this.rangeEnd = accraDayEndExclusive(options.to)
+  }
 
-  for (const order of orders || []) {
+  /**
+   * True when the order falls inside the period and passes the source filter.
+   */
+  private isInScope(order: SalesSummaryOrderInput, createdAt: Date): boolean {
+    if (createdAt.getTime() < this.rangeStart.getTime()) return false
+    if (createdAt.getTime() >= this.rangeEnd.getTime()) return false
+    if (this.context.source !== 'ALL' && order.source !== this.context.source) return false
+    return true
+  }
+
+  /**
+   * Fold one order into the running totals.
+   */
+  add(order: SalesSummaryOrderInput): void {
     const createdAt = order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt)
-    if (createdAt.getTime() < rangeStart.getTime() || createdAt.getTime() >= rangeEnd.getTime()) {
-      continue
-    }
-    if (source !== 'ALL' && order.source !== source) {
-      continue
+    if (!this.isInScope(order, createdAt)) return
+
+    if (this.collectPeriodReceivables && isReceivable(order)) {
+      this.periodReceivables.push(toReceivableOrderRow(order, this.context.now))
     }
 
-    if (isReceivable(order)) {
-      // Whole Accra calendar days between the sale day and today. An order
-      // made today is 0 days old.
-      const ageDays = Math.max(0, accraDayCount(createdAt, now) - 1)
-      receivables.push({
-        id: order.id,
-        displayNumber: salesDisplayNumber(order.id),
-        customerName: salesCustomerName(order),
-        customerPhone: order.customerPhone ?? null,
-        channel: resolveChannel(order),
-        channelLabel: CHANNEL_LABELS[resolveChannel(order)],
-        total: fromPesewas(toPesewas(order.total)),
-        totalPesawas: toPesewas(order.total),
-        createdAt: createdAt.toISOString(),
-        ageDays,
-        receiptToken: order.receiptToken ?? null,
-      })
-    }
+    if (!isCountedSale(order)) return
 
-    if (!isCountedSale(order)) {
-      continue
-    }
-
-    const { revenuePesawas } = accumulate(totalsAcc, order)
-    accumulate(sourceAcc[order.source], order)
+    accumulate(this.totalsAcc, order)
+    accumulate(this.sourceAcc[order.source], order)
 
     const channel = resolveChannel(order)
-    const channelBucket = channelAcc.get(channel) ?? emptyAccumulator()
+    const channelBucket = this.channelAcc.get(channel) ?? emptyAccumulator()
     accumulate(channelBucket, order)
-    channelAcc.set(channel, channelBucket)
+    this.channelAcc.set(channel, channelBucket)
 
     const dayKey = accraDayKey(createdAt)
-    const dayBucket = dailyAcc.get(dayKey) ?? emptyAccumulator()
+    const dayBucket = this.dailyAcc.get(dayKey) ?? emptyAccumulator()
     accumulate(dayBucket, order)
-    dailyAcc.set(dayKey, dayBucket)
+    this.dailyAcc.set(dayKey, dayBucket)
 
     for (const item of order.items || []) {
       const productKey = `${item.productId}::${item.productVariantId ?? 'default'}`
-      let bucket = productAcc.get(productKey)
+      let bucket = this.productAcc.get(productKey)
       if (!bucket) {
         bucket = {
           ...emptyAccumulator(),
@@ -992,7 +1061,7 @@ export function buildSalesSummary(input: SalesSummaryInput): SalesSummaryResult 
           productName: item.productName,
           variantLabel: item.variantLabel ?? null,
         }
-        productAcc.set(productKey, bucket)
+        this.productAcc.set(productKey, bucket)
       }
       const quantity = Number.isFinite(item.quantity) ? item.quantity : 0
       const unitCost = resolveUnitCostPesawas(order, item)
@@ -1015,124 +1084,155 @@ export function buildSalesSummary(input: SalesSummaryInput): SalesSummaryResult 
     }
   }
 
-  const totals = accumulatorTotals(totalsAcc)
+  /**
+   * The finished summary.
+   *
+   * `receivables` overrides the receivables the accumulator collected. The
+   * streaming path passes the all-time receivables there, so a period never
+   * limits what the vendor is still owed.
+   */
+  build(
+    refunds: SalesSummaryRefundInput[] = [],
+    receivables?: ReceivablesSummary | null,
+  ): SalesSummaryResult {
+    const { from, to, source, missingCostProducts } = this.context
 
-  const bySource: SalesBreakdownRow[] = [
-    breakdownRow('ONLINE', 'Online', sourceAcc.ONLINE, sourceAcc.ONLINE.hasOnline),
-    breakdownRow('MANUAL', 'Manual', sourceAcc.MANUAL, false),
-  ]
+    const totals = accumulatorTotals(this.totalsAcc)
 
-  const byChannel: SalesBreakdownRow[] = Array.from(channelAcc.entries())
-    .map(([channel, acc]) => breakdownRow(channel, CHANNEL_LABELS[channel], acc, acc.hasOnline))
-    .sort((a, b) => b.revenuePesawas - a.revenuePesawas || a.label.localeCompare(b.label))
+    const bySource: SalesBreakdownRow[] = [
+      breakdownRow('ONLINE', 'Online', this.sourceAcc.ONLINE, this.sourceAcc.ONLINE.hasOnline),
+      breakdownRow('MANUAL', 'Manual', this.sourceAcc.MANUAL, false),
+    ]
 
-  const dayKeys = accraDayKeysBetween(from, to)
-  const daily: SalesDailyRow[] = dayKeys.map((date) => {
-    const acc = dailyAcc.get(date) ?? emptyAccumulator()
-    const dayTotals = accumulatorTotals(acc)
-    return {
-      date,
-      orders: acc.orders,
-      units: acc.units,
-      revenue: dayTotals.revenue,
-      revenuePesawas: dayTotals.revenuePesawas,
-      cogs: dayTotals.cogs,
-      cogsPesawas: dayTotals.cogsPesawas,
-      profit: dayTotals.profit,
-      profitPesawas: dayTotals.profitPesawas,
-      estimated: dayTotals.estimated,
-    }
-  })
+    const byChannel: SalesBreakdownRow[] = Array.from(this.channelAcc.entries())
+      .map(([channel, acc]) => breakdownRow(channel, CHANNEL_LABELS[channel], acc, acc.hasOnline))
+      .sort((a, b) => b.revenuePesawas - a.revenuePesawas || a.label.localeCompare(b.label))
 
-  const productRows: SalesProductRow[] = Array.from(productAcc.values()).map((bucket) => ({
-    productId: bucket.productId,
-    productVariantId: bucket.productVariantId,
-    productName: bucket.productName,
-    variantLabel: bucket.variantLabel,
-    units: bucket.units,
-    revenue: fromPesewas(bucket.revenuePesawas),
-    revenuePesawas: bucket.revenuePesawas,
-    cogs: fromPesewas(bucket.cogsPesawas),
-    cogsPesawas: bucket.cogsPesawas,
-    profit: fromPesewas(bucket.revenuePesawas - bucket.cogsPesawas),
-    profitPesawas: bucket.revenuePesawas - bucket.cogsPesawas,
-    estimated: bucket.missingCostItems > 0,
-  }))
+    const dayKeys = accraDayKeysBetween(from, to)
+    const daily: SalesDailyRow[] = dayKeys.map((date) => {
+      const acc = this.dailyAcc.get(date) ?? emptyAccumulator()
+      const dayTotals = accumulatorTotals(acc)
+      return {
+        date,
+        orders: acc.orders,
+        units: acc.units,
+        revenue: dayTotals.revenue,
+        revenuePesawas: dayTotals.revenuePesawas,
+        cogs: dayTotals.cogs,
+        cogsPesawas: dayTotals.cogsPesawas,
+        profit: dayTotals.profit,
+        profitPesawas: dayTotals.profitPesawas,
+        estimated: dayTotals.estimated,
+      }
+    })
 
-  const topProductsByUnits = [...productRows]
-    .sort((a, b) => b.units - a.units || b.revenuePesawas - a.revenuePesawas)
-    .slice(0, 10)
-
-  const topProductsByProfit = [...productRows]
-    .sort((a, b) => b.profitPesawas - a.profitPesawas || b.units - a.units)
-    .slice(0, 10)
-
-  receivables.sort((a, b) => b.ageDays - a.ageDays || b.totalPesawas - a.totalPesawas)
-  const receivableAmountPesawas = receivables.reduce((sum, row) => sum + row.totalPesawas, 0)
-  const oldest = receivables.length > 0 ? receivables[0] : null
-
-  const refundRows = (refunds || [])
-    .filter((refund) => refund.status !== 'FAILED')
-    .map((refund) => ({
-      id: refund.id,
-      orderId: refund.orderId ?? null,
-      amount: fromPesewas(toPesewas(refund.amount)),
-      amountPesawas: toPesewas(refund.amount),
-      status: refund.status,
-      createdAt: (refund.createdAt instanceof Date ? refund.createdAt : new Date(refund.createdAt)).toISOString(),
+    const productRows: SalesProductRow[] = Array.from(this.productAcc.values()).map((bucket) => ({
+      productId: bucket.productId,
+      productVariantId: bucket.productVariantId,
+      productName: bucket.productName,
+      variantLabel: bucket.variantLabel,
+      units: bucket.units,
+      revenue: fromPesewas(bucket.revenuePesawas),
+      revenuePesawas: bucket.revenuePesawas,
+      cogs: fromPesewas(bucket.cogsPesawas),
+      cogsPesawas: bucket.cogsPesawas,
+      profit: fromPesewas(bucket.revenuePesawas - bucket.cogsPesawas),
+      profitPesawas: bucket.revenuePesawas - bucket.cogsPesawas,
+      estimated: bucket.missingCostItems > 0,
     }))
 
-  const refundAmountPesawas = refundRows.reduce((sum, row) => sum + row.amountPesawas, 0)
-  const processedAmountPesawas = refundRows
-    .filter((row) => row.status === 'PROCESSED')
-    .reduce((sum, row) => sum + row.amountPesawas, 0)
-  const pendingAmountPesawas = refundAmountPesawas - processedAmountPesawas
+    const topProductsByUnits = [...productRows]
+      .sort((a, b) => b.units - a.units || b.revenuePesawas - a.revenuePesawas)
+      .slice(0, 10)
 
-  return {
-    currency: 'GHS',
-    range: {
-      from: accraDayKey(rangeStart),
-      to: accraDayKey(accraDayStart(to)),
-      days: accraDayCount(from, to),
-    },
-    source,
-    profitLabel: PROFIT_LABEL,
-    totals,
-    bySource,
-    byChannel,
-    topProductsByUnits,
-    topProductsByProfit,
-    daily,
-    receivables: {
-      amount: fromPesewas(receivableAmountPesawas),
-      amountPesawas: receivableAmountPesawas,
-      count: receivables.length,
-      oldestAgeDays: oldest ? oldest.ageDays : 0,
-      oldestCreatedAt: oldest ? oldest.createdAt : null,
-      orders: receivables,
-    },
-    refunds: {
-      amount: fromPesewas(refundAmountPesawas),
-      amountPesawas: refundAmountPesawas,
-      processedAmount: fromPesewas(processedAmountPesawas),
-      processedAmountPesawas: processedAmountPesawas,
-      pendingAmount: fromPesewas(pendingAmountPesawas),
-      pendingAmountPesawas: pendingAmountPesawas,
-      count: refundRows.length,
-      orders: refundRows.map(({ id, orderId, amount, status, createdAt }) => ({
-        id,
-        orderId,
-        amount,
-        status,
-        createdAt,
-      })),
-    },
-    coverage: {
-      items: totalsAcc.items,
-      itemsWithCost: totalsAcc.itemsWithCost,
-      missingCostItems: totalsAcc.missingCostItems,
-      costCoveragePercent: totals.costCoveragePercent,
-      missingCostProducts,
-    },
+    const topProductsByProfit = [...productRows]
+      .sort((a, b) => b.profitPesawas - a.profitPesawas || b.units - a.units)
+      .slice(0, 10)
+
+    const receivableSummary = receivables ?? buildReceivablesSummary(this.periodReceivables)
+
+    const refundRows = (refunds || [])
+      .filter((refund) => refund.status !== 'FAILED')
+      .map((refund) => ({
+        id: refund.id,
+        orderId: refund.orderId ?? null,
+        amount: fromPesewas(toPesewas(refund.amount)),
+        amountPesawas: toPesewas(refund.amount),
+        status: refund.status,
+        createdAt: (refund.createdAt instanceof Date ? refund.createdAt : new Date(refund.createdAt)).toISOString(),
+      }))
+
+    const refundAmountPesawas = refundRows.reduce((sum, row) => sum + row.amountPesawas, 0)
+    const processedAmountPesawas = refundRows
+      .filter((row) => row.status === 'PROCESSED')
+      .reduce((sum, row) => sum + row.amountPesawas, 0)
+    const pendingAmountPesawas = refundAmountPesawas - processedAmountPesawas
+
+    return {
+      currency: 'GHS',
+      range: {
+        from: accraDayKey(this.rangeStart),
+        to: accraDayKey(accraDayStart(to)),
+        days: accraDayCount(from, to),
+      },
+      source,
+      profitLabel: PROFIT_LABEL,
+      totals,
+      bySource,
+      byChannel,
+      topProductsByUnits,
+      topProductsByProfit,
+      daily,
+      receivables: receivableSummary,
+      refunds: {
+        amount: fromPesewas(refundAmountPesawas),
+        amountPesawas: refundAmountPesawas,
+        processedAmount: fromPesewas(processedAmountPesawas),
+        processedAmountPesawas: processedAmountPesawas,
+        pendingAmount: fromPesewas(pendingAmountPesawas),
+        pendingAmountPesawas: pendingAmountPesawas,
+        count: refundRows.length,
+        orders: refundRows.map(({ id, orderId, amount, status, createdAt }) => ({
+          id,
+          orderId,
+          amount,
+          status,
+          createdAt,
+        })),
+      },
+      coverage: {
+        items: this.totalsAcc.items,
+        itemsWithCost: this.totalsAcc.itemsWithCost,
+        missingCostItems: this.totalsAcc.missingCostItems,
+        costCoveragePercent: totals.costCoveragePercent,
+        missingCostProducts,
+      },
+    }
   }
+}
+
+/**
+ * Build the whole sales summary from raw orders.
+ *
+ * Pure: the same input always produces the same output, and the only clock
+ * involved is the `now` the caller passes in.
+ *
+ * This is the single-query path. The streaming path the routes use reads the
+ * same orders in batches and folds them into a SalesSummaryAccumulator, and
+ * the two must always agree.
+ */
+export function buildSalesSummary(input: SalesSummaryInput): SalesSummaryResult {
+  const accumulator = new SalesSummaryAccumulator({
+    from: input.from,
+    to: input.to,
+    now: input.now,
+    source: input.source,
+    missingCostProducts: input.missingCostProducts,
+  })
+
+  for (const order of input.orders || []) {
+    accumulator.add(order)
+  }
+
+  return accumulator.build(input.refunds)
 }

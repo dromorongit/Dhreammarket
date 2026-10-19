@@ -2,12 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
-import { loadVendorSalesData } from '@/lib/vendor-sales-data'
+import { rateLimit } from '@/lib/rate-limit'
 import {
-  buildSalesSummary,
+  MAX_ORDERS_PER_REPORT,
+  SalesRangeTooLargeError,
+  countMissingCostProducts,
+  countVendorOrders,
+  iterateVendorOrders,
+  loadVendorRefunds,
+} from '@/lib/vendor-sales-data'
+import {
+  SalesSummaryAccumulator,
   validateDateRange,
   validateSourceFilter,
 } from '@/lib/sales-summary'
+import {
+  getCachedSalesSummary,
+  salesSummaryCacheKey,
+  setCachedSalesSummary,
+} from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +30,10 @@ export const dynamic = 'force-dynamic'
  * The vendor's own money view: revenue, cost of goods sold, profit before
  * other expenses, receivables and the cost coverage of the period. Every
  * figure is scoped to the authenticated vendor's store.
+ *
+ * The report is read in pages of 500 orders and folded into running totals,
+ * so the memory it needs does not grow with the length of the period. A
+ * period that covers more than 50,000 orders is refused with a 413.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -33,6 +50,11 @@ export async function GET(request: NextRequest) {
 
     if (payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const limit = rateLimit('vendor-sales-summary')(request)
+    if (!limit.success) {
+      return limit.response
     }
 
     const isOnboarded = await isVendorOnboarded(payload.userId)
@@ -64,22 +86,60 @@ export async function GET(request: NextRequest) {
     }
 
     const { from, to } = rangeResult.range
+    const source = sourceResult.source
+
+    const cacheKey = salesSummaryCacheKey(store.id, from, to, source)
+    const cached = getCachedSalesSummary(cacheKey)
+    if (cached) {
+      return NextResponse.json({ ...cached, cached: true })
+    }
+
+    const orderCount = await countVendorOrders(store.id, from, to)
+    if (orderCount > MAX_ORDERS_PER_REPORT) {
+      return NextResponse.json(
+        {
+          error: 'range too large, choose a shorter period',
+          count: orderCount,
+          limit: MAX_ORDERS_PER_REPORT,
+        },
+        { status: 413 }
+      )
+    }
+
     const now = new Date()
+    const missingCostProducts = await countMissingCostProducts(store.id)
 
-    const data = await loadVendorSalesData(store.id, from, to)
-
-    const summary = buildSalesSummary({
-      orders: data.orders,
-      refunds: data.refunds,
+    const accumulator = new SalesSummaryAccumulator({
       from,
       to,
       now,
-      source: sourceResult.source,
-      missingCostProducts: data.missingCostProducts,
+      source,
+      missingCostProducts,
     })
+
+    for await (const order of iterateVendorOrders(store.id, from, to)) {
+      accumulator.add(order)
+    }
+
+    const refunds = await loadVendorRefunds(store.id, from, to)
+
+    const summary = accumulator.build(refunds)
+
+    setCachedSalesSummary(cacheKey, summary)
 
     return NextResponse.json(summary)
   } catch (error) {
+    if (error instanceof SalesRangeTooLargeError) {
+      return NextResponse.json(
+        {
+          error: 'range too large, choose a shorter period',
+          count: error.count,
+          limit: error.limit,
+        },
+        { status: 413 }
+      )
+    }
+
     console.error('Error building vendor sales summary:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(

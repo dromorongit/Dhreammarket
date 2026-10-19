@@ -3,8 +3,13 @@ import { NextRequest } from 'next/server'
 
 const prismaMock = vi.hoisted(() => ({
   store: { findUnique: vi.fn() },
-  product: { findMany: vi.fn() },
-  order: { findMany: vi.fn() },
+  product: { count: vi.fn() },
+  order: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
+    aggregate: vi.fn(),
+  },
   refund: { findMany: vi.fn() },
 }))
 
@@ -17,6 +22,11 @@ const isVendorOnboardedMock = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/onboarding', () => ({ isVendorOnboarded: isVendorOnboardedMock }))
 
 import { GET } from '@/app/api/vendor/sales-summary/export/route'
+import {
+  createFakeSalesPrisma,
+  type FakeOrder,
+  type FakeProduct,
+} from '@/app/api/vendor/sales-summary/fake-sales-db.test-utils'
 
 const VENDOR_A = {
   authenticated: true,
@@ -25,11 +35,10 @@ const VENDOR_A = {
   sessionId: 'sess_a',
 }
 
-const PRODUCT_STORE: Record<string, string> = { prod_a1: 'store_a', prod_b1: 'store_b' }
-
-const PRODUCTS = [
+const PRODUCTS: FakeProduct[] = [
   {
     id: 'prod_a1',
+    storeId: 'store_a',
     name: 'Vendor A Widget',
     price: 20,
     costPrice: 5,
@@ -37,6 +46,7 @@ const PRODUCTS = [
   },
   {
     id: 'prod_b1',
+    storeId: 'store_b',
     name: 'Vendor B Gadget',
     price: 80,
     costPrice: 30,
@@ -44,7 +54,7 @@ const PRODUCTS = [
   },
 ]
 
-function buildOrder(overrides: any = {}) {
+function buildOrder(overrides: any = {}): FakeOrder {
   return {
     id: 'order_a1',
     source: 'MANUAL',
@@ -62,7 +72,6 @@ function buildOrder(overrides: any = {}) {
     receiptToken: 'receipt_a1',
     paymentMethod: 'CASH',
     deletedAt: null,
-    user: null,
     items: [
       {
         id: 'item_a1',
@@ -80,57 +89,61 @@ function buildOrder(overrides: any = {}) {
   }
 }
 
+const ORDERS: FakeOrder[] = [
+  buildOrder(),
+  buildOrder({
+    id: 'order_b1',
+    total: 80,
+    deliveryCost: null,
+    items: [
+      {
+        id: 'item_b1',
+        productId: 'prod_b1',
+        productVariantId: null,
+        quantity: 1,
+        price: 80,
+        costPriceSnapshot: 30,
+        vendorEarnings: null,
+        product: { id: 'prod_b1', name: 'Vendor B Gadget', costPrice: 30 },
+        productVariant: null,
+      },
+    ],
+  }),
+]
+
 beforeEach(() => {
   vi.clearAllMocks()
   verifyTokenMock.mockResolvedValue(VENDOR_A)
   isVendorOnboardedMock.mockResolvedValue(true)
-  prismaMock.store.findUnique.mockResolvedValue({ id: 'store_a', userId: 'vendor_a' })
-  prismaMock.refund.findMany.mockResolvedValue([])
 
-  prismaMock.product.findMany.mockImplementation(async ({ where }: any) =>
-    PRODUCTS.filter((p) => PRODUCT_STORE[p.id] === where.storeId).map((p) => ({
-      ...p,
-      storeId: PRODUCT_STORE[p.id],
-    })),
-  )
-
-  prismaMock.order.findMany.mockImplementation(async ({ where }: any) => {
-    const allowed = where?.items?.some?.productId?.in ?? []
-    const rows = [
-      buildOrder(),
-      buildOrder({
-        id: 'order_b1',
-        total: 80,
-        deliveryCost: null,
-        items: [
-          {
-            id: 'item_b1',
-            productId: 'prod_b1',
-            productVariantId: null,
-            quantity: 1,
-            price: 80,
-            costPriceSnapshot: 30,
-            vendorEarnings: null,
-            product: { id: 'prod_b1', name: 'Vendor B Gadget', costPrice: 30 },
-            productVariant: null,
-          },
-        ],
-      }),
-    ]
-    return rows.filter(
-      (order) =>
-        order.deletedAt === null &&
-        order.items.some((item: any) => allowed.includes(item.productId)) &&
-        order.createdAt.getTime() >= where.createdAt.gte.getTime() &&
-        order.createdAt.getTime() < where.createdAt.lt.getTime()
-    )
+  const fake = createFakeSalesPrisma({
+    store: { id: 'store_a', userId: 'vendor_a' },
+    products: PRODUCTS,
+    orders: ORDERS,
+    refunds: [],
   })
+
+  prismaMock.store.findUnique.mockImplementation(fake.store.findUnique)
+  prismaMock.product.count.mockImplementation(fake.product.count)
+  prismaMock.order.count.mockImplementation(fake.order.count)
+  prismaMock.order.findMany.mockImplementation(fake.order.findMany)
+  prismaMock.order.findFirst.mockImplementation(fake.order.findFirst)
+  prismaMock.order.aggregate.mockImplementation(fake.order.aggregate)
+  prismaMock.refund.findMany.mockImplementation(fake.refund.findMany)
 })
 
+// Every request comes from its own address, so the rate limiter sees one
+// caller per test instead of one caller for the whole file.
+let requestCounter = 0
+
 function buildRequest(query = 'from=2026-10-01&to=2026-10-31', withToken = true): NextRequest {
+  requestCounter += 1
   return new NextRequest(`http://localhost/api/vendor/sales-summary/export?${query}`, {
     method: 'GET',
-    headers: withToken ? { cookie: 'token=test-token' } : {},
+    headers: {
+      ...(withToken ? { cookie: 'token=test-token' } : {}),
+      'x-forwarded-for': `10.0.0.${requestCounter}`,
+    },
   })
 }
 
@@ -226,5 +239,30 @@ describe('GET /api/vendor/sales-summary/export', () => {
     const text = await response.text()
     expect(text).toContain("'=cmd|calc")
     expect(text).not.toContain(',=cmd|calc')
+  })
+
+  it('refuses a period that covers more than 50,000 orders', async () => {
+    prismaMock.order.count.mockResolvedValue(50_001)
+
+    const response = await GET(buildRequest())
+    expect(response.status).toBe(413)
+    const body = await response.json()
+    expect(body.error).toMatch(/range too large, choose a shorter period/)
+    expect(body.limit).toBe(50_000)
+  })
+
+  it('streams the rows instead of building one string', async () => {
+    const response = await GET(buildRequest())
+    expect(response.body).toBeInstanceOf(ReadableStream)
+
+    // The body is a stream, so the file is written as the rows arrive.
+    const reader = (response.body as ReadableStream<Uint8Array>).getReader()
+    const chunks: Uint8Array[] = []
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+    }
+    expect(chunks.length).toBeGreaterThan(1)
   })
 })

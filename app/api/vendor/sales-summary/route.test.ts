@@ -1,10 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 const prismaMock = vi.hoisted(() => ({
   store: { findUnique: vi.fn() },
-  product: { findMany: vi.fn() },
-  order: { findMany: vi.fn() },
+  product: { count: vi.fn() },
+  order: {
+    count: vi.fn(),
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
+    aggregate: vi.fn(),
+  },
   refund: { findMany: vi.fn() },
 }))
 
@@ -17,6 +22,13 @@ const isVendorOnboardedMock = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/onboarding', () => ({ isVendorOnboarded: isVendorOnboardedMock }))
 
 import { GET } from '@/app/api/vendor/sales-summary/route'
+import { clearSalesSummaryCache, salesSummaryCacheSize } from '@/lib/sales-summary-cache'
+import {
+  createFakeSalesPrisma,
+  type FakeOrder,
+  type FakeProduct,
+  type FakeRefund,
+} from '@/app/api/vendor/sales-summary/fake-sales-db.test-utils'
 
 const VENDOR_A = {
   authenticated: true,
@@ -32,16 +44,18 @@ const VENDOR_B = {
   sessionId: 'sess_b',
 }
 
-const PRODUCTS = [
+const PRODUCTS: FakeProduct[] = [
   {
     id: 'prod_a1',
+    storeId: 'store_a',
     name: 'Vendor A Widget',
     price: 20,
     costPrice: 5,
-    variants: [{ id: 'var_a1', color: 'Red', size: null, age: null, sku: null, price: null, costPrice: null }],
+    variants: [],
   },
   {
     id: 'prod_b1',
+    storeId: 'store_b',
     name: 'Vendor B Gadget',
     price: 80,
     costPrice: 30,
@@ -49,7 +63,7 @@ const PRODUCTS = [
   },
 ]
 
-const ORDERS = [
+const ORDERS: FakeOrder[] = [
   {
     id: 'order_a1',
     source: 'MANUAL',
@@ -67,7 +81,6 @@ const ORDERS = [
     receiptToken: 'receipt_a1',
     paymentMethod: 'CASH',
     deletedAt: null,
-    user: null,
     items: [
       {
         id: 'item_a1',
@@ -99,7 +112,6 @@ const ORDERS = [
     receiptToken: null,
     paymentMethod: null,
     deletedAt: null,
-    user: null,
     items: [
       {
         id: 'item_b1',
@@ -116,63 +128,64 @@ const ORDERS = [
   },
 ]
 
-function inRange(date: Date, from: Date, to: Date) {
-  return date.getTime() >= from.getTime() && date.getTime() < to.getTime()
+const REFUNDS: FakeRefund[] = [
+  {
+    id: 'refund_1',
+    orderId: 'order_a1',
+    amount: 12.5,
+    status: 'PROCESSED',
+    createdAt: new Date('2026-10-12T00:00:00.000Z'),
+  },
+]
+
+// Every request comes from its own address, so the rate limiter sees one
+// caller per test instead of one caller for the whole file.
+let requestCounter = 0
+
+function buildRequest(
+  query = 'from=2026-10-01&to=2026-10-31',
+  withToken = true,
+): NextRequest {
+  requestCounter += 1
+  return new NextRequest(`http://localhost/api/vendor/sales-summary?${query}`, {
+    method: 'GET',
+    headers: {
+      ...(withToken ? { cookie: 'token=test-token' } : {}),
+      'x-forwarded-for': `10.0.0.${requestCounter}`,
+    },
+  })
 }
 
-const PRODUCT_STORE: Record<string, string> = { prod_a1: 'store_a', prod_b1: 'store_b' }
+function useFakeDb(orders: FakeOrder[] = ORDERS) {
+  const fake = createFakeSalesPrisma({
+    store: { id: 'store_a', userId: 'vendor_a' },
+    products: PRODUCTS,
+    orders,
+    refunds: REFUNDS,
+  })
+
+  prismaMock.store.findUnique.mockImplementation(fake.store.findUnique)
+  prismaMock.product.count.mockImplementation(fake.product.count)
+  prismaMock.order.count.mockImplementation(fake.order.count)
+  prismaMock.order.findMany.mockImplementation(fake.order.findMany)
+  prismaMock.order.findFirst.mockImplementation(fake.order.findFirst)
+  prismaMock.order.aggregate.mockImplementation(fake.order.aggregate)
+  prismaMock.refund.findMany.mockImplementation(fake.refund.findMany)
+
+  return fake
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
+  clearSalesSummaryCache()
   verifyTokenMock.mockResolvedValue(VENDOR_A)
   isVendorOnboardedMock.mockResolvedValue(true)
-  prismaMock.store.findUnique.mockResolvedValue({ id: 'store_a', userId: 'vendor_a' })
-
-  // A tiny prisma that honours the where clauses the route relies on.
-  prismaMock.product.findMany.mockImplementation(async ({ where }: any) =>
-    PRODUCTS.filter((p) => PRODUCT_STORE[p.id] === where.storeId).map((p) => ({
-      ...p,
-      storeId: PRODUCT_STORE[p.id],
-    })),
-  )
-
-  prismaMock.order.findMany.mockImplementation(async ({ where }: any) => {
-    const allowed = where?.items?.some?.productId?.in ?? []
-    return ORDERS.filter(
-      (order) =>
-        order.deletedAt === null &&
-        order.items.some((item) => allowed.includes(item.productId)) &&
-        inRange(order.createdAt, where.createdAt.gte, where.createdAt.lt)
-    )
-  })
-
-  prismaMock.refund.findMany.mockImplementation(async ({ where }: any) => {
-    const allowed = where?.order?.items?.some?.productId?.in ?? []
-    const matching = ORDERS.filter(
-      (order) =>
-        order.deletedAt === null &&
-        order.items.some((item) => allowed.includes(item.productId)) &&
-        inRange(order.createdAt, where.order.createdAt.gte, where.order.createdAt.lt)
-    )
-    if (matching.length === 0) return []
-    return [
-      {
-        id: 'refund_1',
-        orderId: matching[0].id,
-        amount: 12.5,
-        status: 'PROCESSED',
-        createdAt: new Date('2026-10-12T00:00:00.000Z'),
-      },
-    ]
-  })
+  useFakeDb()
 })
 
-function buildRequest(query = 'from=2026-10-01&to=2026-10-31', withToken = true): NextRequest {
-  return new NextRequest(`http://localhost/api/vendor/sales-summary?${query}`, {
-    method: 'GET',
-    headers: withToken ? { cookie: 'token=test-token' } : {},
-  })
-}
+afterEach(() => {
+  clearSalesSummaryCache()
+})
 
 describe('GET /api/vendor/sales-summary', () => {
   it('returns 401 when no token cookie is present', async () => {
@@ -243,12 +256,9 @@ describe('GET /api/vendor/sales-summary', () => {
     const response = await GET(buildRequest())
     const body = await response.json()
 
-    // The query was scoped to this vendor's store and their product ids.
-    expect(prismaMock.product.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { storeId: 'store_a' } })
-    )
+    // The query was scoped to this vendor's store.
     const orderCall = prismaMock.order.findMany.mock.calls[0][0] as any
-    expect(orderCall.where.items.some.productId.in).toEqual(['prod_a1'])
+    expect(orderCall.where.items.some.product.storeId).toBe('store_a')
 
     // Vendor B's order and product are nowhere in the answer.
     expect(JSON.stringify(body)).not.toContain('Vendor B Gadget')
@@ -258,14 +268,14 @@ describe('GET /api/vendor/sales-summary', () => {
 
   it('keeps each vendor inside their own store', async () => {
     verifyTokenMock.mockResolvedValue(VENDOR_B)
+    useFakeDb()
     prismaMock.store.findUnique.mockResolvedValue({ id: 'store_b', userId: 'vendor_b' })
 
     const response = await GET(buildRequest())
     const body = await response.json()
 
-    expect(prismaMock.product.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { storeId: 'store_b' } })
-    )
+    const orderCall = prismaMock.order.findMany.mock.calls[0][0] as any
+    expect(orderCall.where.items.some.product.storeId).toBe('store_b')
     expect(body.totals.revenue).toBe(80)
     expect(JSON.stringify(body)).not.toContain('Vendor A Widget')
   })
@@ -292,5 +302,101 @@ describe('GET /api/vendor/sales-summary', () => {
     expect(body.refunds.amount).toBe(12.5)
     expect(body.refunds.count).toBe(1)
     expect(body.totals.revenue).toBe(40)
+  })
+
+  it('reports the receivables of the period', async () => {
+    const response = await GET(buildRequest())
+    const body = await response.json()
+    expect(body.receivables.count).toBe(0)
+  })
+})
+
+describe('GET /api/vendor/sales-summary - memory and safety', () => {
+  it('reads the orders in pages instead of one big query', async () => {
+    const many: FakeOrder[] = Array.from({ length: 1200 }, (_, index) => ({
+      ...ORDERS[0],
+      id: `order_${String(index).padStart(4, '0')}`,
+      createdAt: new Date(Date.UTC(2026, 9, 1 + (index % 28), 12)),
+    }))
+    useFakeDb(many)
+
+    const response = await GET(buildRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.totals.orders).toBe(1200)
+
+    // 500 + 500 + 200, and never a query without a take.
+    const findManyCalls = prismaMock.order.findMany.mock.calls as any[]
+    expect(findManyCalls.length).toBeGreaterThan(1)
+    for (const [args] of findManyCalls) {
+      expect(args.take).toBe(500)
+    }
+
+    // The second page starts right after the last order of the first one, and
+    // no order is read twice.
+    const pages = prismaMock.order.findMany.mock.results.map((result: any) =>
+      result.value as Promise<any[]>,
+    )
+    const rows = (await Promise.all(pages)).flat()
+    expect(new Set(rows.map((row) => row.id)).size).toBe(rows.length)
+
+    const firstPageRows = await pages[0]
+    expect(findManyCalls[1][0].cursor).toEqual({ id: firstPageRows[firstPageRows.length - 1].id })
+  })
+
+  it('refuses a period that covers more than 50,000 orders', async () => {
+    prismaMock.order.count.mockResolvedValue(50_001)
+
+    const response = await GET(buildRequest())
+    expect(response.status).toBe(413)
+    const body = await response.json()
+    expect(body.error).toMatch(/range too large, choose a shorter period/)
+    expect(body.limit).toBe(50_000)
+  })
+
+  it('serves a period of exactly 50,000 orders', async () => {
+    prismaMock.order.count.mockResolvedValue(50_000)
+    const response = await GET(buildRequest())
+    expect(response.status).toBe(200)
+  })
+})
+
+describe('GET /api/vendor/sales-summary - the cache', () => {
+  it('answers the second identical request from the cache', async () => {
+    const first = await GET(buildRequest())
+    expect(first.status).toBe(200)
+    const callsAfterFirst = prismaMock.order.findMany.mock.calls.length
+
+    const second = await GET(buildRequest())
+    expect(second.status).toBe(200)
+    const secondBody = await second.json()
+
+    expect(prismaMock.order.findMany.mock.calls.length).toBe(callsAfterFirst)
+    expect(secondBody.cached).toBe(true)
+  })
+
+  it('never shows one vendor the numbers of another', async () => {
+    const first = await GET(buildRequest())
+    const firstBody = await first.json()
+    expect(firstBody.totals.revenue).toBe(40)
+
+    // Vendor B asks for the same period. The cache key holds the store, so
+    // vendor B gets their own report, not vendor A's.
+    verifyTokenMock.mockResolvedValue(VENDOR_B)
+    prismaMock.store.findUnique.mockResolvedValue({ id: 'store_b', userId: 'vendor_b' })
+
+    const second = await GET(buildRequest())
+    const secondBody = await second.json()
+
+    expect(secondBody.totals.revenue).toBe(80)
+    expect(secondBody.cached).toBeUndefined()
+    expect(salesSummaryCacheSize()).toBe(2)
+  })
+
+  it('keys the cache by the period and the source', async () => {
+    await GET(buildRequest('from=2026-10-01&to=2026-10-31'))
+    await GET(buildRequest('from=2026-10-01&to=2026-10-15'))
+    await GET(buildRequest('from=2026-10-01&to=2026-10-31&source=MANUAL'))
+    expect(salesSummaryCacheSize()).toBe(3)
   })
 })

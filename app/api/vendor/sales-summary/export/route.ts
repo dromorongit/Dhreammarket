@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
-import { loadVendorSalesData } from '@/lib/vendor-sales-data'
+import { rateLimit } from '@/lib/rate-limit'
+import {
+  MAX_ORDERS_PER_REPORT,
+  SalesRangeTooLargeError,
+  countVendorOrders,
+  iterateVendorOrders,
+} from '@/lib/vendor-sales-data'
 import {
   accraDayKey,
   fromPesewas,
@@ -15,7 +21,7 @@ import {
   validateSourceFilter,
   type SalesSummaryOrderInput,
 } from '@/lib/sales-summary'
-import { CSV_BOM, buildCsv, csvFileName } from '@/lib/csv'
+import { CSV_BOM, buildCsvRow, csvFileName } from '@/lib/csv'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +53,7 @@ function describeItems(order: SalesSummaryOrderInput): string {
     .join('; ')
 }
 
-function buildCsvRow(order: SalesSummaryOrderInput): unknown[] {
+function buildCsvValues(order: SalesSummaryOrderInput): unknown[] {
   const revenuePesawas = orderRevenuePesawas(order)
   const cogsPesawas = orderCogsPesawas(order).cogsPesawas
   const deliveryCostPesawas =
@@ -72,11 +78,14 @@ function buildCsvRow(order: SalesSummaryOrderInput): unknown[] {
 }
 
 /**
- * GET /api/vendor/sales-summary/export?from&to
+ * GET /api/vendor/sales-summary/export?from&to&source=ALL|ONLINE|MANUAL
  *
  * A CSV of the vendor's own orders in the period. The file is UTF-8 with a
  * BOM so Excel opens it correctly, and every cell is escaped against CSV
  * formula injection.
+ *
+ * The rows are streamed: the orders are read in pages and written out as they
+ * arrive, so the export never holds the whole file in memory.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -93,6 +102,11 @@ export async function GET(request: NextRequest) {
 
     if (payload.role !== 'VENDOR') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const limit = rateLimit('vendor-sales-export')(request)
+    if (!limit.success) {
+      return limit.response
     }
 
     const isOnboarded = await isVendorOnboarded(payload.userId)
@@ -124,18 +138,51 @@ export async function GET(request: NextRequest) {
     }
 
     const { from, to } = rangeResult.range
-    const data = await loadVendorSalesData(store.id, from, to)
+    const source = sourceResult.source
 
-    const rows = data.orders
-      .filter(
-        (order) => sourceResult.source === 'ALL' || order.source === sourceResult.source,
+    // The size of the report is checked before the stream starts, so a range
+    // that is too large is answered with a 413 and not with a broken file.
+    const orderCount = await countVendorOrders(store.id, from, to)
+    if (orderCount > MAX_ORDERS_PER_REPORT) {
+      return NextResponse.json(
+        {
+          error: 'range too large, choose a shorter period',
+          count: orderCount,
+          limit: MAX_ORDERS_PER_REPORT,
+        },
+        { status: 413 }
       )
-      .map(buildCsvRow)
+    }
 
-    const csv = buildCsv(CSV_HEADERS, rows)
     const fileName = csvFileName('dhreamarket-sales', accraDayKey(from), accraDayKey(to))
+    const encoder = new TextEncoder()
 
-    return new Response(`${CSV_BOM}${csv}`, {
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        try {
+          controller.enqueue(encoder.encode(CSV_BOM))
+          controller.enqueue(encoder.encode(`${buildCsvRow(CSV_HEADERS)}\r\n`))
+
+          for await (const order of iterateVendorOrders(store.id, from, to)) {
+            if (source !== 'ALL' && order.source !== source) continue
+            controller.enqueue(
+              encoder.encode(`${buildCsvRow(buildCsvValues(order))}\r\n`),
+            )
+          }
+
+          controller.close()
+        } catch (error) {
+          if (error instanceof SalesRangeTooLargeError) {
+            console.error('Vendor sales export is too large:', error.message)
+          } else {
+            console.error('Error streaming vendor sales export:', error)
+          }
+          controller.error(error)
+        }
+      },
+    })
+
+    return new Response(stream, {
       status: 200,
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
@@ -145,6 +192,17 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
+    if (error instanceof SalesRangeTooLargeError) {
+      return NextResponse.json(
+        {
+          error: 'range too large, choose a shorter period',
+          count: error.count,
+          limit: error.limit,
+        },
+        { status: 413 }
+      )
+    }
+
     console.error('Error exporting vendor sales:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(

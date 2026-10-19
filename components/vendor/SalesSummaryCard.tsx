@@ -20,7 +20,9 @@ interface SalesSummaryCardProps {
 }
 
 export default function SalesSummaryCard({ className }: SalesSummaryCardProps) {
-  const [period, setPeriod] = useState<SalesPeriodKey>('7d')
+  // Only the tab the vendor is looking at is loaded. The card never asks for
+  // the other two periods.
+  const [period, setPeriod] = useState<SalesPeriodKey>('today')
   const [summary, setSummary] = useState<SalesSummaryResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
