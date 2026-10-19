@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge'
 import { formatCurrency } from '@/lib/currency'
 import { SITE_URL } from '@/lib/site-config'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
+import SalesSummaryCard from '@/components/vendor/SalesSummaryCard'
 import dynamic from 'next/dynamic'
 
 interface VendorProduct {
@@ -318,6 +319,26 @@ export default function VendorDashboardPage() {
                     </Link>
                   </Button>
                  <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                   <Link href="/dashboard/vendor/sales">
+                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                       </svg>
+                     </div>
+                     <span className="text-sm font-medium text-slate-700">Sales &amp; Profit</span>
+                   </Link>
+                 </Button>
+                 <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
+                   <Link href="/dashboard/vendor/products/costs">
+                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                       </svg>
+                     </div>
+                     <span className="text-sm font-medium text-slate-700">Product Costs</span>
+                   </Link>
+                 </Button>
+                  <Button asChild variant="ghost" className="flex flex-col items-center gap-2 p-4 hover:bg-slate-50 group w-full">
                    <Link href="/dashboard/vendor/subscription">
                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,12 +364,16 @@ export default function VendorDashboardPage() {
 
         <div className="overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory -mx-4 px-4 sm:-mx-0 sm:px-0 mb-8 pb-2">
           <div className="flex gap-2 whitespace-nowrap flex-nowrap touch-pan-x" style={{ WebkitOverflowScrolling: 'touch' }}>
-             {['overview', 'analytics', 'products', 'services', 'coupons', 'followers', 'advertising', 'quick-sale', 'customers'].map((tab) => (
+             {['overview', 'analytics', 'sales', 'costs', 'products', 'services', 'coupons', 'followers', 'advertising', 'quick-sale', 'customers'].map((tab) => (
                <button
                  key={tab}
                  onClick={() => {
                    if (tab === 'advertising') {
                      router.push('/dashboard/vendor/advertising')
+                   } else if (tab === 'sales') {
+                     router.push('/dashboard/vendor/sales')
+                   } else if (tab === 'costs') {
+                     router.push('/dashboard/vendor/products/costs')
                    } else {
                      setActiveTab(tab)
                    }
@@ -359,7 +384,13 @@ export default function VendorDashboardPage() {
                      : 'border-transparent text-gray-500 hover:text-gray-700'
                  }`}
                >
-                 {tab === 'advertising' ? 'Advertising' : tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                 {tab === 'advertising'
+                   ? 'Advertising'
+                   : tab === 'costs'
+                     ? 'Costs'
+                     : tab === 'sales'
+                       ? 'Sales'
+                       : tab.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                </button>
              ))}
           </div>
@@ -430,6 +461,8 @@ export default function VendorDashboardPage() {
               </Card.Content>
             </Card>
            </div>
+
+              <SalesSummaryCard />
 
           </div>
          )}

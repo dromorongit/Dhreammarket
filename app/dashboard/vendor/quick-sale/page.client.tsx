@@ -73,6 +73,9 @@ export default function VendorQuickSalePageClient() {
   // Delivery fee
   const [deliveryFee, setDeliveryFee] = useState(0)
 
+  // What the vendor actually paid the rider (not the fee charged to the customer)
+  const [deliveryCost, setDeliveryCost] = useState<string>('')
+
   // Payment
   const [markPaid, setMarkPaid] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null)
@@ -281,6 +284,10 @@ export default function VendorQuickSalePageClient() {
     setDeliveryFee(parseFloat(e.target.value) || 0)
   }
 
+  const handleDeliveryCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDeliveryCost(e.target.value)
+  }
+
   // ---- Submit ----
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -298,6 +305,17 @@ export default function VendorQuickSalePageClient() {
       unitPrice: line.overridden ? line.unitPrice : undefined,
     }))
 
+    const trimmedDeliveryCost = deliveryCost.trim()
+    const deliveryCostValue =
+      trimmedDeliveryCost === '' ? undefined : Number(trimmedDeliveryCost)
+    if (
+      deliveryCostValue !== undefined &&
+      (!Number.isFinite(deliveryCostValue) || deliveryCostValue < 0)
+    ) {
+      setSubmitError({ message: 'My delivery cost must be 0 or more' })
+      return
+    }
+
     setSubmitting(true)
     try {
       const res = await fetch('/api/vendor/manual-orders', {
@@ -308,6 +326,7 @@ export default function VendorQuickSalePageClient() {
           channel,
           items: linesPayload,
           deliveryFee,
+          deliveryCost: deliveryCostValue,
           markPaid,
           paymentMethod: markPaid ? (paymentMethod || '') : undefined,
           idempotencyKey,
@@ -363,6 +382,7 @@ export default function VendorQuickSalePageClient() {
     setMarkPaid(false)
     setPaymentMethod(null)
     setDeliveryFee(0)
+    setDeliveryCost('')
     setSale(null)
     setSubmitting(false)
     setIdempotencyKey(crypto.randomUUID())
@@ -634,6 +654,25 @@ export default function VendorQuickSalePageClient() {
                 onChange={handleDeliveryFeeChange}
                 className="min-h-[44px]"
               />
+              <p className="text-xs text-slate-500">
+                The fee you charge the customer for delivery.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">
+                My delivery cost (optional)
+              </label>
+              <Input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={deliveryCost}
+                onChange={handleDeliveryCostChange}
+                className="min-h-[44px]"
+              />
+              <p className="text-xs text-slate-500">
+                What you actually paid the rider. Used to work out your profit.
+              </p>
             </div>
           </CardContent>
         </Card>

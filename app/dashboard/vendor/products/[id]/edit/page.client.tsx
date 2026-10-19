@@ -33,6 +33,7 @@ interface ProductVariant {
   sku?: string
   stock?: number
   price?: number
+  costPrice?: number | null
   active?: boolean
 }
 
@@ -43,6 +44,7 @@ interface Product {
   price: number
   salesPrice?: number | null
   dealsPrice?: number | null
+  costPrice?: number | null
   brandId?: string | null
   brand?: {
     id: string
@@ -99,6 +101,7 @@ export default function VendorEditProductPageClient() {
     lowStockThreshold: '',
     salesPrice: '',
     dealsPrice: '',
+    costPrice: '',
     brandId: '',
     categoryIds: [] as string[],
     imageUrls: [''],
@@ -194,6 +197,7 @@ export default function VendorEditProductPageClient() {
           lowStockThreshold: p.lowStockThreshold !== undefined && p.lowStockThreshold !== null ? p.lowStockThreshold.toString() : '5',
           salesPrice: p.salesPrice ? p.salesPrice.toString() : '',
           dealsPrice: p.dealsPrice ? p.dealsPrice.toString() : '',
+          costPrice: p.costPrice !== null && p.costPrice !== undefined ? p.costPrice.toString() : '',
           brandId: p.brandId || '',
           categoryIds: categoryIds.length > 0 ? categoryIds : [p.categoryId],
           imageUrls: p.images.length > 0
@@ -272,9 +276,13 @@ export default function VendorEditProductPageClient() {
         lowStockThreshold: parseInt(formData.lowStockThreshold) || 5,
         salesPrice: formData.salesPrice ? parseFloat(formData.salesPrice) : null,
         dealsPrice: formData.dealsPrice ? parseFloat(formData.dealsPrice) : null,
+        costPrice: formData.costPrice === '' ? null : parseFloat(formData.costPrice),
         brandId: formData.brandId || null,
         imageUrls: formData.imageUrls.filter(url => url.trim() !== ''),
-        variants: formData.variants.filter(v => v.color || v.size || v.age),
+        variants: formData.variants.filter(v => v.color || v.size || v.age).map(v => ({
+          ...v,
+          costPrice: v.costPrice === null || v.costPrice === undefined ? null : v.costPrice,
+        })),
         expectedArrivalDate: formData.expectedArrivalDate || null,
         estimatedFulfillmentDays: formData.estimatedFulfillmentDays || null,
         preOrderNotes: formData.preOrderNotes || null,
@@ -313,6 +321,12 @@ export default function VendorEditProductPageClient() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
+
+  // A cost above the selling price is allowed, but the vendor should know.
+  const costAbovePrice =
+    formData.costPrice !== '' &&
+    formData.price !== '' &&
+    parseFloat(formData.costPrice) > parseFloat(formData.price)
 
   const getAvailableAvailabilityTypes = () => {
     const types: { value: string; label: string }[] = [{ value: 'IN_STOCK', label: 'In Stock' }]
@@ -569,6 +583,29 @@ export default function VendorEditProductPageClient() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-2">
+                    Cost Price (Optional)
+                  </label>
+                  <Input
+                    id="costPrice"
+                    name="costPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.costPrice}
+                    onChange={handleChange}
+                    placeholder="What you pay for it"
+                  />
+                  {costAbovePrice ? (
+                    <p className="text-xs text-amber-700 mt-1">
+                      Warning: the cost is higher than the selling price.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label htmlFor="salesPrice" className="block text-sm font-medium text-gray-700 mb-2">
                     Sales Price (Optional)
                   </label>
@@ -726,6 +763,17 @@ export default function VendorEditProductPageClient() {
                               value={variant.price !== undefined ? variant.price : ''}
                               onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
                               placeholder="Uses product price if left blank"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Cost price (optional)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={variant.costPrice !== null && variant.costPrice !== undefined ? variant.costPrice : ''}
+                              onChange={(e) => updateVariant(index, 'costPrice', e.target.value === '' ? null : parseFloat(e.target.value))}
+                              placeholder="Uses product cost if left blank"
                             />
                           </div>
                         </div>

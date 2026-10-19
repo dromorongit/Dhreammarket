@@ -53,6 +53,12 @@ interface Order {
   receiptToken?: string | null
   receiptUrl?: string | null
   displayNumber?: string
+  deliveryCost?: number | null
+  cost?: number | null
+  profit?: number | null
+  profitLabel?: string
+  costComplete?: boolean
+  deliveryCostKnown?: boolean
 }
 
 const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -104,9 +110,27 @@ export default function VendorOrdersPageClient() {
   const [cancelConfirm, setCancelConfirm] = useState(false)
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
 
+  // Inline delivery cost editor (manual orders only)
+  const [deliveryCostOrderId, setDeliveryCostOrderId] = useState<string | null>(null)
+  const [deliveryCostDraft, setDeliveryCostDraft] = useState<string>('')
+  const [deliveryCostError, setDeliveryCostError] = useState<string | null>(null)
+
   useEffect(() => {
     fetchOrders()
   }, [page, search, statusFilter, sourceFilter, unpaidOnly])
+
+  // The dashboard "Unpaid" tile links here with ?unpaid=true.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('unpaid') === 'true') {
+      setUnpaidOnly(true)
+    }
+    const status = params.get('status')
+    if (status) {
+      setStatusFilter(status)
+    }
+  }, [])
 
   const fetchOrders = async () => {
     try {
@@ -193,8 +217,60 @@ export default function VendorOrdersPageClient() {
       })
   }
 
-  const handleUpdateStatus = async (status: string) => {
-    if (!manualOrderId) return
+  const startDeliveryCostEdit = (order: Order) => {
+    setDeliveryCostOrderId(order.id)
+    setDeliveryCostDraft(order.deliveryCost != null ? order.deliveryCost.toFixed(2) : '')
+    setDeliveryCostError(null)
+  }
+
+  const cancelDeliveryCostEdit = () => {
+    setDeliveryCostOrderId(null)
+    setDeliveryCostDraft('')
+    setDeliveryCostError(null)
+  }
+
+  const handleSaveDeliveryCost = async (orderId: string) => {
+    const raw = deliveryCostDraft.trim()
+    if (raw === '') {
+      setDeliveryCostError('Enter what you paid the rider')
+      return
+    }
+    const value = Number(raw)
+    if (!Number.isFinite(value) || value < 0) {
+      setDeliveryCostError('Enter 0 or more')
+      return
+    }
+    if (Math.round(value * 100) / 100 !== value) {
+      setDeliveryCostError('Use at most 2 decimal places')
+      return
+    }
+
+    setUpdatingOrder(orderId)
+    setDeliveryCostError(null)
+    try {
+      const res = await fetch(`/api/vendor/manual-orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deliveryCost: value }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to save the delivery cost')
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? { ...o, deliveryCost: value, deliveryCostKnown: true }
+            : o
+        )
+      )
+      cancelDeliveryCostEdit()
+    } catch (err) {
+      setDeliveryCostError(err instanceof Error ? err.message : 'Failed to save the delivery cost')
+    } finally {
+      setUpdatingOrder(null)
+    }
+  }
+
+  const handleUpdateStatus = async (status: string) => {    if (!manualOrderId) return
     setUpdatingOrder(manualOrderId)
     try {
       const res = await fetch(`/api/vendor/manual-orders/${manualOrderId}/status`, {
@@ -429,6 +505,27 @@ export default function VendorOrdersPageClient() {
                               day: 'numeric',
                             })}
                           </p>
+                          {isManual(order) ? (
+                            order.profit !== null && order.profit !== undefined ? (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {order.profitLabel || 'Profit before other expenses'}:{' '}
+                                <span
+                                  className={
+                                    order.profit >= 0 ? 'text-emerald-700 font-medium' : 'text-rose-600 font-medium'
+                                  }
+                                >
+                                  {formatPrice(order.profit)}
+                                </span>
+                                {order.deliveryCostKnown === false ? (
+                                  <span className="text-amber-700"> (delivery cost not set)</span>
+                                ) : null}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Add cost prices to see this order&apos;s profit
+                              </p>
+                            )
+                          ) : null}
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-500">Your Total</p>
@@ -509,6 +606,57 @@ export default function VendorOrdersPageClient() {
                                 className="min-h-[44px] text-xs px-3"
                               >
                                 Share receipt
+                              </Button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Inline delivery cost (manual orders only) */}
+                        {isManual(order) && (
+                          <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 mt-3 sm:mt-0 sm:pt-0">
+                            {deliveryCostOrderId === order.id ? (
+                              <>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="Delivery cost"
+                                  value={deliveryCostDraft}
+                                  onChange={(e) => setDeliveryCostDraft(e.target.value)}
+                                  className="w-32 px-3 py-2 border border-slate-200 rounded-xl text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-royal-blue min-h-[44px]"
+                                />
+                                <Button
+                                  size="sm"
+                                  className="min-h-[44px] text-xs px-3"
+                                  onClick={() => handleSaveDeliveryCost(order.id)}
+                                  disabled={updatingOrder === order.id}
+                                >
+                                  {updatingOrder === order.id ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="min-h-[44px] text-xs px-3"
+                                  onClick={cancelDeliveryCostEdit}
+                                >
+                                  Cancel
+                                </Button>
+                                {deliveryCostError ? (
+                                  <span className="text-xs text-rose-600">{deliveryCostError}</span>
+                                ) : null}
+                              </>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => startDeliveryCostEdit(order)}
+                                disabled={updatingOrder === order.id}
+                                className="min-h-[44px] text-xs px-3"
+                              >
+                                {order.deliveryCost != null
+                                  ? `Delivery cost: ${formatPrice(order.deliveryCost)}`
+                                  : 'Set delivery cost'}
                               </Button>
                             )}
                           </div>
