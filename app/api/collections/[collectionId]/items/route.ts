@@ -32,7 +32,10 @@ export async function POST(request: NextRequest, { params }: { params: { collect
     }
 
     if (productId) {
-      const product = await getPrisma().product.findUnique({ where: { id: productId } })
+      const product = await getPrisma().product.findUnique({
+        where: { id: productId },
+        select: { id: true },
+      })
       if (!product) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 })
       }

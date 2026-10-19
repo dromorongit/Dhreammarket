@@ -12,6 +12,10 @@ import { createAuditLog } from '@/lib/audit-log'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 import { stampOrderItems } from '@/lib/order-delivery-stamps'
 import { isManualOrder } from '@/lib/order-source'
+import {
+  VENDOR_ORDER_ITEM_SELECT,
+  VENDOR_ORDER_SELECT,
+} from '@/lib/public-selects'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,12 +83,17 @@ export async function GET(
           },
         },
       },
-      include: {
+      select: {
+        ...VENDOR_ORDER_SELECT,
+        // The vendor's own rider cost. It is only shown when the order is
+        // theirs alone: on a shared order it belongs to another vendor.
+        deliveryCost: true,
         items: {
           where: {
             productId: { in: productIds },
           },
-          include: {
+          select: {
+            ...VENDOR_ORDER_ITEM_SELECT,
             product: {
               select: {
                 id: true,
@@ -94,7 +103,18 @@ export async function GET(
             },
           },
         },
-        payment: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            reference: true,
+            paystackRef: true,
+            message: true,
+            createdAt: true,
+          },
+        },
         user: {
           select: {
             id: true,
@@ -132,11 +152,21 @@ export async function GET(
       },
     })
 
+    const hasOtherVendorItems = otherVendorItemCount > 0
+
+    // The delivery cost of a shared order belongs to whoever delivered it,
+    // so it is only shown when the order holds this vendor's lines only.
+    const { deliveryCost, ...orderWithoutDeliveryCost } = order
+
     return NextResponse.json({
       order: {
-        ...order,
+        ...orderWithoutDeliveryCost,
+        deliveryCost:
+          hasOtherVendorItems || order.source !== 'MANUAL'
+            ? null
+            : (deliveryCost ?? null),
         vendorTotal,
-        hasOtherVendorItems: otherVendorItemCount > 0,
+        hasOtherVendorItems,
         vendorAccepted: order.vendorAccepted,
         vendorRejected: order.vendorRejected,
         vendorRejectionReason: order.vendorRejectionReason,

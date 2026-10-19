@@ -45,6 +45,9 @@ q.py
 *.sql.bak
 readonly-check*.js
 
+# scratch working directory (schema baseline copies, one-off scripts)
+/.tmp
+
 # session cookie files (security risk if committed)
 cookies.txt
 prod_cookies*.txt

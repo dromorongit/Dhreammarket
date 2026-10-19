@@ -83,10 +83,39 @@ export async function PATCH(
         userId: payload.userId,
         deletedAt: null,
       },
-      include: {
-        payment: true,
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
+        total: true,
+        subtotal: true,
+        shipping: true,
+        tax: true,
+        userId: true,
+        createdAt: true,
+        source: true,
+        orderType: true,
+        fulfillmentStatus: true,
+        walletAmountApplied: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            reference: true,
+            paystackRef: true,
+            message: true,
+            createdAt: true,
+          },
+        },
         items: {
-          include: {
+          select: {
+            id: true,
+            productId: true,
+            productVariantId: true,
+            quantity: true,
+            price: true,
             product: {
               select: {
                 store: {

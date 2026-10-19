@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import {
+  PUBLIC_ORDER_ITEM_SELECT,
+  PUBLIC_ORDER_SELECT,
+} from '@/lib/public-selects'
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,9 +38,11 @@ export async function GET(request: NextRequest) {
 
     const orders = await getPrisma().order.findMany({
       where: whereClause,
-      include: {
+      select: {
+        ...PUBLIC_ORDER_SELECT,
         items: {
-          include: {
+          select: {
+            ...PUBLIC_ORDER_ITEM_SELECT,
             product: {
               select: {
                 id: true,
@@ -51,7 +57,18 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        payment: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            reference: true,
+            paystackRef: true,
+            message: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       skip,

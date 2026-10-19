@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { PaymentStatus } from '@prisma/client'
 import { countAttributableVendorCancelledOrders, vendorRejectedOrdersWhere } from '@/lib/trust-metrics'
+import {
+  PUBLIC_PRODUCT_IMAGE_SELECT,
+  PUBLIC_PRODUCT_SELECT,
+} from '@/lib/public-selects'
+
+// The storefront product shape. Every field is selected on purpose so the
+// vendor's cost price never reaches a visitor.
+const STOREFRONT_PRODUCT_SELECT = {
+  ...PUBLIC_PRODUCT_SELECT,
+  images: { select: PUBLIC_PRODUCT_IMAGE_SELECT },
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  _count: {
+    select: { productReviews: true },
+  },
+}
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -30,24 +50,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
               { availabilityType: 'BACKORDER' },
             ],
           },
-          include: {
-            images: true,
-            category: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            _count: {
-              select: { productReviews: true },
-            },
-          },
+          select: STOREFRONT_PRODUCT_SELECT,
           orderBy: { createdAt: 'desc' },
         },
         services: {
           where: {
-            status: 'PUBLISHED',
-            isActive: true,
+            status: 'PUBLISHED',            isActive: true,
           },
           select: {
             id: true,
@@ -93,18 +101,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
                 { availabilityType: 'BACKORDER' },
               ],
             },
-            include: {
-              images: true,
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-              _count: {
-                select: { productReviews: true },
-              },
-            },
+            select: STOREFRONT_PRODUCT_SELECT,
             orderBy: { createdAt: 'desc' },
           },
           services: {

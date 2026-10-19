@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import {
+  PUBLIC_PRODUCT_IMAGE_SELECT,
+  PUBLIC_PRODUCT_SELECT,
+} from '@/lib/public-selects'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -27,7 +31,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const [featuredProducts, featuredServices, reviews, followers, badges] = await Promise.all([
       getPrisma().product.findMany({
         where: { storeId: store.id, isSponsored: true },
-        include: { images: { take: 1 } },
+        select: {
+          ...PUBLIC_PRODUCT_SELECT,
+          images: { select: PUBLIC_PRODUCT_IMAGE_SELECT, take: 1 },
+          store: { select: { id: true, name: true, slug: true } },
+        },
         take: 5,
       }),
       getPrisma().service.findMany({

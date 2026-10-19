@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { getUnitPrice } from '@/lib/pricing'
+import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -28,8 +29,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id: cartItemId },
       include: {
         cart: true,
-        product: true,
-        productVariant: true,
+        product: {
+          select: {
+            id: true,
+            stock: true,
+            reservedQuantity: true,
+            availabilityType: true,
+          },
+        },
+        productVariant: { select: PUBLIC_VARIANT_SELECT },
       },
     })
 
@@ -80,7 +88,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
                 images: true,
               },
             },
-            productVariant: true,
+            productVariant: { select: PUBLIC_VARIANT_SELECT },
           },
         },
       },
@@ -168,7 +176,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
                 images: true,
               },
             },
-            productVariant: true,
+            productVariant: { select: PUBLIC_VARIANT_SELECT },
           },
         },
       },

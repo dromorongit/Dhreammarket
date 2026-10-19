@@ -11,6 +11,7 @@ import { SITE_URL, PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 import { getUnitPrice } from '@/lib/pricing'
+import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -53,11 +54,32 @@ export async function POST(request: NextRequest) {
         items: {
           include: {
             product: {
-              include: {
-                store: true,
+              select: {
+                id: true,
+                name: true,
+                storeId: true,
+                price: true,
+                dealsPrice: true,
+                salesPrice: true,
+                stock: true,
+                reservedQuantity: true,
+                availabilityType: true,
+                expectedArrivalDate: true,
+                estimatedFulfillmentDays: true,
+                expectedRestockDate: true,
+                store: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    mainPhoneNumber: true,
+                    whatsappNumber: true,
+                    location: true,
+                  },
+                },
               },
             },
-            productVariant: true,
+            productVariant: { select: PUBLIC_VARIANT_SELECT },
           },
         },
       },

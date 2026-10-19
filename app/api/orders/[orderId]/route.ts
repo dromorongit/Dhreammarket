@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import {
+  PUBLIC_ORDER_ITEM_SELECT,
+  PUBLIC_ORDER_SELECT,
+  PUBLIC_VARIANT_SELECT,
+} from '@/lib/public-selects'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,9 +39,11 @@ export async function GET(
         userId: payload.userId,
         deletedAt: null, // Exclude soft-deleted orders
       },
-      include: {
+      select: {
+        ...PUBLIC_ORDER_SELECT,
         items: {
-          include: {
+          select: {
+            ...PUBLIC_ORDER_ITEM_SELECT,
             product: {
               select: {
                 id: true,
@@ -56,10 +63,21 @@ export async function GET(
                 },
               },
             },
-            productVariant: true,
+            productVariant: { select: PUBLIC_VARIANT_SELECT },
           },
         },
-        payment: true,
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            reference: true,
+            paystackRef: true,
+            message: true,
+            createdAt: true,
+          },
+        },
         user: {
           select: {
             id: true,

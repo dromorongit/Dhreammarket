@@ -237,7 +237,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Verify product exists by id or slug
     let product = await getPrisma().product.findUnique({
       where: { id: productId },
-      include: {
+      select: {
+        id: true,
         store: {
           select: {
             userId: true,
@@ -249,7 +250,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (!product) {
       const productBySlug = await getPrisma().product.findUnique({
         where: { slug: productId },
-        include: {
+        select: {
+          id: true,
           store: {
             select: {
               userId: true,

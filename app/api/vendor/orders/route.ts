@@ -9,6 +9,10 @@ import {
   toPesewas,
   PROFIT_LABEL,
 } from '@/lib/sales-summary'
+import {
+  VENDOR_ORDER_ITEM_SELECT,
+  VENDOR_ORDER_SELECT,
+} from '@/lib/public-selects'
 
 export const dynamic = 'force-dynamic'
 
@@ -119,27 +123,33 @@ const skip = (page - 1) * limit
              },
            },
          },
-         include: {
+         select: {
+           ...VENDOR_ORDER_SELECT,
+           // The vendor's own rider cost. It is stripped from the answer
+           // again below unless this is a manual order that only holds their
+           // own lines: on a shared order it belongs to another vendor.
+           deliveryCost: true,
            items: {
              where: {
                productId: { in: productIds },
              },
-              include: {
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
-                    availabilityType: true,
-                    costPrice: true,
-                  },
-                },
-                productVariant: {
-                  select: {
-                    id: true,
-                    costPrice: true,
-                  },
-                },
-              },
+             select: {
+               ...VENDOR_ORDER_ITEM_SELECT,
+               product: {
+                 select: {
+                   id: true,
+                   name: true,
+                   availabilityType: true,
+                   costPrice: true,
+                 },
+               },
+               productVariant: {
+                 select: {
+                   id: true,
+                   costPrice: true,
+                 },
+               },
+             },
            },
            user: {
              select: {
@@ -201,14 +211,19 @@ const skip = (page - 1) * limit
         customerPhone: _cpf,
         paymentMethod: _pm,
         receiptToken: _rt,
+        // The delivery cost of a shared order belongs to whoever delivered
+        // it, and on an online order it is the platform's delivery bill.
+        // It is added back below for the vendor's own manual orders only.
+        deliveryCost: _dc,
         ...orderRest
       } = order
+      const hasOtherVendorItems = otherVendorOrderIds.has(order.id)
       const baseRow = {
         ...orderRest,
         vendorTotal,
         source: order.source,
         channel: order.channel,
-        hasOtherVendorItems: otherVendorOrderIds.has(order.id),
+        hasOtherVendorItems,
       }
 
       // Additive fields for MANUAL orders only — ONLINE rows are unchanged.
@@ -262,7 +277,7 @@ const skip = (page - 1) * limit
           paymentMethod: order.paymentMethod || null,
           receiptToken: order.receiptToken || null,
           receiptUrl: order.receiptToken ? buildReceiptUrl(order.receiptToken) : null,
-          deliveryCost: order.deliveryCost ?? null,
+          deliveryCost: hasOtherVendorItems ? null : (order.deliveryCost ?? null),
           cost: costComplete ? fromPesewas(cost.cogsPesawas) : null,
           profit: costComplete ? fromPesewas(profitPesawas) : null,
           profitLabel: PROFIT_LABEL,

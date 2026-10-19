@@ -39,10 +39,13 @@ export async function GET(request: NextRequest) {
         paymentStatus: 'PAID',
         deletedAt: null,
       },
-      include: {
+      select: {
+        id: true,
+        createdAt: true,
+        customerCity: true,
         items: {
           take: 1,
-          include: {
+          select: {
             product: {
               select: {
                 name: true,

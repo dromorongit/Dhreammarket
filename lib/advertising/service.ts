@@ -700,7 +700,16 @@ export async function getCampaignById(id: string, vendorId?: string): Promise<Ad
     where,
     include: {
       vendor: { select: { id: true, email: true } },
-      product: true,
+      // The promoted product. Only the fields the advertising screens read
+      // are selected, so a cost price can never ride along.
+      product: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          price: true,
+        },
+      },
       service: true,
       placements: true,
       payments: true,

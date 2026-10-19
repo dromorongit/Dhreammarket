@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import {
+  PUBLIC_PRODUCT_IMAGE_SELECT,
+  PUBLIC_PRODUCT_SELECT,
+} from '@/lib/public-selects'
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,8 +66,9 @@ export async function GET(request: NextRequest) {
         products: {
           include: {
             product: {
-              include: {
-                images: true,
+              select: {
+                ...PUBLIC_PRODUCT_SELECT,
+                images: { select: PUBLIC_PRODUCT_IMAGE_SELECT },
                 store: { select: { name: true, slug: true, averageRating: true, reviewCount: true } },
               },
             },

@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { PerformanceLogger } from '@/lib/performance'
 import { getUnitPrice } from '@/lib/pricing'
+import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
 
 export async function GET(request: NextRequest) {
   const perf = new PerformanceLogger(request.method, request.url)
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
                   images: true,
                 },
               },
-              productVariant: true,
+              productVariant: { select: PUBLIC_VARIANT_SELECT },
             },
           },
         },
@@ -284,7 +285,7 @@ export async function POST(request: NextRequest) {
                   images: true,
                 },
               },
-              productVariant: true,
+              productVariant: { select: PUBLIC_VARIANT_SELECT },
             },
           },
         },

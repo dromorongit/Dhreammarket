@@ -142,10 +142,11 @@ function buildMockPrisma() {
       }),
     },
     product: {
-      findUnique: vi.fn(async ({ where, include }: any) => {
+      findUnique: vi.fn(async ({ where, include, select }: any) => {
         const product = products.find((p) => p.id === where.id || p.slug === where.slug) || null
         if (!product) return null
-        if (include?.store) {
+        const wantsStore = Boolean(include?.store || select?.store)
+        if (wantsStore) {
           const store = stores.find((s) => s.id === product.storeId)
           return {
             ...product,

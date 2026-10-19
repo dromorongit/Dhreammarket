@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
+import {
+  PUBLIC_PRODUCT_IMAGE_SELECT,
+  PUBLIC_PRODUCT_SELECT,
+  PUBLIC_VARIANT_SELECT,
+} from '@/lib/public-selects'
+
+// The comparison card shape. Every field is selected on purpose so that the
+// vendor's cost price never reaches the buyer.
+const COMPARE_PRODUCT_SELECT = {
+  ...PUBLIC_PRODUCT_SELECT,
+  images: { select: PUBLIC_PRODUCT_IMAGE_SELECT },
+  store: { select: { name: true, slug: true, averageRating: true, reviewCount: true } },
+  category: { select: { name: true } },
+  variants: { select: PUBLIC_VARIANT_SELECT },
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,12 +38,7 @@ export async function POST(request: NextRequest) {
 
     const product = await getPrisma().product.findUnique({
       where: { id: productId },
-      include: {
-        images: true,
-        store: { select: { name: true, slug: true, averageRating: true, reviewCount: true } },
-        category: { select: { name: true } },
-        variants: true,
-      },
+      select: COMPARE_PRODUCT_SELECT,
     })
 
     if (!product) {
@@ -85,12 +95,7 @@ export async function GET(request: NextRequest) {
 
     const products = await getPrisma().product.findMany({
       where: { id: { in: productIds } },
-      include: {
-        images: true,
-        store: { select: { name: true, slug: true, averageRating: true, reviewCount: true } },
-        category: { select: { name: true } },
-        variants: true,
-      },
+      select: COMPARE_PRODUCT_SELECT,
     })
 
     return NextResponse.json({ products, count: products.length })

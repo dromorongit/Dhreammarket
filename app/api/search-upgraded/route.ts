@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { getActiveSponsoredPlacements } from '@/lib/advertising/service'
+import { PUBLIC_PRODUCT_SELECT } from '@/lib/public-selects'
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,8 +37,9 @@ export async function GET(request: NextRequest) {
             { OR: [{ stock: { gt: 0 } }, { availabilityType: 'PREORDER' }, { availabilityType: 'BACKORDER' }] },
           ],
         },
-        include: {
-          images: { take: 1 },
+        select: {
+          ...PUBLIC_PRODUCT_SELECT,
+          images: { select: { id: true, url: true, alt: true }, take: 1 },
           store: { select: { id: true, slug: true, name: true, isVerified: true, badgeTier: true } },
           category: { select: { id: true, name: true } },
         },

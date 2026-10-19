@@ -960,10 +960,9 @@ async function resolveHybridProducts(prisma: ReturnType<typeof getPrisma> | null
 
   const pinnedProducts = await prisma.product.findMany({
     where: { id: { in: joinTableProductIds } },
-    include: {
-      images: { take: 1 },
-      category: { select: { id: true, name: true, slug: true } },
-      store: { select: { id: true, name: true, isVerified: true, logo: true, badgeTier: true } },
+    select: {
+      ...productSelect,
+      images: { select: { id: true, url: true, alt: true }, take: 1 },
     },
     take: joinTableProductIds.length,
   })

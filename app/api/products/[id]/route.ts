@@ -6,6 +6,11 @@ import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-al
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
+import {
+  PUBLIC_PRODUCT_IMAGE_SELECT,
+  PUBLIC_PRODUCT_SELECT,
+  PUBLIC_VARIANT_SELECT,
+} from '@/lib/public-selects'
 
 export const runtime = 'nodejs'
 export const revalidate = 60
@@ -15,68 +20,64 @@ export async function GET(
    { params }: { params: { id: string } }
  ) {
    try {
+// The public product shape. Every field is selected on purpose: an
+// `include` would ship the vendor's cost price to every guest.
+const PUBLIC_PRODUCT_DETAIL_SELECT = {
+      ...PUBLIC_PRODUCT_SELECT,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          parentId: true,
+          isActive: true,
+        },
+      },
+      brandRelation: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logo: true,
+        },
+      },
+      store: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          logo: true,
+          isVerified: true,
+          badgeTier: true,
+          mainPhoneNumber: true,
+        },
+      },
+      images: { select: PUBLIC_PRODUCT_IMAGE_SELECT },
+      categoryAssignments: {
+        select: {
+          id: true,
+          productCategoryId: true,
+          isPrimary: true,
+          productCategory: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              parentId: true,
+              isActive: true,
+            },
+          },
+        },
+      },
+      variants: { select: PUBLIC_VARIANT_SELECT },
+    }
+
 const product = await getPrisma().product.findUnique({
         where: { slug: params.id },
-        include: {
-          category: true,
-          brandRelation: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              logo: true,
-            },
-          },
-          store: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              logo: true,
-              isVerified: true,
-              badgeTier: true,
-              mainPhoneNumber: true,
-            },
-          },
-          images: true,
-          categoryAssignments: {
-           include: {
-             productCategory: true,
-           },
-         },
-         variants: true,
-       },
-     }) ?? await getPrisma().product.findUnique({
+        select: PUBLIC_PRODUCT_DETAIL_SELECT,
+      }) ?? await getPrisma().product.findUnique({
        where: { id: params.id },
-       include: {
-         category: true,
-         brandRelation: {
-           select: {
-             id: true,
-             name: true,
-             slug: true,
-             logo: true,
-           },
-         },
-store: {
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              logo: true,
-              isVerified: true,
-              badgeTier: true,
-              mainPhoneNumber: true,
-            },
-          },
-           images: true,
-          categoryAssignments: {
-           include: {
-             productCategory: true,
-           },
-         },
-         variants: true,
-       },
+       select: PUBLIC_PRODUCT_DETAIL_SELECT,
      })
 
 if (!product) {
