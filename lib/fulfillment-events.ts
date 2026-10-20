@@ -191,9 +191,20 @@ export async function recordFulfillmentEvent(
 
     const order = await getPrisma().order.findUnique({
       where: { id: orderId },
-      include: {
-        user: { include: { profile: true } },
-        items: { include: { product: true } },
+      // Only the fields the notification and the email read are selected: an
+      // `include` would load every column of the order, of its lines and of
+      // their products, the cost prices included.
+      select: {
+        id: true,
+        userId: true,
+        customerEmail: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: { select: { firstName: true } },
+          },
+        },
       },
     })
 
@@ -298,7 +309,7 @@ async function sendEventEmailIfNeeded(
   }
 
   try {
-    const customerName = order.user.profile?.firstName || 'Customer'
+    const customerName = order.user?.profile?.firstName || 'Customer'
     const subject = emailTemplate.subject.replace('{productName}', metadata?.productName || '')
     const message = formatNotificationMessage(emailTemplate.message, {
       productName: metadata?.productName,

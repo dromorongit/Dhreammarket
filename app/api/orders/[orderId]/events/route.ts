@@ -33,6 +33,10 @@ export async function GET(
         id: orderId,
         userId: payload.userId,
       },
+      // Only the ownership check is needed here. A read without a `select`
+      // would load every column of the order, the delivery cost of the
+      // vendor's rider included.
+      select: { id: true },
     })
 
     if (!order) {

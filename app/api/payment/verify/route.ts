@@ -51,8 +51,18 @@ export async function POST(request: NextRequest) {
     // Find the payment record
     const payment = await getPrisma().payment.findUnique({
       where: { reference },
-      include: {
-        order: true,
+      // Only the fields the answer below uses are selected: an `include` would
+      // load every column of the order, the delivery cost of the vendor's
+      // rider included.
+      select: {
+        id: true,
+        userId: true,
+        amount: true,
+        currency: true,
+        status: true,
+        orderId: true,
+        reference: true,
+        order: { select: { status: true } },
       },
     })
 
@@ -150,9 +160,10 @@ export async function POST(request: NextRequest) {
        })
 
        // Release reserved stock for NORMAL orders (must run after transaction commits)
-       const orderForRelease = await getPrisma().order.findUnique({
-         where: { id: payment.orderId },
-       })
+        const orderForRelease = await getPrisma().order.findUnique({
+          where: { id: payment.orderId },
+          select: { orderType: true },
+        })
 
        if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
          releaseStock(payment.orderId).catch(err => {
@@ -193,16 +204,17 @@ export async function POST(request: NextRequest) {
         // Fetch order items to calculate financials
         const orderItems = await prisma.orderItem.findMany({
           where: { orderId: payment.orderId },
-          include: {
-            product: {
-              include: {
-                store: {
-                  include: {
-                    user: true,
-                  },
-                },
-              },
-            },
+          // Every field is selected on purpose: an `include` would load every
+          // column of the line and of its product, the cost price of the
+          // vendor and the cost snapshot of the line included.
+          select: {
+            id: true,
+            productId: true,
+            productVariantId: true,
+            quantity: true,
+            price: true,
+            availabilityType: true,
+            product: { select: { storeId: true } },
           },
         })
 
@@ -274,6 +286,7 @@ export async function POST(request: NextRequest) {
     // Reserve stock for NORMAL orders only (outside transaction to avoid long locks)
     const order = await getPrisma().order.findUnique({
       where: { id: payment.orderId },
+      select: { orderType: true, userId: true },
     })
 
     if (order && order.orderType === 'NORMAL') {

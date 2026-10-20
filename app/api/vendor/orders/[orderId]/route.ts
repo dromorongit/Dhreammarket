@@ -575,7 +575,16 @@ export async function PATCH(
     if (eventType) {
       const orderWithItems = await getPrisma().order.findUnique({
         where: { id: orderId },
-        include: { items: { include: { product: true } } },
+        // Only the name of one of the vendor's own products is needed. An
+        // `include` would read the cost price of every product of the
+        // order, including the ones of the other vendors.
+        select: {
+          items: {
+            where: { productId: { in: productIds } },
+            take: 1,
+            select: { product: { select: { name: true } } },
+          },
+        },
       })
       const item = orderWithItems?.items?.[0]
       recordFulfillmentEvent(orderId, eventType, payload.userId, {

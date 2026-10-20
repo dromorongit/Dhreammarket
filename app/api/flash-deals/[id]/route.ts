@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { requireAdmin } from '@/lib/adminAuth'
+import {
+  PUBLIC_PRODUCT_IMAGE_SELECT,
+  PUBLIC_PRODUCT_SELECT,
+} from '@/lib/public-selects'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -16,8 +20,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         products: {
           include: {
             product: {
-              include: {
-                images: true,
+              // The public product shape: an `include` would ship the cost
+              // price of the vendor with the deal.
+              select: {
+                ...PUBLIC_PRODUCT_SELECT,
+                images: { select: PUBLIC_PRODUCT_IMAGE_SELECT },
                 store: { select: { name: true, slug: true, averageRating: true, reviewCount: true } },
               },
             },

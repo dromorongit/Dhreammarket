@@ -136,7 +136,14 @@ export async function POST(request: NextRequest) {
     try {
       product = await getPrisma().product.findUnique({
         where: { id: productId },
-        include: {
+        // Every field is selected on purpose: an `include` would load every
+        // column of the product, the cost price of the vendor included.
+        select: {
+          id: true,
+          name: true,
+          stock: true,
+          reservedQuantity: true,
+          availabilityType: true,
           variants: {
             select: {
               id: true,

@@ -147,4 +147,43 @@ describe('getReceiptByToken', () => {
     expect(where.source).toBe('MANUAL')
     expect(where.receiptToken).toBe(VALID_TOKEN)
   })
+
+  it('reads the order with a select, so no cost field is ever loaded', async () => {
+    mockOrder()
+    await getReceiptByToken(VALID_TOKEN)
+
+    const query = prismaMock.order.findFirst.mock.calls[0]?.[0]
+
+    // An `include` would load every column of the order and of its lines,
+    // the delivery cost of the vendor and the cost snapshot of the line
+    // included. The receipt is public: the token is the only gate.
+    expect(query.include).toBeUndefined()
+    expect(query.select).toBeDefined()
+
+    const selected = JSON.stringify(query.select)
+    expect(selected).not.toContain('costPrice')
+    expect(selected).not.toContain('deliveryCost')
+  })
+
+  it('never puts a cost field in the receipt of a buyer', async () => {
+    mockOrder({
+      deliveryCost: 7.5,
+      items: [
+        {
+          product: { name: 'Widget' },
+          productVariant: { color: 'Red', size: null, age: null },
+          quantity: 2,
+          price: 10,
+          costPriceSnapshot: 4,
+        },
+      ],
+    })
+
+    const result = await getReceiptByToken(VALID_TOKEN)
+    const receipt = JSON.stringify(result)
+
+    expect(receipt).not.toContain('costPrice')
+    expect(receipt).not.toContain('deliveryCost')
+    expect(receipt).not.toContain('7.5')
+  })
 })

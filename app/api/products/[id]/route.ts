@@ -328,6 +328,17 @@ export async function PUT(
     // Check if product exists and belongs to vendor
     const existingProduct = await getPrisma().product.findUnique({
       where: { id: params.id },
+      select: {
+        id: true,
+        storeId: true,
+        name: true,
+        price: true,
+        stock: true,
+        lowStockThreshold: true,
+        categoryId: true,
+        brandId: true,
+        availabilityType: true,
+      },
     })
 
     if (!existingProduct) {
@@ -612,6 +623,7 @@ export async function DELETE(
     // Check if product exists and belongs to vendor
     const product = await getPrisma().product.findUnique({
       where: { id },
+      select: { id: true, storeId: true, name: true, price: true, stock: true },
     })
 
     if (!product) {

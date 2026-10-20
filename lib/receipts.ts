@@ -1,5 +1,9 @@
 import { getPrisma } from '@/lib/prisma'
 import { orderDisplayNumber } from '@/lib/manual-orders'
+import {
+  PUBLIC_ORDER_ITEM_SELECT,
+  PUBLIC_ORDER_SELECT,
+} from '@/lib/public-selects'
 
 const RECEIPT_TOKEN_REGEX = /^[0-9a-f]{32}$/
 
@@ -47,7 +51,11 @@ export async function getReceiptByToken(token: string): Promise<ReceiptDTO | nul
       receiptToken: token,
       source: 'MANUAL',
     },
-    include: {
+    // The receipt is public: the token is the only gate. Every field is
+    // selected on purpose, because an `include` would ship the vendor's cost
+    // price and the delivery cost to an anonymous browser.
+    select: {
+      ...PUBLIC_ORDER_SELECT,
       vendorCustomer: {
         select: {
           store: {
@@ -62,7 +70,8 @@ export async function getReceiptByToken(token: string): Promise<ReceiptDTO | nul
         },
       },
       items: {
-        include: {
+        select: {
+          ...PUBLIC_ORDER_ITEM_SELECT,
           product: {
             select: {
               name: true,

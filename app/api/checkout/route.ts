@@ -151,7 +151,19 @@ export async function POST(request: NextRequest) {
         idempotencyKey: effectiveIdempotencyKey,
         createdAt: { gte: tenMinutesAgo },
       },
-      include: { payment: true },
+      // Only the fields the answer below uses are selected: a read without a
+      // `select` loads every column of the order, the delivery cost of the
+      // vendor's rider included.
+      select: {
+        id: true,
+        paymentStatus: true,
+        walletAmountApplied: true,
+        subtotal: true,
+        shipping: true,
+        tax: true,
+        total: true,
+        payment: { select: { id: true, reference: true, paystackRef: true } },
+      },
     })
 
     if (recentOrder) {
