@@ -47,6 +47,7 @@ readonly-check*.js
 
 # scratch working directory (schema baseline copies, one-off scripts)
 /.tmp
+.tmp/
 
 # session cookie files (security risk if committed)
 cookies.txt
@@ -57,6 +58,9 @@ prod_cookies*.txt
 dev.db
 
 /generated/prisma
+
+# local export archives
+Dhreamarket.zip
 
 # backups
 /backups
