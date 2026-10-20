@@ -1,0 +1,43 @@
+# Local development database for Dhreamarket.
+#
+# This stack is DEVELOPMENT ONLY. It must never be pointed at, or used to
+# replace, the production (Railway) database. The .env file in this repository
+# holds the production DATABASE_URL and is never read by the db:dev:* scripts.
+#
+# Usage (always through the guarded npm scripts):
+#   npm run db:dev:up       start postgres
+#   npm run db:dev:status   show migration status against the local database
+#   npm run db:dev:migrate  apply migrations to the local database
+#   npm run db:dev:reset    drop the local volume and recreate an empty database
+#   npm run db:dev:down     stop postgres (keeps the volume)
+#
+# The host port is 5433 on purpose: 5432 is left free for a Postgres that may
+# already be installed locally.
+
+services:
+  postgres:
+    # Production runs PostgreSQL on Railway; its exact major version is not
+    # recorded anywhere in this repository, so the local image tracks the
+    # current PostgreSQL default major release (16).
+    image: postgres:16
+    container_name: dhream-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dhream_dev
+      POSTGRES_PASSWORD: dhream_dev
+      POSTGRES_DB: dhream_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      # Bound to the loopback interface only: never reachable from the network.
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - dhream_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dhream_dev -d dhream_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  dhream_dev_pgdata:
