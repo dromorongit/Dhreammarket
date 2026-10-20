@@ -2659,17 +2659,24 @@ model VendorBalanceAdjustment {
   id              String         @id @default(cuid())
   vendorId        String
   storeId         String
-  appliedPayoutId String
+  appliedPayoutId String?
   orderItemId     String
   refundId        String
   adjustmentType  AdjustmentType
   amount          Decimal        @db.Decimal(12, 2)
-  appliedAt       DateTime
+  appliedAt       DateTime?
+  idempotencyKey  String?        @unique
+  currency        String         @default("GHS")
   note            String?
   createdAt       DateTime       @default(now())
   vendor          User           @relation(fields: [vendorId], references: [id])
   store           Store          @relation(fields: [storeId], references: [id])
-  payout          VendorPayout   @relation(fields: [appliedPayoutId], references: [id])
+  // onDelete: Restrict pins the foreign key to the constraint that is already
+  // in the database ("vendor_balance_adjustments_appliedPayoutId_fkey" is
+  // ON DELETE RESTRICT ON UPDATE CASCADE). Prisma's default for an OPTIONAL
+  // relation is SetNull, which would silently re-open an applied debit if a
+  // payout were ever deleted - so the action is stated explicitly.
+  payout          VendorPayout?  @relation(fields: [appliedPayoutId], references: [id], onDelete: Restrict)
   orderItem       OrderItem      @relation(fields: [orderItemId], references: [id])
   refund          Refund         @relation(fields: [refundId], references: [id])
 
@@ -2678,6 +2685,7 @@ model VendorBalanceAdjustment {
   @@index([appliedPayoutId])
   @@index([orderItemId])
   @@index([refundId])
+  @@index([storeId, appliedPayoutId])
   @@map("vendor_balance_adjustments")
 }
 
@@ -3197,6 +3205,7 @@ enum AdjustmentType {
   CHARGEBACK
   FEE_CORRECTION
   MANUAL
+  REFUND_CLAWBACK
 }
 
 enum RefundStatus {
