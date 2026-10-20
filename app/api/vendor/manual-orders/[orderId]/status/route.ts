@@ -6,6 +6,7 @@ import { restoreManualSaleStock } from '@/lib/stock-reservation'
 import { stampOrderItems } from '@/lib/order-delivery-stamps'
 import { createAuditLog } from '@/lib/audit-log'
 import { orderDisplayNumber } from '@/lib/manual-orders'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 import type { OrderFulfillmentStatus, OrderStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -164,6 +165,10 @@ export async function PATCH(
         },
       }).catch((err) => console.error('Failed to create cancellation audit log:', err))
 
+      // A cancelled sale leaves the totals, so the cached summaries of this
+      // store are dropped.
+      invalidateSalesSummaryCache(store.id)
+
       return NextResponse.json({
         order: {
           id: existingOrder.id,
@@ -195,6 +200,10 @@ export async function PATCH(
 
       return updated
     })
+
+    // The status of the sale changed, so the cached summaries of this store
+    // are dropped.
+    invalidateSalesSummaryCache(store.id)
 
     return NextResponse.json({
       order: {

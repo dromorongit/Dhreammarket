@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -212,6 +213,10 @@ export async function PATCH(
       },
       ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
     })
+
+    // The cost of the product changed, so the money view of this store shows
+    // different numbers from now on. The cached summaries are dropped.
+    invalidateSalesSummaryCache(store.id)
 
     return NextResponse.json({
       success: true,

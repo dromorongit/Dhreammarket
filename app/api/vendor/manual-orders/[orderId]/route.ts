@@ -5,6 +5,7 @@ import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { orderDisplayNumber } from '@/lib/manual-orders'
 import { fromPesewas, validateDeliveryCost } from '@/lib/sales-summary'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -129,6 +130,10 @@ export async function PATCH(
       beforeData: { deliveryCost: existingOrder.deliveryCost },
       afterData: { deliveryCost },
     }).catch((err) => console.error('Failed to create delivery cost audit log:', err))
+
+    // The delivery cost of the sale changed, so the cached summaries of this
+    // store are dropped.
+    invalidateSalesSummaryCache(store.id)
 
     return NextResponse.json({
       order: {

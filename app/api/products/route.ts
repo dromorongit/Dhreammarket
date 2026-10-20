@@ -10,6 +10,7 @@ import { sanitizeUserContent } from '@/lib/sanitize'
 import { canCreateProduct } from '@/lib/subscription/feature-restriction'
 import { getCategoryFilterIds } from '@/lib/categories'
 import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 120
@@ -640,6 +641,11 @@ responseProduct = productWithImages ?? product
       }
 
       perf.log()
+
+      // A new product changes the cost coverage the money view reports, so
+      // the cached summaries of this store are dropped.
+      invalidateSalesSummaryCache(store.id)
+
       return NextResponse.json({ product: responseProduct }, { status: 201 })
     } catch (error) {
       perf.markPrismaEnd(prismaPerfStart)

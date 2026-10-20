@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
 import { createAuditLog } from '@/lib/audit-log'
 import { orderDisplayNumber } from '@/lib/manual-orders'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,6 +148,10 @@ export async function PATCH(
         },
       }).catch((err) => console.error('Failed to create payment confirmation audit log:', err))
     })
+
+    // The sale moves from "unpaid" to "paid": it leaves the receivables and
+    // joins the revenue, so the cached summaries of this store are dropped.
+    invalidateSalesSummaryCache(store.id)
 
     return NextResponse.json({
       order: {

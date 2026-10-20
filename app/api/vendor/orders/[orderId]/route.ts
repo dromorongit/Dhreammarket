@@ -12,6 +12,7 @@ import { createAuditLog } from '@/lib/audit-log'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 import { stampOrderItems } from '@/lib/order-delivery-stamps'
 import { isManualOrder } from '@/lib/order-source'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 import {
   VENDOR_ORDER_ITEM_SELECT,
   VENDOR_ORDER_SELECT,
@@ -391,6 +392,10 @@ export async function PATCH(
           },
         }).catch(err => console.error('Failed to create rejection audit log:', err))
 
+        // A rejected order leaves the totals, so the cached summaries of this
+        // store are dropped.
+        invalidateSalesSummaryCache(store.id)
+
         const orderWithUser = await getPrisma().order.findUnique({
           where: { id: orderId },
           include: {
@@ -522,6 +527,10 @@ export async function PATCH(
       }
       // COMPLETED alone stamps nothing (but may have already stamped deliveredAt via transition)
     })
+
+    // The status of the online order changed, so what the vendor sees in the
+    // money view changed with it. The cached summaries are dropped.
+    invalidateSalesSummaryCache(store.id)
 
     if (isConsumptionStatus && existingOrder.orderType === 'NORMAL' && !manual) {
       const consumptionResult = await consumeInventory(orderId, payload.userId)

@@ -25,6 +25,7 @@ export interface FakeProduct {
   name: string
   price: number
   costPrice: number | null
+  availabilityType?: string
   variants: FakeProductVariant[]
 }
 
@@ -56,6 +57,7 @@ export interface FakeOrder {
   customerPhone: string | null
   receiptToken: string | null
   paymentMethod: string | null
+  idempotencyKey?: string | null
   deletedAt: Date | null
   items: FakeOrderItem[]
 }
@@ -100,6 +102,7 @@ function matchesOrder(order: FakeOrder, where: any): boolean {
 
   if (where.source && order.source !== where.source) return false
   if (where.paymentStatus && order.paymentStatus !== where.paymentStatus) return false
+  if (where.idempotencyKey && order.idempotencyKey !== where.idempotencyKey) return false
 
   if (where.status && typeof where.status === 'object' && where.status.not) {
     if (order.status === where.status.not) return false
@@ -170,8 +173,13 @@ export interface FakeSalesPrisma {
     findMany: any
     findFirst: any
     aggregate: any
+    create: any
+    update: any
   }
+  orderItem: { createMany: any }
+  vendorCustomer: { upsert: any }
   refund: { findMany: any }
+  $transaction: any
   /** Every where clause the order query was called with, in order. */
   orderQueries: any[]
 }
@@ -277,6 +285,85 @@ export function createFakeSalesPrisma(options: FakeSalesDbOptions = {}): FakeSal
         const total = rows.reduce((sum, order) => sum + order.total, 0)
         return { _sum: { [Object.keys(_sum)[0]]: total } }
       }),
+      create: vi.fn(async ({ data }: any) => {
+        const order: FakeOrder = {
+          id: `order_${fakeOrders.length + 1}`,
+          source: data.source ?? 'MANUAL',
+          channel: data.channel ?? null,
+          status: data.status ?? 'PROCESSING',
+          paymentStatus: data.paymentStatus ?? 'PENDING',
+          createdAt: data.createdAt ?? new Date(),
+          total: data.total ?? 0,
+          vendorEarnings: data.vendorEarnings ?? null,
+          netAmount: data.netAmount ?? null,
+          deliveryCost: data.deliveryCost ?? null,
+          customerFirstName: data.customerFirstName ?? null,
+          customerLastName: data.customerLastName ?? null,
+          customerPhone: data.customerPhone ?? null,
+          receiptToken: data.receiptToken ?? null,
+          paymentMethod: data.paymentMethod ?? null,
+          idempotencyKey: data.idempotencyKey ?? null,
+          deletedAt: null,
+          items: [],
+        }
+        fakeOrders.push(order)
+        return { ...order }
+      }),
+      update: vi.fn(async ({ where, data }: any) => {
+        const order = fakeOrders.find((candidate) => candidate.id === where?.id)
+        if (!order) return null
+        Object.assign(order, data)
+        return { ...order }
+      }),
+    },
+    orderItem: {
+      createMany: vi.fn(async ({ data }: any) => {
+        const rows = Array.isArray(data) ? data : [data]
+
+        for (const row of rows) {
+          const order = fakeOrders.find((candidate) => candidate.id === row.orderId)
+          if (!order) continue
+
+          const product = fakeProducts.find((candidate) => candidate.id === row.productId)
+          const variant =
+            product?.variants.find((candidate) => candidate.id === row.productVariantId) ?? null
+
+          order.items.push({
+            id: `item_${order.items.length + 1}`,
+            productId: row.productId,
+            productVariantId: row.productVariantId ?? null,
+            quantity: row.quantity ?? 0,
+            price: row.price ?? 0,
+            costPriceSnapshot: row.costPriceSnapshot ?? null,
+            vendorEarnings: row.vendorEarnings ?? null,
+            product: {
+              id: row.productId,
+              name: product?.name ?? 'Unknown product',
+              costPrice: product?.costPrice ?? null,
+            },
+            productVariant: variant
+              ? {
+                  id: variant.id,
+                  color: variant.color,
+                  size: variant.size,
+                  age: variant.age,
+                  sku: variant.sku,
+                  price: variant.price,
+                  costPrice: variant.costPrice,
+                }
+              : null,
+          })
+        }
+
+        return { count: rows.length }
+      }),
+    },
+    vendorCustomer: {
+      upsert: vi.fn(async () => ({
+        id: 'vendor_customer_1',
+        storeId: fakeStore.id,
+        phone: '+233000000000',
+      })),
     },
     refund: {
       findMany: vi.fn(async ({ where }: any) => {
@@ -290,9 +377,27 @@ export function createFakeSalesPrisma(options: FakeSalesDbOptions = {}): FakeSal
       }),
     },
     orderQueries,
+    $transaction: vi.fn(),
   }
 
+  // The transaction of a manual sale runs against the very same rows.
+  prisma.$transaction = vi.fn(async (callback: any) =>
+    callback({
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      order: prisma.order,
+      orderItem: prisma.orderItem,
+      vendorCustomer: prisma.vendorCustomer,
+    }),
+  )
+
   return prisma
+}
+
+/**
+ * The orders the fake holds right now.
+ */
+export function fakeSalesOrders(): FakeOrder[] {
+  return fakeOrders
 }
 
 /**

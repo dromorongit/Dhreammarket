@@ -6,6 +6,7 @@ import { allocateForProductStock, allocateForVariantStock } from '@/lib/stock-al
 import { sanitizeUserContent } from '@/lib/sanitize'
 import { createAuditLog, captureBeforeAfter } from '@/lib/audit-log'
 import { fromPesewas, validateCostPrice } from '@/lib/sales-summary'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 import {
   PUBLIC_PRODUCT_IMAGE_SELECT,
   PUBLIC_PRODUCT_SELECT,
@@ -575,6 +576,10 @@ if (finalAvailabilityType === 'PREORDER') {
       },
     })
 
+    // The cost of the product (or of one of its variants) may have changed,
+    // so the money view of this store shows different numbers from now on.
+    invalidateSalesSummaryCache(store.id)
+
     return NextResponse.json({ product: productWithUpdates })
   } catch (error) {
     console.error('Error updating product:', error)
@@ -686,6 +691,9 @@ export async function DELETE(
     await getPrisma().product.delete({
       where: { id },
     })
+
+    // The product is gone, so the cost coverage of the money view changed.
+    invalidateSalesSummaryCache(store.id)
 
     return NextResponse.json({ message: 'Product deleted successfully' })
   } catch (error: any) {

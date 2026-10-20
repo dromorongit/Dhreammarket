@@ -10,6 +10,7 @@ import { createNotification } from '@/lib/notifications'
 import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 import { isManualOrder } from '@/lib/order-source'
+import { invalidateSalesSummaryCaches } from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,6 +121,7 @@ export async function PATCH(
               select: {
                 store: {
                   select: {
+                    id: true,
                     userId: true,
                     name: true,
                   },
@@ -354,6 +356,14 @@ export async function PATCH(
         console.error('Failed to create vendor cancellation notification:', err)
       )
     }
+
+    // A cancelled order leaves the totals, so the money view of every store
+    // that sold into it has to be recomputed.
+    invalidateSalesSummaryCaches(
+      existingOrder.items
+        .map(item => item.product?.store?.id)
+        .filter((storeId): storeId is string => Boolean(storeId))
+    )
 
     return NextResponse.json({
       success: true,

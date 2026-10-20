@@ -25,6 +25,7 @@ import {
   resolveUnitCostPesawas,
   validateDeliveryCost,
 } from '@/lib/sales-summary'
+import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -452,6 +453,10 @@ export async function POST(request: NextRequest) {
     if (result.kind === 'conflict') {
       return NextResponse.json({ error: result.error }, { status: 409 })
     }
+
+    // A new sale changes the numbers of the money view, so the cached
+    // summaries of this store are dropped instead of waiting out the minute.
+    invalidateSalesSummaryCache(store.id)
 
     return NextResponse.json(
       {
