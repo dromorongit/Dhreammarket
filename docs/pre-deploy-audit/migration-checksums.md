@@ -48,9 +48,9 @@ Source: `backups/prisma-migrations-raw.json` (allowed read-only file) and `git s
 | 20261001202400_restrict_order_items_product_fk | 1371ed73e0725cb5a53796e38e1f5e45db6ca0383cc3437ef005a97ca4434676 | 64 | 1371ed73e0725cb5a53796e38e1f5e45db6ca0383cc3437ef005a97ca4434676 | YES | No | YES | MATCH_BLOB |
 | 20261001203000_add_influencer_account_type | NOT_RECORDED | N/A | 7401bf2568303aa13640837f8f0aead7a9261174d9ff3e5f61d3d0a92f71f75f | N/A | Yes | N/A | NOT_RECORDED |
 | 20261008000000_add_influencer_perks | NOT_RECORDED | N/A | 7c0cea5ed2b3a0316d31db51ae2fd2ac020afdb32d1f4ffb0254e09016ba184a | N/A | No | N/A | NOT_RECORDED |
-| 20261008010000_add_returns_refunds_payout_ledger | NOT_RECORDED | N/A | 783cae61ade955d61e35eece023194828bc6c702b5df6bcc86977ebc80f06fb6 | N/A | No | N/A | NOT_RECORDED |
-| 20261009000000_add_refund_links | NOT_RECORDED | N/A | 1b6257b30995fc0a768057bf294a6083242692ddfe99447819677192437cea80 | N/A | No | N/A | NOT_RECORDED |
-| 20261016000000_seller_os_manual_orders | NOT_RECORDED | N/A | e73b6bc17b68635bbe51fbfbeb755a5ae8d3d2b8e14cd6b0aebd39b11d73416c | N/A | Yes | N/A | NOT_RECORDED |
+| 20261008010000_add_returns_refunds_payout_ledger | NOT_RECORDED | N/A | 783cae61ade955d5889faa59c056591be9f081289235270cb7c33ed39bbd5a01 | N/A | No | N/A | NOT_RECORDED |
+| 20261009000000_add_refund_links | NOT_RECORDED | N/A | 4fb37a5b6be92493b6cad6b8cf215cb0631db4fd539c0a2b677b8b727fe2d16d | N/A | No | N/A | NOT_RECORDED |
+| 20261016000000_seller_os_manual_orders | NOT_RECORDED | N/A | b6852063e3c5c1b8eb88c1f9431225465ec3b6b76e26a3d3a170bae6bb692378 | N/A | Yes | N/A | NOT_RECORDED |
 | 20261019000000_seller_os_money_view | NOT_RECORDED | N/A | 6ec8e836a1226e6811496f7f2588172536ba555ad3ae11e5914ded1f536c0e3d | N/A | Yes | N/A | NOT_RECORDED |
 | 20261020100000_corrective_ledger_refund_clawback_enum | NOT_RECORDED | N/A | 5870fa59449690b495ec4334ea20afa67d791c5221484ba040a67bb09d8a0e61 | N/A | Yes | N/A | NOT_RECORDED |
 | 20261020110000_corrective_ledger_refund_clawback_columns | NOT_RECORDED | N/A | 579ea6a9177271d2d0b2c0ef3838e5746309b4c3cbd9299cc85a5ec4e6acd15d | N/A | Yes | N/A | NOT_RECORDED |
@@ -67,10 +67,47 @@ Of the **10 migrations previously reported as mismatching** (comparing working-t
 | 1 | **Genuinely unexplained** — recorded checksum matches neither the committed blob nor the working-tree file. | `20260722120000_verify_existing_users` |
 
 **Conclusion:** H-01 is resolved for 9 of 10 migrations. The committed-blob bytes (what Railway builds from) match the recorded checksums everywhere except:
-- `20260722120000_verify_existing_users` — truly unexplained (unverifiable against production without database access)
+- `20260722120000_verify_existing_users` — unexplained by the file-based comparison alone; now explained against production below
 - `20260731000000_add_service_average_rating_review_count` — recorded as placeholder `abc123`
 
 No migration file was modified by this branch. All working-tree CRLF files are the result of `core.autocrlf` checkout conversion on Windows; the committed blobs are LF.
+
+## The two genuine anomalies (verified against production)
+
+Every expected checksum in `verify-migrations.sql` and every `blob_sha256` in the table above was recomputed from the committed bytes (`git show HEAD:prisma/migrations/<dir>/migration.sql | sha256sum`) and compared against the `checksum` recorded in the production `_prisma_migrations` table (read-only query). After that comparison, **only two migrations differ**, and both are explained:
+
+### 1. `20260722120000_verify_existing_users` — the file was edited after it was applied
+
+| Source | sha256 |
+|---|---|
+| Committed blob at HEAD (commit `4a3c09b1bb`, "Priority 3", 2026-07-25) | `8bb5e26b541a0abcce395a8af645f7127a7d6d19690c76f7028cd7146f7d48cc` |
+| Blob of commit `30be15dd68` ("Email Feature Flag", 2026-07-22) | `de1d1c469c8846bcde3c81942dc4209ad080096c39241069e9125f536126144` |
+| Recorded in production `_prisma_migrations` | `de1d1c469c8846bcde3c81942dc4209ad080096c39241069e9125f536126144` |
+
+The migration was applied in production at 2026-07-22 12:40:10 UTC; the version that ran was committed 32 minutes later as `30be15dd68`. The file was then edited on 2026-07-25 in `4a3c09b1bb`, which is the version on HEAD today. The mismatch is therefore not corruption: **production holds the checksum of the version that was actually applied, and the file has since been modified in the repository.**
+
+### 2. `20260731000000_add_service_average_rating_review_count` — a placeholder in the production record
+
+| Source | Value |
+|---|---|
+| Committed blob at HEAD (commit `88b58c9943`, 2026-07-31) | `30cd29455c20238cdef18bbb1154611c7eea0185d77aa981abe71338687d1f45` |
+| Recorded in production `_prisma_migrations` | `abc123` (6 characters — not a SHA-256) |
+
+The file has exactly one commit and has never been edited, so the committed blob is the version that was applied. The value recorded in production is the literal string `abc123`, which is not a valid checksum and cannot be compared against any file. **This is a bad record, not a modified file.**
+
+### Effect on `prisma migrate deploy`
+
+**Neither anomaly blocks a deploy.** `prisma migrate deploy` only refuses to continue when a row in `_prisma_migrations` has `finished_at IS NULL` **and** `rolled_back_at IS NULL` — an unresolved failure. For an already-applied migration whose checksum no longer matches the file, it emits a warning and continues:
+
+```
+WARNING The following migrations have been modified since they were applied:
+20260722120000_verify_existing_users
+20260731000000_add_service_average_rating_review_count
+```
+
+`migrate deploy` also does not detect schema drift, does not reset the database, and does not warn about an applied migration that is missing from the migration directory.
+
+The stricter behaviour lives in the development commands: `prisma migrate dev` treats an edited applied migration as a hard error and demands a reset, and `prisma migrate status` reports it as a diff. Neither is part of the production deploy path (`npm start` runs `prisma migrate deploy` only), but both should be kept away from a database that shares this migration history.
 
 ## Note on `20260801_loyalty_rewards_system`
 

@@ -33,9 +33,9 @@ WITH expected(migration_name, expected_checksum) AS (
     ('20261001202400_restrict_order_items_product_fk', '1371ed73e0725cb5a53796e38e1f5e45db6ca0383cc3437ef005a97ca4434676'),
     ('20261001203000_add_influencer_account_type', '7401bf2568303aa13640837f8f0aead7a9261174d9ff3e5f61d3d0a92f71f75f'),
     ('20261008000000_add_influencer_perks', '7c0cea5ed2b3a0316d31db51ae2fd2ac020afdb32d1f4ffb0254e09016ba184a'),
-    ('20261008010000_add_returns_refunds_payout_ledger', '783cae61ade955d61e35eece023194828bc6c702b5df6bcc86977ebc80f06fb6'),
-    ('20261009000000_add_refund_links', '1b6257b30995fc0a768057bf294a6083242692ddfe99447819677192437cea80'),
-    ('20261016000000_seller_os_manual_orders', 'e73b6bc17b68635bbe51fbfbeb755a5ae8d3d2b8e14cd6b0aebd39b11d73416c'),
+    ('20261008010000_add_returns_refunds_payout_ledger', '783cae61ade955d5889faa59c056591be9f081289235270cb7c33ed39bbd5a01'),
+    ('20261009000000_add_refund_links', '4fb37a5b6be92493b6cad6b8cf215cb0631db4fd539c0a2b677b8b727fe2d16d'),
+    ('20261016000000_seller_os_manual_orders', 'b6852063e3c5c1b8eb88c1f9431225465ec3b6b76e26a3d3a170bae6bb692378'),
     ('20261019000000_seller_os_money_view', '6ec8e836a1226e6811496f7f2588172536ba555ad3ae11e5914ded1f536c0e3d'),
     ('20261020100000_corrective_ledger_refund_clawback_enum', '5870fa59449690b495ec4334ea20afa67d791c5221484ba040a67bb09d8a0e61'),
     ('20261020110000_corrective_ledger_refund_clawback_columns', '579ea6a9177271d2d0b2c0ef3838e5746309b4c3cbd9299cc85a5ec4e6acd15d')
