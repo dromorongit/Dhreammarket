@@ -26,6 +26,7 @@ import { createAuditLog } from '@/lib/audit-log'
 import { recordFulfillmentEvent } from '@/lib/fulfillment-events'
 import { releaseStock } from '@/lib/stock-reservation'
 import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
+import { recordClawbackAfterSettlement } from '@/lib/ledger/shadow-hook'
 import { createNotification } from '@/lib/notifications'
 import { logError, logInfo, logWarn } from '@/lib/logger'
 import type { Prisma, RefundStatus } from '@prisma/client'
@@ -579,6 +580,7 @@ export async function createRefund(input: CreateRefundInput): Promise<CreateRefu
         // row or a single receipt for the order can only be decided once the
         // order has settled below.
         processedRefundIds.push(row.id)
+        await recordClawbackAfterSettlement(prisma, row.id)
       }
       continue
     }
@@ -872,6 +874,7 @@ export async function checkRefundStatus(
 
     const attached = !refund.paystackRefundId
     const becameProcessed = nextStatus === 'PROCESSED' && previousStatus !== 'PROCESSED'
+    if (becameProcessed) await recordClawbackAfterSettlement(prisma, refundId)
 
     const orderRefunded = await settleOrderIfFullyRefunded(refund.payment.orderId)
 
@@ -977,7 +980,8 @@ export async function checkRefundStatus(
   }
 
     // RESUBMIT: re-issue the Paystack refund under the same row.
-  return prisma.$transaction(async (tx) => {
+  let becameProcessed = false
+  const result = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM payments WHERE id = ${refund.paymentId} FOR UPDATE`
 
     const fresh = await tx.refund.findUnique({ where: { id: refundId } })
@@ -1135,6 +1139,8 @@ export async function checkRefundStatus(
       await notifyRefundProcessed(refundId)
     }
 
+    becameProcessed = nextStatus === 'PROCESSED' && previousFreshStatus !== 'PROCESSED'
+
     return {
       refundId,
       status: nextStatus,
@@ -1146,6 +1152,10 @@ export async function checkRefundStatus(
       eligibleAt,
     }
   })
+
+    if (becameProcessed) await recordClawbackAfterSettlement(prisma, refundId)
+
+    return result
 }
 
 async function notifyAdminsOfAmbiguity(paymentReference: string, refundId: string): Promise<void> {

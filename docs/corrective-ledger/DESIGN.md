@@ -906,3 +906,77 @@ whose count moved are the two ledger files:
 * Deduction from payouts, the vendor-facing balance views, the payout
   eligibility aggregate and the refund-requests queue are all **out of scope**
   and untouched.
+
+---
+
+## 10. Feature flag: LEDGER_SHADOW_WRITE
+
+The shadow write is gated by one new flag in `lib/feature-flags.ts`, following
+the file's existing pattern (`isEmailServiceEnabled`):
+
+```ts
+export function isLedgerShadowWriteEnabled(): boolean {
+  const value = process.env.LEDGER_SHADOW_WRITE
+  if (value === undefined || value === null) return false
+  return value.toLowerCase() === 'true'
+}
+```
+
+* It reads only `process.env.LEDGER_SHADOW_WRITE` - no database, no secret file.
+* Unset or null resolves to `false`, so the default is **OFF in every
+  environment**; nothing in this mechanism can make it default ON.
+* The only production wiring is the hook call sites in section 11; with the
+  flag off the hook returns before any database access, logging or allocation
+  beyond reading the flag.
+
+---
+
+## 11. Shadow hook wiring
+
+`lib/ledger/shadow-hook.ts` exports `recordClawbackAfterSettlement(client,
+refundId): Promise<void>`:
+
+* Flag OFF: return immediately - no database access, no logging, no allocation
+  beyond reading the flag.
+* Flag ON: `await recordRefundClawback(client, refundId)` inside try/catch.
+  `created` / `already_recorded` / `skipped` produce one debug line with the
+  refund id and status only. Any thrown error or rejection (including a
+  non-Error value) is caught, logged as an error with the refund id and the
+  error message only, and the hook returns. It never throws and never rejects,
+  and it opens no transaction of its own.
+* Logged output carries ids and status/message text only - never customer
+  data and never `Refund.reason`.
+
+Each settlement path calls it **once, after the transaction that marks the
+refund PROCESSED has committed**, using the `prisma` client from
+`getPrisma()`, and only when **this call performed the transition**:
+
+| # | Path | After-commit point | Client in scope | Transition detected as |
+|---|------|--------------------|-----------------|------------------------|
+| 1 | `createRefund` (`lib/refunds/refund-service.ts:564-572`) | Immediately after the `prisma.refund.update(... status: nextStatus)` at :564-572 resolves. That update runs outside the `$transaction` (which ended at :479), so it autocommites. | `prisma` | `nextStatus === 'PROCESSED'`. Rows in the `pending` list were just created as `PENDING` (:449-463) and already-existed rows skip at :506, so this is exactly the PENDING→PROCESSED transition this call performed. |
+| 2 | `checkRefundStatus` reconcile branch (:855-871) | Immediately after the `prisma.refund.update` at :856-870 resolves (no transaction wraps `checkRefundStatus` here). | `prisma` | `becameProcessed = nextStatus === 'PROCESSED' && previousStatus !== 'PROCESSED'` (`previousStatus` captured at :796). Rows already `PROCESSED`/`FAILED` return `ALREADY_FINAL` at :798-809. |
+| 3 | `checkRefundStatus` RESUBMIT branch (:1119-1130) | After `prisma.$transaction(async (tx) => {...})` at :980 resolves. The update that sets PROCESSED is inside the transaction, so the hook is called once the transaction result is captured and the function is about to return. | `prisma` (`tx` only exists inside the callback) | `becameProcessed = nextStatus === 'PROCESSED' && previousFreshStatus !== 'PROCESSED'` (`previousFreshStatus` captured at :986). The `PROCESSED`/`FAILED` guard at :987 returns `ALREADY_FINAL` first. |
+| 4 | `reconcileRefundsForPayment` (`lib/webhooks/refund-webhook-handler.ts:177-185`) | Immediately after the `prisma.refund.update` at :177-185 resolves (no transaction). | `prisma` | `becameProcessed = nextStatus === 'PROCESSED' && refund.status !== 'PROCESSED'` (:175). Rows are pre-filtered to non-terminal statuses at :125. |
+
+A refund that was already `PROCESSED` never triggers the hook: each path
+compares against the status captured before the update (or skips
+already-existed rows / pre-filters non-terminal rows), so a no-op re-read is a
+no-op for the ledger too.
+
+---
+
+## 12. Refundable-cap item loading
+
+`Caps.forOrder` places the rounding remainder on the **last** item in the
+list it receives (`lib/refunds/process-refund.ts:222-253`), so the ledger and
+the refund service must see the items in the same order.
+
+* The refund service reads the order with `orderInclude`
+  (`lib/refunds/refund-service.ts:258-263`): `items: true`, **no `orderBy`**.
+* `recordRefundClawback` reads `items: { select: { id, price, quantity } }`
+  (`lib/ledger/corrective-ledger.ts:208-218`), **no `orderBy`**.
+
+Both therefore see the items in the same database-returned order and pass the
+same effective list (`id`, `price`, `quantity`) to the same pure
+`Caps.forOrder`, so the cap is identical in both places. No `orderBy` was
+added on either side, and `refund-service.ts` was not modified.

@@ -23,6 +23,7 @@ import { canTransition, mapPaystackRefundStatus, round2, toPesewas } from '@/lib
 import { notifyRefundProcessed } from '@/lib/refunds/refund-email'
 import { createAuditLog } from '@/lib/audit-log'
 import { createNotification } from '@/lib/notifications'
+import { recordClawbackAfterSettlement } from '@/lib/ledger/shadow-hook'
 import { logWarn, logError, logInfo } from '@/lib/logger'
 import type { RefundStatus } from '@prisma/client'
 
@@ -183,6 +184,7 @@ export async function reconcileRefundsForPayment(
         processedAt: isTerminal && !refund.processedAt ? new Date() : refund.processedAt,
       },
     })
+    if (becameProcessed) await recordClawbackAfterSettlement(prisma, refund.id)
     summary.reconciled += 1
     if (isNewlyAttached) summary.attached += 1
 
