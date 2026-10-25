@@ -1,0 +1,381 @@
+[
+  {
+    "id": "GAP-001",
+    "topic": "Cancellation information (staged policy not built)",
+    "whyItMatters": "The owner chose a staged cancellation policy (instant cancel within 1 hour, request-based after that, non-delivery deadline) that is not built yet. Until it exists, no document may state any cancellation rule, so the Support AI must not answer cancellation questions from this pack.",
+    "dependsOnIntents": ["buyer.cancellation_info"],
+    "whereItShouldAppear": "app/faq/faq-client.tsx (the 'Can I modify or cancel my order?' entry), app/refund/page.tsx (Cancellation section), app/help/refunds, app/help/preorders, app/help/backorders, app/help/restock-orders, app/help/purchase-orders, app/help/placing-orders",
+    "evidence": [
+      "app/faq/faq-client.tsx:92-94 - 'Orders can only be modified or cancelled within 1 hour of placement if they haven't entered processing.'",
+      "app/refund/page.tsx:246-265 - Cancellation section: 'Orders can be cancelled before they are shipped without penalty'",
+      "app/help/refunds/page.tsx:38-46 - 'Step 1 (Alternative): Cancel Before Shipping' / 'If your order hasn't been shipped yet, you can cancel it directly from your order details page.'",
+      "app/help/preorders/page.tsx:73 - 'You can cancel preorders before shipment if needed'",
+      "app/help/preorders/page.tsx:90-91 - 'Yes, you can cancel before shipment. Contact the vendor to initiate cancellation.'",
+      "app/help/preorders/page.tsx:98-99 - 'Vendors will notify you of any significant delays. You can choose to wait or cancel.'",
+      "app/help/preorders/page.tsx:74 - 'Refunds follow standard refund policy if you cancel'",
+      "app/help/backorders/page.tsx:88-89 - 'Yes, you can cancel anytime before shipment. Contact the vendor to cancel.'",
+      "app/help/restock-orders/page.tsx:85-86 - 'Customers can cancel backorders before shipment. Notify them when stock arrives.'",
+      "app/help/purchase-orders/page.tsx:98-99 - 'Yes, cancel anytime before delivery. Contact the supplier to confirm cancellation.' (vendor-to-supplier purchase order, not a customer order)",
+      "app/help/purchase-orders/page.tsx:90-91 - 'Yes, before the supplier accepts. After acceptance, you may need to cancel and create a new order.' (vendor-to-supplier purchase order)",
+      "app/help/placing-orders/page.tsx:98-99 - 'Orders can be modified before shipment. Contact the vendor immediately for any changes.'",
+      "app/terms/page.tsx:189 - 'We reserve the right to cancel orders that violate our policies' (platform-side right, not a customer rule)",
+      "app/dashboard/customer/orders/[id]/page.tsx:856 - 'Please provide a reason for cancelling this order. Orders can only be cancelled before they are shipped.'",
+      "lib/support-ai/knowledge-base.ts:144 - legacy intent order-modification-cancellation repeats the 1 hour rule"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-002",
+    "topic": "Commission rates and platform fees",
+    "whyItMatters": "Vendors and buyers both ask what the platform takes. The rate is configurable in code and its live value is unknown, so no rate may be published by the AI. A hardcoded '1%' also appears in two UI surfaces and does not match the admin default.",
+    "dependsOnIntents": ["vendor.fees_plans_info", "vendor.payout_info_general"],
+    "whereItShouldAppear": "app/register/page.tsx, app/dashboard/vendor/page.client.tsx, a vendor pricing or fees section on the public site",
+    "evidence": [
+      "lib/revenue.ts:12 - COMMISSION_CONFIG.DEFAULT_RATE = 0.01 (code-derived, needs owner approval)",
+      "lib/revenue.ts:28 - the effective rate is read from the super admin settings row at runtime (value unknown)",
+      "lib/revenue.ts:13 - COMMISSION_CONFIG.FALLBACK_PROCESSOR_FEE_RATE = 0.02 (code-derived, needs owner approval)",
+      "components/settings/SuperAdminSections.tsx:133 - admin settings default platformFee = 2.5",
+      "app/register/page.tsx:273 - 'Vendors pay a 1% platform commission on all completed orders. Payouts are processed after 2 business days.'",
+      "app/dashboard/vendor/page.client.tsx:221 - 'Vendors pay a 1% platform commission on all completed orders. Payouts are processed after 2 business days.'"
+    ],
+    "kind": "code-derived-needs-approval"
+  },
+  {
+    "id": "GAP-003",
+    "topic": "KYC failure reasons and appeal steps",
+    "whyItMatters": "Vendors whose documents are rejected need to know why and what to do next. The repo only promises that reasons will be given and that a resubmission is possible; the actual reason categories and any escalation path do not exist as text.",
+    "dependsOnIntents": ["vendor.kyc_info_general"],
+    "whereItShouldAppear": "app/help/vendor-verification/page.tsx, app/help/kyc-submission/page.tsx",
+    "evidence": [
+      "app/help/vendor-verification/page.tsx:109 - 'You'll receive specific reasons and can resubmit corrected documents within 7 days.'",
+      "app/help/kyc-submission/page.tsx:85 - 'You'll receive specific reasons. Correct the issues and resubmit within 7 days.'",
+      "NOT FOUND - the list of rejection reasons and any appeal or escalation step beyond resubmission"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-004",
+    "topic": "Account suspension and reinstatement criteria",
+    "whyItMatters": "A suspended buyer or vendor needs to know why and how to get the account back. The terms only reserve the right to suspend; the criteria, the notice, the duration and the reinstatement route are not written anywhere.",
+    "dependsOnIntents": ["account.help_general"],
+    "whereItShouldAppear": "app/terms/page.tsx (Termination section), a support article on account suspension",
+    "evidence": [
+      "app/terms/page.tsx:336 - 'We reserve the right to suspend or terminate your account at any time for violation of these terms or for any other reason.'",
+      "NOT FOUND - suspension criteria, notice period, suspension duration and reinstatement procedure"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-005",
+    "topic": "Chargeback and payment dispute process",
+    "whyItMatters": "A buyer whose card payment is reversed, and a vendor whose payout is reduced by a chargeback, both need the process. Chargebacks appear only as a line in the payout deduction list; there is no process, no timeline and no owner.",
+    "dependsOnIntents": ["buyer.payment_methods_info", "vendor.payout_info_general", "buyer.returns_policy_info"],
+    "whereItShouldAppear": "app/payment-policy/page.tsx, app/refund/page.tsx (Dispute Resolution)",
+    "evidence": [
+      "app/payment-policy/page.tsx:92 - 'Chargebacks' listed only as a payout deduction",
+      "app/terms/page.tsx:409 - 'Chargebacks' listed only as a payout deduction",
+      "app/refund/page.tsx:239-243 - dispute resolution covers return and refund disputes only",
+      "NOT FOUND - chargeback workflow, evidence requirements, outcome and timeline"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-006",
+    "topic": "Data deletion and data export procedure, and retention period for legally required records",
+    "whyItMatters": "The privacy policy grants the right to request deletion and a copy of personal data but does not say how to ask, how long it takes, what happens to the request, or how long order and tax records are kept. The FAQ only says audit logs are retained.",
+    "dependsOnIntents": ["account.help_general"],
+    "whereItShouldAppear": "app/privacy/page.tsx (Your Rights, Data Retention), app/faq/faq-client.tsx (delete account)",
+    "evidence": [
+      "app/privacy/page.tsx:200 - 'Access and request a copy of your personal data'",
+      "app/privacy/page.tsx:208 - 'Request deletion of your personal data'",
+      "app/privacy/page.tsx:220 - 'To exercise these rights, please contact us through our Contact page.'",
+      "app/privacy/page.tsx:262 - 'order information is retained for legal and tax purposes' (no duration)",
+      "app/privacy/page.tsx:266 - 'IP addresses and device information tied to account activity are retained for 90 days in our audit logs'",
+      "app/faq/faq-client.tsx:150 - 'Audit logs and records the platform is legally required to keep are retained.'",
+      "NOT FOUND - the request procedure, the export format, the service level and the retention duration for order and tax records"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-007",
+    "topic": "Support hours, response times and admin review time for refund requests",
+    "whyItMatters": "Every customer-facing page implies that support is reachable on a schedule, and two pages state hours and a response window that the owner has not approved. The AI must not promise a response time until the owner confirms it.",
+    "dependsOnIntents": ["account.help_general"],
+    "whereItShouldAppear": "app/contact/page.tsx, app/help/help-client.tsx",
+    "evidence": [
+      "app/help/help-client.tsx:274 - 'We'll respond within 24-48 hours.' (not owner approved)",
+      "app/help/help-client.tsx:310 - 'Our support team operates Monday to Friday, 9:00 AM - 6:00 PM (GMT).' (not owner approved)",
+      "app/contact/page.tsx:215 - 'Available Monday to Friday, 9:00 AM - 6:00 PM (GMT)' (not owner approved)",
+      "NOT FOUND - admin review time for refund requests"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-008",
+    "topic": "What starts the 2 business day payout clock, and whether holds other than disputes apply to it",
+    "whyItMatters": "The FAQ promises payouts within 2 business days when there is no open dispute, but nothing states when the clock starts or what happens when a fraud or compliance hold applies. Both remain undecided.",
+    "dependsOnIntents": ["vendor.payout_info_general"],
+    "whereItShouldAppear": "app/faq/faq-client.tsx (vendor payouts), app/payment-policy/page.tsx",
+    "evidence": [
+      "app/faq/faq-client.tsx:59 - 'When there is no open dispute, vendors receive payouts within 2 business days.'",
+      "app/terms/page.tsx:455-477 - Payout Holds list suspicious activity, fraud investigation, disputes, policy violations and compliance reviews",
+      "app/payment-policy/page.tsx:155-179 - the same hold list on the payment policy page",
+      "NOT FOUND - the event that starts the 2 business day clock and whether non-dispute holds stop it"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-009",
+    "topic": "Refunds for orders paid partly or wholly with wallet balance",
+    "whyItMatters": "Checkout supports a wallet balance, but the refund methods only list mobile money, card and bank transfer. Whether the refund goes back to the wallet, to the original method, or is split is not decided.",
+    "dependsOnIntents": ["buyer.returns_policy_info", "buyer.payment_methods_info"],
+    "whereItShouldAppear": "app/refund/page.tsx (Refund Methods), app/help/refunds/page.tsx",
+    "evidence": [
+      "app/refund/page.tsx:171-185 - refunds go to the original payment method: mobile money, card, bank transfer",
+      "app/help/refunds/page.tsx:75-83 - same three methods",
+      "NOT FOUND - any rule for orders paid with wallet balance"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-010",
+    "topic": "Non-delivery handling when a vendor never ships",
+    "whyItMatters": "The staged cancellation policy includes a non-delivery deadline, and the fulfillment guide only tells vendors to notify the customer. A buyer who receives nothing has no documented remedy.",
+    "dependsOnIntents": ["buyer.delivery_info", "buyer.returns_policy_info", "buyer.cancellation_info"],
+    "whereItShouldAppear": "app/help/fulfillment-workflow/page.tsx, a buyer-facing delivery policy section",
+    "evidence": [
+      "app/help/fulfillment-workflow/page.tsx:91 - 'Notify the customer immediately and update the expected shipping date.'",
+      "app/help/tracking-orders/page.tsx:102 - 'Contact the vendor and our support team immediately to investigate'",
+      "NOT FOUND - the buyer remedy, the deadline after which an order counts as not delivered, and any automatic refund"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-011",
+    "topic": "Internal support-agent procedures for each complaint type",
+    "whyItMatters": "agent.procedure_lookup has no content anywhere in the repo. There is no internal runbook for handling damaged orders, refund escalations, disputes, KYC rejections or payout complaints.",
+    "dependsOnIntents": ["agent.procedure_lookup"],
+    "whereItShouldAppear": "An internal support runbook, separate from customer-facing pages",
+    "evidence": [
+      "NOT FOUND - no agent procedure, escalation matrix, ticket SLA or internal checklist in the repo"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-012",
+    "topic": "Where buyers can track orders if not already stated",
+    "whyItMatters": "Resolved: the approved text already states it, so no gap is needed. Buyers can see order status in Dashboard > Orders, and vendors are expected to update status within 24 hours.",
+    "dependsOnIntents": ["buyer.track_order_info"],
+    "whereItShouldAppear": "app/help/tracking-orders/page.tsx (Accessing Your Orders), app/faq/faq-client.tsx",
+    "evidence": [
+      "app/help/tracking-orders/page.tsx:37 - 'Go to Dashboard > Orders to see your order history and track your orders.'",
+      "app/faq/faq-client.tsx:63 - 'Go to your Dashboard > Orders. Click on any order to see its current status.'"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-013",
+    "topic": "Delivery fees and shipping zones",
+    "whyItMatters": "Shipping price tables live in code with hardcoded zone prices and delivery estimates. These are code-derived values, not approved policy, and they change, so they cannot be published by the AI.",
+    "dependsOnIntents": ["buyer.delivery_info"],
+    "whereItShouldAppear": "A public delivery and shipping page",
+    "evidence": [
+      "lib/shipping.ts:19 - SHIPPING_ZONES array with basePrice values (Accra Metropolitan 15.00, Greater Accra 20.00, Ashanti 25.00, Central 30.00, Western 35.00, ...)",
+      "lib/shipping.ts:25 - estimatedDays per zone",
+      "app/terms/page.tsx:202 - 'Shipping costs and delivery times vary by vendor' (the only published statement)",
+      "app/help/tracking-orders/page.tsx:70 - 'Delivery time depends on the vendor's location and shipping method'"
+    ],
+    "kind": "code-derived-needs-approval"
+  },
+  {
+    "id": "GAP-014",
+    "topic": "Payment processing fee percentage",
+    "whyItMatters": "Checkout adds a processing fee that the customer sees at the last step. The percentage is a code constant and is not owner-approved, so the AI cannot state it.",
+    "dependsOnIntents": ["buyer.payment_methods_info", "vendor.fees_plans_info"],
+    "whereItShouldAppear": "app/payment-policy/page.tsx, a published fees or checkout explanation",
+    "evidence": [
+      "lib/site-config.ts:2 - PAYSTACK_FEE_PERCENTAGE = 0.0195 (code-derived, needs owner approval)",
+      "lib/revenue.ts:13 - COMMISSION_CONFIG.FALLBACK_PROCESSOR_FEE_RATE = 0.02 (code-derived, needs owner approval)",
+      "app/api/checkout/route.ts:118 - the processing fee is computed from that constant",
+      "app/payment-policy/page.tsx:68 - 'Paystack transaction charges/fees are deducted by Paystack before payout settlement.' (no percentage published)"
+    ],
+    "kind": "code-derived-needs-approval"
+  },
+  {
+    "id": "GAP-015",
+    "topic": "Promo code and discount rules",
+    "whyItMatters": "The checkout can apply a promo code but no page explains what codes exist, whether they stack, or whether shipping is discounted.",
+    "dependsOnIntents": ["buyer.payment_methods_info", "buyer.how_to_order"],
+    "whereItShouldAppear": "app/coupons, a promotions page",
+    "evidence": [
+      "NOT FOUND - no promo code rules on any public page",
+      "lib/support-ai/knowledge-base.ts:257 - legacy intent discount-code is the only mention of a promo code field"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-016",
+    "topic": "Wishlist features and rules",
+    "whyItMatters": "The privacy policy mentions a Wishlist Preferences setting, so a wishlist exists, but no page explains what it does, how items are removed or how it interacts with stock.",
+    "dependsOnIntents": ["buyer.how_to_order"],
+    "whereItShouldAppear": "A buyer-facing wishlist help page",
+    "evidence": [
+      "app/privacy/page.tsx:251 - 'You can opt out of this tracking at any time in your account settings under Wishlist Preferences.'",
+      "lib/support-ai/knowledge-base.ts:267 - legacy intent wishlist is the only other mention"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-017",
+    "topic": "Vendor verification validity period and re-verification triggers",
+    "whyItMatters": "The help pages state that verification is valid for one year and that re-verification may be needed, but not which changes trigger it or what happens if it lapses.",
+    "dependsOnIntents": ["vendor.onboarding_guide", "vendor.kyc_info_general"],
+    "whereItShouldAppear": "app/help/vendor-verification/page.tsx",
+    "evidence": [
+      "app/help/vendor-verification/page.tsx:113 - 'Verification is valid for 1 year. You may need to re-verify for certain categories.'",
+      "NOT FOUND - which categories, what triggers early re-verification, and the consequence of an expired verification"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-018",
+    "topic": "Featured vendor criteria and review cadence",
+    "whyItMatters": "Both the FAQ and the legacy knowledge base talk about featured vendors, but the FAQ states no threshold and the legacy text asserts a rating threshold and a review cadence that the page does not support.",
+    "dependsOnIntents": ["vendor.store_management_guide"],
+    "whereItShouldAppear": "app/faq/faq-client.tsx (featured vendor entries)",
+    "evidence": [
+      "app/faq/faq-client.tsx:122 - 'Featured vendors are approved by our team based on excellent customer ratings and consistent order fulfillment.'",
+      "lib/support-ai/knowledge-base.ts:184 - legacy text adds a '4.5+ average' rating threshold and a monthly review",
+      "app/faq/faq-client.tsx:127 - 'Top placement in category pages, featured badge on listings, and priority in search results'"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-019",
+    "topic": "Return review window after a return request",
+    "whyItMatters": "The help centre says 1-3 business days and the refund policy says 3 business days. The owner has aligned the return window and the refund processing window, but not the review window, so both numbers are still live on the site.",
+    "dependsOnIntents": ["buyer.returns_policy_info"],
+    "whereItShouldAppear": "app/help/refunds/page.tsx, app/refund/page.tsx",
+    "evidence": [
+      "app/help/refunds/page.tsx:67 - 'Request Review: 1-3 business days'",
+      "app/refund/page.tsx:129 - 'The vendor will review your request and approve or reject it within 3 business days.'",
+      "app/help/returns/page.tsx:57 - 'Vendor reviews your request and provides return instructions within 3 business days.'"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-020",
+    "topic": "Vendor non-response window",
+    "whyItMatters": "A damaged-order buyer is told support intervenes after 48 hours, while a return buyer is told to open a dispute after 3 business days. Both are published and they do not agree.",
+    "dependsOnIntents": ["buyer.returns_policy_info"],
+    "whereItShouldAppear": "app/faq/faq-client.tsx, app/help/returns/page.tsx",
+    "evidence": [
+      "app/faq/faq-client.tsx:101 - 'If the seller doesn't respond within 48 hours, our support team will intervene.'",
+      "app/help/returns/page.tsx:98 - 'Contact our support team to open a dispute if the vendor doesn't respond within 3 business days.'"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-021",
+    "topic": "Subscription plans, prices and limits",
+    "whyItMatters": "Vendor plans and their limits are hardcoded in code. Nothing on the site publishes them, so the AI cannot answer a vendor asking what a plan costs or how many listings it allows.",
+    "dependsOnIntents": ["vendor.fees_plans_info"],
+    "whereItShouldAppear": "A public vendor pricing page",
+    "evidence": [
+      "lib/subscription/types.ts:4-40 - subscriptionPlans: Free 0/0 (20 products, 10 services), Starter 79/790 (100/40), Business 199/1990 (unlimited), Professional 399/3990 (unlimited), Enterprise null/null",
+      "lib/subscription/types.ts:52-90 - planBenefits lists",
+      "NOT FOUND - any published plan, price or limit"
+    ],
+    "kind": "code-derived-needs-approval"
+  },
+  {
+    "id": "GAP-022",
+    "topic": "Vendor badge tiers and how they are earned",
+    "whyItMatters": "Three badge tiers exist in code. The public pages only promise a featured badge without saying what a badge means or what earns it.",
+    "dependsOnIntents": ["vendor.store_management_guide"],
+    "whereItShouldAppear": "app/faq/faq-client.tsx (featured vendor entries)",
+    "evidence": [
+      "lib/vendor-badge.ts:53-57 - BADGE_TIERS: Platinum Vendor (Grey badge), Premium Vendor (Gold badge), Trusted Vendor (Blue badge)",
+      "lib/vendor-badge.ts:6 - badge variants trusted-vendor / premium-vendor / platinum-vendor",
+      "NOT FOUND - the criteria for each tier and who awards them"
+    ],
+    "kind": "code-derived-needs-approval"
+  },
+  {
+    "id": "GAP-023",
+    "topic": "Vendor onboarding completion checks",
+    "whyItMatters": "The platform decides that a vendor is onboarded from hardcoded checks. A vendor asking what is still missing for their store gets no published list.",
+    "dependsOnIntents": ["vendor.onboarding_guide", "vendor.store_management_guide"],
+    "whereItShouldAppear": "app/help/creating-store/page.tsx",
+    "evidence": [
+      "lib/onboarding.ts:38-47 - onboarding requires category, a non-generic store name, location, main phone number and description",
+      "lib/onboarding.ts:83 - the same set is reported as hasStore, hasCategory, hasValidName, hasLocation, hasPhone, hasDescription",
+      "NOT FOUND - a published list of the checks a vendor must pass"
+    ],
+    "kind": "code-derived-needs-approval"
+  },
+  {
+    "id": "GAP-024",
+    "topic": "Whether the published support phone numbers are official support channels",
+    "whyItMatters": "The owner approved the WhatsApp link and the support email as the official channels. Three phone numbers are published on the contact page and on every help page footer, so the owner should confirm whether the AI may quote them.",
+    "dependsOnIntents": ["account.help_general"],
+    "whereItShouldAppear": "app/contact/page.tsx, app/help/**/page.tsx footers",
+    "evidence": [
+      "app/contact/page.tsx:219 - '+233 59 652 2239'",
+      "app/contact/page.tsx:220 - '+233 50 854 8181'",
+      "app/contact/page.tsx:221 - '+233 27 935 4362'",
+      "app/help/returns/page.tsx:126-134 - the same three numbers in the help footer"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-025",
+    "topic": "Dispute submission steps and required evidence",
+    "whyItMatters": "Buyers are told they can open a dispute and that the decision is final within 7 business days, but no page says where to open one, what to attach, or how the buyer is notified.",
+    "dependsOnIntents": ["buyer.returns_policy_info"],
+    "whereItShouldAppear": "app/refund/page.tsx (Dispute Resolution), app/help/refunds/page.tsx",
+    "evidence": [
+      "app/refund/page.tsx:240-242 - 'you can open a dispute through our platform. We will review the case and make a final decision within 7 business days.'",
+      "NOT FOUND - the submission route, the evidence list and the notification steps"
+    ],
+    "kind": "policy-gap"
+  },
+  {
+    "id": "GAP-026",
+    "topic": "When the refund processing clock starts",
+    "whyItMatters": "The owner aligned the refund processing window at 3-5 business days but the pages trigger it from different events: after approval on the refund policy timeline, after the vendor receives and inspects the item on the same page, and after receipt on the help page.",
+    "dependsOnIntents": ["buyer.returns_policy_info"],
+    "whereItShouldAppear": "app/refund/page.tsx (Refund Timeline), app/help/refunds/page.tsx (Refund Timeline)",
+    "evidence": [
+      "app/refund/page.tsx:157 - 'Refund Processing: 3-5 business days after approval'",
+      "app/refund/page.tsx:139-140 - 'Once the vendor receives and inspects the returned item, the refund will be processed within 3-5 business days.'",
+      "app/help/refunds/page.tsx:68 - 'Return Processing: 3-5 business days after receipt'",
+      "app/help/refunds/page.tsx:94 - 'Refunds are processed within 3-5 business days after the vendor receives returned items.'"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-027",
+    "topic": "Payout release trigger on the vendor side",
+    "whyItMatters": "The fulfillment guide says payment is released after delivery, while the FAQ says payouts arrive within 2 business days when there is no open dispute. A vendor asking when money lands gets two different answers.",
+    "dependsOnIntents": ["vendor.payout_info_general"],
+    "whereItShouldAppear": "app/help/fulfillment-workflow/page.tsx, app/faq/faq-client.tsx",
+    "evidence": [
+      "app/help/fulfillment-workflow/page.tsx:99 - 'Payment is released after delivery.'",
+      "app/faq/faq-client.tsx:59 - 'When there is no open dispute, vendors receive payouts within 2 business days.'"
+    ],
+    "kind": "needs-owner-decision"
+  },
+  {
+    "id": "GAP-028",
+    "topic": "Vendor payout method, bank details and failed payout handling",
+    "whyItMatters": "Vendors are told to keep their payout banking details accurate, but the payout method, the settlement account, and what happens when a payout fails are not documented.",
+    "dependsOnIntents": ["vendor.payout_info_general"],
+    "whereItShouldAppear": "app/payment-policy/page.tsx (Vendor Responsibilities)",
+    "evidence": [
+      "app/payment-policy/page.tsx:145 - 'Vendors are responsible for ensuring their payout banking details are accurate.'",
+      "NOT FOUND - the payout method, the settlement schedule and the failed payout route"
+    ],
+    "kind": "policy-gap"
+  }
+]
