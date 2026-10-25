@@ -3,6 +3,9 @@ import { getPrisma } from '@/lib/prisma'
 import { verifyToken, type VerifyTokenOutcome } from '@/lib/auth-middleware'
 import { requireAdmin, requireSuperAdmin } from '@/lib/adminAuth'
 import { createAuditLog } from '@/lib/audit-log'
+import { getPayoutLedgerMode } from '@/lib/ledger/payout-config'
+import { computeStoreBalance } from '@/lib/ledger/payout-eligibility'
+import { createPayoutWithinLedger } from '@/lib/ledger/payout-create'
 
 export const dynamic = 'force-dynamic'
 
@@ -133,7 +136,65 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
     }
 
+    const mode = getPayoutLedgerMode()
+
+    if (mode === 'enforce') {
+      const result = await createPayoutWithinLedger(getPrisma(), {
+        vendorId,
+        storeId: store.id,
+        amount,
+        reference,
+        note,
+      })
+
+      if (!result.ok) {
+        if (result.reason === 'INVALID_AMOUNT') {
+          return NextResponse.json(
+            { error: 'Amount must be a positive finite number' },
+            { status: 400 }
+          )
+        }
+        return NextResponse.json(
+          {
+            error: 'Amount exceeds vendor available unpaid eligible earnings',
+            availableEarnings: Number(result.available.toString()),
+          },
+          { status: 400 }
+        )
+      }
+
+      const payout = result.payout
+
+      await createAuditLog({
+        userId: authResult.userId,
+        userRole: authResult.role,
+        action: 'PAYOUT_CREATED',
+        entityType: 'VENDOR_PAYOUT_METHOD',
+        entityId: payout.id,
+        afterData: payout,
+      })
+
+      return NextResponse.json(payout, { status: 201 })
+    }
+
     const eligibleEarnings = await getVendorUnpaidEligibleEarnings(vendorId)
+
+    if (mode === 'compare') {
+      try {
+        const newBalance = await computeStoreBalance(getPrisma(), { storeId: store.id })
+        const newAvailable = Number(newBalance.available.toString())
+        if (newAvailable !== eligibleEarnings) {
+          console.log({
+            storeId: store.id,
+            oldAvailable: eligibleEarnings,
+            newAvailable,
+            delta: newAvailable - eligibleEarnings,
+          })
+        }
+      } catch {
+        // never let the new calculation affect the request
+      }
+    }
 
     if (amount > eligibleEarnings) {
       return NextResponse.json(
