@@ -48,7 +48,14 @@ function buildItem(overrides: any = {}) {
   }
 }
 
-function buildClient({ item, existingRequests = [], txLockedStatus = null, seq } = {}) {
+type BuildClientOptions = {
+  item?: any
+  existingRequests?: any[]
+  txLockedStatus?: string | null
+  seq?: string[]
+}
+
+function buildClient({ item, existingRequests = [], txLockedStatus = null, seq }: BuildClientOptions = {}) {
   const it = item ?? buildItem()
   const requests = existingRequests.map((r) => ({ ...r }))
   const events: any[] = []
@@ -172,7 +179,7 @@ function buildClient({ item, existingRequests = [], txLockedStatus = null, seq }
       return callback(tx)
     }),
   }
-  return { client, events, requests }
+  return { client, events, requests, calls: client.calls }
 }
 
 function refundCalls() {

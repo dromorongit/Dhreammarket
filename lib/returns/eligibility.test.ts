@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { Prisma } from '@prisma/client'
 import { checkReturnEligibility } from '@/lib/returns/eligibility'
+import type { EligibilityReason, EligibilityResult } from '@/lib/returns/types'
 
 const NOW = new Date('2026-10-25T12:00:00.000Z')
 const DELIVERED = new Date('2026-10-20T10:00:00.000Z')
@@ -40,6 +41,18 @@ function baseInput(overrides: any = {}) {
   return result
 }
 
+/**
+ * Narrow the EligibilityResult union: only read `reason` once `eligible` is
+ * asserted false. `expect(...)` does not narrow types, so an explicit check
+ * is required before accessing the discriminated `reason` property.
+ */
+function assertIneligible(r: EligibilityResult, reason: EligibilityReason): void {
+  expect(r.eligible).toBe(false)
+  if (!r.eligible) {
+    expect(r.reason).toBe(reason)
+  }
+}
+
 describe('checkReturnEligibility', () => {
   it('is eligible with the full remaining amount as a Decimal', () => {
     const r = checkReturnEligibility(baseInput())
@@ -59,43 +72,37 @@ describe('checkReturnEligibility', () => {
 
   it('INVALID_DELIVERY_DATE for null deliveredAt', () => {
     const r = checkReturnEligibility(baseInput({ item: { deliveredAt: null } }))
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('INVALID_DELIVERY_DATE')
+    assertIneligible(r, 'INVALID_DELIVERY_DATE')
   })
 
   it('INVALID_DELIVERY_DATE for future deliveredAt', () => {
     const r = checkReturnEligibility(
       baseInput({ item: { deliveredAt: new Date(NOW.getTime() + 86400000) } })
     )
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('INVALID_DELIVERY_DATE')
+    assertIneligible(r, 'INVALID_DELIVERY_DATE')
   })
 
   it('NOT_DELIVERED for non-delivered order statuses', () => {
     for (const s of ['PENDING', 'PAID', 'CANCELLED', 'REFUNDED']) {
       const r = checkReturnEligibility(baseInput({ order: { status: s } }))
-      expect(r.eligible).toBe(false)
-      expect(r.reason).toBe('NOT_DELIVERED')
+      assertIneligible(r, 'NOT_DELIVERED')
     }
   })
 
   it('ORDER_NOT_PAID for an unpaid order', () => {
     const r = checkReturnEligibility(baseInput({ order: { paymentStatus: 'UNPAID' } }))
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('ORDER_NOT_PAID')
+    assertIneligible(r, 'ORDER_NOT_PAID')
   })
 
   it('NOT_RETURNABLE_PRODUCT when isReturnable is false', () => {
     const r = checkReturnEligibility(baseInput({ product: { isReturnable: false } }))
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('NOT_RETURNABLE_PRODUCT')
+    assertIneligible(r, 'NOT_RETURNABLE_PRODUCT')
   })
 
   it('WINDOW_EXPIRED one second after the boundary', () => {
     const deadline = new Date(DELIVERED.getTime() + WINDOW_DAYS * 24 * 60 * 60 * 1000)
     const r = checkReturnEligibility(baseInput({ root: { now: new Date(deadline.getTime() + 1000) } }))
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('WINDOW_EXPIRED')
+    assertIneligible(r, 'WINDOW_EXPIRED')
   })
 
   it('is eligible exactly at the window boundary (now === deadline)', () => {
@@ -112,8 +119,7 @@ describe('checkReturnEligibility', () => {
 
   it('FULLY_REFUNDED when alreadyRefunded reaches the cap', () => {
     const r = checkReturnEligibility(baseInput({ root: { alreadyRefunded: 100 } }))
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('FULLY_REFUNDED')
+    assertIneligible(r, 'FULLY_REFUNDED')
   })
 
   it('is eligible when partially refunded with a remaining amount', () => {
@@ -125,15 +131,13 @@ describe('checkReturnEligibility', () => {
   it('OPEN_REQUEST_EXISTS for every open status', () => {
     for (const status of ['PENDING', 'ITEM_IN_TRANSIT', 'ITEM_RECEIVED', 'AWAITING_REFUND', 'ESCALATED']) {
       const r = checkReturnEligibility(baseInput({ existingRequests: [{ status, orderItemId: 'oi_1' }] }))
-      expect(r.eligible).toBe(false)
-      expect(r.reason).toBe('OPEN_REQUEST_EXISTS')
+      assertIneligible(r, 'OPEN_REQUEST_EXISTS')
     }
   })
 
   it('OPEN_REQUEST_EXISTS for an open request without an orderItemId', () => {
     const r = checkReturnEligibility(baseInput({ existingRequests: [{ status: 'PENDING' }] }))
-    expect(r.eligible).toBe(false)
-    expect(r.reason).toBe('OPEN_REQUEST_EXISTS')
+    assertIneligible(r, 'OPEN_REQUEST_EXISTS')
   })
 
   it('terminal requests do not block eligibility', () => {
