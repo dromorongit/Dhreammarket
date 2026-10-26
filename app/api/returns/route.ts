@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const allowed = new Set(['orderItemId', 'reason', 'quantity', 'requestedAmount', 'amount', 'refundAmount', 'requestedRefundAmount', 'attachments'])
+  const allowed = new Set(['orderItemId', 'reason', 'quantity', 'requestedAmount', 'attachments'])
   for (const key of Object.keys(body)) {
     if (!allowed.has(key)) {
       return NextResponse.json({ error: `Unknown field: ${key}` }, { status: 400 })
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 })
   }
 
-  const requestedAmount = body.requestedAmount ?? body.amount ?? body.refundAmount ?? body.requestedRefundAmount
+  const requestedAmount = body.requestedAmount
 
   try {
     const result = await openReturn(getPrisma(), {

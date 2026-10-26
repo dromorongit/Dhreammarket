@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isOverdue, findOverdueReturns } from '@/lib/returns/overdue'
+import { isOverdue, findOverdueReturns, findSettledReturns } from '@/lib/returns/overdue'
 
 const DAY = 24 * 60 * 60 * 1000
 const NOW = new Date('2026-10-25T12:00:00.000Z')
@@ -65,5 +65,41 @@ describe('findOverdueReturns', () => {
   it('returns empty for non-array input', () => {
     expect(findOverdueReturns(null as any, NOW)).toEqual([])
     expect(findOverdueReturns(undefined as any, NOW)).toEqual([])
+  })
+})
+
+describe('findSettledReturns', () => {
+  it('returns AWAITING_REFUND requests whose linked refund is PROCESSED', () => {
+    const requests = [
+      { id: 'rr_1', status: 'AWAITING_REFUND', refund: { status: 'PROCESSED' } },
+      { id: 'rr_2', status: 'AWAITING_REFUND', refund: { status: 'PENDING' } },
+      { id: 'rr_3', status: 'AWAITING_REFUND', refund: { status: 'FAILED' } },
+      { id: 'rr_4', status: 'AWAITING_REFUND' },
+      { id: 'rr_5', status: 'PENDING', refund: { status: 'PROCESSED' } },
+      { id: 'rr_6', status: 'CLOSED', refund: { status: 'PROCESSED' } },
+    ]
+    const settled = findSettledReturns(requests)
+    expect(settled.map((r: any) => r.id)).toEqual(['rr_1'])
+  })
+
+  it('supports refunds array form', () => {
+    const requests = [
+      { id: 'rr_1', status: 'AWAITING_REFUND', refunds: [{ status: 'PROCESSED' }] },
+      { id: 'rr_2', status: 'AWAITING_REFUND', refunds: [{ status: 'PENDING' }] },
+    ]
+    const settled = findSettledReturns(requests)
+    expect(settled.map((r: any) => r.id)).toEqual(['rr_1'])
+  })
+
+  it('returns empty for non-array input', () => {
+    expect(findSettledReturns(null as any)).toEqual([])
+    expect(findSettledReturns(undefined as any)).toEqual([])
+  })
+
+  it('accepts object input with a requests key', () => {
+    const res = findSettledReturns({
+      requests: [{ id: 'rr_1', status: 'AWAITING_REFUND', refund: { status: 'PROCESSED' } }],
+    })
+    expect(res.length).toBe(1)
   })
 })

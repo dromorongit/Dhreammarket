@@ -48,3 +48,29 @@ export function findOverdueReturns(input: any, nowArg?: any): any[] {
 export const findOverdueReturnRequests = findOverdueReturns
 export const getOverdueReturns = findOverdueReturns
 export const listOverdueReturns = findOverdueReturns
+
+/**
+ * Pure finder: lists AWAITING_REFUND requests whose linked refund is PROCESSED.
+ * Request objects may carry the refund inline as `refund` or `refunds[0]`.
+ * No database, no network, no money writes.
+ */
+export function findSettledReturns(input: any): any[] {
+  let requests: any[]
+  if (Array.isArray(input)) {
+    requests = input
+  } else if (input && typeof input === 'object') {
+    requests = input.requests || input.items || input.returnRequests || []
+  } else {
+    requests = []
+  }
+  if (!Array.isArray(requests)) return []
+  return requests.filter((r) => {
+    if (r.status !== 'AWAITING_REFUND') return false
+    const refund = r.refund ?? (r.refunds && r.refunds[0])
+    return Boolean(refund && refund.status === 'PROCESSED')
+  })
+}
+
+export const findSettledReturnRequests = findSettledReturns
+export const getSettledReturns = findSettledReturns
+export const listSettledReturns = findSettledReturns

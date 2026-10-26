@@ -16,6 +16,8 @@ const TRANSITIONS: { from: ReturnStatus; to: ReturnStatus; actor: ReturnActor }[
   { from: 'PENDING', to: 'ESCALATED', actor: 'ADMIN' },
   { from: 'ESCALATED', to: 'AWAITING_REFUND', actor: 'ADMIN' },
   { from: 'ESCALATED', to: 'REJECTED', actor: 'ADMIN' },
+  { from: 'AWAITING_REFUND', to: 'CLOSED', actor: 'SYSTEM' },
+  { from: 'AWAITING_REFUND', to: 'CLOSED', actor: 'ADMIN' },
 ]
 
 export function canTransition(from: string, to: string, actor: string): boolean {

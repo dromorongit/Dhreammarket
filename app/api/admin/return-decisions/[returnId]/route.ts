@@ -26,7 +26,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const allowed = new Set(['decision', 'approve', 'approved', 'action', 'response', 'amount', 'approvedAmount', 'refundAmount', 'note', 'adminNote', 'reason'])
+  const allowed = new Set(['decision', 'amount', 'note'])
   for (const key of Object.keys(body)) {
     if (!allowed.has(key)) {
       return NextResponse.json({ error: `Unknown field: ${key}` }, { status: 400 })
@@ -37,16 +37,8 @@ export async function POST(
     const result = await adminDecide(getPrisma(), {
       returnRequestId: params.returnId,
       decision: body.decision as any,
-      approve: body.approve as any,
-      approved: body.approved as any,
-      action: body.action as any,
-      response: body.response as any,
       amount: body.amount as any,
-      approvedAmount: body.approvedAmount as any,
-      refundAmount: body.refundAmount as any,
       note: body.note as any,
-      adminNote: body.adminNote as any,
-      reason: body.reason as any,
       actorId: superAdmin.userId,
     })
     return NextResponse.json({ returnRequest: result })

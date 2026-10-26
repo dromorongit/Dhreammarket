@@ -32,8 +32,12 @@
 | PENDING | ESCALATED | ADMIN | ESCALATED |
 | ESCALATED | AWAITING_REFUND | ADMIN | ADMIN_APPROVED |
 | ESCALATED | REJECTED | ADMIN | ADMIN_DENIED |
+| AWAITING_REFUND | CLOSED | SYSTEM | RETURN_CLOSED (refund PROCESSED) |
+| AWAITING_REFUND | CLOSED | ADMIN | RETURN_CLOSED (refund PROCESSED) |
 
 Terminal states have no outgoing transitions. SYSTEM may only escalate overdue PENDING requests.
+
+ITEM_IN_TRANSIT and ITEM_RECEIVED are reserved for a future physical-return step. They are reachable in the ReturnStatus enum and remain in the payout hold list (open non-terminal states), but no transition currently leads into or out of them.
 
 ## Eligibility
 See lib/returns/eligibility.ts. Window boundary inclusive: now <= deliveredAt + windowDays.

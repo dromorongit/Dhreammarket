@@ -25,18 +25,18 @@ function resolveNow(input: any, trailing?: any): Date {
   return new Date()
 }
 
-function getField(obj: any, ...keys: string[]): any {
-  if (!obj || typeof obj !== 'object') return undefined
-  for (const k of keys) {
-    if (obj[k] !== undefined) return obj[k]
-  }
-  return undefined
-}
-
 function toDecimal(value: any): Prisma.Decimal {
   if (value instanceof Prisma.Decimal) return value
   if (value === null || value === undefined) return new Prisma.Decimal(0)
   return new Prisma.Decimal(String(value))
+}
+
+function assertKnownFields(input: any, allowed: string[]): void {
+  if (!input || typeof input !== 'object') return
+  const known = new Set(allowed)
+  for (const key of Object.keys(input)) {
+    if (!known.has(key)) throw createReturnError(400, `Unknown field: ${key}`, 'UNKNOWN_FIELD')
+  }
 }
 
 function normalizeReason(reason: any): string {
@@ -47,15 +47,10 @@ function normalizeReason(reason: any): string {
 
 export type OpenReturnInput = {
   customerId?: string
-  userId?: string
   orderItemId?: string
-  itemId?: string
   reason?: string
   quantity?: number
   requestedAmount?: number | string
-  amount?: number | string
-  refundAmount?: number | string
-  requestedRefundAmount?: number | string
   attachments?: { url: string; publicId?: string; mimeType?: string; sizeBytes?: number }[]
   now?: any
   windowDays?: number
@@ -63,13 +58,14 @@ export type OpenReturnInput = {
 }
 
 export async function openReturn(client: any, input: OpenReturnInput, nowArg?: any) {
+  assertKnownFields(input, ['customerId', 'orderItemId', 'reason', 'quantity', 'requestedAmount', 'attachments', 'now', 'windowDays', 'vendorResponseHours'])
   const now = resolveNow(input, nowArg)
-  const customerId = getField(input, 'customerId', 'userId', 'customerUserId')
-  const orderItemId = getField(input, 'orderItemId', 'itemId', 'orderItem')
+  const customerId = input.customerId
+  const orderItemId = input.orderItemId
   if (!customerId || !orderItemId) throw createReturnError(400, 'customerId and orderItemId are required', 'INVALID_INPUT')
 
-  const reason = normalizeReason(getField(input, 'reason', 'returnReason'))
-  const quantity = Number(getField(input, 'quantity') ?? 1)
+  const reason = normalizeReason(input.reason)
+  const quantity = Number(input.quantity ?? 1)
   if (!Number.isInteger(quantity) || quantity < 1) throw createReturnError(400, 'quantity must be positive integer', 'INVALID_QUANTITY')
 
   const item = await client.orderItem.findUnique({
@@ -131,7 +127,7 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
 
   if (!elig.eligible) throw createReturnError(409, elig.reason, elig.reason)
 
-  const requestedRaw = getField(input, 'requestedAmount', 'amount', 'refundAmount', 'requestedRefundAmount')
+  const requestedRaw = input.requestedAmount
   let requestedAmount: number
   if (requestedRaw === undefined || requestedRaw === null || requestedRaw === '') {
     requestedAmount = Number(elig.maxRefundAmount.toString())
@@ -219,36 +215,26 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
 
 export type VendorRespondInput = {
   returnRequestId?: string
-  id?: string
-  vendorId?: string
-  userId?: string
   decision?: string
-  accept?: boolean
-  accepted?: boolean
-  response?: string
-  action?: string
   amount?: number | string
-  acceptedAmount?: number | string
-  refundAmount?: number | string
-  reason?: string
-  rejectionReason?: string
   note?: string
+  vendorId?: string
   now?: any
 }
 
 export async function vendorRespond(client: any, input: VendorRespondInput, nowArg?: any) {
+  assertKnownFields(input, ['returnRequestId', 'decision', 'amount', 'note', 'vendorId', 'now'])
   const now = resolveNow(input, nowArg)
-  const returnRequestId = getField(input, 'returnRequestId', 'id', 'returnId')
+  const returnRequestId = input.returnRequestId
   if (!returnRequestId) throw createReturnError(400, 'returnRequestId required', 'INVALID_INPUT')
 
-  const decisionRaw = String(getField(input, 'decision', 'response', 'action', 'status') ?? '').toUpperCase()
-  const acceptFlag = getField(input, 'accept', 'accepted')
-  const accept =
-    acceptFlag !== undefined
-      ? Boolean(acceptFlag)
-      : decisionRaw === 'ACCEPT' || decisionRaw === 'APPROVE' || decisionRaw === 'ACCEPTED' || decisionRaw === 'APPROVED'
+  const decisionRaw = String(input.decision ?? '').toUpperCase()
+  if (decisionRaw !== '' && decisionRaw !== 'APPROVE' && decisionRaw !== 'DENY') {
+    throw createReturnError(400, 'Invalid decision', 'INVALID_INPUT')
+  }
+  const accept = decisionRaw === 'APPROVE'
 
-  const reason = getField(input, 'reason', 'rejectionReason', 'note')
+  const note = input.note
 
   const rr = await client.returnRequest.findUnique({
     where: { id: returnRequestId },
@@ -288,7 +274,7 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
   // vendor ownership check should be done in route; here just status
 
   if (!accept) {
-    if (!reason || String(reason).trim() === '') throw createReturnError(400, 'Rejection reason required', 'INVALID_INPUT')
+    if (!note || String(note).trim() === '') throw createReturnError(400, 'Rejection reason required', 'INVALID_INPUT')
     // transition to escalated
     if (!canTransition(rr.status, 'ESCALATED', 'VENDOR')) throw createReturnError(409, 'Transition not allowed', 'INVALID_TRANSITION')
     const updated = await client.$transaction(async (tx: any) => {
@@ -303,8 +289,8 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
         data: {
           returnRequestId,
           eventType: 'VENDOR_REJECTED',
-          note: String(reason).slice(0, 500),
-          createdBy: getField(input, 'vendorId', 'userId') ?? null,
+          note: String(note).slice(0, 500),
+          createdBy: input.vendorId ?? null,
         },
       })
       return u
@@ -317,13 +303,8 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
   }
 
   // accept
-  const acceptedAmountRaw = getField(input, 'amount', 'acceptedAmount', 'refundAmount')
+  const acceptedAmountRaw = input.amount
   let acceptedAmount: number
-  if (acceptedAmountRaw === undefined || acceptedAmountRaw === null || acceptedAmountRaw === '') {
-    // full max refund amount; compute from eligibility caps
-    acceptedAmount = Number(rr.orderItem ? 0 : 0)
-    // fallback: requested? We'll set later after compute
-  }
   // compute max refund amount via Caps
   const order = rr.orderItem.order
   const caps = Caps.forOrder({
@@ -358,7 +339,7 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
         returnRequestId,
         eventType: 'VENDOR_ACCEPTED',
         note: acceptedAmount.toString(),
-        createdBy: getField(input, 'vendorId', 'userId') ?? null,
+        createdBy: input.vendorId ?? null,
       },
     })
     return u
@@ -370,7 +351,7 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
     amount: acceptedAmount,
     now,
     actorRole: 'VENDOR',
-    actorId: getField(input, 'vendorId', 'userId'),
+    actorId: input.vendorId,
   })
 
   return updated
@@ -378,21 +359,19 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
 
 export type EscalateInput = {
   returnRequestId?: string
-  id?: string
-  returnId?: string
   actor?: string
-  actorRole?: string
+  actorId?: string
   reason?: string
   now?: any
-  vendorDeadlinePassed?: boolean
 }
 
 export async function escalate(client: any, input: EscalateInput, nowArg?: any) {
+  assertKnownFields(input, ['returnRequestId', 'actor', 'actorId', 'reason', 'now'])
   const now = resolveNow(input, nowArg)
-  const returnRequestId = getField(input, 'returnRequestId', 'id', 'returnId')
+  const returnRequestId = input.returnRequestId
   if (!returnRequestId) throw createReturnError(400, 'returnRequestId required', 'INVALID_INPUT')
 
-  const actor = (getField(input, 'actor', 'actorRole') || 'SYSTEM').toUpperCase()
+  const actor = (input.actor || 'SYSTEM').toUpperCase()
   if (actor !== 'SYSTEM' && actor !== 'ADMIN') throw createReturnError(403, 'Actor not allowed', 'FORBIDDEN')
 
   const rr = await client.returnRequest.findUnique({ where: { id: returnRequestId } })
@@ -427,7 +406,7 @@ export async function escalate(client: any, input: EscalateInput, nowArg?: any) 
         returnRequestId,
         eventType: 'ESCALATED',
         note: null,
-        createdBy: actor === 'SYSTEM' ? null : (getField(input, 'actorId', 'userId') ?? null),
+        createdBy: actor === 'SYSTEM' ? null : (input.actorId ?? null),
       },
     })
     return u
@@ -438,37 +417,26 @@ export async function escalate(client: any, input: EscalateInput, nowArg?: any) 
 
 export type AdminDecideInput = {
   returnRequestId?: string
-  id?: string
-  returnId?: string
   decision?: string
-  approve?: boolean
-  approved?: boolean
-  action?: string
-  response?: string
   amount?: number | string
-  approvedAmount?: number | string
-  refundAmount?: number | string
   note?: string
-  adminNote?: string
-  reason?: string
-  now?: any
   actorId?: string
-  userId?: string
+  now?: any
 }
 
 export async function adminDecide(client: any, input: AdminDecideInput, nowArg?: any) {
+  assertKnownFields(input, ['returnRequestId', 'decision', 'amount', 'note', 'actorId', 'now'])
   const now = resolveNow(input, nowArg)
-  const returnRequestId = getField(input, 'returnRequestId', 'id', 'returnId')
+  const returnRequestId = input.returnRequestId
   if (!returnRequestId) throw createReturnError(400, 'returnRequestId required', 'INVALID_INPUT')
 
-  const decisionRaw = String(getField(input, 'decision', 'action', 'response', 'status') ?? '').toUpperCase()
-  const approveFlag = getField(input, 'approve', 'approved')
-  const approve =
-    approveFlag !== undefined
-      ? Boolean(approveFlag)
-      : decisionRaw === 'APPROVE' || decisionRaw === 'APPROVED' || decisionRaw === 'ACCEPT' || decisionRaw === 'ACCEPTED'
+  const decisionRaw = String(input.decision ?? '').toUpperCase()
+  if (decisionRaw !== '' && decisionRaw !== 'APPROVE' && decisionRaw !== 'DENY') {
+    throw createReturnError(400, 'Invalid decision', 'INVALID_INPUT')
+  }
+  const approve = decisionRaw === 'APPROVE'
 
-  const note = getField(input, 'note', 'adminNote', 'reason')
+  const note = input.note
   if (!approve && (!note || String(note).trim() === '')) {
     // deny requires note? spec says with a note; allow empty? require note for deny
   }
@@ -522,7 +490,7 @@ export async function adminDecide(client: any, input: AdminDecideInput, nowArg?:
       refunds: order.refunds || [],
     })
     const max = Number(caps.itemRemaining(rr.orderItemId).toString())
-    const amountRaw = getField(input, 'amount', 'approvedAmount', 'refundAmount')
+    const amountRaw = input.amount
     if (amountRaw === undefined || amountRaw === null || amountRaw === '') {
       approvedAmount = max
     } else {
@@ -545,7 +513,7 @@ export async function adminDecide(client: any, input: AdminDecideInput, nowArg?:
         returnRequestId,
         eventType: approve ? 'ADMIN_APPROVED' : 'ADMIN_DENIED',
         note: note ? String(note).slice(0, 500) : null,
-        createdBy: getField(input, 'actorId', 'userId') ?? null,
+        createdBy: input.actorId ?? null,
       },
     })
     return u
@@ -557,7 +525,7 @@ export async function adminDecide(client: any, input: AdminDecideInput, nowArg?:
       amount: approvedAmount,
       now,
       actorRole: 'ADMIN',
-      actorId: getField(input, 'actorId', 'userId'),
+      actorId: input.actorId,
     })
   } else {
     // notify customer (best effort)
@@ -571,19 +539,16 @@ export async function adminDecide(client: any, input: AdminDecideInput, nowArg?:
 
 export type RequestRefundForReturnInput = {
   returnRequestId?: string
-  id?: string
   amount?: number | string
-  approvedAmount?: number | string
-  acceptedAmount?: number | string
   now?: any
   actorRole?: string
   actorId?: string
-  userId?: string
 }
 
 export async function requestRefundForReturn(client: any, input: RequestRefundForReturnInput, nowArg?: any) {
+  assertKnownFields(input, ['returnRequestId', 'amount', 'now', 'actorRole', 'actorId'])
   const now = resolveNow(input, nowArg)
-  const returnRequestId = getField(input, 'returnRequestId', 'id')
+  const returnRequestId = input.returnRequestId
   if (!returnRequestId) throw createReturnError(400, 'returnRequestId required', 'INVALID_INPUT')
 
   const rr = await client.returnRequest.findUnique({
@@ -616,7 +581,7 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
     return { status: 'INVALID_STATUS', returnRequestId }
   }
 
-  const amountRaw = getField(input, 'amount', 'approvedAmount', 'acceptedAmount')
+  const amountRaw = input.amount
   let amount: number
   if (amountRaw === undefined || amountRaw === null || amountRaw === '') {
     // default max remaining
@@ -636,7 +601,7 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
   const order = rr.orderItem.order
   const orderId = order.id
 
-  const actorRole = (getField(input, 'actorRole') || 'SYSTEM').toUpperCase()
+  const actorRole = (input.actorRole || 'SYSTEM').toUpperCase()
   const triggeredByRole = actorRole === 'VENDOR' ? 'ADMIN' : 'SYSTEM'
 
   let result: any
@@ -650,7 +615,7 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
       returnRequestId,
       reason: rr.reason,
       actor: {
-        triggeredByUserId: getField(input, 'actorId', 'userId') ?? null,
+        triggeredByUserId: input.actorId ?? null,
         triggeredByRole: triggeredByRole as any,
       },
     })
@@ -667,7 +632,7 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
         returnRequestId,
         eventType: 'REFUND_REQUESTED',
         note: outcome === 'CREATED' ? 'created' : `failed:${result?.code ?? 'ERROR'}`,
-        createdBy: getField(input, 'actorId', 'userId') ?? null,
+        createdBy: input.actorId ?? null,
       },
     })
   } catch { /* ignore */ }
@@ -677,4 +642,54 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
     returnRequestId,
     result,
   }
+}
+
+export type CloseSettledReturnInput = {
+  returnRequestId?: string
+  now?: any
+  actorId?: string
+}
+
+export async function closeSettledReturn(client: any, input: CloseSettledReturnInput, nowArg?: any) {
+  assertKnownFields(input, ['returnRequestId', 'now', 'actorId'])
+  const now = resolveNow(input, nowArg)
+  const returnRequestId = input.returnRequestId
+  if (!returnRequestId) throw createReturnError(400, 'returnRequestId required', 'INVALID_INPUT')
+
+  const updated = await client.$transaction(async (tx: any) => {
+    await tx.$queryRaw`SELECT id FROM return_requests WHERE id = ${returnRequestId} FOR UPDATE`
+    const locked = await tx.returnRequest.findUnique({ where: { id: returnRequestId } })
+    if (!locked) throw createReturnError(404, 'Return request not found', 'NOT_FOUND')
+    if (locked.status === 'CLOSED') {
+      return { status: 'ALREADY_CLOSED', returnRequestId }
+    }
+    if (locked.status !== 'AWAITING_REFUND') {
+      throw createReturnError(409, 'Return request is not awaiting refund', 'INVALID_STATUS')
+    }
+    const refund = await tx.refund.findFirst({
+      where: { returnRequestId },
+      select: { id: true, status: true },
+    })
+    if (!refund) {
+      return { status: 'NO_REFUND', returnRequestId }
+    }
+    if (refund.status !== 'PROCESSED') {
+      return { status: 'REFUND_NOT_PROCESSED', returnRequestId, refundStatus: refund.status }
+    }
+    const u = await tx.returnRequest.update({
+      where: { id: returnRequestId },
+      data: { status: 'CLOSED' },
+    })
+    await tx.returnRequestEvent.create({
+      data: {
+        returnRequestId,
+        eventType: 'RETURN_CLOSED',
+        note: null,
+        createdBy: input.actorId ?? null,
+      },
+    })
+    return u
+  })
+
+  return updated
 }

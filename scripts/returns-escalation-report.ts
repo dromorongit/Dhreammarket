@@ -1,6 +1,6 @@
 import { assertLocalDatabaseUrl } from './assert-local-db.mjs'
 import { getPrisma } from '../lib/prisma'
-import { findOverdueReturns } from '../lib/returns/overdue'
+import { findOverdueReturns, findSettledReturns } from '../lib/returns/overdue'
 
 async function main(argv: string[]): Promise<void> {
   assertLocalDatabaseUrl(process.env.DATABASE_URL)
@@ -23,6 +23,16 @@ async function main(argv: string[]): Promise<void> {
       createdAt: r.createdAt,
     }))
     process.stdout.write(JSON.stringify(report, null, 2) + '\n')
+
+    // Dry-run: list AWAITING_REFUND requests whose linked refund is PROCESSED.
+    // Ids only, read-only, not wired to any automatic action.
+    const settledRows = await client.returnRequest.findMany({
+      where: { status: 'AWAITING_REFUND' },
+      include: { refunds: { select: { status: true } } },
+    })
+    const settled = findSettledReturns(settledRows)
+    const settledReport = settled.map((r: any) => ({ id: r.id }))
+    process.stdout.write(JSON.stringify({ settled: settledReport }, null, 2) + '\n')
   } finally {
     await client.$disconnect()
   }

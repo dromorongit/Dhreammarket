@@ -20,6 +20,7 @@ const ACTORS = ['CUSTOMER', 'VENDOR', 'ADMIN', 'SYSTEM'] as const
 const ALLOWED: Record<string, Record<string, string[]>> = {
   PENDING: { VENDOR: ['AWAITING_REFUND', 'ESCALATED'], SYSTEM: ['ESCALATED'], ADMIN: ['ESCALATED'] },
   ESCALATED: { ADMIN: ['AWAITING_REFUND', 'REJECTED'] },
+  AWAITING_REFUND: { SYSTEM: ['CLOSED'], ADMIN: ['CLOSED'] },
 }
 
 describe('state machine transition table', () => {
@@ -31,6 +32,8 @@ describe('state machine transition table', () => {
       { from: 'PENDING', to: 'ESCALATED', actor: 'ADMIN' },
       { from: 'ESCALATED', to: 'AWAITING_REFUND', actor: 'ADMIN' },
       { from: 'ESCALATED', to: 'REJECTED', actor: 'ADMIN' },
+      { from: 'AWAITING_REFUND', to: 'CLOSED', actor: 'SYSTEM' },
+      { from: 'AWAITING_REFUND', to: 'CLOSED', actor: 'ADMIN' },
     ]
     expect(TRANSITION_TABLE).toEqual(expected)
   })
@@ -66,6 +69,28 @@ describe('state machine transition table', () => {
       for (const actor of ACTORS) {
         expect(canTransition('REJECTED', to, actor)).toBe(false)
         expect(canTransition('CLOSED', to, actor)).toBe(false)
+      }
+    }
+  })
+
+  it('AWAITING_REFUND -> CLOSED is allowed for SYSTEM and ADMIN only', () => {
+    expect(canTransition('AWAITING_REFUND', 'CLOSED', 'SYSTEM')).toBe(true)
+    expect(canTransition('AWAITING_REFUND', 'CLOSED', 'ADMIN')).toBe(true)
+    expect(canTransition('AWAITING_REFUND', 'CLOSED', 'CUSTOMER')).toBe(false)
+    expect(canTransition('AWAITING_REFUND', 'CLOSED', 'VENDOR')).toBe(false)
+  })
+
+  it('ITEM_IN_TRANSIT and ITEM_RECEIVED are reserved: no transition leads into or out of them', () => {
+    for (const from of STATUSES) {
+      for (const actor of ACTORS) {
+        expect(canTransition(from, 'ITEM_IN_TRANSIT', actor)).toBe(false)
+        expect(canTransition(from, 'ITEM_RECEIVED', actor)).toBe(false)
+      }
+    }
+    for (const to of STATUSES) {
+      for (const actor of ACTORS) {
+        expect(canTransition('ITEM_IN_TRANSIT', to, actor)).toBe(false)
+        expect(canTransition('ITEM_RECEIVED', to, actor)).toBe(false)
       }
     }
   })

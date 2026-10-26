@@ -5,6 +5,7 @@ import {
   adminDecide,
   escalate,
   requestRefundForReturn,
+  closeSettledReturn,
 } from '@/lib/returns/return-service'
 
 const createRefundMock = vi.hoisted(() => vi.fn().mockResolvedValue({ refunds: [{ alreadyExisted: false }] }))
@@ -125,6 +126,9 @@ function buildClient({ item, existingRequests = [], txLockedStatus = null, seq }
         return args.data
       }),
     },
+    refund: {
+      findFirst: vi.fn(async () => null),
+    },
     $queryRaw: vi.fn(async () => []),
     $transaction: vi.fn(async (callback: any) => {
       const tx: any = {
@@ -159,6 +163,9 @@ function buildClient({ item, existingRequests = [], txLockedStatus = null, seq }
             events.push(args.data)
             return args.data
           }),
+        },
+        refund: {
+          findFirst: vi.fn(async () => null),
         },
         $queryRaw: vi.fn(async () => []),
       }
@@ -247,7 +254,7 @@ describe('return-service', () => {
       })
       const updated = await vendorRespond(client, {
         returnRequestId: rr.id,
-        decision: 'ACCEPT',
+        decision: 'APPROVE',
         vendorId: VENDOR,
         now: NOW,
       })
@@ -276,8 +283,8 @@ describe('return-service', () => {
       })
       const updated = await vendorRespond(client, {
         returnRequestId: rr.id,
-        decision: 'REJECT',
-        rejectionReason: 'not valid',
+        decision: 'DENY',
+        note: 'not valid',
         vendorId: VENDOR,
         now: NOW,
       })
@@ -298,10 +305,10 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'ACCEPT', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'APPROVE', vendorId: VENDOR, now: NOW })
       // status is now AWAITING_REFUND; another vendor response is rejected
       await expect(
-        vendorRespond(client, { returnRequestId: rr.id, decision: 'ACCEPT', vendorId: VENDOR, now: NOW })
+        vendorRespond(client, { returnRequestId: rr.id, decision: 'APPROVE', vendorId: VENDOR, now: NOW })
       ).rejects.toMatchObject({ status: 409 })
     })
 
@@ -316,11 +323,11 @@ describe('return-service', () => {
         now: NOW,
       })
       await expect(
-        vendorRespond(client, { returnRequestId: rr.id, decision: 'ACCEPT', vendorId: VENDOR, now: NOW })
+        vendorRespond(client, { returnRequestId: rr.id, decision: 'APPROVE', vendorId: VENDOR, now: NOW })
       ).rejects.toMatchObject({ code: 'CONFLICT', status: 409 })
     })
 
-    it('rejects unknown body fields via caller-side validation is a route concern; service accepts known fields', async () => {
+    it('service rejects unknown fields and removed aliases', async () => {
       const { client } = buildClient()
       const rr = await openReturn(client, {
         customerId: CUSTOMER,
@@ -330,13 +337,39 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, {
-        returnRequestId: rr.id,
-        decision: 'ACCEPT',
-        vendorId: VENDOR,
-        acceptedAmount: 50,
-        now: NOW,
+      const base = { returnRequestId: rr.id, vendorId: VENDOR, now: NOW }
+      await expect(vendorRespond(client, { ...base, decision: 'APPROVE', accept: true } as any)).rejects.toMatchObject({
+        status: 400,
+        code: 'UNKNOWN_FIELD',
       })
+      await expect(vendorRespond(client, { ...base, decision: 'APPROVE', accepted: true } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      await expect(vendorRespond(client, { ...base, decision: 'APPROVE', response: 'x' } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      await expect(vendorRespond(client, { ...base, decision: 'APPROVE', action: 'x' } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      await expect(vendorRespond(client, { ...base, decision: 'APPROVE', reason: 'x' } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      await expect(vendorRespond(client, { ...base, decision: 'APPROVE', rejectionReason: 'x' } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      await expect(
+        vendorRespond(client, { ...base, decision: 'APPROVE', acceptedAmount: 50 } as any)
+      ).rejects.toMatchObject({ status: 400 })
+      await expect(
+        vendorRespond(client, { ...base, decision: 'APPROVE', refundAmount: 50 } as any)
+      ).rejects.toMatchObject({ status: 400 })
+      // alias for returnRequestId is rejected too
+      await expect(vendorRespond(client, { id: rr.id, decision: 'APPROVE' } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      // valid single-name body still works with an amount
+      const updated = await vendorRespond(client, { ...base, decision: 'APPROVE', amount: 50 })
+      expect(updated.status).toBe('AWAITING_REFUND')
       const calls = refundCalls()
       expect(calls.length).toBe(1)
       expect(calls[0].items[0].amount).toBe(50)
@@ -354,11 +387,11 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'REJECT', rejectionReason: 'no', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'DENY', note: 'no', vendorId: VENDOR, now: NOW })
       const updated = await adminDecide(client, {
         returnRequestId: rr.id,
         decision: 'APPROVE',
-        approvedAmount: 30,
+        amount: 30,
         actorId: ADMIN,
         now: NOW,
       })
@@ -383,11 +416,11 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'REJECT', rejectionReason: 'no', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'DENY', note: 'no', vendorId: VENDOR, now: NOW })
       const updated = await adminDecide(client, {
         returnRequestId: rr.id,
         decision: 'DENY',
-        reason: 'ineligible',
+        note: 'ineligible',
         actorId: ADMIN,
         now: NOW,
       })
@@ -408,9 +441,9 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'REJECT', rejectionReason: 'no', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'DENY', note: 'no', vendorId: VENDOR, now: NOW })
       await expect(
-        adminDecide(client, { returnRequestId: rr.id, decision: 'APPROVE', approvedAmount: 999, actorId: ADMIN, now: NOW })
+        adminDecide(client, { returnRequestId: rr.id, decision: 'APPROVE', amount: 999, actorId: ADMIN, now: NOW })
       ).rejects.toMatchObject({ status: 400 })
       expect(createRefundMock).not.toHaveBeenCalled()
     })
@@ -425,10 +458,10 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'REJECT', rejectionReason: 'no', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'DENY', note: 'no', vendorId: VENDOR, now: NOW })
       for (const amount of [0, -5, 10.123]) {
         await expect(
-          adminDecide(client, { returnRequestId: rr.id, decision: 'APPROVE', approvedAmount: amount, actorId: ADMIN, now: NOW })
+          adminDecide(client, { returnRequestId: rr.id, decision: 'APPROVE', amount, actorId: ADMIN, now: NOW })
         ).rejects.toMatchObject({ status: 400 })
       }
       expect(createRefundMock).not.toHaveBeenCalled()
@@ -502,7 +535,7 @@ describe('return-service', () => {
       })
       // first attempt fails (Paystack down) - triggered by vendor accept
       createRefundMock.mockRejectedValueOnce(new Error('paystack timeout'))
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'ACCEPT', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'APPROVE', vendorId: VENDOR, now: NOW })
       // retry is idempotent: alreadyExisted (at most one refund)
       createRefundMock.mockResolvedValueOnce({ refunds: [{ alreadyExisted: true }] })
       await requestRefundForReturn(client, { returnRequestId: rr.id, actorRole: 'VENDOR', actorId: VENDOR, now: NOW })
@@ -533,7 +566,7 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'ACCEPT', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'APPROVE', vendorId: VENDOR, now: NOW })
       const txUpdateIdx = order.indexOf('tx-update')
       const createRefundIdx = order.indexOf('create-refund')
       expect(txUpdateIdx).toBeGreaterThanOrEqual(0)
@@ -550,13 +583,235 @@ describe('return-service', () => {
         vendorResponseHours: 72,
         now: NOW,
       })
-      await vendorRespond(client, { returnRequestId: rr.id, decision: 'ACCEPT', vendorId: VENDOR, now: NOW })
+      await vendorRespond(client, { returnRequestId: rr.id, decision: 'APPROVE', vendorId: VENDOR, now: NOW })
       const forbidden = /(refund|payment|wallet|vendorBalanceAdjustment|vendorPayout)/i
       for (const c of client.calls) {
         expect(forbidden.test(c)).toBe(false)
       }
       // the only refund delegate invoked is createRefund (mocked)
       expect(createRefundMock).toHaveBeenCalled()
+    })
+  })
+
+  describe('closeSettledReturn', () => {
+    function buildCloseClient({ status = 'AWAITING_REFUND', refundStatus }: { status?: string; refundStatus?: string } = {}) {
+      const events: any[] = []
+      const updates: any[] = []
+      const client: any = {
+        calls: [] as string[],
+        returnRequest: {
+          findUnique: vi.fn(async () => {
+            client.calls.push('returnRequest.findUnique')
+            return { id: 'rr_1', status, orderItemId: ORDER_ITEM, customerId: CUSTOMER }
+          }),
+        },
+        refund: {
+          findFirst: vi.fn(async () => {
+            client.calls.push('refund.findFirst')
+            if (refundStatus === undefined) return null
+            return { id: 'rf_1', status: refundStatus }
+          }),
+        },
+        $queryRaw: vi.fn(async () => []),
+        $transaction: vi.fn(async (callback: any) => {
+          const tx: any = {
+            returnRequest: {
+              findUnique: vi.fn(async () => ({ id: 'rr_1', status, orderItemId: ORDER_ITEM })),
+              update: vi.fn(async (args: any) => {
+                updates.push(args.data)
+                return { id: 'rr_1', status: args.data.status }
+              }),
+            },
+            refund: {
+              findFirst: vi.fn(async () => {
+                client.calls.push('tx.refund.findFirst')
+                if (refundStatus === undefined) return null
+                return { id: 'rf_1', status: refundStatus }
+              }),
+            },
+            returnRequestEvent: {
+              create: vi.fn(async (args: any) => {
+                events.push(args.data)
+                return args.data
+              }),
+            },
+            $queryRaw: vi.fn(async () => []),
+          }
+          return callback(tx)
+        }),
+      }
+      return { client, events, updates }
+    }
+
+    it('closes when the linked refund is PROCESSED, writing a RETURN_CLOSED event', async () => {
+      const { client, events, updates } = buildCloseClient({ refundStatus: 'PROCESSED' })
+      const result = await closeSettledReturn(client, { returnRequestId: 'rr_1', actorId: ADMIN, now: NOW })
+      expect(result.status).toBe('CLOSED')
+      expect(updates.map((u) => u.status)).toEqual(['CLOSED'])
+      const closed = events.filter((e) => e.eventType === 'RETURN_CLOSED')
+      expect(closed.length).toBe(1)
+      expect(closed[0].createdBy).toBe(ADMIN)
+      expect(createRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('leaves AWAITING_REFUND open when the refund is PENDING and reports the refund status', async () => {
+      const { client, events, updates } = buildCloseClient({ refundStatus: 'PENDING' })
+      const result = await closeSettledReturn(client, { returnRequestId: 'rr_1', actorId: ADMIN, now: NOW })
+      expect(result).toMatchObject({ status: 'REFUND_NOT_PROCESSED', returnRequestId: 'rr_1', refundStatus: 'PENDING' })
+      expect(updates).toEqual([])
+      expect(events).toEqual([])
+      expect(createRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('leaves AWAITING_REFUND open when the refund is FAILED and reports the refund status', async () => {
+      const { client, events, updates } = buildCloseClient({ refundStatus: 'FAILED' })
+      const result = await closeSettledReturn(client, { returnRequestId: 'rr_1', actorId: 'system', now: NOW })
+      expect(result).toMatchObject({ status: 'REFUND_NOT_PROCESSED', refundStatus: 'FAILED' })
+      expect(updates).toEqual([])
+      expect(events).toEqual([])
+      expect(createRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('reports NO_REFUND and stays open when no refund is linked', async () => {
+      const { client, events, updates } = buildCloseClient({})
+      const result = await closeSettledReturn(client, { returnRequestId: 'rr_1', actorId: ADMIN, now: NOW })
+      expect(result).toMatchObject({ status: 'NO_REFUND', returnRequestId: 'rr_1' })
+      expect(updates).toEqual([])
+      expect(events).toEqual([])
+      expect(createRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('is a no-op when the request is already CLOSED', async () => {
+      const { client, events, updates } = buildCloseClient({ status: 'CLOSED' })
+      const result = await closeSettledReturn(client, { returnRequestId: 'rr_1', actorId: ADMIN, now: NOW })
+      expect(result).toMatchObject({ status: 'ALREADY_CLOSED', returnRequestId: 'rr_1' })
+      expect(updates).toEqual([])
+      expect(events).toEqual([])
+      expect(createRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('rejects removed aliases', async () => {
+      const { client } = buildCloseClient({ refundStatus: 'PROCESSED' })
+      await expect(closeSettledReturn(client, { returnRequestId: 'rr_1', id: 'rr_1', actorId: ADMIN } as any)).rejects.toMatchObject({
+        status: 400,
+        code: 'UNKNOWN_FIELD',
+      })
+      await expect(closeSettledReturn(client, { returnRequestId: 'rr_1', returnId: 'rr_1', actorId: ADMIN } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+      await expect(closeSettledReturn(client, { returnRequestId: 'rr_1', userId: ADMIN, actorId: ADMIN } as any)).rejects.toMatchObject({
+        status: 400,
+      })
+    })
+  })
+
+  describe('alias rejection', () => {
+    it('openReturn rejects every removed alias', async () => {
+      const { client } = buildClient()
+      const base = { customerId: CUSTOMER, orderItemId: ORDER_ITEM, reason: 'NOT_AS_DESCRIBED', now: NOW }
+      for (const alias of [
+        { userId: CUSTOMER },
+        { customerUserId: CUSTOMER },
+        { itemId: ORDER_ITEM },
+        { orderItem: ORDER_ITEM },
+        { returnReason: 'DAMAGED' },
+        { amount: 50 },
+        { refundAmount: 50 },
+        { requestedRefundAmount: 50 },
+      ] as any) {
+        await expect(openReturn(client, { ...base, ...alias })).rejects.toMatchObject({
+          status: 400,
+          code: 'UNKNOWN_FIELD',
+        })
+      }
+    })
+
+    it('vendorRespond rejects every removed alias', async () => {
+      const { client } = buildClient()
+      const rr = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        windowDays: 7,
+        vendorResponseHours: 72,
+        now: NOW,
+      })
+      const base = { returnRequestId: rr.id, vendorId: VENDOR, now: NOW }
+      for (const alias of [
+        { id: rr.id },
+        { accept: true },
+        { accepted: true },
+        { response: 'x' },
+        { action: 'x' },
+        { reason: 'x' },
+        { rejectionReason: 'x' },
+        { acceptedAmount: 50 },
+        { refundAmount: 50 },
+      ] as any) {
+        await expect(vendorRespond(client, { ...base, ...alias })).rejects.toMatchObject({
+          status: 400,
+          code: 'UNKNOWN_FIELD',
+        })
+      }
+      await expect(vendorRespond(client, { id: rr.id, decision: 'APPROVE' } as any)).rejects.toMatchObject({ status: 400 })
+      // invalid decision value is rejected
+      await expect(vendorRespond(client, { ...base, decision: 'MAYBE' })).rejects.toMatchObject({ status: 400 })
+    })
+
+    it('adminDecide rejects every removed alias', async () => {
+      const { client } = buildClient()
+      const base = { returnRequestId: 'rr_1', decision: 'DENY', note: 'no', actorId: ADMIN, now: NOW }
+      for (const alias of [
+        { id: 'rr_1' },
+        { returnId: 'rr_1' },
+        { approve: true },
+        { approved: true },
+        { action: 'x' },
+        { response: 'x' },
+        { approvedAmount: 10 },
+        { refundAmount: 10 },
+        { adminNote: 'x' },
+        { reason: 'x' },
+        { userId: ADMIN },
+      ] as any) {
+        await expect(adminDecide(client, { ...base, ...alias })).rejects.toMatchObject({
+          status: 400,
+          code: 'UNKNOWN_FIELD',
+        })
+      }
+      await expect(adminDecide(client, { ...base, decision: 'MAYBE' })).rejects.toMatchObject({ status: 400 })
+    })
+
+    it('requestRefundForReturn rejects removed aliases', async () => {
+      const { client } = buildClient()
+      const base = { returnRequestId: 'rr_1', actorRole: 'VENDOR', actorId: VENDOR, now: NOW }
+      for (const alias of [
+        { id: 'rr_1' },
+        { approvedAmount: 10 },
+        { acceptedAmount: 10 },
+        { userId: VENDOR },
+      ] as any) {
+        await expect(requestRefundForReturn(client, { ...base, ...alias })).rejects.toMatchObject({
+          status: 400,
+          code: 'UNKNOWN_FIELD',
+        })
+      }
+    })
+
+    it('escalate rejects removed aliases', async () => {
+      const { client } = buildClient()
+      const base = { returnRequestId: 'rr_1', actor: 'ADMIN', now: NOW }
+      for (const alias of [
+        { id: 'rr_1' },
+        { returnId: 'rr_1' },
+        { actorRole: 'ADMIN' },
+        { vendorDeadlinePassed: true },
+      ] as any) {
+        await expect(escalate(client, { ...base, ...alias })).rejects.toMatchObject({
+          status: 400,
+          code: 'UNKNOWN_FIELD',
+        })
+      }
     })
   })
 })
