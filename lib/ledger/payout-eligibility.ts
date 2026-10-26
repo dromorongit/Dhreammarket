@@ -55,11 +55,27 @@ export async function computeStoreBalance(
     select: { id: true, vendorEarnings: true, deliveredAt: true },
   })
 
-  const eligibleItems = items.filter((item) => {
+  const candidateItems = items.filter((item) => {
     const d = item.deliveredAt
     if (!d) return false
     return d.getTime() + holdDays * 24 * 60 * 60 * 1000 <= asOf.getTime()
   })
+
+  // Exclude items that have an open (non-terminal) ReturnRequest: the item's
+  // funds are held until the return is resolved. Applied to the same item set
+  // used for both credits and debits.
+  const openReturnRows =
+    items.length > 0 && typeof client?.returnRequest?.findMany === 'function'
+      ? await client.returnRequest.findMany({
+          where: {
+            orderItemId: { in: items.map((i) => i.id) },
+            status: { in: ['PENDING', 'ITEM_IN_TRANSIT', 'ITEM_RECEIVED', 'AWAITING_REFUND', 'ESCALATED'] },
+          },
+          select: { orderItemId: true },
+        })
+      : []
+  const heldItemIds = new Set(openReturnRows.map((r: any) => r.orderItemId))
+  const eligibleItems = candidateItems.filter((item) => !heldItemIds.has(item.id))
 
   const itemIds = eligibleItems.map((i) => i.id)
 

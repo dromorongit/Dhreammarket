@@ -1,3 +1,40 @@
+export function isReturnsFlowEnabled(): boolean {
+  const value = process.env.RETURNS_FLOW_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}
+
+let returnWindowDaysWarned = false
+
+export function getReturnWindowDays(): number {
+  const value = process.env.RETURN_WINDOW_DAYS
+  if (value === undefined || value === null || value.trim() === '') return 7
+  const parsed = Number(value.trim())
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0 || parsed > 60) {
+    if (!returnWindowDaysWarned) {
+      returnWindowDaysWarned = true
+      console.warn(`RETURN_WINDOW_DAYS invalid ("${value}"); falling back to 7`)
+    }
+    return 7
+  }
+  return parsed
+}
+
+let vendorResponseHoursWarned = false
+
+export function getVendorResponseHours(): number {
+  const value = process.env.VENDOR_RESPONSE_HOURS
+  if (value === undefined || value === null || value.trim() === '') return 72
+  const parsed = Number(value.trim())
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1 || parsed > 720) {
+    if (!vendorResponseHoursWarned) {
+      vendorResponseHoursWarned = true
+      console.warn(`VENDOR_RESPONSE_HOURS invalid ("${value}"); falling back to 72`)
+    }
+    return 72
+  }
+  return parsed
+}
 export function isEmailServiceEnabled(): boolean {
   const value = process.env.NEXT_PUBLIC_EMAIL_SERVICE_ENABLED
   if (value === undefined || value === null) return false
