@@ -1,13 +1,7 @@
 import type { ReturnActor } from './types'
+import type { ReturnStatus } from '@prisma/client'
 
-export type ReturnStatus =
-  | 'PENDING'
-  | 'ITEM_IN_TRANSIT'
-  | 'ITEM_RECEIVED'
-  | 'AWAITING_REFUND'
-  | 'ESCALATED'
-  | 'REJECTED'
-  | 'CLOSED'
+export type { ReturnStatus }
 
 const TRANSITIONS: { from: ReturnStatus; to: ReturnStatus; actor: ReturnActor }[] = [
   { from: 'PENDING', to: 'AWAITING_REFUND', actor: 'VENDOR' },
