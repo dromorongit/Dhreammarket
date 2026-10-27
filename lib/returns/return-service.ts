@@ -1,9 +1,11 @@
 import { Prisma } from '@prisma/client'
 import { createRefund } from '@/lib/refunds'
 import { Caps } from '@/lib/refunds/process-refund'
+import { toPesewas, pesewasToGhs } from '@/lib/refunds/process-refund'
 import { createAuditLog } from '@/lib/audit-log'
 import { createNotification } from '@/lib/notifications'
 import { checkReturnEligibility } from './eligibility'
+import { parseAmountToPesewas } from './ui/amount'
 import { canTransition } from './state-machine'
 import { createReturnError } from './types'
 import { isReturnsFlowEnabled } from '@/lib/feature-flags'
@@ -136,7 +138,7 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   }
   if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) throw createReturnError(400, 'Requested amount must be positive', 'INVALID_AMOUNT')
   if (Math.round(requestedAmount * 100) / 100 !== requestedAmount) throw createReturnError(400, 'Requested amount must have at most 2 decimals', 'INVALID_AMOUNT')
-  if (requestedAmount > Number(elig.maxRefundAmount.toString()) + 1e-9) throw createReturnError(400, 'Requested amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
+  if (toPesewas(requestedAmount) > toPesewas(elig.maxRefundAmount)) throw createReturnError(400, 'Requested amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
 
   const vendorResponseHours = input.vendorResponseHours ?? getVendorResponseHours()
   const escalationDeadline = new Date(now.getTime() + vendorResponseHours * 60 * 60 * 1000)
@@ -145,6 +147,8 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
     windowDays,
     vendorResponseHours,
     deliveredAt: item.deliveredAt,
+    requestedAmount: requestedAmount.toFixed(2),
+    maxRefundAmount: Number(elig.maxRefundAmount.toString()).toFixed(2),
   }
 
   const result = await client.$transaction(async (tx: any) => {
@@ -213,6 +217,17 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   return result
 }
 
+function requestedAmountFromSnapshot(snapshot: any): number | null {
+  const value = snapshot && typeof snapshot === 'object' ? snapshot.requestedAmount : null
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (trimmed === '') return null
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed) || parsed <= 0) return null
+  return parsed
+}
+
 export type VendorRespondInput = {
   returnRequestId?: string
   decision?: string
@@ -244,6 +259,7 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
       customerId: true,
       orderItemId: true,
       escalationDeadline: true,
+      policySnapshot: true,
       orderItem: {
         select: {
           id: true,
@@ -304,7 +320,6 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
 
   // accept
   const acceptedAmountRaw = input.amount
-  let acceptedAmount: number
   // compute max refund amount via Caps
   const order = rr.orderItem.order
   const caps = Caps.forOrder({
@@ -314,15 +329,35 @@ export async function vendorRespond(client: any, input: VendorRespondInput, nowA
     payment: order.payment ? { id: order.payment.id, amount: order.payment.amount } : null,
     refunds: order.refunds || [],
   })
-  const max = Number(caps.itemRemaining(rr.orderItemId).toString())
-  if (acceptedAmountRaw === undefined || acceptedAmountRaw === null || acceptedAmountRaw === '') {
-    acceptedAmount = max
-  } else {
-    acceptedAmount = Number(acceptedAmountRaw)
+  const requestedAmount = requestedAmountFromSnapshot(rr.policySnapshot)
+  if (requestedAmount === null) {
+    throw createReturnError(409, 'Requested amount is missing', 'REQUESTED_AMOUNT_MISSING')
   }
-  if (!Number.isFinite(acceptedAmount) || acceptedAmount <= 0) throw createReturnError(400, 'Accepted amount must be positive', 'INVALID_AMOUNT')
-  if (Math.round(acceptedAmount * 100) / 100 !== acceptedAmount) throw createReturnError(400, 'Accepted amount must have at most 2 decimals', 'INVALID_AMOUNT')
-  if (acceptedAmount > max + 1e-9) throw createReturnError(400, 'Accepted amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
+
+  const itemCapPesewas = toPesewas(caps.itemRemaining(rr.orderItemId))
+  const requestedPesewasResult = parseAmountToPesewas(requestedAmount.toFixed(2))
+  if (requestedPesewasResult.kind !== 'ok') {
+    throw createReturnError(409, 'Requested amount is missing', 'REQUESTED_AMOUNT_MISSING')
+  }
+  const requestedPesewas = requestedPesewasResult.pesewas
+  const effectiveMaxPesewas = Math.min(itemCapPesewas, requestedPesewas)
+
+  let amountPesewas: number
+  if (acceptedAmountRaw === undefined || acceptedAmountRaw === null || acceptedAmountRaw === '') {
+    amountPesewas = effectiveMaxPesewas
+  } else {
+    const parsed = parseAmountToPesewas(String(acceptedAmountRaw))
+    if (parsed.kind !== 'ok') {
+      throw createReturnError(400, 'Accepted amount must be positive', 'INVALID_AMOUNT')
+    }
+    amountPesewas = parsed.pesewas
+  }
+  if (amountPesewas <= 0) throw createReturnError(400, 'Accepted amount must be positive', 'INVALID_AMOUNT')
+  if (amountPesewas > effectiveMaxPesewas) {
+    throw createReturnError(400, 'Accepted amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
+  }
+
+  const acceptedAmount = pesewasToGhs(amountPesewas)
 
   if (!canTransition(rr.status, 'AWAITING_REFUND', 'VENDOR')) throw createReturnError(409, 'Transition not allowed', 'INVALID_TRANSITION')
 
@@ -448,6 +483,7 @@ export async function adminDecide(client: any, input: AdminDecideInput, nowArg?:
       status: true,
       customerId: true,
       orderItemId: true,
+      policySnapshot: true,
       orderItem: {
         select: {
           id: true,
@@ -489,16 +525,36 @@ export async function adminDecide(client: any, input: AdminDecideInput, nowArg?:
       payment: order.payment ? { id: order.payment.id, amount: order.payment.amount } : null,
       refunds: order.refunds || [],
     })
-    const max = Number(caps.itemRemaining(rr.orderItemId).toString())
-    const amountRaw = input.amount
-    if (amountRaw === undefined || amountRaw === null || amountRaw === '') {
-      approvedAmount = max
-    } else {
-      approvedAmount = Number(amountRaw)
+    const requestedAmount = requestedAmountFromSnapshot(rr.policySnapshot)
+    if (requestedAmount === null) {
+      throw createReturnError(409, 'Requested amount is missing', 'REQUESTED_AMOUNT_MISSING')
     }
-    if (!Number.isFinite(approvedAmount) || (approvedAmount as number) <= 0) throw createReturnError(400, 'Approved amount must be positive', 'INVALID_AMOUNT')
-    if (Math.round((approvedAmount as number) * 100) / 100 !== approvedAmount) throw createReturnError(400, 'Approved amount must have at most 2 decimals', 'INVALID_AMOUNT')
-    if ((approvedAmount as number) > max + 1e-9) throw createReturnError(400, 'Approved amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
+
+    const itemCapPesewas = toPesewas(caps.itemRemaining(rr.orderItemId))
+    const requestedPesewasResult = parseAmountToPesewas(requestedAmount.toFixed(2))
+    if (requestedPesewasResult.kind !== 'ok') {
+      throw createReturnError(409, 'Requested amount is missing', 'REQUESTED_AMOUNT_MISSING')
+    }
+    const requestedPesewas = requestedPesewasResult.pesewas
+    const effectiveMaxPesewas = Math.min(itemCapPesewas, requestedPesewas)
+
+    const amountRaw = input.amount
+    let amountPesewas: number
+    if (amountRaw === undefined || amountRaw === null || amountRaw === '') {
+      amountPesewas = effectiveMaxPesewas
+    } else {
+      const parsed = parseAmountToPesewas(String(amountRaw))
+      if (parsed.kind !== 'ok') {
+        throw createReturnError(400, 'Approved amount must be positive', 'INVALID_AMOUNT')
+      }
+      amountPesewas = parsed.pesewas
+    }
+    if (amountPesewas <= 0) throw createReturnError(400, 'Approved amount must be positive', 'INVALID_AMOUNT')
+    if (amountPesewas > effectiveMaxPesewas) {
+      throw createReturnError(400, 'Approved amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
+    }
+
+    approvedAmount = pesewasToGhs(amountPesewas)
   }
 
   const updated = await client.$transaction(async (tx: any) => {
@@ -559,6 +615,7 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
       reason: true,
       customerId: true,
       orderItemId: true,
+      policySnapshot: true,
       orderItem: {
         select: {
           id: true,
@@ -581,25 +638,45 @@ export async function requestRefundForReturn(client: any, input: RequestRefundFo
     return { status: 'INVALID_STATUS', returnRequestId }
   }
 
-  const amountRaw = input.amount
-  let amount: number
-  if (amountRaw === undefined || amountRaw === null || amountRaw === '') {
-    // default max remaining
-    const order = rr.orderItem.order
-    const caps = Caps.forOrder({
-      id: order.id,
-      total: order.total,
-      items: (order.items || []).map((i: any) => ({ id: i.id, price: i.price, quantity: i.quantity })),
-      payment: order.payment ? { id: order.payment.id, amount: order.payment.amount } : null,
-      refunds: order.refunds || [],
-    })
-    amount = Number(caps.itemRemaining(rr.orderItemId).toString())
-  } else {
-    amount = Number(amountRaw)
+  const requestedAmount = requestedAmountFromSnapshot(rr.policySnapshot)
+  if (requestedAmount === null) {
+    throw createReturnError(409, 'Requested amount is missing', 'REQUESTED_AMOUNT_MISSING')
   }
 
   const order = rr.orderItem.order
-  const orderId = order.id
+  const caps = Caps.forOrder({
+    id: order.id,
+    total: order.total,
+    items: (order.items || []).map((i: any) => ({ id: i.id, price: i.price, quantity: i.quantity })),
+    payment: order.payment ? { id: order.payment.id, amount: order.payment.amount } : null,
+    refunds: order.refunds || [],
+  })
+  const itemCapPesewas = toPesewas(caps.itemRemaining(rr.orderItemId))
+  const requestedPesewasResult = parseAmountToPesewas(requestedAmount.toFixed(2))
+  if (requestedPesewasResult.kind !== 'ok') {
+    throw createReturnError(409, 'Requested amount is missing', 'REQUESTED_AMOUNT_MISSING')
+  }
+  const requestedPesewas = requestedPesewasResult.pesewas
+  const effectiveMaxPesewas = Math.min(itemCapPesewas, requestedPesewas)
+
+  const amountRaw = input.amount
+  let amountPesewas: number
+  if (amountRaw === undefined || amountRaw === null || amountRaw === '') {
+    amountPesewas = effectiveMaxPesewas
+  } else {
+    const parsed = parseAmountToPesewas(String(amountRaw))
+    if (parsed.kind !== 'ok') {
+      throw createReturnError(400, 'Refund amount must be positive', 'INVALID_AMOUNT')
+    }
+    amountPesewas = parsed.pesewas
+  }
+  if (amountPesewas <= 0) throw createReturnError(400, 'Refund amount must be positive', 'INVALID_AMOUNT')
+  if (amountPesewas > effectiveMaxPesewas) {
+    throw createReturnError(400, 'Refund amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
+  }
+
+  const amount = pesewasToGhs(amountPesewas)
+  const orderId = rr.orderItem.order.id
 
   const actorRole = (input.actorRole || 'SYSTEM').toUpperCase()
   const triggeredByRole = actorRole === 'VENDOR' ? 'ADMIN' : 'SYSTEM'
