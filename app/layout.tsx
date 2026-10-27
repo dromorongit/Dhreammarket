@@ -9,6 +9,7 @@ import { CookieConsentBanner } from '@/components/CookieConsentBanner'
 import { OrganizationJsonLd } from '@/components/seo/OrganizationJsonLd'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import { getServerSession } from '@/lib/auth'
+import { isReturnsFlowEnabled } from '@/lib/feature-flags'
 import WaitlistPromo from '@/components/WaitlistPromo'
 import { SupportChatWidget } from '@/components/support-ai/support-chat-widget'
 import { Suspense } from 'react'
@@ -48,6 +49,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const session = await getServerSession()
+  const returnsFlowEnabled = isReturnsFlowEnabled()
 
   return (
     <html lang="en">
@@ -59,7 +61,7 @@ export default async function RootLayout({
         <CartProvider>
           <QueryProvider>
             <TopContactBar />
-            <Navbar />
+            <Navbar returnsFlowEnabled={returnsFlowEnabled} />
             <main className="min-h-screen">
               {children}
             </main>

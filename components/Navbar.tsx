@@ -9,6 +9,7 @@ import { Button } from './Button'
 import { Badge } from './Badge'
 import { SearchDropdown } from './SearchDropdown'
 import { useCart } from '@/lib/CartContext'
+import { getReturnsNavItems } from '@/lib/returns/ui/navigation'
 import { FiHeart } from 'react-icons/fi'
 import { getBlurDataURL, NAV_LOGO_SIZES } from '@/lib/image-utils'
 
@@ -69,7 +70,7 @@ function getAvatarInitials(user: User | null): string {
   return ''
 }
 
-export function Navbar() {
+export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: boolean } = {}) {
   const queryClient = useQueryClient()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -493,6 +494,11 @@ export function Navbar() {
                         My Account
                       </Link>
                     )}
+                    {getReturnsNavItems(user.role, returnsFlowEnabled).map((item) => (
+                      <Link key={item.href} href={item.href} className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                        {item.label}
+                      </Link>
+                    ))}
                     <div className="border-t border-slate-100 my-2"></div>
                     <button
                       onClick={handleLogout}
@@ -697,6 +703,15 @@ export function Navbar() {
                    My Account
                  </button>
                )}
+               {getReturnsNavItems(user.role, returnsFlowEnabled).map((item) => (
+                 <button
+                   key={item.href}
+                   onClick={() => navigateAndCloseMobileMenu(item.href)}
+                   className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                 >
+                   {item.label}
+                 </button>
+               ))}
                <button
                  onClick={handleLogout}
                  className="w-full text-left px-4 py-3 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors mt-2"

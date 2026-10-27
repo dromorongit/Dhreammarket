@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
+import { shouldShowReturnLink, buildReturnLinkHref } from '@/lib/returns/ui/navigation'
+import { useReturnsFlowEnabled } from '@/components/returns/ReturnsFlowProvider'
 import { formatPrice } from '@/lib/currency'
 import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 import NeedHelpButton from '@/components/NeedHelpButton'
@@ -153,6 +155,7 @@ export default function CustomerOrderDetailPage() {
   const router = useRouter()
   const params = useParams()
   const orderId = params!.id as string
+  const returnsFlowEnabled = useReturnsFlowEnabled()
   const [order, setOrder] = useState<Order | null>(null)
   const [events, setEvents] = useState<FulfillmentEvent[]>([])
   const [messages, setMessages] = useState<OrderMessage[]>([])
@@ -740,6 +743,21 @@ export default function CustomerOrderDetailPage() {
                             })}
                           </p>
                         )}
+                        {shouldShowReturnLink({
+                          flagEnabled: returnsFlowEnabled,
+                          orderStatus: order.status,
+                          paymentStatus: order.paymentStatus,
+                        }) &&
+                          buildReturnLinkHref(item.id) && (
+                            <div className="mt-2">
+                              <Link
+                                href={buildReturnLinkHref(item.id)!}
+                                className="text-royal-blue hover:underline text-sm"
+                              >
+                                Return this item
+                              </Link>
+                            </div>
+                          )}
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-gray-900">
