@@ -2,31 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { hashPassword, verifyPassword } from '@/lib/auth'
+import { validatePassword } from '@/lib/password-validation'
 import { rateLimit } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
 import { sendPasswordChangedEmail } from '@/lib/email'
 import { isEmailServiceEnabled } from '@/lib/feature-flags'
 
 export const dynamic = 'force-dynamic'
-
-function validatePassword(password: string): string | null {
-  if (!password || password.length < 8) {
-    return 'Password must be at least 8 characters long'
-  }
-  if (!/[A-Z]/.test(password)) {
-    return 'Password must contain at least one uppercase letter'
-  }
-  if (!/[a-z]/.test(password)) {
-    return 'Password must contain at least one lowercase letter'
-  }
-  if (!/\d/.test(password)) {
-    return 'Password must contain at least one number'
-  }
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return 'Password must contain at least one special character'
-  }
-  return null
-}
 
 export async function POST(request: NextRequest) {
   const rateLimitCheck = rateLimit('change-password')(request)

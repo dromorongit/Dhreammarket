@@ -28,6 +28,20 @@ export default function AdminUsersPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
   const [filters, setFilters] = useState({ role: '', search: '' })
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Reset password dialog state
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [resetTarget, setResetTarget] = useState<User | null>(null)
+  const [resetMode, setResetMode] = useState<'link' | 'manual'>('link')
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetExpireSessions, setResetExpireSessions] = useState(true)
+  const [resetSubmitting, setResetSubmitting] = useState(false)
+  const [resetError, setResetError] = useState<string | null>(null)
+  const [resetMessage, setResetMessage] = useState<string | null>(null)
+  const [resetMessageType, setResetMessageType] = useState<'success' | 'error'>('success')
+  const [showResetPassword, setShowResetPassword] = useState(false)
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -58,7 +72,21 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers()
+    fetchUserRole()
   }, [fetchUsers])
+
+  const fetchUserRole = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUserRole(data.user?.role || null)
+        setCurrentUserId(data.user?.id || null)
+      }
+    } catch (e) {
+      console.error('Failed to fetch user role:', e)
+    }
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -174,6 +202,84 @@ export default function AdminUsersPage() {
     // Only SUPER_ADMIN can manage ADMIN accounts
     if (user.role === 'ADMIN' && action !== 'delete') return false
     return true
+  }
+
+  const isSuperAdmin = userRole === 'SUPER_ADMIN'
+
+  const canResetPassword = (user: User) => {
+    if (!isSuperAdmin) return false
+    if (user.role === 'SUPER_ADMIN') return false
+    if (user.id === currentUserId) return false
+    return true
+  }
+
+  const closeResetDialog = () => {
+    setShowResetDialog(false)
+    setResetTarget(null)
+    setResetMode('link')
+    setResetPassword('')
+    setResetExpireSessions(true)
+    setResetError(null)
+    setResetMessage(null)
+    setResetSubmitting(false)
+  }
+
+  const handleResetPassword = async () => {
+    if (!resetTarget || resetSubmitting) return
+    setResetError(null)
+    setResetMessage(null)
+
+    try {
+      setResetSubmitting(true)
+      const body: { mode: string; newPassword?: string; expireSessions: boolean } = {
+        mode: resetMode,
+        expireSessions: resetExpireSessions,
+      }
+      if (resetMode === 'manual') body.newPassword = resetPassword
+
+      const response = await fetch(`/api/admin/users/${resetTarget.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          setResetError('Too many resets. Try again later.')
+        } else if (response.status === 502) {
+          setResetError('Could not send the reset email. Nothing was changed.')
+        } else {
+          setResetError(data.error || 'Failed to reset password')
+        }
+        return
+      }
+
+      setResetSubmitting(false)
+      if (resetMode === 'link') {
+        const sent = data.emailSent !== false
+        setResetMessage(sent ? 'Reset link sent to ' + resetTarget.email : 'Reset link could not be emailed; nothing was changed.')
+        setResetMessageType(sent ? 'success' : 'error')
+      } else {
+        const sent = data.emailSent !== false
+        setResetMessage(sent ? 'Password updated.' : 'Password updated, but the notification email could not be sent.')
+        setResetMessageType('success')
+      }
+
+      setResetPassword('')
+      setShowResetDialog(false)
+      setResetTarget(null)
+      setResetMode('link')
+      setResetExpireSessions(true)
+      fetchUsers()
+    } catch (err) {
+      setResetSubmitting(false)
+      setResetError('Network error. Please try again.')
+      console.error(err)
+    } finally {
+      setResetSubmitting(false)
+    }
   }
 
   if (error) {
@@ -359,6 +465,18 @@ export default function AdminUsersPage() {
                               Delete
                             </button>
                           )}
+                          {canResetPassword(user) && (
+                            <button
+                              onClick={() => {
+                                setResetTarget(user)
+                                setShowResetDialog(true)
+                              }}
+                              className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 underline min-h-[44px]"
+                              title="Reset password"
+                            >
+                              Reset Password
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
@@ -477,6 +595,18 @@ export default function AdminUsersPage() {
                                   Delete
                                 </button>
                               )}
+                              {canResetPassword(user) && (
+                                <button
+                                  onClick={() => {
+                                    setResetTarget(user)
+                                    setShowResetDialog(true)
+                                  }}
+                                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                  title="Reset password"
+                                >
+                                  Reset Password
+                                </button>
+                              )}
                             </div>
                           )}
                         </td>
@@ -513,6 +643,110 @@ export default function AdminUsersPage() {
             </>
           )}
         </Card>
+
+        {/* Reset Password Dialog */}
+        {showResetDialog && resetTarget && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 sm:p-6" onClick={closeResetDialog}>
+            <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Reset password for {resetTarget.email}</h3>
+
+              {resetError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">{resetError}</div>
+              )}
+              {resetMessage && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-800">{resetMessage}</div>
+              )}
+
+              <div className="mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Reset method</p>
+                <label className="flex items-start gap-2 mb-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="resetMode"
+                    value="link"
+                    checked={resetMode === 'link'}
+                    onChange={() => setResetMode('link')}
+                    className="mt-1"
+                  />
+                  <span className="text-sm text-gray-700">Send reset link by email</span>
+                </label>
+                <p className="text-xs text-gray-500 mb-2">The user receives a link valid for 1 hour to create a new password.</p>
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="resetMode"
+                    value="manual"
+                    checked={resetMode === 'manual'}
+                    onChange={() => setResetMode('manual')}
+                    className="mt-1"
+                  />
+                  <span className="text-sm text-gray-700">Set a password manually</span>
+                </label>
+                {resetMode === 'manual' && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 mb-1">
+                      The user is not forced to change it at next login, so tell them to change it right away.
+                    </p>
+                    <div className="relative">
+                      <input
+                        type={showResetPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        value={resetPassword}
+                        onChange={(e) => setResetPassword(e.target.value)}
+                        placeholder="New password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowResetPassword(!showResetPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-800"
+                      >
+                        {showResetPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    <ul className="text-xs mt-1 text-gray-500 list-disc list-inside space-y-0.5">
+                      <li>8+ characters</li>
+                      <li>Uppercase letter</li>
+                      <li>Lowercase letter</li>
+                      <li>Number</li>
+                      <li>Special character</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={resetExpireSessions}
+                    onChange={() => setResetExpireSessions(!resetExpireSessions)}
+                  />
+                  <span className="text-sm text-gray-700">Sign the user out of all devices</span>
+                </label>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={closeResetDialog}
+                  disabled={resetSubmitting}
+                  className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={resetSubmitting || (resetMode === 'manual' && !resetPassword)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resetSubmitting ? 'Resetting...' : resetMode === 'link' ? 'Send Reset Link' : 'Set Password'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

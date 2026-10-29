@@ -488,7 +488,57 @@ export async function sendPasswordResetEmail(
     emailType: 'PASSWORD_RESET',
     retryPayload: { customerEmail, customerName, selector, secretToken, expiresAt },
   })
- }
+}
+
+// Password reset email initiated by an administrator (wording does not assume the user requested it)
+export async function sendAdminInitiatedPasswordResetEmail(
+  customerEmail: string,
+  customerName: string,
+  selector: string,
+  secretToken: string,
+  expiresAt: Date
+) {
+  const resetUrl = `${getAppUrl()}/reset-password/${selector}/${secretToken}`
+  const expiryHours = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60))
+  
+  const subject = 'Your Dhream Market Password Has Been Reset by an Administrator'
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Password Reset Initiated by an Administrator</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${customerName},</p>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">An administrator has initiated a password reset for your Dhream Market account. Click the button below to create a new password:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+      <tr>
+        <td align="center">
+          <a href="${resetUrl}" 
+             style="display: inline-block; background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(26, 26, 46, 0.3);">
+            Create New Password
+          </a>
+        </td>
+      </tr>
+    </table>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-size: 14px; color: #92400e;">
+        <strong>Important:</strong> This link will expire in ${expiryHours} hour(s). For security reasons, this link can only be used once.
+      </p>
+    </div>
+    
+    <p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280;">
+      If you did not expect this reset, please contact our support team immediately at support@dhreamarket.com to secure your account.
+    </p>
+  `
+  const htmlContent = getEmailTemplate(content, 'If you need assistance, contact our support team at support@dhreamarket.com')
+  
+  return sendEmail({
+    to: customerEmail,
+    subject,
+    htmlContent,
+    textContent: `An administrator has initiated a password reset for your Dhream Market account. Create a new password by visiting: ${resetUrl}. This link expires in ${expiryHours} hour(s).`,
+    emailType: 'PASSWORD_RESET',
+    retryPayload: { customerEmail, customerName, selector, secretToken, expiresAt },
+  })
+}
 
 // Payment failed notification email
 export async function sendPaymentFailedEmail(

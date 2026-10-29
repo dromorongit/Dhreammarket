@@ -33,6 +33,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'payment-verification': { windowMs: 60 * 60 * 1000, maxRequests: 20 },
   search: { windowMs: 60 * 1000, maxRequests: 60 },
   'change-password': { windowMs: 15 * 60 * 1000, maxRequests: 5 },
+  'admin-reset-password': { windowMs: 60 * 60 * 1000, maxRequests: 10 },
   upload: { windowMs: 60 * 60 * 1000, maxRequests: 30 },
   'admin-upload': { windowMs: 60 * 60 * 1000, maxRequests: 50 },
   'verification-payment-verify': { windowMs: 60 * 60 * 1000, maxRequests: 10 },
@@ -107,6 +108,34 @@ export function checkRateLimit(
   return { success: true, remaining: config.maxRequests - record.count, resetTime: record.resetTime, limit: config.maxRequests }
 }
 
+function rateLimitResponse(
+  result: { success: false; remaining?: number; resetTime?: number; limit?: number }
+): { success: false; response: NextResponse } {
+  const response = NextResponse.json(
+    {
+      error: 'Too many requests. Please try again later.',
+      resetTime: new Date(result.resetTime!).toISOString(),
+    },
+    { status: 429 }
+  )
+  response.headers.set('X-RateLimit-Limit', String(result.limit))
+  response.headers.set('X-RateLimit-Remaining', '0')
+      response.headers.set('X-RateLimit-Reset', String(result.resetTime!))
+      response.headers.set('Retry-After', String(Math.ceil((result.resetTime! - Date.now()) / 1000)))
+  return { success: false, response }
+}
+
+export function rateLimitByKey(
+  key: string,
+  config: RateLimitConfig
+): { success: true } | { success: false; response: NextResponse } {
+  const result = checkRateLimit(key, config)
+    if (!result.success) {
+      return rateLimitResponse(result as { success: false; remaining: 0; resetTime: number; limit: number })
+    }
+  return { success: true }
+}
+
 export function rateLimit(endpoint: keyof typeof RATE_LIMIT_CONFIGS) {
   return function rateLimitMiddleware(request: NextRequest):
     { success: true } | { success: false; response: NextResponse } {
@@ -114,24 +143,7 @@ export function rateLimit(endpoint: keyof typeof RATE_LIMIT_CONFIGS) {
     const config = RATE_LIMIT_CONFIGS[endpoint]
     const key = `${clientIP}:${endpoint}`
 
-    const result = checkRateLimit(key, config)
-
-    if (!result.success) {
-      const response = NextResponse.json(
-        {
-          error: 'Too many requests. Please try again later.',
-          resetTime: new Date(result.resetTime!).toISOString(),
-        },
-        { status: 429 }
-      )
-      response.headers.set('X-RateLimit-Limit', String(result.limit))
-      response.headers.set('X-RateLimit-Remaining', '0')
-      response.headers.set('X-RateLimit-Reset', String(result.resetTime))
-      response.headers.set('Retry-After', String(Math.ceil((result.resetTime! - Date.now()) / 1000)))
-      return { success: false, response }
-    }
-
-    return { success: true }
+    return rateLimitByKey(key, config)
   }
 }
 
