@@ -6,22 +6,19 @@ vi.mock('@/lib/feature-flags', () => ({
 vi.mock('@/lib/prisma', () => ({
   getPrisma: vi.fn(),
 }))
-vi.mock('@/lib/trust/load-profile', () => ({
-  loadSellerTrustProfile: vi.fn(),
+vi.mock('@/lib/trust/cached-profile', () => ({
+  getCachedSellerTrustProfile: vi.fn(),
 }))
 
 import { isTrustProfileEnabled } from '@/lib/feature-flags'
-import { getPrisma } from '@/lib/prisma'
-import { loadSellerTrustProfile } from '@/lib/trust/load-profile'
+import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
 
 const flagsMock = isTrustProfileEnabled as unknown as ReturnType<typeof vi.fn>
-const loadMock = loadSellerTrustProfile as unknown as ReturnType<typeof vi.fn>
-const getPrismaMock = getPrisma as unknown as ReturnType<typeof vi.fn>
+const cachedMock = getCachedSellerTrustProfile as unknown as ReturnType<typeof vi.fn>
 
 describe('trust seller route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    getPrismaMock.mockReturnValue({} as any)
   })
 
   it('flag off returns 404 and zero db calls', async () => {
@@ -30,8 +27,7 @@ describe('trust seller route', () => {
     const req = { headers: new Headers() } as any
     const res = await GET(req, { params: { storeId: 'store-1' } })
     expect(res.status).toBe(404)
-    expect(getPrismaMock).not.toHaveBeenCalled()
-    expect(loadMock).not.toHaveBeenCalled()
+    expect(cachedMock).not.toHaveBeenCalled()
   })
 
   it('invalid store id returns 400', async () => {
@@ -40,12 +36,12 @@ describe('trust seller route', () => {
     const req = { headers: new Headers() } as any
     const res = await GET(req, { params: { storeId: 'bad id!' } })
     expect(res.status).toBe(400)
-    expect(loadMock).not.toHaveBeenCalled()
+    expect(cachedMock).not.toHaveBeenCalled()
   })
 
   it('unknown store returns 404', async () => {
     flagsMock.mockReturnValue(true)
-    loadMock.mockResolvedValue({ found: false })
+    cachedMock.mockResolvedValue({ found: false })
     const { GET } = await import('@/app/api/trust/sellers/[storeId]/route')
     const req = { headers: new Headers() } as any
     const res = await GET(req, { params: { storeId: 'store-1' } })
@@ -54,15 +50,14 @@ describe('trust seller route', () => {
 
   it('success shape has no customer/order identifiers', async () => {
     flagsMock.mockReturnValue(true)
-    const now = new Date('2025-01-01T00:00:00Z')
-    loadMock.mockResolvedValue({
+    cachedMock.mockResolvedValue({
       found: true,
       data: {
-        storeCreatedAt: new Date('2024-01-01T00:00:00Z'),
-        firstSaleAt: new Date('2024-02-01T00:00:00Z'),
         verificationStatus: 'VERIFIED',
-        verifiedSince: new Date('2024-03-01T00:00:00Z'),
-        now,
+        storeCreatedAt: '2024-01-01T00:00:00.000Z',
+        firstSaleAt: '2024-02-01T00:00:00.000Z',
+        verifiedSince: '2024-03-01T00:00:00.000Z',
+        now: '2025-01-01T00:00:00.000Z',
         windowDays: 90,
         completedInWindow: 10,
         completedLifetime: 20,

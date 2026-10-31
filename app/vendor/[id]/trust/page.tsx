@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { isTrustProfileEnabled } from '@/lib/feature-flags'
 import { getPrisma } from '@/lib/prisma'
-import { loadSellerTrustProfile } from '@/lib/trust/load-profile'
+import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
 import { composeProfile } from '@/lib/trust/metrics'
 import { formatRate, formatDelivery, formatReturns, formatRating } from '@/lib/trust/copy'
 import { SellerTrustProfileCard } from '@/components/trust/SellerTrustProfileCard'
@@ -28,12 +28,18 @@ export default async function SellerTrustProfilePage({ params }: { params: { id:
     notFound()
   }
 
-  const result = await loadSellerTrustProfile(prisma, { storeId: store.id, now: new Date() })
+  const result = await getCachedSellerTrustProfile(store.id)
   if (!result.found) {
     notFound()
   }
 
-  const profile = composeProfile(result.data)
+  const profile = composeProfile({
+    ...result.data,
+    storeCreatedAt: new Date(result.data.storeCreatedAt),
+    firstSaleAt: result.data.firstSaleAt ? new Date(result.data.firstSaleAt) : null,
+    verifiedSince: result.data.verifiedSince ? new Date(result.data.verifiedSince) : null,
+    now: new Date(result.data.now),
+  })
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 sm:py-12">

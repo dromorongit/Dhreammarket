@@ -33,6 +33,7 @@ describe('getCachedSellerTrustProfile', () => {
 
   it('caches a found profile so the loader runs once', async () => {
     const data = {
+      verificationStatus: 'VERIFIED' as const,
       storeCreatedAt: new Date('2024-01-01T00:00:00Z'),
       firstSaleAt: new Date('2024-02-02T00:00:00Z'),
       verifiedSince: new Date('2024-03-03T00:00:00Z'),
@@ -74,6 +75,7 @@ describe('getCachedSellerTrustProfile', () => {
 
   it('uses a different cache key per store', async () => {
     const data = {
+      verificationStatus: 'UNVERIFIED' as const,
       storeCreatedAt: new Date('2024-01-01T00:00:00Z'),
       firstSaleAt: null,
       verifiedSince: null,
@@ -95,6 +97,7 @@ describe('getCachedSellerTrustProfile', () => {
 
   it('returns no customer or order identifiers', async () => {
     const data = {
+      verificationStatus: 'UNVERIFIED' as const,
       storeCreatedAt: new Date('2024-01-01T00:00:00Z'),
       firstSaleAt: null,
       verifiedSince: null,

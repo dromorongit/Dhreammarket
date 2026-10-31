@@ -1,10 +1,12 @@
 import { unstable_cache } from 'next/cache'
 import { getPrisma } from '@/lib/prisma'
 import { loadSellerTrustProfile } from '@/lib/trust/load-profile'
+import type { IdentityStatus } from '@/lib/trust/types'
 
 class SellerTrustProfileNotFoundError extends Error {}
 
 interface CachedSellerTrustProfileData {
+  verificationStatus: IdentityStatus
   storeCreatedAt: string
   firstSaleAt: string | null
   verifiedSince: string | null
@@ -21,6 +23,7 @@ interface CachedSellerTrustProfileData {
 
 function serialize(data: any): CachedSellerTrustProfileData {
   return {
+    verificationStatus: data.verificationStatus,
     storeCreatedAt: data.storeCreatedAt.toISOString(),
     firstSaleAt: data.firstSaleAt ? data.firstSaleAt.toISOString() : null,
     verifiedSince: data.verifiedSince ? data.verifiedSince.toISOString() : null,

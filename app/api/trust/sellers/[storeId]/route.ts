@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isTrustProfileEnabled } from '@/lib/feature-flags'
-import { getPrisma } from '@/lib/prisma'
-import { loadSellerTrustProfile } from '@/lib/trust/load-profile'
+import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
 import { composeProfile } from '@/lib/trust/metrics'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -22,13 +21,18 @@ export async function GET(request: NextRequest, { params }: { params: { storeId:
     return NextResponse.json({ error: 'Not found' }, { status: 400 })
   }
 
-  const client = getPrisma()
-  const result = await loadSellerTrustProfile(client, { storeId, now: new Date() })
+  const result = await getCachedSellerTrustProfile(storeId)
   if (!result.found) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const profile = composeProfile(result.data)
+  const profile = composeProfile({
+    ...result.data,
+    storeCreatedAt: new Date(result.data.storeCreatedAt),
+    firstSaleAt: result.data.firstSaleAt ? new Date(result.data.firstSaleAt) : null,
+    verifiedSince: result.data.verifiedSince ? new Date(result.data.verifiedSince) : null,
+    now: new Date(result.data.now),
+  })
 
   const response = NextResponse.json(profile)
   response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=60')
