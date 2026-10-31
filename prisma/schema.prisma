@@ -548,6 +548,7 @@ model Order {
   @@index([idempotencyKey], map: "idx_orders_idempotencyKey")
   @@index([walletAmountApplied])
   @@index([source])
+  @@index([source, paymentStatus, createdAt])
   @@index([vendorCustomerId])
   @@map("orders")
 }
@@ -586,6 +587,7 @@ model OrderItem {
   payoutItems         VendorPayoutItem[]
   balanceAdjustments  VendorBalanceAdjustment[]
 
+  @@index([productId, deliveredAt])
   @@map("order_items")
 }
 
@@ -624,6 +626,7 @@ model ProductReview {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+  @@index([productId, isApproved, isHidden])
   @@map("product_reviews")
 }
 
@@ -643,6 +646,7 @@ model VendorReview {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, storeId])
+  @@index([storeId, isApproved, isHidden])
   @@map("vendor_reviews")
 }
 
@@ -2612,6 +2616,7 @@ model ReturnRequest {
   @@index([orderItemId])
   @@index([customerId])
   @@index([status])
+  @@index([status, createdAt])
   @@map("return_requests")
 }
 
