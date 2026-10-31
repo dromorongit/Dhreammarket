@@ -3260,3 +3260,23 @@ enum SaleChannel {
   WALK_IN
   OTHER
 }
+
+model WaitlistSignup {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullName     String    @map("full_name") @db.Text
+  email        String    @db.Text
+  phone        String?   @db.Text
+  interest     String    @db.Text
+  device       String?   @db.Text
+  consent      Boolean
+  source       String?   @db.Text
+  utmMedium    String?   @map("utm_medium") @db.Text
+  utmCampaign  String?   @map("utm_campaign") @db.Text
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  notifiedAt   DateTime? @map("notified_at") @db.Timestamptz
+
+  @@unique([email])
+  @@index([createdAt(sort: Desc)], name: "waitlist_signups_created_at_idx")
+  @@index([interest], name: "waitlist_signups_interest_idx")
+  @@map("waitlist_signups")
+}

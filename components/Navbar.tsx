@@ -324,6 +324,13 @@ export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: bo
               <span>Support</span>
               <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-royal-blue to-premium-gold rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
             </Link>
+            <Link
+              href="/app-waitlist"
+              className="relative px-3 py-2 text-sm font-medium text-dhream-orange hover:text-dhream-orange-deep transition-colors duration-200 group"
+            >
+              <span>Get App</span>
+              <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-dhream-orange to-dhream-orange-deep rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+            </Link>
              {user && user.role !== 'INFLUENCER' && (
                <>
                  <Link
@@ -462,6 +469,11 @@ export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: bo
                     {user.role === 'SUPER_ADMIN' && (
                       <Link href="/dashboard/super-admin" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
                         Super Admin Dashboard
+                      </Link>
+                    )}
+                    {user.role === 'SUPER_ADMIN' && (
+                      <Link href="/dashboard/super-admin/waitlist" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                        Waitlist
                       </Link>
                     )}
                     {user.role === 'SUPER_ADMIN' && (
@@ -607,6 +619,12 @@ export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: bo
            >
              Support
            </button>
+           <button
+             onClick={() => navigateAndCloseMobileMenu('/app-waitlist')}
+             className="w-full block px-4 py-3 rounded-xl text-dhream-orange font-semibold hover:bg-orange-50 transition-colors text-left"
+           >
+             Get the App
+           </button>
             {user && user.role !== 'INFLUENCER' && (
                <>
                  <button
@@ -653,6 +671,14 @@ export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: bo
                    className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
                  >
                    Super Admin Dashboard
+                 </button>
+               )}
+               {user.role === 'SUPER_ADMIN' && (
+                 <button
+                   onClick={() => navigateAndCloseMobileMenu('/dashboard/super-admin/waitlist')}
+                   className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                 >
+                   Waitlist
                  </button>
                )}
                {user.role === 'SUPER_ADMIN' && (

@@ -17,6 +17,7 @@
     "db:dev:reset": "node scripts/local-db.mjs reset",
     "db:dev:migrate": "node scripts/local-db.mjs migrate",
     "db:dev:status": "node scripts/local-db.mjs status",
+    "export:waitlist": "tsx scripts/export-waitlist.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run test/unit",

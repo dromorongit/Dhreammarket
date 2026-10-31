@@ -1065,6 +1065,16 @@ export default function SuperAdminDashboard() {
                     <span className="text-sm font-medium text-slate-700 group-hover:text-amber-700 transition-colors">Influencers</span>
                   </div>
                 </Link>
+                <Link href="/dashboard/super-admin/waitlist" className="group">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 hover:bg-orange-50 hover:border-orange-200 border border-transparent transition-all">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-dhream-orange to-dhream-orange-deep flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" />
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-orange-700 transition-colors">Waitlist</span>
+                  </div>
+                </Link>
              </div>
           </CardContent>
         </Card>

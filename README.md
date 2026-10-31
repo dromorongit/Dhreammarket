@@ -127,3 +127,19 @@ This Phase 1 foundation enables future development of:
 ## License
 
 ISC
+## App Waitlist
+
+- Page: /app-waitlist (landing page collecting name, email, optional phone, interest, device).
+- API: POST /api/waitlist (rate-limited, validated server-side, duplicate-email friendly).
+- Storage: app_waitlist_entries table (Prisma AppWaitlistEntry) and waitlist_signups table (Prisma WaitlistSignup).
+- Export signups: npm run export:waitlist (writes waitlist-export.csv) or admin GET /api/admin/waitlist/export.
+- Configure via .env (see .env.example): DATABASE_URL, ENABLE_WELCOME_EMAIL, RESEND_API_KEY, etc.
+
+### Waitlist migration
+
+- Migration: prisma/migrations/20261031140000_add_waitlist_signups/migration.sql creates waitlist_signups.
+- Apply locally: npx prisma migrate dev (or npm run db:dev:migrate).
+- Apply in production: npx prisma migrate deploy (runs automatically on npm start).
+- Super Admin access: set a user's role to SUPER_ADMIN in the database (e.g., via Prisma Studio or admin tools).
+- Admin view: /dashboard/super-admin/waitlist (super admins only).
+- Export: /api/admin/waitlist/export or npm run export:waitlist.

@@ -16,6 +16,16 @@ module.exports = {
         'soft-background': '#F5F7FA',
         'dark-text': '#0F172A',
         'muted-text': '#64748B',
+        'dhream-navy': '#0B4A6F',
+        'dhream-navy-dark': '#073550',
+        'dhream-orange': '#F7931E',
+        'dhream-orange-deep': '#F26B1D',
+        'dhream-teal': '#1A9A9A',
+        'dhream-coral': '#F4846C',
+        'dhream-cream': '#FFF4E8',
+        'dhream-cream-light': '#FFFAF4',
+        'dhream-text': '#0B2F45',
+        'dhream-muted': '#4A6272',
         'slate': {
           50: '#f8fafc',
           100: '#f1f5f9',
@@ -28,6 +38,11 @@ module.exports = {
           800: '#1e293b',
           900: '#0f172a',
         },
+      },
+      fontFamily: {
+        poppins: ['Poppins', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
+        caveat: ['Caveat', 'cursive'],
       },
       borderRadius: {
         'xl': '0.75rem',
