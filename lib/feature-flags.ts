@@ -73,3 +73,9 @@ export function getPayoutHoldDays(): number {
   }
   return parsed
 }
+
+export function isTrustProfileEnabled(): boolean {
+  const value = process.env.TRUST_PROFILE_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}
