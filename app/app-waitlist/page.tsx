@@ -19,13 +19,14 @@ export const metadata: Metadata = {
     description:
       "The Dhream Market mobile app is coming! Join the waitlist to shop, sell and grow in one smarter, faster app, and be the first to know when it launches.",
     type: 'website',
-    images: [{ url: '/images/waitlist.jpg', width: 1200, height: 630 }],
+    images: [{ url: '/assets/images/dhreammarket.png', width: 512, height: 512, alt: 'Dhream Market' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Dhream Market Mobile App — Join the Waitlist',
     description:
       "The Dhream Market mobile app is coming! Join the waitlist to shop, sell and grow in one smarter, faster app, and be the first to know when it launches.",
+    images: ['/assets/images/dhreammarket.png'],
   },
   alternates: { canonical: '/app-waitlist' },
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 
 export default function PhoneMockup() {
   const [reduceMotion, setReduceMotion] = useState(false)
@@ -32,8 +33,14 @@ export default function PhoneMockup() {
             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-slate-900 rounded-b-xl z-10" />
             {/* Screen */}
             <div className="relative aspect-[9/19] rounded-[2rem] overflow-hidden bg-gradient-to-b from-[#FFFAF4] to-[#FFF4E8] flex flex-col items-center justify-center px-4 text-center">
-              <div className="w-14 h-14 mb-3 rounded-2xl bg-dhream-navy/10 flex items-center justify-center">
-                <span className="text-2xl font-bold text-dhream-navy">D</span>
+              <div className="w-14 h-14 mb-3 rounded-2xl bg-white flex items-center justify-center overflow-hidden">
+                <Image
+                  src="/assets/images/dhreammarket.png"
+                  alt="Dhream Market"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
               </div>
               <p className="text-xs font-semibold text-dhream-navy/80 mb-1">Dhream Market</p>
               <p className="text-sm font-bold text-dhream-navy leading-tight mb-2">More Choices. More Possibilities.</p>
