@@ -129,26 +129,28 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         })
       }
 
-      const customer = await getPrisma().user.findUnique({
-        where: { id: payment.userId },
-        select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } },
-      })
-
-      if (customer) {
-        const customerName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || 'Customer'
-        createNotification(
-          customer.id,
-          'PAYMENT_FAILED',
-          'Payment Failed',
-          'Your payment could not be completed and your order was not placed. If you were charged, contact support.'
-        ).catch(err => {
-          console.error('Failed to create payment failed notification:', err)
+      if (payment.userId) {
+        const customer = await getPrisma().user.findUnique({
+          where: { id: payment.userId },
+          select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } },
         })
 
-        if (customer.email) {
-          sendPaymentFailedEmail(customer.email, customerName, payment.orderId).catch(err => {
-            console.error('Failed to send payment failed email:', err)
+        if (customer) {
+          const customerName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || 'Customer'
+          createNotification(
+            customer.id,
+            'PAYMENT_FAILED',
+            'Payment Failed',
+            'Your payment could not be completed and your order was not placed. If you were charged, contact support.'
+          ).catch(err => {
+            console.error('Failed to create payment failed notification:', err)
           })
+
+          if (customer.email) {
+            sendPaymentFailedEmail(customer.email, customerName, payment.orderId).catch(err => {
+              console.error('Failed to send payment failed email:', err)
+            })
+          }
         }
       }
 
@@ -267,7 +269,7 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       console.error('Influencer qualification check failed after payment webhook:', qualifyError)
     }
 
-    if (order && order.walletAmountApplied && order.walletAmountApplied > 0) {
+    if (order && order.walletAmountApplied && order.walletAmountApplied > 0 && payment.userId) {
       await getPrisma().$transaction(async (tx: any) => {
         await tx.customerLoyalty.update({
           where: { userId: payment.userId },
@@ -293,13 +295,15 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       console.error('Failed to record payment confirmed event:', err)
     })
 
-    const cart = await getPrisma().cart.findUnique({
-      where: { userId: payment.userId },
-    })
-    if (cart) {
-      await getPrisma().cartItem.deleteMany({
-        where: { cartId: cart.id },
+    if (payment.userId) {
+      const cart = await getPrisma().cart.findUnique({
+        where: { userId: payment.userId },
       })
+      if (cart) {
+        await getPrisma().cartItem.deleteMany({
+          where: { cartId: cart.id },
+        })
+      }
     }
 
     await createAuditLog({

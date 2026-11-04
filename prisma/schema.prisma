@@ -534,6 +534,10 @@ model Order {
   paymentMethod         String?
   paymentConfirmedAt    DateTime?
   receiptToken          String?                @unique
+  payToken              String?                @unique
+  paymentRequestedAt    DateTime?
+  paymentLinkExpiresAt  DateTime?
+  paymentLinkRevokedAt  DateTime?
   vendorCustomerId      String?
   fulfillmentEvents     FulfillmentEvent[]
   items                 OrderItem[]
@@ -593,7 +597,7 @@ model OrderItem {
 
 model Payment {
   id          String        @id @default(cuid())
-  userId      String
+  userId      String?
   orderId     String        @unique
   amount      Float
   currency    String        @default("GHS")
@@ -601,13 +605,32 @@ model Payment {
   reference   String        @unique
   paystackRef String?
   message     String?
+  reviewReason String?
+  reviewFlaggedAt DateTime?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   refunds     Refund[]
+  paymentAttempts PaymentAttempt[]
 
   @@map("payments")
+}
+
+model PaymentAttempt {
+  id             String           @id @default(cuid())
+  paymentId      String
+  reference      String           @unique
+  status         PaymentStatus    @default(PENDING)
+  amount         Float
+  authorizationUrl String?
+  accessCode     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  payment        Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("payment_attempts")
 }
 
 model ProductReview {
@@ -1052,7 +1075,7 @@ model HomepageSectionBrand {
 
 model AuditLog {
   id         String   @id @default(cuid())
-  userId     String
+  userId     String?
   userRole   String
   action     String
   entityType String
@@ -1062,7 +1085,7 @@ model AuditLog {
   ipAddress  String?
   userAgent  String?
   createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([action])
