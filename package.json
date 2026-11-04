@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
+    "typecheck": "tsc --noEmit",
     "build": "prisma generate && cross-env NODE_OPTIONS=--max-old-space-size=3584 next build && node scripts/copy-static.js",
     "start": "prisma migrate deploy && cross-env NODE_OPTIONS=--max-old-space-size=768 node server-entry.js",
     "lint": "next lint",

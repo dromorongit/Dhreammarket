@@ -12,6 +12,7 @@ export interface ReservationItem {
 
 export interface ReservationResult {
   success: boolean
+  alreadyReserved?: boolean
   error?: string
   reservedItems?: Array<{ productId: string; productVariantId?: string; reserved: number }>
 }
@@ -33,7 +34,20 @@ export async function reserveStock(
     const reservedItems: Array<{ productId: string; productVariantId?: string; reserved: number }> = []
     const beforeStockData: Array<{ productId: string; stock: number; reservedQuantity: number }> = []
 
-    await prisma.$transaction(async (tx) => {
+    const txOutcome = await prisma.$transaction<ReservationResult>(async (tx) => {
+      // Idempotency guard: claim the reservation flag atomically. If another
+      // caller already reserved stock for this order (stockReservedAt set),
+      // zero rows are updated and we bail out without reserving again.
+      const claimed = await tx.$executeRaw`
+        UPDATE "orders" SET "stockReservedAt" = now() WHERE id = ${orderId} AND "stockReservedAt" IS NULL
+      `
+      if (Number(claimed) === 0) {
+        return {
+          success: true,
+          alreadyReserved: true,
+        }
+      }
+
       for (const item of items) {
         if (item.availabilityType !== 'IN_STOCK') {
           continue
@@ -95,10 +109,20 @@ export async function reserveStock(
           reserved: item.quantity,
         })
       }
+
+      return { success: true, reservedItems }
     })
 
-    for (let i = 0; i < reservedItems.length; i++) {
-      const reservedItem = reservedItems[i]
+    if (!txOutcome.success) {
+      return txOutcome
+    }
+
+    if (!txOutcome.reservedItems) {
+      return txOutcome
+    }
+
+    for (let i = 0; i < txOutcome.reservedItems.length; i++) {
+      const reservedItem = txOutcome.reservedItems[i]
       const beforeData = beforeStockData[i]
 
       recordFulfillmentEvent(orderId, 'STOCK_RESERVED', createdBy, {
@@ -119,7 +143,7 @@ export async function reserveStock(
       }).catch(err => console.error('Failed to create audit log:', err))
     }
 
-    return { success: true, reservedItems }
+    return txOutcome
   } catch (error) {
     return {
       success: false,
@@ -155,6 +179,16 @@ export async function releaseStock(
     const releasedItems: Array<{ productId: string; productVariantId?: string; released: number; beforeData?: { stock: number; reservedQuantity: number } }> = []
 
     await prisma.$transaction(async (tx) => {
+      // Idempotency guard: clear the reservation flag atomically. If no
+      // active reservation exists (stockReservedAt already NULL), zero rows
+      // are updated and we bail out without releasing again.
+      const cleared = await tx.$executeRaw`
+        UPDATE "orders" SET "stockReservedAt" = NULL WHERE id = ${orderId} AND "stockReservedAt" IS NOT NULL
+      `
+      if (Number(cleared) === 0) {
+        return { success: true, releasedItems: [] }
+      }
+
       for (const item of order.items) {
         if (productIds && !productIds.includes(item.productId)) {
           continue
@@ -198,6 +232,12 @@ export async function releaseStock(
             const releaseQuantity = Math.min(variant.reservedQuantity, item.quantity)
 
             if (releaseQuantity > 0) {
+              const newVariantReserved = variant.reservedQuantity - releaseQuantity
+              await tx.productVariant.update({
+                where: { id: item.productVariantId },
+                data: { reservedQuantity: Math.max(0, newVariantReserved) },
+              })
+
               const existingIndex = releasedItems.findIndex(
                 (i) => i.productId === item.productId && i.productVariantId === item.productVariantId
               )
@@ -398,6 +438,12 @@ export async function consumeInventory(
         return { success: true, consumedItems: [] }
       }
 
+      // Capture whether this order actually reserved stock BEFORE we clear the
+      // flag on the update below. Orders that never reserved (e.g. fully
+      // wallet-paid NORMAL orders that skipped reserveStock) should only
+      // decrement real stock, not reservedQuantity.
+      const hadReservation = !!order.stockReservedAt
+
       const consumedItems: Array<{ productId: string; variantId?: string; quantity: number; timestamp: Date }> = []
       const beforeStockData: Array<{ productId: string; stock: number; reservedQuantity: number }> = []
       const timestamp = new Date()
@@ -419,63 +465,105 @@ export async function consumeInventory(
 
         beforeStockData.push({ productId: item.productId, stock: product.stock, reservedQuantity: product.reservedQuantity })
 
-        if (product.reservedQuantity < item.quantity) {
-          throw new Error(
-            `Insufficient reserved stock for product ${item.productId}. ` +
-            `Reserved: ${product.reservedQuantity}, Required: ${item.quantity}`
-          )
-        }
-
-        const newStock = product.stock - item.quantity
-        const newReserved = product.reservedQuantity - item.quantity
-
-        if (newStock < 0) {
-          throw new Error(
-            `Insufficient stock for product ${item.productId}. ` +
-            `Current stock: ${product.stock}, Required: ${item.quantity}`
-          )
-        }
-
-        if (newReserved < 0) {
-          throw new Error(
-            `Insufficient reserved quantity for product ${item.productId}. ` +
-            `Current reserved: ${product.reservedQuantity}, Required: ${item.quantity}`
-          )
-        }
-
-        if (item.productVariantId) {
-          const variantResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
-            SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
-          `
-          const variant = variantResult[0]
-
-          if (variant) {
-            const newVariantStock = variant.stock - item.quantity
-            const newVariantReserved = variant.reservedQuantity - item.quantity
-
-            if (newVariantStock < 0 || newVariantReserved < 0) {
-              throw new Error(
-                `Insufficient variant stock/reserved for variant ${item.productVariantId}`
-              )
-            }
-
-            await tx.productVariant.update({
-              where: { id: item.productVariantId },
-              data: {
-                stock: newVariantStock,
-                reservedQuantity: newVariantReserved,
-              },
-            })
+        if (hadReservation) {
+          // Order reserved stock: decrement both real stock and reservedQuantity.
+          if (product.reservedQuantity < item.quantity) {
+            throw new Error(
+              `Insufficient reserved stock for product ${item.productId}. ` +
+              `Reserved: ${product.reservedQuantity}, Required: ${item.quantity}`
+            )
           }
-        }
+          const newStock = product.stock - item.quantity
+          const newReserved = product.reservedQuantity - item.quantity
 
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: newStock,
-            reservedQuantity: newReserved,
-          },
-        })
+          if (newStock < 0) {
+            throw new Error(
+              `Insufficient stock for product ${item.productId}. ` +
+              `Current stock: ${product.stock}, Required: ${item.quantity}`
+            )
+          }
+
+          if (newReserved < 0) {
+            throw new Error(
+              `Insufficient reserved quantity for product ${item.productId}. ` +
+              `Current reserved: ${product.reservedQuantity}, Required: ${item.quantity}`
+            )
+          }
+
+          if (item.productVariantId) {
+            const variantResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+              SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
+            `
+            const variant = variantResult[0]
+
+            if (variant) {
+              const newVariantStock = variant.stock - item.quantity
+              const newVariantReserved = variant.reservedQuantity - item.quantity
+
+              if (newVariantStock < 0 || newVariantReserved < 0) {
+                throw new Error(
+                  `Insufficient variant stock/reserved for variant ${item.productVariantId}`
+                )
+              }
+
+              await tx.productVariant.update({
+                where: { id: item.productVariantId },
+                data: {
+                  stock: newVariantStock,
+                  reservedQuantity: newVariantReserved,
+                },
+              })
+            }
+          }
+
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: newStock,
+              reservedQuantity: newReserved,
+            },
+          })
+        } else {
+          // Order never reserved stock: decrement real stock only, leaving
+          // reservedQuantity untouched so another order's reservation is not
+          // misattributed to this consumption.
+          const newStock = product.stock - item.quantity
+
+          if (newStock < 0) {
+            throw new Error(
+              `Insufficient stock for product ${item.productId}. ` +
+              `Current stock: ${product.stock}, Required: ${item.quantity}`
+            )
+          }
+
+          if (item.productVariantId) {
+            const variantResult = await tx.$queryRaw<Array<{ stock: number; reservedQuantity: number }>>`
+              SELECT stock, "reservedQuantity" FROM product_variants WHERE id = ${item.productVariantId} FOR UPDATE
+            `
+            const variant = variantResult[0]
+
+            if (variant) {
+              const newVariantStock = variant.stock - item.quantity
+
+              if (newVariantStock < 0) {
+                throw new Error(
+                  `Insufficient variant stock for variant ${item.productVariantId}. ` +
+                  `Current stock: ${variant.stock}, Required: ${item.quantity}`
+                )
+              }
+
+              await tx.productVariant.update({
+                where: { id: item.productVariantId },
+                data: { stock: newVariantStock },
+              })
+            }
+          }
+
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: newStock },
+          })
+        }
 
         consumedItems.push({
           productId: item.productId,
@@ -487,7 +575,7 @@ export async function consumeInventory(
 
       await tx.order.update({
         where: { id: orderId },
-        data: { inventoryConsumedAt: timestamp },
+        data: { inventoryConsumedAt: timestamp, stockReservedAt: null },
       })
 
       for (let i = 0; i < consumedItems.length; i++) {

@@ -526,6 +526,8 @@ model Order {
   orderType             OrderType              @default(NORMAL)
   fulfillmentStatus     OrderFulfillmentStatus @default(PENDING)
   inventoryConsumedAt   DateTime?
+  stockReservedAt       DateTime?
+  reservationExpiredAt  DateTime?
   allocatedAt           DateTime?
   idempotencyKey        String?
   walletAmountApplied   Float?

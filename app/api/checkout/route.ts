@@ -12,6 +12,7 @@ import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 import { getUnitPrice } from '@/lib/pricing'
 import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
+import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -354,6 +355,36 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // Reserve stock for NORMAL, non-wallet-covered orders before Paystack init.
+    // Fully wallet-covered orders skip Paystack entirely and never reach
+    // reserveStock later (verify/webhook return early on payment.status === 'PAID').
+    if (orderType === 'NORMAL' && !fullyCoveredByWallet) {
+      const reservationItems = itemsWithPrice
+        .filter((item: any) => item.availabilityType === 'IN_STOCK')
+        .map((item: any) => ({
+          productId: item.productId,
+          productVariantId: item.productVariantId || undefined,
+          quantity: item.quantity,
+          availabilityType: item.product.availabilityType,
+        }))
+
+      if (reservationItems.length > 0) {
+        const reservation = await reserveStock(result.order.id, reservationItems)
+        if (!reservation.success) {
+          // Insufficient stock: cancel the just-created order and mark payment failed.
+          await getPrisma().payment.update({
+            where: { id: result.payment.id },
+            data: { status: 'FAILED', message: reservation.error || 'Insufficient stock' },
+          })
+          await getPrisma().order.update({
+            where: { id: result.order.id },
+            data: { status: 'CANCELLED', paymentStatus: 'FAILED' },
+          })
+          return NextResponse.json({ error: 'Item out of stock' }, { status: 409 })
+        }
+      }
+    }
+
     // Initialize Paystack payment
     const callbackUrl = `${SITE_URL}/checkout`
     console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
@@ -451,9 +482,15 @@ export async function POST(request: NextRequest) {
         fullyCoveredByWallet: !!fullyCoveredByWallet,
       })
     } catch (paystackError) {
-      // If Paystack initialization fails, update payment status to FAILED
+      // If Paystack initialization fails, release any reserved stock and update payment status
       console.error('[Checkout API] Paystack initialization error:', paystackError)
       
+      if (orderType === 'NORMAL' && !fullyCoveredByWallet) {
+        releaseStock(result.order.id).catch(err => {
+          console.error('Failed to release stock for failed Paystack init:', err)
+        })
+      }
+
       await getPrisma().payment.update({
         where: { id: result.payment.id },
         data: { 
