@@ -62,7 +62,7 @@ async function main(argv: string[]): Promise<void> {
   const prisma = getPrisma()
   try {
     // Expected reservedQuantity per product from active (unconsumed) reservations.
-    const expectedProducts = await prisma.$queryRaw<Array<{ id: string; expected: number }>>`
+    const expectedProducts = await prisma.$queryRaw<any[]>`
       SELECT oi."productId" AS id, COALESCE(SUM(oi."quantity")::int, 0) AS expected
       FROM "order_items" oi
       JOIN "orders" o ON o.id = oi."orderId"
@@ -72,7 +72,7 @@ async function main(argv: string[]): Promise<void> {
     `
 
     // Expected reservedQuantity per product variant from active reservations.
-    const expectedVariants = await prisma.$queryRaw<Array<{ id: string; expected: number }>>`
+    const expectedVariants = await prisma.$queryRaw<any[]>`
       SELECT oi."productVariantId" AS id, COALESCE(SUM(oi."quantity")::int, 0) AS expected
       FROM "order_items" oi
       JOIN "orders" o ON o.id = oi."orderId"
@@ -84,12 +84,12 @@ async function main(argv: string[]): Promise<void> {
 
     const expectedProductMap = new Map<string, number>()
     for (const row of expectedProducts) {
-      expectedProductMap.set(row.id, Number(row.expected))
+      expectedProductMap.set(String((row as { id: string }).id), Number((row as { expected: number }).expected))
     }
 
     const expectedVariantMap = new Map<string, number>()
     for (const row of expectedVariants) {
-      expectedVariantMap.set(row.id, Number(row.expected))
+      expectedVariantMap.set(String((row as { id: string }).id), Number((row as { expected: number }).expected))
     }
 
     const products = await prisma.product.findMany({
@@ -162,7 +162,7 @@ async function main(argv: string[]): Promise<void> {
     for (const row of drifted) {
       if (row.kind === 'product') {
         await prisma.$transaction(async (tx) => {
-          const expected = await tx.$queryRaw<Array<{ expected: number }>>`
+          const expected = await tx.$queryRaw<any[]>`
             SELECT COALESCE(SUM(oi."quantity")::int, 0) AS expected
             FROM "order_items" oi
             JOIN "orders" o ON o.id = oi."orderId"
@@ -178,7 +178,7 @@ async function main(argv: string[]): Promise<void> {
         })
       } else {
         await prisma.$transaction(async (tx) => {
-          const expected = await tx.$queryRaw<Array<{ expected: number }>>`
+          const expected = await tx.$queryRaw<any[]>`
             SELECT COALESCE(SUM(oi."quantity")::int, 0) AS expected
             FROM "order_items" oi
             JOIN "orders" o ON o.id = oi."orderId"
