@@ -864,6 +864,8 @@ model VendorSettings {
   notifyLowStock             Boolean  @default(true)
   notifyCustomerMessages     Boolean  @default(true)
   notifySettlements          Boolean  @default(true)
+  notifyDailySummary         Boolean  @default(true)
+  lastDailySummaryDate       DateTime?
   notificationChannels       Json     @default("{}")
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
@@ -2813,6 +2815,7 @@ enum NotificationType {
   VERIFICATION_REVOKED
   VERIFICATION_SUBMITTED
   LOW_STOCK
+  DAILY_SUMMARY
 }
 
 enum FeedbackType {

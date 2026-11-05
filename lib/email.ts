@@ -722,3 +722,48 @@ export async function sendRefundConfirmationEmail(
     retryPayload: { customerEmail, customerName, orderId },
   })
 }
+
+// Vendor daily summary email.
+export async function sendVendorDailySummaryEmail(
+  to: string,
+  vendorName: string,
+  summary: string
+) {
+  const subject = 'Your daily sales summary'
+  const lines = summary
+    .split('\n')
+    .map(
+      (line) =>
+        `<li style="margin: 0 0 8px 0; font-size: 16px; color: #374151;">${line}</li>`
+    )
+    .join('')
+  const content = `
+    <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #1a1a2e;">Daily Sales Summary</h2>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Dear ${vendorName},</p>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151;">Here is your sales summary for today:</p>
+    <ul style="margin: 0 0 24px 0; padding-left: 20px; color: #374151;">
+      ${lines}
+    </ul>
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151;">View full details in your dashboard:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 0 0 24px 0;">
+      <tr>
+        <td align="center">
+          <a href="${SITE_URL}/dashboard/vendor/sales" style="display: inline-block; background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%); color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            View Sales Summary
+          </a>
+        </td>
+      </tr>
+    </table>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">You can turn off the daily summary email in your dashboard Settings under Notification Preferences.</p>
+  `
+  const htmlContent = getEmailTemplate(content, 'Questions? Contact us at support@dhreamarket.com')
+
+  return sendEmail({
+    to,
+    subject,
+    htmlContent,
+    textContent: `Dear ${vendorName},\n\nHere is your daily sales summary:\n${summary}\n\nView it in your dashboard: ${SITE_URL}/dashboard/vendor/sales\n\nYou can turn off the daily summary email in Settings > Notification Preferences.`,
+    emailType: 'DAILY_SUMMARY',
+    retryPayload: { to, vendorName, summary },
+  })
+}
