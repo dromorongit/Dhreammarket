@@ -43,7 +43,6 @@ interface Order {
   payment: {
     id: string
     status: string
-    reference: string
     amount: number
   } | null
   source: string
@@ -60,6 +59,8 @@ interface Order {
   profitLabel?: string
   costComplete?: boolean
   deliveryCostKnown?: boolean
+  payLinkSent?: boolean
+  paymentNeedsReview?: boolean
 }
 
 const ORDER_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -82,13 +83,39 @@ const SOURCE_BADGE: Record<string, { label: string; color: string }> = {
   MANUAL: { label: 'Manual', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
 }
 
+const CHANNEL_BADGE: Record<string, { label: string; color: string }> = {
+  WHATSAPP: { label: 'WhatsApp', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  INSTAGRAM: { label: 'Instagram', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  FACEBOOK: { label: 'Facebook', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  CALL: { label: 'Call', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+  WALK_IN: { label: 'Walk-in', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  OTHER: { label: 'Other', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+}
+
+const PAYMENT_CHIP: Record<string, { label: string; color: string }> = {
+  LINK_SENT: { label: 'Link sent', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  NEEDS_REVIEW: { label: 'Review payment', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  UNPAID: { label: 'Unpaid', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+}
+
+const CHANNEL_LABEL: Record<string, string> = {
+  WHATSAPP: 'WhatsApp',
+  INSTAGRAM: 'Instagram',
+  FACEBOOK: 'Facebook',
+  CALL: 'Call',
+  WALK_IN: 'Walk-in',
+  OTHER: 'Other',
+}
+
+const CHANNELS: string[] = ['WHATSAPP', 'INSTAGRAM', 'FACEBOOK', 'CALL', 'WALK_IN', 'OTHER']
+
 const MANUAL_STATUS_TRANSITIONS: Record<string, string[]> = {
   PROCESSING: ['SHIPPED', 'CANCELLED'],
   SHIPPED: ['DELIVERED', 'CANCELLED'],
   DELIVERED: ['COMPLETED'],
   COMPLETED: [],
   CANCELLED: [],
-  PENDING: [],
+  PENDING: ['PROCESSING', 'CANCELLED'],
 }
 
 export default function VendorOrdersPageClient() {
@@ -98,7 +125,9 @@ export default function VendorOrdersPageClient() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sourceFilter, setSourceFilter] = useState('all')
-  const [unpaidOnly, setUnpaidOnly] = useState(false)
+  const [filterMode, setFilterMode] = useState<'all' | 'unpaid' | 'toDispatch'>('all')
+  const [counts, setCounts] = useState<{ unpaid: number; toDispatch: number } | null>(null)
+  const [channelFilter, setChannelFilter] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
   const [totalPages, setTotalPages] = useState(1)
@@ -116,20 +145,49 @@ export default function VendorOrdersPageClient() {
   const [deliveryCostDraft, setDeliveryCostDraft] = useState<string>('')
   const [deliveryCostError, setDeliveryCostError] = useState<string | null>(null)
 
+  // More menu: only one row's menu open at a time
+  const [moreOpenId, setMoreOpenId] = useState<string | null>(null)
+
+  const closeMore = () => setMoreOpenId(null)
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeMore() }
+    const handleClick = (e: MouseEvent) => {
+      if (moreOpenId !== null) {
+        const target = e.target as HTMLElement
+        if (!target.closest('[data-more-menu]')) closeMore()
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    document.addEventListener('mousedown', handleClick)
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+      document.removeEventListener('mousedown', handleClick)
+    }
+  }, [moreOpenId])
+
   useEffect(() => {
     fetchOrders()
-  }, [page, search, statusFilter, sourceFilter, unpaidOnly])
+  }, [page, search, statusFilter, sourceFilter, filterMode, channelFilter])
 
   // The dashboard "Unpaid" tile links here with ?unpaid=true.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
-    if (params.get('unpaid') === 'true') {
-      setUnpaidOnly(true)
+    const unpaid = params.get('unpaid')
+    const toDispatch = params.get('toDispatch')
+    if (toDispatch === 'true') {
+      setFilterMode('toDispatch')
+    } else if (unpaid === 'true') {
+      setFilterMode('unpaid')
     }
     const status = params.get('status')
     if (status) {
       setStatusFilter(status)
+    }
+    const channel = params.get('channel')
+    if (channel) {
+      setChannelFilter(channel)
     }
   }, [])
 
@@ -145,7 +203,9 @@ export default function VendorOrdersPageClient() {
         status: statusFilter,
       })
       if (sourceFilter !== 'all') params.set('source', sourceFilter)
-      if (unpaidOnly) params.set('unpaid', 'true')
+      if (filterMode === 'unpaid') params.set('unpaid', 'true')
+      if (filterMode === 'toDispatch') params.set('toDispatch', 'true')
+      if (channelFilter) params.set('channel', channelFilter)
 
       const response = await fetch(`/api/vendor/orders?${params}`)
 
@@ -159,6 +219,9 @@ export default function VendorOrdersPageClient() {
       setOrders(data.orders || [])
       setTotalPages(data.pagination?.totalPages || 1)
       setTotal(data.pagination?.total || 0)
+      if (data.counts) {
+        setCounts(data.counts)
+      }
     } catch (err) {
       console.error('Error fetching orders:', err)
       setError('An error occurred while loading orders')
@@ -166,6 +229,12 @@ export default function VendorOrdersPageClient() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (filterMode === 'toDispatch') {
+      setStatusFilter('all')
+    }
+  }, [filterMode])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -190,6 +259,41 @@ export default function VendorOrdersPageClient() {
   const isManual = (order: Order) => order.source === 'MANUAL'
 
   const allowedManualStatuses = (order: Order) => MANUAL_STATUS_TRANSITIONS[order.status] || []
+
+  const paymentChipLabel = (order: Order) => {
+    if (order.payLinkSent) return PAYMENT_CHIP.LINK_SENT.label
+    if (order.paymentNeedsReview) return PAYMENT_CHIP.NEEDS_REVIEW.label
+    return PAYMENT_CHIP.UNPAID.label
+  }
+
+  const paymentChipColor = (order: Order) => {
+    if (order.payLinkSent) return PAYMENT_CHIP.LINK_SENT.color
+    if (order.paymentNeedsReview) return PAYMENT_CHIP.NEEDS_REVIEW.color
+    return PAYMENT_CHIP.UNPAID.color
+  }
+
+  const getNextStatusStep = (order: Order) => {
+    if (!isManual(order)) return null
+    const transitions = allowedManualStatuses(order)
+    if (transitions.includes('PROCESSING')) {
+      return { label: 'Start order', onClick: () => handleUpdateStatus('PROCESSING') }
+    }
+    if (transitions.includes('SHIPPED')) {
+      return { label: 'Mark shipped', onClick: () => handleManualAction(order.id, 'ship') }
+    }
+    if (transitions.includes('DELIVERED')) {
+      return { label: 'Mark delivered', onClick: () => handleManualAction(order.id, 'deliver') }
+    }
+    if (transitions.includes('COMPLETED')) {
+      return { label: 'Complete', onClick: () => handleManualAction(order.id, 'complete') }
+    }
+    return null
+  }
+
+  const hasSecondaryActions = (order: Order) => {
+    // View Details is always a secondary action, so More is never empty.
+    return true
+  }
 
   const handleManualAction = (orderId: string, action: 'pay' | 'ship' | 'deliver' | 'complete' | 'cancel') => {
     setManualOrderId(orderId)
@@ -409,7 +513,9 @@ export default function VendorOrdersPageClient() {
               </form>
               <select
                 value={statusFilter}
+                disabled={filterMode === 'toDispatch'}
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                  if (filterMode === 'toDispatch') return
                   setStatusFilter(e.target.value)
                   setPage(1)
                 }}
@@ -434,14 +540,58 @@ export default function VendorOrdersPageClient() {
                 <option value="ONLINE">Online</option>
                 <option value="MANUAL">Manual</option>
               </select>
+              {/* Filter chips: All, Unpaid, To dispatch */}
+              <div className="flex items-center gap-2 sm:flex-none">
+                <Button
+                  size="sm"
+                  variant={filterMode === 'all' ? 'secondary' : 'outline'}
+                  onClick={() => { setFilterMode('all'); setPage(1) }}
+                  className="min-h-[44px] text-xs px-3"
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filterMode === 'unpaid' ? 'secondary' : 'outline'}
+                  onClick={() => { setFilterMode('unpaid'); setPage(1) }}
+                  className="min-h-[44px] text-xs px-3"
+                >
+                  Unpaid{counts != null && counts.unpaid > 0 ? ` (${counts.unpaid})` : ''}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={filterMode === 'toDispatch' ? 'secondary' : 'outline'}
+                  onClick={() => { setStatusFilter('all'); setFilterMode('toDispatch'); setPage(1) }}
+                  className="min-h-[44px] text-xs px-3"
+                >
+                  To dispatch{counts != null && counts.toDispatch > 0 ? ` (${counts.toDispatch})` : ''}
+                </Button>
+              </div>
+            </div>
+            {/* Channel chips */}
+            <div className="mt-3 sm:mt-4 flex gap-2 overflow-x-auto scrollbar-hide sm:overflow-x-hidden">
               <Button
-                variant={unpaidOnly ? 'secondary' : 'outline'}
                 size="sm"
-                onClick={() => setUnpaidOnly(!unpaidOnly)}
-                className="min-h-[44px] flex-1 sm:flex-none"
+                variant={channelFilter === null ? 'secondary' : 'outline'}
+                onClick={() => { setChannelFilter(null); setPage(1) }}
+                className="min-h-[44px] whitespace-nowrap text-xs px-3 flex-shrink-0"
               >
-                {unpaidOnly ? 'Showing Unpaid' : 'Unpaid Only'}
+                All channels
               </Button>
+              {CHANNELS.map((ch) => (
+                <Button
+                  key={ch}
+                  size="sm"
+                  variant={channelFilter === ch ? 'secondary' : 'outline'}
+                  onClick={() => {
+                    setChannelFilter(channelFilter === ch ? null : ch)
+                    setPage(1)
+                  }}
+                  className="min-h-[44px] whitespace-nowrap text-xs px-3 flex-shrink-0"
+                >
+                  {CHANNEL_LABEL[ch]}
+                </Button>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -455,7 +605,7 @@ export default function VendorOrdersPageClient() {
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
               <p className="text-gray-600">
-                {search || statusFilter !== 'all' || sourceFilter !== 'all' || unpaidOnly
+                {search || statusFilter !== 'all' || sourceFilter !== 'all' || filterMode !== 'all' || channelFilter !== null
                   ? 'Try adjusting your search or filters'
                   : 'You don\'t have any orders yet. Orders will appear here when customers purchase your products.'}
               </p>
@@ -483,12 +633,22 @@ export default function VendorOrdersPageClient() {
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${sourceConfig.color}`}>
                               {sourceConfig.label}
                             </span>
+                            {isManual(order) && order.channel && CHANNEL_BADGE[order.channel] && (
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${CHANNEL_BADGE[order.channel].color}`}>
+                                {CHANNEL_BADGE[order.channel].label}
+                              </span>
+                            )}
                             <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig?.color || 'bg-gray-100 text-gray-800'}`}>
                               {statusLabel}
                             </span>
                             {!isManual(order) && (
                               <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${acceptanceConfig?.color || 'bg-gray-100 text-gray-800'}`}>
                                 {acceptanceConfig?.label || 'Pending'}
+                              </span>
+                            )}
+                            {order.paymentStatus !== 'PAID' && (
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${paymentChipColor(order)}`}>
+                                {paymentChipLabel(order)}
                               </span>
                             )}
                           </div>
@@ -533,14 +693,18 @@ export default function VendorOrdersPageClient() {
                           <p className="text-xl font-bold text-gray-900">{formatPrice(order.vendorTotal)}</p>
                           <p className="text-xs text-gray-500">{order.items.length} item(s)</p>
                         </div>
-                        <Button asChild variant="outline" size="sm" className="min-h-[44px]">
-                          <Link href={`/dashboard/vendor/orders/${order.id}`}>View Details</Link>
-                        </Button>
 
-                        {/* Manual order actions */}
-                        {isManual(order) && (
+                        {/* Primary visible actions */}
+                        {isManual(order) ? (
                           <div className="flex flex-wrap gap-2 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                            {order.paymentStatus !== 'PAID' && (
+                            <PayLinkButton
+                              orderId={order.id}
+                              source={order.source}
+                              paymentStatus={order.paymentStatus}
+                              status={order.status}
+                              customerPhone={order.customerPhone || undefined}
+                            />
+                            {order.paymentStatus !== 'PAID' && order.status !== 'CANCELLED' && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -551,50 +715,48 @@ export default function VendorOrdersPageClient() {
                                 {updatingOrder === order.id && manualAction === 'pay' ? 'Confirming...' : 'Mark as paid'}
                               </Button>
                             )}
-                            {allowedManualStatuses(order).includes('SHIPPED') && (
+                            {getNextStatusStep(order) && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleManualAction(order.id, 'ship')}
+                                onClick={() => getNextStatusStep(order)!.onClick()}
                                 disabled={updatingOrder === order.id}
                                 className="min-h-[44px] text-xs px-3"
                               >
-                                {updatingOrder === order.id && manualAction === 'ship' ? 'Shipping...' : 'Mark shipped'}
+                                {getNextStatusStep(order)!.label}
                               </Button>
                             )}
-                            {allowedManualStatuses(order).includes('DELIVERED') && (
+                            {hasSecondaryActions(order) && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleManualAction(order.id, 'deliver')}
+                                onClick={() => setMoreOpenId(order.id)}
                                 disabled={updatingOrder === order.id}
                                 className="min-h-[44px] text-xs px-3"
                               >
-                                {updatingOrder === order.id && manualAction === 'deliver' ? 'Delivering...' : 'Mark delivered'}
+                                More
                               </Button>
                             )}
-                            {allowedManualStatuses(order).includes('COMPLETED') && (
+                          </div>
+                        ) : (
+                          <div className="mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                            {hasSecondaryActions(order) && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleManualAction(order.id, 'complete')}
+                                onClick={() => setMoreOpenId(order.id)}
                                 disabled={updatingOrder === order.id}
                                 className="min-h-[44px] text-xs px-3"
                               >
-                                {updatingOrder === order.id && manualAction === 'complete' ? 'Completing...' : 'Mark completed'}
+                                More
                               </Button>
                             )}
-                            {allowedManualStatuses(order).includes('CANCELLED') && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCancelSale()}
-                                disabled={updatingOrder === order.id}
-                                className="min-h-[44px] text-xs px-3 text-rose-600 border-rose-200 hover:bg-rose-50"
-                              >
-                                Cancel sale
-                              </Button>
-                            )}
+                          </div>
+                        )}
+
+                        {/* More menu (one row open at a time) */}
+                        {moreOpenId === order.id && (
+                          <div className="mt-2 flex flex-col gap-1 w-full sm:w-auto">
                             {order.receiptUrl && (
                               <Button
                                 variant="outline"
@@ -602,71 +764,100 @@ export default function VendorOrdersPageClient() {
                                 onClick={() => {
                                   handleShareReceipt(order)
                                   handleWhatsAppReceipt(order)
+                                  closeMore()
                                 }}
                                 disabled={updatingOrder === order.id}
-                                className="min-h-[44px] text-xs px-3"
+                                className="min-h-[44px] text-xs px-3 w-full sm:w-auto justify-start"
                               >
                                 Share receipt
                               </Button>
                             )}
-                            <PayLinkButton
-                              orderId={order.id}
-                              source={order.source}
-                              paymentStatus={order.paymentStatus}
-                              status={order.status}
-                              customerPhone={order.customerPhone || undefined}
-                            />
-                          </div>
-                        )}
-
-                        {/* Inline delivery cost (manual orders only) */}
-                        {isManual(order) && (
-                          <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 mt-3 sm:mt-0 sm:pt-0">
-                            {deliveryCostOrderId === order.id ? (
-                              <>
-                                <input
-                                  type="number"
-                                  inputMode="decimal"
-                                  step="0.01"
-                                  min="0"
-                                  placeholder="Delivery cost"
-                                  value={deliveryCostDraft}
-                                  onChange={(e) => setDeliveryCostDraft(e.target.value)}
-                                  className="w-32 px-3 py-2 border border-slate-200 rounded-xl text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-royal-blue min-h-[44px]"
-                                />
-                                <Button
-                                  size="sm"
-                                  className="min-h-[44px] text-xs px-3"
-                                  onClick={() => handleSaveDeliveryCost(order.id)}
-                                  disabled={updatingOrder === order.id}
-                                >
-                                  {updatingOrder === order.id ? 'Saving...' : 'Save'}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="min-h-[44px] text-xs px-3"
-                                  onClick={cancelDeliveryCostEdit}
-                                >
-                                  Cancel
-                                </Button>
-                                {deliveryCostError ? (
-                                  <span className="text-xs text-rose-600">{deliveryCostError}</span>
-                                ) : null}
-                              </>
-                            ) : (
+                            {order.customerPhone && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => startDeliveryCostEdit(order)}
+                                onClick={() => {
+                                  handleWhatsAppReceipt(order)
+                                  closeMore()
+                                }}
                                 disabled={updatingOrder === order.id}
-                                className="min-h-[44px] text-xs px-3"
+                                className="min-h-[44px] text-xs px-3 w-full sm:w-auto justify-start"
                               >
-                                {order.deliveryCost != null
-                                  ? `Delivery cost: ${formatPrice(order.deliveryCost)}`
-                                  : 'Set delivery cost'}
+                                WhatsApp receipt
                               </Button>
                             )}
+                            {isManual(order) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  startDeliveryCostEdit(order)
+                                  closeMore()
+                                }}
+                                disabled={updatingOrder === order.id}
+                                className="min-h-[44px] text-xs px-3 w-full sm:w-auto justify-start"
+                              >
+                                Set delivery cost
+                              </Button>
+                            )}
+                            {isManual(order) && allowedManualStatuses(order).includes('CANCELLED') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  handleCancelSale()
+                                  closeMore()
+                                }}
+                                disabled={updatingOrder === order.id}
+                                className="min-h-[44px] text-xs px-3 text-rose-600 border-rose-200 hover:bg-rose-50 w-full sm:w-auto justify-start"
+                              >
+                                Cancel order
+                              </Button>
+                            )}
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              onClick={closeMore}
+                              className="min-h-[44px] text-xs px-3 w-full sm:w-auto justify-start"
+                            >
+                              <Link href={`/dashboard/vendor/orders/${order.id}`}>View Details</Link>
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Inline delivery cost editor (manual orders only) */}
+                        {isManual(order) && deliveryCostOrderId === order.id && (
+                          <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 mt-3 sm:mt-0 sm:pt-0">
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              step="0.01"
+                              min="0"
+                              placeholder="Delivery cost"
+                              value={deliveryCostDraft}
+                              onChange={(e) => setDeliveryCostDraft(e.target.value)}
+                              className="w-32 px-3 py-2 border border-slate-200 rounded-xl text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-royal-blue min-h-[44px]"
+                            />
+                            <Button
+                              size="sm"
+                              className="min-h-[44px] text-xs px-3"
+                              onClick={() => handleSaveDeliveryCost(order.id)}
+                              disabled={updatingOrder === order.id}
+                            >
+                              {updatingOrder === order.id ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="min-h-[44px] text-xs px-3"
+                              onClick={cancelDeliveryCostEdit}
+                            >
+                              Cancel
+                            </Button>
+                            {deliveryCostError ? (
+                              <span className="text-xs text-rose-600">{deliveryCostError}</span>
+                            ) : null}
                           </div>
                         )}
                       </div>

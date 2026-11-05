@@ -125,13 +125,20 @@ export async function PATCH(
     const now = new Date()
 
     await prisma.$transaction(async (tx) => {
+      const updateData: any = {
+        paymentStatus: 'PAID',
+        paymentMethod: paymentMethod.trim(),
+        paymentConfirmedAt: now,
+      }
+      // A PENDING manual order becomes PROCESSING once payment is confirmed
+      // (cash on delivery). Already-started orders keep their status.
+      if (existingOrder.status === 'PENDING') {
+        updateData.status = 'PROCESSING'
+        updateData.fulfillmentStatus = 'PROCESSING'
+      }
       await tx.order.update({
         where: { id: orderId },
-        data: {
-          paymentStatus: 'PAID',
-          paymentMethod: paymentMethod.trim(),
-          paymentConfirmedAt: now,
-        },
+        data: updateData,
       })
 
       await createAuditLog({
@@ -153,12 +160,14 @@ export async function PATCH(
     // joins the revenue, so the cached summaries of this store are dropped.
     invalidateSalesSummaryCache(store.id)
 
+    const newStatus = existingOrder.status === 'PENDING' ? 'PROCESSING' : existingOrder.status
+
     return NextResponse.json({
       order: {
         id: existingOrder.id,
         displayNumber: orderDisplayNumber(existingOrder.id),
         receiptToken: existingOrder.receiptToken,
-        status: existingOrder.status,
+        status: newStatus,
         paymentStatus: 'PAID',
         paymentMethod: paymentMethod.trim(),
         paymentConfirmedAt: now,
