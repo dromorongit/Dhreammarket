@@ -41,6 +41,7 @@ export default function VendorProductsPageClient() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [isOnboarded, setIsOnboarded] = useState<boolean | null>(null)
+  const [lowStockFilter, setLowStockFilter] = useState(false)
 
   useEffect(() => {
     checkOnboardingStatus()
@@ -64,7 +65,8 @@ export default function VendorProductsPageClient() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products')
+      const url = lowStockFilter ? '/api/products?lowStock=true' : '/api/products'
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         const rawProducts = Array.isArray(data?.products) ? data.products : []
@@ -82,6 +84,11 @@ export default function VendorProductsPageClient() {
       setLoading(false)
     }
   }
+
+  const lowStockCount = products.filter((p) => {
+    const available = p.stock - (p.reservedQuantity || 0)
+    return available <= (p.lowStockThreshold ?? 5)
+  }).length
 
   const handleDelete = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) {
@@ -165,6 +172,18 @@ export default function VendorProductsPageClient() {
               size="sm"
               category="VENDOR"
             />
+            <Button
+              variant={lowStockFilter ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setLowStockFilter(!lowStockFilter)
+                if (!lowStockFilter) {
+                  fetchProducts()
+                }
+              }}
+            >
+              Low stock ({lowStockCount})
+            </Button>
             <Button asChild>
               <Link href="/dashboard/vendor/products/new">+ Add New Product</Link>
             </Button>
@@ -235,22 +254,25 @@ export default function VendorProductsPageClient() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mb-3">
-                      {(product as any).availableStock !== undefined && (product as any).availableStock <= 5 && (
-                        <Badge variant="warning" size="sm" className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 01-2-2V7a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
-                          </svg>
-                          Low Stock
-                        </Badge>
-                      )}
-                      {(product as any).availableStock === 0 && (
-                        <Badge variant="danger" size="sm" className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Out of Stock
-                        </Badge>
-                      )}
+                      {(product as any).availableStock !== undefined &&
+                        (product as any).availableStock <= 0 && (
+                          <Badge variant="danger" size="sm" className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Out of stock
+                          </Badge>
+                        )}
+                      {(product as any).availableStock !== undefined &&
+                        (product as any).availableStock > 0 &&
+                        (product as any).availableStock <= ((product as any).lowStockThreshold ?? 5) && (
+                          <Badge variant="warning" size="sm" className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 9l-.732-2.28A2 2 0 0115.567 7H18a2 2 0 012 2v5a2 2 0 01-2 2h-5l-1 1-1-1H9a2 2 0 012-2h2.432l1.132 2.707c.77 1.333-.192 2.541-1.732 3z" />
+                            </svg>
+                            Low
+                          </Badge>
+                        )}
                     </div>
                     <p className="text-xs text-gray-500 mb-4">
                       Category: {product.category.name}
@@ -273,6 +295,26 @@ export default function VendorProductsPageClient() {
                       >
                         {deleting === product.id ? 'Deleting...' : 'Delete'}
                       </Button>
+                      {(product as any).availableStock !== undefined &&
+                        (product as any).availableStock <= ((product as any).lowStockThreshold ?? 5) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              const available =
+                                (product as any).availableStock ??
+                                product.stock - (product.reservedQuantity || 0)
+                              const threshold = (product as any).lowStockThreshold ?? 5
+                              const quantity = Math.max(2 * threshold - available, 1)
+                              router.push(
+                                `/dashboard/vendor/restock?productId=${product.id}&quantity=${quantity}`
+                              )
+                            }}
+                          >
+                            Reorder
+                          </Button>
+                        )}
                     </div>
                   </div>
                 </CardContent>
