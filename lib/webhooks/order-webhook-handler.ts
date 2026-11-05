@@ -218,18 +218,20 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         })
       })
 
-      await createAuditLog({
-        userId: payment.userId,
-        userRole: 'SYSTEM',
-        action: 'PAYMENT_FAILED',
-        entityType: 'ORDER',
-        entityId: payment.orderId,
-        afterData: {
-          paymentId: payment.id,
-          reference: payment.reference,
-          status: failedStatus,
-        },
-      })
+      if (payment.userId) {
+        await createAuditLog({
+          userId: payment.userId,
+          userRole: 'SYSTEM',
+          action: 'PAYMENT_FAILED',
+          entityType: 'ORDER',
+          entityId: payment.orderId,
+          afterData: {
+            paymentId: payment.id,
+            reference: payment.reference,
+            status: failedStatus,
+          },
+        })
+      }
 
       const orderForRelease = await getPrisma().order.findUnique({
         where: { id: payment.orderId },
@@ -241,26 +243,28 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         })
       }
 
-      const customer = await getPrisma().user.findUnique({
-        where: { id: payment.userId },
-        select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } },
-      })
-
-      if (customer) {
-        const customerName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || 'Customer'
-        createNotification(
-          customer.id,
-          'PAYMENT_FAILED',
-          'Payment Failed',
-          'Your payment could not be completed and your order was not placed. If you were charged, contact support.'
-        ).catch(err => {
-          console.error('Failed to create payment failed notification:', err)
+      if (payment.userId) {
+        const customer = await getPrisma().user.findUnique({
+          where: { id: payment.userId },
+          select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } },
         })
 
-        if (customer.email) {
-          sendPaymentFailedEmail(customer.email, customerName, payment.orderId).catch(err => {
-            console.error('Failed to send payment failed email:', err)
+        if (customer) {
+          const customerName = `${customer.profile?.firstName || ''} ${customer.profile?.lastName || ''}`.trim() || 'Customer'
+          createNotification(
+            customer.id,
+            'PAYMENT_FAILED',
+            'Payment Failed',
+            'Your payment could not be completed and your order was not placed. If you were charged, contact support.'
+          ).catch(err => {
+            console.error('Failed to create payment failed notification:', err)
           })
+
+          if (customer.email) {
+            sendPaymentFailedEmail(customer.email, customerName, payment.orderId).catch(err => {
+              console.error('Failed to send payment failed email:', err)
+            })
+          }
         }
       }
 
@@ -405,27 +409,31 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       console.error('Failed to record payment confirmed event:', err)
     })
 
-    const cart = await getPrisma().cart.findUnique({
-      where: { userId: payment.userId },
-    })
-    if (cart) {
-      await getPrisma().cartItem.deleteMany({
-        where: { cartId: cart.id },
+    if (payment.userId) {
+      const cart = await getPrisma().cart.findUnique({
+        where: { userId: payment.userId },
       })
+      if (cart) {
+        await getPrisma().cartItem.deleteMany({
+          where: { cartId: cart.id },
+        })
+      }
     }
 
-    await createAuditLog({
-      userId: payment.userId,
-      userRole: 'SYSTEM',
-      action: 'PAYMENT_CONFIRMED',
-      entityType: 'ORDER',
-      entityId: payment.orderId,
-      afterData: {
-        paymentId: payment.id,
-        reference: payment.reference,
-        amount: payment.amount,
-      },
-    })
+    if (payment.userId) {
+      await createAuditLog({
+        userId: payment.userId,
+        userRole: 'SYSTEM',
+        action: 'PAYMENT_CONFIRMED',
+        entityType: 'ORDER',
+        entityId: payment.orderId,
+        afterData: {
+          paymentId: payment.id,
+          reference: payment.reference,
+          amount: payment.amount,
+        },
+      })
+    }
 
     return NextResponse.json({ received: true })
   } catch (error) {

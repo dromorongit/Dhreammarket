@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { Badge } from '@/components/Badge'
+import PayLinkButton from '@/components/vendor/PayLinkButton'
 import { formatPrice } from '@/lib/currency'
 import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 
@@ -608,6 +609,13 @@ export default function VendorOrdersPageClient() {
                                 Share receipt
                               </Button>
                             )}
+                            <PayLinkButton
+                              orderId={order.id}
+                              source={order.source}
+                              paymentStatus={order.paymentStatus}
+                              status={order.status}
+                              customerPhone={order.customerPhone || undefined}
+                            />
                           </div>
                         )}
 

@@ -48,7 +48,10 @@ export async function computeStoreBalance(
       order: {
         paymentStatus: 'PAID',
         status: { in: ['DELIVERED', 'COMPLETED'] },
-        source: 'ONLINE',
+        OR: [
+          { source: 'ONLINE' },
+          { source: 'MANUAL', payment: { status: 'PAID' } },
+        ],
       },
       deliveredAt: { not: null },
     },

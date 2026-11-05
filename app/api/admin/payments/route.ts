@@ -62,11 +62,13 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit)
 
     // Calculate total revenue from paid payments using aggregation.
-    // Manual orders never enter platform money flows, so restrict to ONLINE orders.
+    // Include MANUAL orders that have a Payment row (e.g. Paystack-paid
+    // manual orders created via a pay link). Cash/MoMo manual orders have no
+    // Payment row, so they stay out automatically.
     const totalRevenueResult = await prisma.payment.aggregate({
       where: {
         status: 'PAID',
-        order: { source: 'ONLINE' },
+        order: { source: { in: ['ONLINE', 'MANUAL'] } },
       },
       _sum: { amount: true },
     })

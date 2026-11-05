@@ -182,11 +182,11 @@ export function buildReceiptUrl(receiptToken: string): string {
 /**
  * Build a wa.me share link: wa.me/<digits>?text=<encoded message with receipt URL>.
  */
-export function buildWhatsAppShareLink(phone: string, receiptUrl: string): string {
+export function buildWhatsAppShareLink(phone: string, receiptUrl: string, text?: string): string {
   const normalized = normalizeGhanaPhone(phone)
   const digits = normalized ? normalized.replace(/\D/g, '') : phone.replace(/\D/g, '')
-  const text = encodeURIComponent(`Your Dhreamarket receipt: ${receiptUrl}`)
-  return `https://wa.me/${digits}?text=${text}`
+  const message = text ?? `Your Dhreamarket receipt: ${receiptUrl}`
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
 }
 
 export function normalizeCustomerPhone(phone: unknown): { phone: string } | { error: string } {

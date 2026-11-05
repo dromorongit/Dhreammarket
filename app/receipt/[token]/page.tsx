@@ -5,6 +5,7 @@ import { formatCurrency } from '@/lib/currency'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/Button'
+import PaymentConfirmingNotice from './PaymentConfirmingNotice'
 import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
@@ -46,12 +47,22 @@ function NotFound() {
   )
 }
 
-export default async function ReceiptPage({ params }: { params: { token: string } }) {
+export default async function ReceiptPage({
+  params,
+  searchParams,
+}: {
+  params: { token: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const receipt = await getReceiptByToken(params.token)
 
   if (!receipt) {
     notFound()
   }
+
+  const hasPaymentParams = Boolean(searchParams.trxref || searchParams.reference)
+  const awaitingPayment =
+    hasPaymentParams && receipt.paymentStatus !== 'PAID' && receipt.status !== 'CANCELLED'
 
   return (
     <div className="min-h-screen bg-white">
@@ -96,8 +107,17 @@ export default async function ReceiptPage({ params }: { params: { token: string 
           <div className="bg-gray-50 p-3 rounded-xl">
             <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Payment</p>
             <p className="text-gray-900">
-              {receipt.paymentStatus === 'PAID' ? 'Paid' : 'Unpaid'}
-              {receipt.paymentMethod ? ` • ${receipt.paymentMethod}` : ''}
+              {awaitingPayment ? (
+                <PaymentConfirmingNotice />
+              ) : receipt.paymentStatus === 'PAID' ? (
+                <>
+                  Paid{receipt.paymentMethod ? ` • ${receipt.paymentMethod}` : ''}
+                </>
+              ) : (
+                <>
+                  Unpaid{receipt.paymentMethod ? ` • ${receipt.paymentMethod}` : ''}
+                </>
+              )}
             </p>
           </div>
           <div className="bg-gray-50 p-3 rounded-xl">

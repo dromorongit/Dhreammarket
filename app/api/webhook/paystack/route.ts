@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { handleOrderWebhook } from '@/lib/webhooks/order-webhook-handler'
+import { handleManualOrderWebhook } from '@/lib/webhooks/manual-order-webhook-handler'
 import { handleVerificationWebhook } from '@/lib/webhooks/verification-webhook-handler'
 import { handleSubscriptionWebhook } from '@/lib/webhooks/subscription-webhook-handler'
 import { handleAdvertisingWebhook } from '@/lib/webhooks/advertising-webhook-handler'
@@ -179,6 +180,8 @@ export async function POST(
       handler = handleSubscriptionWebhook
     } else if (reference.startsWith('ADV-')) {
       handler = handleAdvertisingWebhook
+    } else if (reference.startsWith('MAN-')) {
+      handler = handleManualOrderWebhook
     } else {
       // No handler for this prefix. The single per-request log line above
       // already recorded the event and the prefix, so nothing further is

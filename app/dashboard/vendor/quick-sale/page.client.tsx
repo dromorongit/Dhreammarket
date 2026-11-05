@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Badge } from '@/components/Badge'
+import PayLinkButton from '@/components/vendor/PayLinkButton'
 import { formatCurrency } from '@/lib/currency'
 import { toPesewas, fromPesewas, computeOrderTotals, buildWhatsAppShareLink, MANUAL_CHANNELS, type ManualChannel } from '@/lib/manual-orders'
 
@@ -85,7 +86,7 @@ export default function VendorQuickSalePageClient() {
   const [submitError, setSubmitError] = useState<{ message: string; products?: Array<{ productName: string }> } | null>(null)
 
   // Success
-  const [sale, setSale] = useState<{ displayNumber: string; total: number; paymentStatus: string; receiptUrl: string | null; receiptToken: string | null } | null>(null)
+  const [sale, setSale] = useState<{ id: string; displayNumber: string; source: string; status: string; total: number; paymentStatus: string; receiptUrl: string | null; receiptToken: string | null } | null>(null)
 
   // Debounce ref
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -345,7 +346,10 @@ export default function VendorQuickSalePageClient() {
 
       const order = data.order
       setSale({
+        id: order.id,
         displayNumber: order.displayNumber,
+        source: order.source,
+        status: order.status,
         total: order.total,
         paymentStatus: order.paymentStatus,
         receiptUrl: order.receiptUrl || null,
@@ -436,6 +440,15 @@ export default function VendorQuickSalePageClient() {
               <Button onClick={handleCopyLink} fullWidth variant="outline" size="sm" disabled={!sale!.receiptUrl}>
                 Copy link
               </Button>
+              {sale && (
+                <PayLinkButton
+                  orderId={sale.id}
+                  source={sale.source}
+                  paymentStatus={sale.paymentStatus}
+                  status={sale.status}
+                  customerPhone={customerPhone || undefined}
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Button onClick={handleRecordAnother} fullWidth variant="outline" size="sm">
