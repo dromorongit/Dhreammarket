@@ -1,0 +1,110 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getPrisma } from '@/lib/prisma'
+import { verifyToken } from '@/lib/auth-middleware'
+import { sanitizeUserContent } from '@/lib/sanitize'
+
+export async function POST(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
+  try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const outcome = await verifyToken(token)
+    if (!outcome.authenticated) {
+      const response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      response.cookies.set('token', '', { expires: new Date(0), path: '/' })
+      return response
+    }
+
+    const payload = outcome
+    if (payload.role !== 'VENDOR' && payload.role !== 'ADMIN' && payload.role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Only vendors can reply to reviews' }, { status: 403 })
+    }
+
+    const { reviewId } = params
+    const { message } = await request.json()
+
+    if (!message || !message.trim()) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+    }
+
+    if (message.trim().length > 2000) {
+      return NextResponse.json({ error: 'Message must be under 2000 characters' }, { status: 400 })
+    }
+
+    const sanitizedMessage = sanitizeUserContent(message.trim(), { maxLength: 2000 })
+
+    const review = await getPrisma().vendorReview.findUnique({
+      where: { id: reviewId },
+      include: { store: { select: { userId: true } } },
+    })
+
+    if (!review) {
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+    }
+
+    const vendorId = review.store.userId
+
+    if (vendorId !== payload.userId && payload.role !== 'SUPER_ADMIN' && payload.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'You can only reply to reviews of your own store' }, { status: 403 })
+    }
+
+    const reply = await getPrisma().vendorReviewReply.create({
+      data: {
+        reviewId,
+        vendorId: payload.userId,
+        message: sanitizedMessage,
+      },
+    })
+
+    return NextResponse.json({ reply }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating vendor review reply:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
+  try {
+    const { reviewId } = params
+    const page = Math.max(parseInt(request.nextUrl.searchParams.get('page') || '1', 10), 1)
+    const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '10', 10), 1), 100)
+
+    const skip = (page - 1) * limit
+    const [replies, total] = await Promise.all([
+      getPrisma().vendorReviewReply.findMany({
+        where: { reviewId },
+        select: { id: true, vendorId: true, message: true, createdAt: true, updatedAt: true },
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: limit,
+      }),
+      getPrisma().vendorReviewReply.count({ where: { reviewId } }),
+    ])
+
+    const vendorIdArray = Array.from(new Set(replies.map((r) => r.vendorId)))
+    const vendors = await getPrisma().user.findMany({
+      where: { id: { in: vendorIdArray } },
+      select: { id: true, profile: { select: { firstName: true, lastName: true } } },
+    })
+    const vendorMap = new Map(vendors.map((v) => [v.id, v]))
+
+    const maskedReplies = replies.map((reply) => ({
+      ...reply,
+      vendor: vendorMap.get(reply.vendorId),
+    }))
+
+    const totalPages = Math.ceil(total / limit)
+
+    return NextResponse.json({
+      replies: maskedReplies,
+      pagination: { page, limit, total, totalPages },
+    })
+  } catch (error) {
+    console.error('Error fetching vendor review replies:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

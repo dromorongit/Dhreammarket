@@ -12,11 +12,11 @@ const globalForRateLimit = globalThis as unknown as {
 // Key: IP + endpoint, Value: { count, resetTime }
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
-type RateLimitStoreName = 'memory' | 'redis' | 'upstash'
+type RateLimitStoreName = 'memory' | 'redis'
 
 function getRateLimitStore(): RateLimitStoreName {
   const value = process.env.RATE_LIMIT_STORE
-  if (value === 'redis' || value === 'upstash') return value
+  if (value === 'redis') return value
   return 'memory'
 }
 
@@ -35,17 +35,6 @@ async function getRedisClient(): Promise<RedisClient> {
         if (!url) return null
         const m = await import('ioredis')
         const client = new m.default(url)
-        return {
-          incr: (key: string) => client.incr(key),
-          expire: (key: string, seconds: number) => client.expire(key, seconds),
-        }
-      }
-      if (store === 'upstash') {
-        const url = process.env.UPSTASH_REDIS_REST_URL
-        const token = process.env.UPSTASH_REDIS_REST_TOKEN
-        if (!url || !token) return null
-        const m = await import('@upstash/redis')
-        const client = new m.Redis({ url, token })
         return {
           incr: (key: string) => client.incr(key),
           expire: (key: string, seconds: number) => client.expire(key, seconds),

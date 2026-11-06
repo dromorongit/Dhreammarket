@@ -3,6 +3,7 @@ import { isTrustProfileEnabled } from '@/lib/feature-flags'
 import { getPrisma } from '@/lib/prisma'
 import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
 import { composeProfile } from '@/lib/trust/metrics'
+import { rehydrateProfileInput } from '@/lib/trust/rehydrate'
 import { formatRate, formatDelivery, formatReturns, formatRating } from '@/lib/trust/copy'
 import { SellerTrustProfileCard } from '@/components/trust/SellerTrustProfileCard'
 
@@ -33,13 +34,7 @@ export default async function SellerTrustProfilePage({ params }: { params: { id:
     notFound()
   }
 
-  const profile = composeProfile({
-    ...result.data,
-    storeCreatedAt: new Date(result.data.storeCreatedAt),
-    firstSaleAt: result.data.firstSaleAt ? new Date(result.data.firstSaleAt) : null,
-    verifiedSince: result.data.verifiedSince ? new Date(result.data.verifiedSince) : null,
-    now: new Date(result.data.now),
-  })
+  const profile = composeProfile(rehydrateProfileInput(result.data))
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 sm:py-12">

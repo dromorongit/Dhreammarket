@@ -635,21 +635,22 @@ model ProductReview {
 }
 
 model VendorReview {
-  id         String   @id @default(cuid())
-  rating     Int
-  comment    String?
-  userId     String
-  storeId    String
-  orderId    String?
-  isApproved Boolean  @default(true)
-  isHidden   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  order      Order?   @relation(fields: [orderId], references: [id])
-  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  rating            Int
+  comment           String?
+  userId            String
+  storeId           String
+  orderId           String?
+  isVerifiedPurchase Boolean  @default(false)
+  isApproved        Boolean  @default(true)
+  isHidden          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  order             Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, storeId])
+  @@unique([orderId, storeId])
   @@index([storeId, isApproved, isHidden])
   @@map("vendor_reviews")
 }
@@ -742,6 +743,7 @@ model VendorVerificationApplication {
   paymentCompletedAt DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
+  revokedAt          DateTime?
   paystackRef        String?
   store              Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
   vendor             User                   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -779,7 +781,8 @@ model VerificationDocument {
   id            String                        @id @default(cuid())
   applicationId String
   documentType  String
-  documentUrl   String
+  documentPath  String
+  resourceType  String?
   fileName      String?
   createdAt     DateTime                      @default(now())
   application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -2885,6 +2888,7 @@ enum VerificationStatus {
   PENDING_REVIEW
   APPROVED
   REJECTED
+  REVOKED
   CHANGES_REQUESTED
 }
 
@@ -2894,9 +2898,11 @@ enum VerificationAction {
   KYC_SUBMITTED
   ADMIN_APPROVED
   ADMIN_REJECTED
+  ADMIN_REVOKED
   ADMIN_REQUESTED_CHANGES
   VENDOR_RESUBMITTED
   PAYMENT_REINITIATED
+  DOCUMENT_ACCESSED
 }
 
 enum VendorBadgeTier {

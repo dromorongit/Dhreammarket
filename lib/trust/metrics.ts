@@ -3,6 +3,8 @@ import {
   MIN_REVIEWS_FOR_RATING,
   SUPPRESSION_THRESHOLD,
   ROLLING_WINDOW_DAYS,
+  RESPONSE_WINDOW_DAYS,
+  DELIVERY_WINDOW_DAYS,
 } from './constants'
 import type {
   TrustProfileInput,
@@ -13,6 +15,8 @@ import type {
   DeliveryValue,
   RatingValue,
   IdentityStatus,
+  DeliverySample,
+  ResponseSample,
 } from './types'
 
 function trunc(n: number): number {
@@ -54,15 +58,27 @@ export function computeCancellationSignal(
 }
 
 export function computeDeliverySignal(
-  deliveryDays: number[],
-  minSample: number
+  samples: DeliverySample[],
+  minSample: number,
+  policyDispatchDays: number
 ): Signal<DeliveryValue> {
-  const samples = (deliveryDays ?? []).filter((n) => Number.isFinite(n) && n >= 0)
-  const count = samples.length
+  const valid = (samples ?? [])
+    .filter((s) => s.deliveredAt && s.orderDate && Number.isFinite(s.deliveredAt.getTime()) && Number.isFinite(s.orderDate.getTime()))
+  const count = valid.length
   if (count < minSample) {
-    return { state: 'INSUFFICIENT_DATA', counts: { numerator: count, denominator: count } }
+    return { state: 'INSUFFICIENT_DATA', counts: { numerator: 0, denominator: count } }
   }
-  const sorted = [...samples].sort((a, b) => a - b)
+  const policyDays = Number.isFinite(policyDispatchDays) && policyDispatchDays >= 0 ? trunc(policyDispatchDays) : 0
+  const fallbackDays = policyDays + trunc(DELIVERY_WINDOW_DAYS)
+  let onTime = 0
+  const deliveryDays: number[] = []
+  for (const s of valid) {
+    const promised = s.expectedAt ?? new Date(s.orderDate.getTime() + fallbackDays * 86400000)
+    const ms = s.deliveredAt.getTime() - promised.getTime()
+    if (ms <= 0) onTime++
+    deliveryDays.push(Math.max(0, (s.deliveredAt.getTime() - s.orderDate.getTime()) / 86400000))
+  }
+  const sorted = [...deliveryDays].sort((a, b) => a - b)
   const mid = Math.floor(sorted.length / 2)
   const median =
     sorted.length % 2 === 0
@@ -70,9 +86,26 @@ export function computeDeliverySignal(
       : sorted[mid]
   return {
     state: 'OK',
-    counts: { numerator: count, denominator: count },
-    value: { medianDays: round1(median) },
+    counts: { numerator: onTime, denominator: count },
+    value: { onTimePercentage: Math.round((onTime * 1000) / count) / 10, medianDays: round1(median) },
   }
+}
+
+export function computeResponseRateSignal(
+  samples: ResponseSample[],
+  minSample: number,
+  windowDays: number
+): Signal<RateValue> {
+  const valid = (samples ?? []).filter((s) => s.orderDate && Number.isFinite(s.orderDate.getTime()))
+  const count = valid.length
+  const windowMs = Number.isFinite(windowDays) && windowDays >= 0 ? trunc(windowDays) * 86400000 : 0
+  let responsive = 0
+  for (const s of valid) {
+    if (!s.firstVendorReplyAt || !Number.isFinite(s.firstVendorReplyAt.getTime())) continue
+    const ms = s.firstVendorReplyAt.getTime() - s.orderDate.getTime()
+    if (ms >= 0 && ms <= windowMs) responsive++
+  }
+  return computeRate(responsive, count, minSample)
 }
 
 export function computeReturnSignal(
@@ -142,7 +175,12 @@ export function composeProfile(input: TrustProfileInput): SellerTrustProfile {
       input.completedInWindow,
       MIN_ORDERS_FOR_RATES
     ),
-    delivery: computeDeliverySignal(input.deliveryDays, MIN_ORDERS_FOR_RATES),
+    delivery: computeDeliverySignal(input.deliveries, MIN_ORDERS_FOR_RATES, input.deliveryPolicyDays),
+    responseRate: computeResponseRateSignal(
+      input.responseSamples,
+      MIN_ORDERS_FOR_RATES,
+      RESPONSE_WINDOW_DAYS
+    ),
     sellerFaultReturns: computeReturnSignal(
       input.sellerFaultReturnsInWindow,
       input.completedInWindow,

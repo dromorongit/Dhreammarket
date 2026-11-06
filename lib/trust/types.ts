@@ -16,7 +16,28 @@ export interface RateValue {
 }
 
 export interface DeliveryValue {
-  medianDays: number
+  onTimePercentage: number
+  medianDays?: number
+}
+
+export interface DeliverySample {
+  deliveredAt: Date
+  // Promised/expected delivery date (e.g. orderItem.expectedArrivalDate). When
+  // null, the signal falls back to the PlatformPolicy dispatch target plus the
+  // delivery window, counted from the payment date.
+  expectedAt: Date | null
+  // Payment date that starts the delivery clock (paymentConfirmedAt). Samples
+  // without a payment date are excluded.
+  orderDate: Date
+}
+
+export interface ResponseSample {
+  // Payment date that starts the response clock (paymentConfirmedAt). Samples
+  // without a payment date are excluded.
+  orderDate: Date
+  // First vendor (userRole === 'VENDOR') reply on the order, if any. System or
+  // automated messages (userRole 'SYSTEM') are excluded upstream.
+  firstVendorReplyAt: Date | null
 }
 
 export interface RatingValue {
@@ -33,6 +54,7 @@ export interface SellerTrustProfile {
   fulfilment: Signal<RateValue>
   cancellation: Signal<RateValue>
   delivery: Signal<DeliveryValue>
+  responseRate: Signal<RateValue>
   sellerFaultReturns: Signal<RateValue> | SuppressedBand
   ratings: Signal<RatingValue>
   computedAt: Date
@@ -49,7 +71,14 @@ export interface TrustProfileInput {
   completedInWindow: number
   completedLifetime: number
   vendorCancelledInWindow: number
-  deliveryDays: number[]
+  // Delivered order items in window, each with deliveredAt and the
+  // promised/expected date (expectedAt). Used for on-time delivery %.
+  deliveries: DeliverySample[]
+  // Paid orders in window with their first vendor reply time. Used for
+  // response_rate_after_payment.
+  responseSamples: ResponseSample[]
+  // PlatformPolicy.dispatchTargetDaysAfterPayment, used when expectedAt is absent.
+  deliveryPolicyDays: number
   sellerFaultReturnsInWindow: number
   reviewCount: number
   reviewSum: number

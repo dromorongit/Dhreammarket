@@ -12,8 +12,8 @@ import Link from 'next/link'
 interface VerificationDocument {
   id: string
   documentType: string
-  documentUrl: string
   fileName: string
+  createdAt?: string
 }
 
 interface VerificationPayment {
@@ -85,6 +85,7 @@ const statusColors: Record<string, string> = {
   APPROVED: 'bg-green-100 text-green-800',
   REJECTED: 'bg-red-100 text-red-800',
   CHANGES_REQUESTED: 'bg-amber-100 text-amber-800',
+  REVOKED: 'bg-gray-100 text-gray-800',
 }
 
 export default function AdminVerificationApplicationsPage() {
@@ -241,6 +242,26 @@ export default function AdminVerificationApplicationsPage() {
     })
   }
 
+  const handleDownloadDocument = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/admin/verification-documents/${documentId}/url`, {
+        method: 'GET',
+      })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        alert(data.error || 'Failed to get document link')
+        return
+      }
+      const { url } = await response.json()
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer')
+      }
+    } catch (err) {
+      console.error('Failed to download document:', err)
+      alert('Failed to download document')
+    }
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -300,6 +321,7 @@ export default function AdminVerificationApplicationsPage() {
                 <option value="PENDING_REVIEW">Pending Review</option>
                 <option value="APPROVED">Approved</option>
                 <option value="REJECTED">Rejected</option>
+                <option value="REVOKED">Revoked</option>
                 <option value="CHANGES_REQUESTED">Changes Requested</option>
               </select>
               <button
@@ -688,10 +710,9 @@ export default function AdminVerificationApplicationsPage() {
                           <div key={doc.id} className="border border-gray-200 rounded p-3">
                             <p className="text-xs font-medium truncate">{doc.documentType.replace(/_/g, ' ')}</p>
                             <a
-                              href={doc.documentUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:underline mt-1 inline-block"
+                              onClick={() => handleDownloadDocument(doc.id)}
+                              role="link"
+                              className="text-xs text-blue-600 hover:underline mt-1 inline-block cursor-pointer"
                             >
                               Download
                             </a>

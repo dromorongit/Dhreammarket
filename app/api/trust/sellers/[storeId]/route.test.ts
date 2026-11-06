@@ -62,7 +62,16 @@ describe('trust seller route', () => {
         completedInWindow: 10,
         completedLifetime: 20,
         vendorCancelledInWindow: 1,
-        deliveryDays: Array(10).fill(2),
+        deliveries: Array(10).fill(null).map(() => ({
+          deliveredAt: new Date('2025-01-03T00:00:00Z'),
+          expectedAt: null,
+          orderDate: new Date('2025-01-01T00:00:00Z'),
+        })),
+        responseSamples: Array(10).fill(null).map(() => ({
+          orderDate: new Date('2025-01-01T00:00:00Z'),
+          firstVendorReplyAt: new Date('2025-01-01T12:00:00Z'),
+        })),
+        deliveryPolicyDays: 3,
         sellerFaultReturnsInWindow: 0,
         reviewCount: 5,
         reviewSum: 25,

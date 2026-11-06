@@ -5,7 +5,7 @@ import type { IdentityStatus } from '@/lib/trust/types'
 
 class SellerTrustProfileNotFoundError extends Error {}
 
-interface CachedSellerTrustProfileData {
+export interface CachedSellerTrustProfileData {
   verificationStatus: IdentityStatus
   storeCreatedAt: string
   firstSaleAt: string | null
@@ -15,7 +15,9 @@ interface CachedSellerTrustProfileData {
   completedInWindow: number
   completedLifetime: number
   vendorCancelledInWindow: number
-  deliveryDays: number[]
+  deliveries: Array<{ deliveredAt: string; expectedAt: string | null; orderDate: string }>
+  responseSamples: Array<{ orderDate: string; firstVendorReplyAt: string | null }>
+  deliveryPolicyDays: number
   sellerFaultReturnsInWindow: number
   reviewCount: number
   reviewSum: number
@@ -32,7 +34,16 @@ function serialize(data: any): CachedSellerTrustProfileData {
     completedInWindow: data.completedInWindow,
     completedLifetime: data.completedLifetime,
     vendorCancelledInWindow: data.vendorCancelledInWindow,
-    deliveryDays: data.deliveryDays,
+    deliveries: (data.deliveries ?? []).map((d: any) => ({
+      deliveredAt: d.deliveredAt.toISOString(),
+      expectedAt: d.expectedAt ? d.expectedAt.toISOString() : null,
+      orderDate: d.orderDate.toISOString(),
+    })),
+    responseSamples: (data.responseSamples ?? []).map((r: any) => ({
+      orderDate: r.orderDate.toISOString(),
+      firstVendorReplyAt: r.firstVendorReplyAt ? r.firstVendorReplyAt.toISOString() : null,
+    })),
+    deliveryPolicyDays: data.deliveryPolicyDays,
     sellerFaultReturnsInWindow: data.sellerFaultReturnsInWindow,
     reviewCount: data.reviewCount,
     reviewSum: data.reviewSum,

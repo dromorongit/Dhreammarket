@@ -6,6 +6,10 @@ import ProductClient from './product-client'
 import { ProductJsonLd } from '@/components/seo/ProductJsonLd'
 import { BreadcrumbJsonLd } from '@/components/seo/BreadcrumbJsonLd'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
+import { isTrustProfileEnabled } from '@/lib/feature-flags'
+import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
+import { composeProfile } from '@/lib/trust/metrics'
+import { rehydrateProfileInput } from '@/lib/trust/rehydrate'
 
 const DEFAULT_OG_IMAGE = '/assets/images/dhreammarket.png'
 
@@ -174,7 +178,25 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const product = await getProductInfo(params.id)
 
   const title = product?.name ?? 'Product - Dhream Market'
-  const description = truncateDescription(product?.description ?? null)
+  let description = truncateDescription(product?.description ?? null)
+
+  if (isTrustProfileEnabled() && product?.store?.id) {
+    try {
+      const cached = await getCachedSellerTrustProfile(product.store.id)
+      if (cached.found) {
+        const profile = composeProfile(rehydrateProfileInput(cached.data))
+        const verified = profile.identity.status === 'VERIFIED' ? 'Verified seller' : 'Unverified seller'
+        const ratingPart =
+          profile.ratings.state === 'OK' && profile.ratings.value
+            ? `${profile.ratings.value.average.toFixed(1)}★ (${profile.ratings.value.count} verified purchases)`
+            : ''
+        const parts = [product?.store?.name, verified, `${profile.orders.lifetimeCompleted} completed orders`, ratingPart].filter(Boolean)
+        description = `${truncateDescription(product?.description ?? null)} — ${parts.join(' · ')}`
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   const imageUrl = product?.images?.[0]?.url ?? product?.store?.logo ?? DEFAULT_OG_IMAGE
   const url = `${SITE_URL}/marketplace/product/${product?.slug ?? params.id}`

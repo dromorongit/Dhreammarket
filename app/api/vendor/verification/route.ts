@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { sendEmail } from '@/lib/email'
 import { createNotification } from '@/lib/notifications'
 import { SITE_URL } from '@/lib/site-config'
+import { isPublicUrl } from '@/lib/cloudinary'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,18 +88,29 @@ export async function POST(request: NextRequest) {
 
       // Add/replace documents
       if (documents && documents.length > 0) {
+        // KYC documents must never be public URLs (they bypass the public upload helper)
+        for (const doc of documents) {
+          if (isPublicUrl(doc.url)) {
+            return NextResponse.json(
+              { error: `KYC document "${doc.name || doc.type}" must be uploaded as a private authenticated asset` },
+              { status: 400 }
+            )
+          }
+        }
+
         // Delete existing documents for this application
         await getPrisma().verificationDocument.deleteMany({
           where: { applicationId: application.id },
         })
 
-        // Create new documents
+        // Create new documents with resource_type stored alongside documentPath
         await getPrisma().verificationDocument.createMany({
           data: documents.map((doc: any) => ({
             applicationId: application.id,
             documentType: doc.type,
-            documentUrl: doc.url,
+            documentPath: doc.url,
             fileName: doc.name,
+            resourceType: String(doc.name).toLowerCase().endsWith('.pdf') ? 'raw' : 'image',
           }))
         })
       }
@@ -200,7 +212,15 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      return NextResponse.json({ application: updatedApplication })
+      const applicationWithoutDocumentPaths = {
+        ...updatedApplication,
+        documents: updatedApplication.documents.map((doc: any) => {
+          const { documentPath, ...rest } = doc
+          return rest
+        }),
+      }
+
+      return NextResponse.json({ application: applicationWithoutDocumentPaths })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

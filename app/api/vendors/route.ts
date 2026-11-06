@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const vendorsWithMetrics = vendors.map((store) => ({
       ...store,
+      badgeTier: store.isVerified ? store.badgeTier : null,
       isFeatured: store.isFeatured && store.featuredUntil && new Date(store.featuredUntil) > now,
       rating: store.averageRating,
       productCount: store._count.products,

@@ -14,6 +14,7 @@ const nextConfig = {
       'prisma',
       '@prisma/adapter-pg',
       'cloudinary',
+      'ioredis',
       'pg',
     ],
     optimizePackageImports: ['react-icons', 'lucide-react'],

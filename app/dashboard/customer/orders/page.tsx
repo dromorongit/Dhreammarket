@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/Card'
+import CompactSellerTrustSummary from '@/components/trust/CompactSellerTrustSummary'
+import type { SellerTrustProfile } from '@/lib/trust/types'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
 import { EmptyState } from '@/components/EmptyState'
@@ -19,6 +21,7 @@ interface OrderItem {
   product: {
     id: string
     name: string
+    storeId?: string | null
     images: Array<{
       id: string
       url: string
@@ -97,6 +100,7 @@ export default function CustomerOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
+  const [trustProfiles, setTrustProfiles] = useState<Record<string, SellerTrustProfile | null>>({})
 
   useEffect(() => {
     fetchOrders()
@@ -109,12 +113,38 @@ export default function CustomerOrdersPage() {
         const data = await response.json()
         setOrders(data.orders)
         setTotalPages(data.pagination?.totalPages ?? 0)
+        await fetchTrustProfiles(data.orders)
       }
     } catch (error) {
       console.error('Error fetching orders:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Fetch trust once per unique store across the whole order list instead of
+  // once per (order, store) pair. Worst case for a 10-order list: one request
+  // per unique store (<= 10 total); a failed trust fetch never blocks the list.
+  const fetchTrustProfiles = async (orders: Order[]): Promise<void> => {
+    const storeIds = Array.from(
+      new Set(
+        orders.flatMap((order) =>
+          order.items.map((item) => item.product?.storeId).filter((storeId): storeId is string => Boolean(storeId))
+        )
+      )
+    )
+    const profiles: Record<string, SellerTrustProfile | null> = {}
+    await Promise.all(
+      storeIds.map(async (storeId) => {
+        try {
+          const res = await fetch(`/api/trust/sellers/${encodeURIComponent(storeId)}`)
+          profiles[storeId] = res.ok ? (await res.json()) : null
+        } catch {
+          profiles[storeId] = null
+        }
+      })
+    )
+    setTrustProfiles(profiles)
   }
 
   const getOrderStatusConfig = (status: string) => {
@@ -276,6 +306,11 @@ export default function CustomerOrdersPage() {
                           {order.items.length} item{order.items.length !== 1 ? 's' : ''}: {' '}
                           {order.items.map(item => item.product.name).join(', ')}
                         </p>
+                        {Array.from(new Set(order.items.map((i: any) => i.product?.storeId).filter(Boolean))).map((storeId: any) => (
+                          <div key={storeId} className="mt-1">
+                            <CompactSellerTrustSummary storeId={String(storeId)} variant="line" profile={trustProfiles[String(storeId)] ?? null} />
+                          </div>
+                        ))}
                         {order.shippingZone && (
                           <p className="text-slate-400">
                             Shipping: {order.shippingZone} ({order.shippingDaysMin}-{order.shippingDaysMax} days)

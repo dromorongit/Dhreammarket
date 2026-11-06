@@ -65,9 +65,16 @@ store: {
              badgeTier: true,
            }
          },
-documents: true,
+documents: {
+          select: {
+            id: true,
+            documentType: true,
+            fileName: true,
+            createdAt: true,
+          },
+        },
          payments: true,
-         auditLogs: {
+          auditLogs: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
@@ -78,9 +85,19 @@ documents: true,
     })
 
     const total = await getPrisma().vendorVerificationApplication.count({ where })
-
+ 
+    const sanitizedApplications = applications.map((app: any) => ({
+      ...app,
+      documents: Array.isArray(app.documents)
+        ? app.documents.map((doc: any) => {
+            const { documentPath, ...rest } = doc
+            return rest
+          })
+        : app.documents,
+    }))
+ 
     return NextResponse.json({
-      applications,
+      applications: sanitizedApplications,
       pagination: {
         total,
         limit,
@@ -131,8 +148,8 @@ export async function PATCH(request: NextRequest) {
         auditAction = 'ADMIN_REJECTED'
         break
       case 'revoke':
-        newStatus = 'REJECTED'
-        auditAction = 'ADMIN_REJECTED'
+        newStatus = 'REVOKED'
+        auditAction = 'ADMIN_REVOKED'
         break
       case 'request_changes':
         newStatus = 'CHANGES_REQUESTED'
@@ -149,7 +166,10 @@ export async function PATCH(request: NextRequest) {
 
     const updatedApplication = await getPrisma().vendorVerificationApplication.update({
       where: { id: applicationId },
-      data: { status: newStatus as any },
+      data: {
+        status: newStatus as any,
+        ...(action === 'revoke' ? { revokedAt: new Date() } : {}),
+      },
       include: {
         store: true,
         vendor: {
@@ -165,7 +185,14 @@ export async function PATCH(request: NextRequest) {
           }
         },
         kycInfo: true,
-        documents: true,
+        documents: {
+          select: {
+            id: true,
+            documentType: true,
+            fileName: true,
+            createdAt: true,
+          },
+        },
       }
     })
 
@@ -178,7 +205,7 @@ export async function PATCH(request: NextRequest) {
     } else if (action === 'revoke') {
       await getPrisma().store.update({
         where: { id: application.storeId },
-        data: { isVerified: false }
+        data: { isVerified: false, badgeTier: null }
       })
     }
 
@@ -186,7 +213,7 @@ export async function PATCH(request: NextRequest) {
     await createAuditLog({
       userId: authCheck.userId,
       userRole: authCheck.role,
-      action: action === 'approve' ? 'KYC_APPROVED' : action === 'reject' || action === 'revoke' ? 'KYC_REJECTED' : 'SUPPORT_TICKET_UPDATED',
+      action: action === 'approve' ? 'KYC_APPROVED' : action === 'revoke' ? 'KYC_REVOKED' : action === 'reject' ? 'KYC_REJECTED' : 'SUPPORT_TICKET_UPDATED',
       entityType: 'KYC_APPLICATION',
       entityId: applicationId,
       beforeData: { status: application.status },
@@ -254,7 +281,17 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ application: updatedApplication })
+    const sanitizedApplication = {
+      ...updatedApplication,
+      documents: Array.isArray(updatedApplication.documents)
+        ? updatedApplication.documents.map((doc: any) => {
+            const { documentPath, ...rest } = doc
+            return rest
+          })
+        : updatedApplication.documents,
+    }
+ 
+    return NextResponse.json({ application: sanitizedApplication })
   } catch (error) {
     console.error('Error updating verification application:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

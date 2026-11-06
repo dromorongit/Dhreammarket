@@ -22,3 +22,5 @@ jobs:
 
       # The vitest suite mocks the database layer and needs no Postgres service.
       - run: npx vitest run
+
+      - run: npm run build

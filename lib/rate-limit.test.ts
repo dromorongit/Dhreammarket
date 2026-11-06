@@ -115,7 +115,6 @@ describe('logRateLimitStoreWarning', () => {
   it('flags production with an unset or memory store, nothing else', () => {
     expect(rateLimitStoreNeedsWarning('production', 'memory')).toBe(true)
     expect(rateLimitStoreNeedsWarning('production', 'redis')).toBe(false)
-    expect(rateLimitStoreNeedsWarning('production', 'upstash')).toBe(false)
     expect(rateLimitStoreNeedsWarning('development', 'memory')).toBe(false)
     expect(rateLimitStoreNeedsWarning('test', 'memory')).toBe(false)
     expect(rateLimitStoreNeedsWarning(undefined, 'memory')).toBe(false)

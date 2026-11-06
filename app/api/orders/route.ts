@@ -43,11 +43,12 @@ export async function GET(request: NextRequest) {
         items: {
           select: {
             ...PUBLIC_ORDER_ITEM_SELECT,
-            product: {
-              select: {
-                id: true,
-                name: true,
-                images: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  storeId: true,
+                  images: {
                   where: { mediaType: 'image' },
                   orderBy: { createdAt: 'asc' },
                   select: { url: true },

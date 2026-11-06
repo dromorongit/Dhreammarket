@@ -42,7 +42,6 @@ interface VerificationApplication {
   }
   documents?: Array<{
     documentType: string
-    documentUrl: string
     fileName?: string
   }>
 }
@@ -161,29 +160,8 @@ export default function VendorVerificationPageClient() {
           })
         }
         if (appData.application?.documents) {
-          const docs: Record<string, string> = {
-            ghana_card_front: '',
-            ghana_card_back: '',
-            passport: '',
-            drivers_license_front: '',
-            drivers_license_back: '',
-            business_registration_certificate: '',
-          }
-          appData.application.documents.forEach((doc: any) => {
-            const docType = doc.documentType as string
-            if (docType === 'ghana_card_front' || docType === 'ghana_card_back' ||
-                docType === 'passport' || docType === 'drivers_license_front' ||
-                docType === 'drivers_license_back' || docType === 'business_registration_certificate') {
-              docs[docType] = doc.documentUrl
-            } else if (docType === 'ghana_card') {
-              docs['ghana_card_front'] = doc.documentUrl
-            } else if (docType === 'drivers_license') {
-              docs['drivers_license_front'] = doc.documentUrl
-            } else {
-              docs[docType] = doc.documentUrl
-            }
-          })
-          setKycDocuments(docs)
+          // Document paths are private and not returned to the vendor. Submitted
+          // document types are recorded but preview URLs are intentionally omitted.
         }
       }
 
@@ -627,6 +605,7 @@ export default function VendorVerificationPageClient() {
                           value={kycDocuments['ghana_card_front'] ? [kycDocuments['ghana_card_front']] : []}
                           onChange={(urls) => setKycDocuments(prev => ({ ...prev, ghana_card_front: urls[0] || '' }))}
                           folder="verification"
+                          uploadUrl="/api/vendor/kyc-upload"
                           maxFiles={1}
                           maxSizeMB={5}
                         />
@@ -637,6 +616,7 @@ export default function VendorVerificationPageClient() {
                           value={kycDocuments['ghana_card_back'] ? [kycDocuments['ghana_card_back']] : []}
                           onChange={(urls) => setKycDocuments(prev => ({ ...prev, ghana_card_back: urls[0] || '' }))}
                           folder="verification"
+                          uploadUrl="/api/vendor/kyc-upload"
                           maxFiles={1}
                           maxSizeMB={5}
                         />
@@ -652,6 +632,7 @@ export default function VendorVerificationPageClient() {
                           value={kycDocuments['passport'] ? [kycDocuments['passport']] : []}
                           onChange={(urls) => setKycDocuments(prev => ({ ...prev, passport: urls[0] || '' }))}
                           folder="verification"
+                          uploadUrl="/api/vendor/kyc-upload"
                           maxFiles={1}
                           maxSizeMB={5}
                         />
@@ -667,6 +648,7 @@ export default function VendorVerificationPageClient() {
                           value={kycDocuments['drivers_license_front'] ? [kycDocuments['drivers_license_front']] : []}
                           onChange={(urls) => setKycDocuments(prev => ({ ...prev, drivers_license_front: urls[0] || '' }))}
                           folder="verification"
+                          uploadUrl="/api/vendor/kyc-upload"
                           maxFiles={1}
                           maxSizeMB={5}
                         />
@@ -677,6 +659,7 @@ export default function VendorVerificationPageClient() {
                           value={kycDocuments['drivers_license_back'] ? [kycDocuments['drivers_license_back']] : []}
                           onChange={(urls) => setKycDocuments(prev => ({ ...prev, drivers_license_back: urls[0] || '' }))}
                           folder="verification"
+                          uploadUrl="/api/vendor/kyc-upload"
                           maxFiles={1}
                           maxSizeMB={5}
                         />
@@ -693,8 +676,10 @@ export default function VendorVerificationPageClient() {
                       value={kycDocuments['business_registration_certificate'] ? [kycDocuments['business_registration_certificate']] : []}
                       onChange={(urls) => setKycDocuments(prev => ({ ...prev, business_registration_certificate: urls[0] || '' }))}
                       folder="verification"
+                      uploadUrl="/api/vendor/kyc-upload"
                       maxFiles={1}
                       maxSizeMB={5}
+                      allowedExtensions={['.jpg', '.jpeg', '.png', '.webp', '.pdf']}
                     />
                   </div>
                 </div>

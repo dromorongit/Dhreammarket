@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
         logo: v.logo,
         isVerified: v.isVerified,
         isFeatured: v.isFeatured,
-        badgeTier: v.badgeTier,
+        badgeTier: v.isVerified ? v.badgeTier : null,
         productCount: v._count?.products || 0,
         category: v.vendor_categories,
         type: 'vendor',

@@ -176,7 +176,7 @@ export async function GET(request: NextRequest) {
             banner: store.banner,
             rating: store.averageRating,
             isVerified: store.isVerified,
-            badgeTier: store.badgeTier,
+            badgeTier: store.isVerified ? store.badgeTier : null,
             productCount: store._count.products,
             profile: store.user?.profile,
             category: store.vendor_categories,
