@@ -1,0 +1,8 @@
+coverage
+backups
+audit
+playwright
+docs
+.git
+*.tsbuildinfo
+.env
