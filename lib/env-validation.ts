@@ -36,6 +36,11 @@ export function validateEnvironment(): void {
     }
   }
 
+  // Pay links require a fallback email domain when enabled.
+  if (process.env.PAYLINK_ENABLED === 'true' && !process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN) {
+    warnings.push('PAYLINK_FALLBACK_EMAIL_DOMAIN is required when PAYLINK_ENABLED=true')
+  }
+
   if (missing.length > 0) {
     throw new Error(
       `Missing required environment variables: ${missing.join(', ')}. Application startup aborted.`

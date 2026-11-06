@@ -10,6 +10,7 @@ import { Badge } from '@/components/Badge'
 import PayLinkButton from '@/components/vendor/PayLinkButton'
 import { formatCurrency } from '@/lib/currency'
 import { toPesewas, fromPesewas, computeOrderTotals, buildWhatsAppShareLink, MANUAL_CHANNELS, type ManualChannel } from '@/lib/manual-orders'
+import { buildRepeatLines, type RepeatOrderItem } from '@/app/dashboard/vendor/quick-sale/repeat-prefill'
 
 const PAYMENT_METHODS = [
   { value: 'MOBILE_MONEY', label: 'Mobile Money' },
@@ -47,6 +48,7 @@ export default function VendorQuickSalePageClient() {
   const router = useRouter()
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const prefillPhone = searchParams.get('phone') || ''
+  const isRepeat = searchParams.get('repeat') === '1'
 
   // --- Form state ---
   const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID())
@@ -56,9 +58,15 @@ export default function VendorQuickSalePageClient() {
   const [customerPhone, setCustomerPhone] = useState(prefillPhone)
   const [customerName, setCustomerName] = useState('')
   const [channel, setChannel] = useState<ManualChannel>('WHATSAPP')
-  const [lookupResult, setLookupResult] = useState<{ found: boolean; name: string | null; orderCount: number } | null>(null)
+  const [lookupResult, setLookupResult] = useState<{ found: boolean; name: string | null; orderCount: number; id: string | null } | null>(null)
   const [lookupLoading, setLookupLoading] = useState(false)
   const [customerError, setCustomerError] = useState<string | null>(null)
+
+  // Repeat last order state
+  const [repeatLoading, setRepeatLoading] = useState(false)
+  const [repeatSkipped, setRepeatSkipped] = useState<string[]>([])
+  const [repeatError, setRepeatError] = useState<string | null>(null)
+  const repeatPrefilled = useRef(false)
 
   // Items
   const [products, setProducts] = useState<ProductOption[]>([])
@@ -115,13 +123,18 @@ export default function VendorQuickSalePageClient() {
       setLookupLoading(true)
       try {
         const res = await fetch(`/api/vendor/customers/lookup?phone=${encodeURIComponent(phone)}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.found && data.customer) {
-            setLookupResult({ found: true, name: data.customer.name || null, orderCount: data.customer.orderCount || 0 })
-            if (data.customer.name && !customerName) setCustomerName(data.customer.name)
-          } else {
-            setLookupResult({ found: false, name: null, orderCount: 0 })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.found && data.customer) {
+              setLookupResult({
+                found: true,
+                name: data.customer.name || null,
+                orderCount: data.customer.orderCount || 0,
+                id: data.customer.id || null,
+              })
+              if (data.customer.name && !customerName) setCustomerName(data.customer.name)
+            } else {
+            setLookupResult({ found: false, name: null, orderCount: 0, id: null })
           }
         }
       } catch {
@@ -163,6 +176,40 @@ export default function VendorQuickSalePageClient() {
       .finally(() => { if (!cancelled) setProductsLoading(false) })
     return () => { cancelled = true }
   }, [productSearch])
+
+  // Prefill the cart from the customer's last order when ?repeat=1.
+  // Nothing is saved until the seller confirms the cart.
+  useEffect(() => {
+    if (!isRepeat || repeatPrefilled.current) return
+    if (!lookupResult?.found || !lookupResult.id) return
+    if (productsLoading) return
+
+    ;(async () => {
+      setRepeatLoading(true)
+      setRepeatError(null)
+      try {
+        const customerId = lookupResult.id
+        const res = await fetch(`/api/vendor/customers/${customerId}`)
+        if (!res.ok) throw new Error('Failed to load last order')
+        const data = await res.json()
+        const lastItems: RepeatOrderItem[] = (data.customer?.lastOrderedItems || []) as RepeatOrderItem[]
+        const repeatProducts = products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          availableStock: p.availableStock,
+        }))
+        const { lines, skipped } = buildRepeatLines(lastItems, repeatProducts)
+        setCart(lines)
+        setRepeatSkipped(skipped)
+        repeatPrefilled.current = true
+      } catch (err) {
+        setRepeatError(err instanceof Error ? err.message : 'Repeat failed')
+      } finally {
+        setRepeatLoading(false)
+      }
+    })()
+  }, [isRepeat, lookupResult, products, productsLoading])
 
   // Reset variant selection when product changes
   useEffect(() => {
@@ -647,10 +694,29 @@ export default function VendorQuickSalePageClient() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-              {itemsError && <p className="text-sm text-rose-600">{itemsError}</p>}
+                      ))}
+                    </div>
+                  )}
+                  {repeatLoading && <p className="text-xs text-gray-500">Prefilling last order...</p>}
+                  {repeatError && <p className="text-sm text-rose-600">{repeatError}</p>}
+                  {repeatSkipped.length > 0 && (
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                      <p className="text-xs font-semibold text-amber-900 mb-1">
+                        Some items couldn't be repeated:
+                      </p>
+                      <ul className="text-xs text-amber-700 list-disc pl-4 space-y-1">
+                        {repeatSkipped.map((name, i) => (
+                          <li key={i}>
+                            {name} (no longer available or out of stock)
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-amber-600 mt-2">
+                        Only available items were added to your cart. Review before recording the sale.
+                      </p>
+                    </div>
+                  )}
+                  {itemsError && <p className="text-sm text-rose-600">{itemsError}</p>}
             </div>
           </CardContent>
         </Card>

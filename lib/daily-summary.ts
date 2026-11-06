@@ -7,6 +7,10 @@
 // The order's day is decided by `createdAt` in Africa/Accra (see
 // lib/sales-summary.ts accraDayStart/accraDayEndExclusive), not by the payment
 // date. "Today" therefore means the Accra calendar day that contains `now`.
+//
+// Scope: a sale is counted only when paymentStatus is PAID or the order source
+// is MANUAL (same base scope as /api/vendor/orders), so abandoned online
+// checkouts never appear in today's figures.
 
 import { getPrisma } from '@/lib/prisma'
 import {
@@ -14,6 +18,11 @@ import {
   accraDayEndExclusive,
   ACCRA_TIME_ZONE,
   getZonedParts,
+  PROFIT_LABEL,
+  fromPesewas,
+  toPesewas,
+  resolveUnitCostPesawas,
+  type SalesSource,
 } from '@/lib/sales-summary'
 import { createNotification } from '@/lib/notifications'
 import { sendVendorDailySummaryEmail } from '@/lib/email'
@@ -24,10 +33,9 @@ export const DAILY_SUMMARY_HOUR = 19
 interface DailySummaryMetrics {
   ordersToday: number
   paidSalesGHS: number
-  deliveryCostGHS: number
+  profitGHS: number
   ordersToDispatch: number
   receivablesGHS: number
-  lowStockCount: number
 }
 
 function ghs(amount: number): string {
@@ -38,10 +46,9 @@ function buildMessage(m: DailySummaryMetrics): string {
   const lines: string[] = []
   lines.push(`Orders today: ${m.ordersToday}`)
   if (m.paidSalesGHS > 0) lines.push(`Paid sales (orders placed today): ${ghs(m.paidSalesGHS)}`)
-  if (m.deliveryCostGHS > 0) lines.push(`Delivery cost: ${ghs(m.deliveryCostGHS)}`)
+  lines.push(`${PROFIT_LABEL}: ${ghs(m.profitGHS)}`)
   if (m.ordersToDispatch > 0) lines.push(`Orders to dispatch: ${m.ordersToDispatch}`)
   if (m.receivablesGHS > 0) lines.push(`Unpaid receivables: ${ghs(m.receivablesGHS)}`)
-  if (m.lowStockCount > 0) lines.push(`Low stock: ${m.lowStockCount} products`)
   return lines.slice(0, 5).join('\n')
 }
 
@@ -51,12 +58,14 @@ async function computeMetrics(
   todayStart: Date,
   todayEnd: Date,
 ): Promise<DailySummaryMetrics> {
-  // Today's orders for this store's products, not cancelled and not deleted.
-  // The day boundary is set by createdAt (Accra), matching lib/sales-summary.ts.
+  // Today's counted orders for this store's products: paid sales and manual
+  // orders only (same base scope as /api/vendor/orders), not cancelled and not
+  // deleted. Abandoned online checkouts are excluded.
   const todayOrders = await prisma.order.findMany({
     where: {
       deletedAt: null,
       status: { not: 'CANCELLED' },
+      OR: [{ paymentStatus: 'PAID' }, { source: 'MANUAL' }],
       createdAt: { gte: todayStart, lt: todayEnd },
       items: { some: { product: { storeId } } },
     },
@@ -65,52 +74,77 @@ async function computeMetrics(
       total: true,
       paymentStatus: true,
       status: true,
+      source: true,
       deliveryCost: true,
+      items: {
+        select: {
+          quantity: true,
+          costPriceSnapshot: true,
+          product: { select: { costPrice: true } },
+          productVariant: { select: { costPrice: true } },
+        },
+      },
     },
   })
 
   let ordersToday = 0
   let paidSalesGHS = 0
-  let deliveryCostGHS = 0
-  let ordersToDispatch = 0
+  let revenuePesawas = 0
+  let cogsPesawas = 0
+  let deliveryCostPesawas = 0
 
   for (const order of todayOrders) {
+    // Base scope: paid sales and manual orders only; abandoned online
+    // checkouts are excluded.
+    if (order.paymentStatus !== 'PAID' && order.source !== 'MANUAL') continue
     ordersToday += 1
-    if (order.paymentStatus === 'PAID') {
-      paidSalesGHS += Number(order.total)
-    }
+    const isPaid = order.paymentStatus === 'PAID'
+    if (!isPaid) continue
+    paidSalesGHS += Number(order.total)
+    revenuePesawas += toPesewas(Number(order.total))
     if (order.deliveryCost != null) {
-      deliveryCostGHS += Number(order.deliveryCost)
+      deliveryCostPesawas += toPesewas(Number(order.deliveryCost))
     }
-    if (order.status === 'PROCESSING') {
-      ordersToDispatch += 1
+    for (const item of order.items || []) {
+      const unitCost = resolveUnitCostPesawas(
+        { source: order.source as SalesSource },
+        {
+          costPriceSnapshot: item.costPriceSnapshot ?? null,
+          variantCostPrice: item.productVariant?.costPrice ?? null,
+          productCostPrice: item.product?.costPrice ?? null,
+        },
+      )
+      if (unitCost === null) continue
+      cogsPesawas += unitCost * Number(item.quantity)
     }
   }
 
-  // Low-stock count: products without variants, at or below their threshold.
-  const lowStockRows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT id FROM products
-    WHERE "storeId" = ${storeId}
-      AND (stock - "reservedQuantity") <= "lowStockThreshold"
-      AND NOT EXISTS (SELECT 1 FROM "product_variants" WHERE "productId" = products.id)
-  `
-  const lowStockCount = lowStockRows.length
+  // Orders to dispatch: ALL PROCESSING orders for the store, not only today's.
+  const processingCount = await prisma.order.count({
+    where: {
+      deletedAt: null,
+      status: 'PROCESSING',
+      items: { some: { product: { storeId } } },
+    },
+  })
 
   // Unpaid receivables, all time (manual sales still pending).
   const receivables = await loadVendorReceivables(storeId, new Date())
   const receivablesGHS = receivables.amountPesawas / 100
 
+  const profitPesawas = revenuePesawas - cogsPesawas - deliveryCostPesawas
+  const profitGHS = fromPesewas(profitPesawas)
+
   return {
     ordersToday,
     paidSalesGHS,
-    deliveryCostGHS,
-    ordersToDispatch,
+    profitGHS,
+    ordersToDispatch: processingCount,
     receivablesGHS,
-    lowStockCount,
   }
 }
 
-type DailySummaryResult =
+export type DailySummaryResult =
   | { skipped: 'before_send_time' }
   | { considered: number; sent: number; quiet: number; failed: number }
 
@@ -218,18 +252,18 @@ export async function runDailySummaries(now: Date = new Date()): Promise<DailySu
       continue
     }
 
+    // Remember the previous claim date so a failed send can roll back and be
+    // retried on the next hourly run.
+    const previousDate = settings?.lastDailySummaryDate ?? null
+
     // Atomic claim: at most one summary per vendor per Accra day.
     let claimed = false
     const updated = await prisma.vendorSettings.updateMany({
       where: {
-        AND: [
-          { userId },
-          {
-            OR: [
-              { lastDailySummaryDate: null },
-              { lastDailySummaryDate: { lt: todayStart } },
-            ],
-          },
+        userId,
+        OR: [
+          { lastDailySummaryDate: null },
+          { lastDailySummaryDate: { lt: todayStart } },
         ],
       },
       data: { lastDailySummaryDate: now },
@@ -279,6 +313,15 @@ export async function runDailySummaries(now: Date = new Date()): Promise<DailySu
       sent += 1
     } catch (error) {
       console.error(`[Daily Summary] Failed for vendor ${userId}:`, error)
+      // Roll back the claim so the next hourly run retries this vendor.
+      try {
+        await prisma.vendorSettings.update({
+          where: { userId },
+          data: { lastDailySummaryDate: previousDate },
+        })
+      } catch {
+        // best-effort rollback
+      }
       failed += 1
     }
   }

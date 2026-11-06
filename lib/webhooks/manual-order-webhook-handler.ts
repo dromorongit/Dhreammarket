@@ -6,6 +6,7 @@ import { createAuditLog } from '@/lib/audit-log'
 import { createNotification } from '@/lib/notifications'
 import { invalidateSalesSummaryCache } from '@/lib/sales-summary-cache'
 import { PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
+import { orderDisplayNumber } from '@/lib/manual-orders'
 import crypto from 'crypto'
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY
@@ -115,6 +116,12 @@ export async function handleManualOrderWebhook(
     // Amount and currency validation against Paystack's charged amount.
     const amountCheck = checkPaystackAmount(paystackResponse.data, payment)
     if (amountCheck.wrongCurrency || amountCheck.underpaid) {
+      // The payment was claimed above; reset it so the vendor can retry or
+      // confirm the underpaid/overpaid amount manually.
+      await getPrisma().payment.update({
+        where: { id: payment.id },
+        data: { status: 'PENDING', message: 'Amount mismatch; awaiting vendor review' },
+      })
       await notifySuperAdmins(
         'Manual order payment amount mismatch',
         `Order ${order.id} received ${amountCheck.paystackAmountGhs} ${paystackResponse.data.currency} but expected ${amountCheck.storedAmountGhs} ${payment.currency}. Reference: ${reference}`
@@ -151,7 +158,7 @@ export async function handleManualOrderWebhook(
     let processorFee: number
     const paystackFeesPesewas = paystackResponse.data.fees
     if (paystackFeesPesewas !== null && paystackFeesPesewas !== undefined && paystackFeesPesewas > 0) {
-      processorFee = Math.round(paystackFeesPesewas / 100)
+      processorFee = Math.round(paystackFeesPesewas) / 100
     } else {
       processorFee = Math.round((grossAmount * PAYSTACK_FEE_PERCENTAGE) * 100) / 100
     }
@@ -235,13 +242,35 @@ export async function handleManualOrderWebhook(
     // Post-transaction side effects wrapped so they can never turn a
     // successful payment into a 500.
 
-    // Audit log: userId is a required FK to User. Manual orders have
-    // payment.userId === null, so skip when no valid user exists (same
-    // convention as order-webhook-handler.ts:221).
-    if (payment.userId) {
+    // Resolve the store owner (manual orders have payment.userId === null).
+    let storeOwnerId: string | null = null
+    let storeName: string | null = null
+    let storeId: string | null = null
+    try {
+      const storeItem = await getPrisma().orderItem.findFirst({
+        where: { orderId: order.id },
+        select: {
+          product: {
+            select: {
+              store: {
+                select: { id: true, userId: true, name: true },
+              },
+            },
+          },
+        },
+      })
+      storeOwnerId = storeItem?.product?.store?.userId ?? null
+      storeName = storeItem?.product?.store?.name ?? null
+      storeId = storeItem?.product?.store?.id ?? null
+    } catch {
+      // best-effort only
+    }
+
+    // Audit log against the store owner (payment.userId is null for manual orders).
+    if (storeOwnerId) {
       try {
         await createAuditLog({
-          userId: payment.userId,
+          userId: storeOwnerId,
           userRole: 'SYSTEM',
           action: 'PAYMENT_CONFIRMED',
           entityType: 'ORDER',
@@ -255,15 +284,28 @@ export async function handleManualOrderWebhook(
       } catch {
         // best-effort only
       }
+    } else {
+      console.warn(`[Manual Order Webhook] Skipping audit log: no store owner userId for order ${order.id}`)
+    }
+
+    // Notify the vendor that the manual order is paid.
+    try {
+      if (storeOwnerId) {
+        const customerName = `${order.customerFirstName ?? ''} ${order.customerLastName ?? ''}`.trim() || 'Customer'
+        await createNotification(
+          storeOwnerId,
+          'ORDER_STATUS_UPDATED',
+          `Order paid - ${orderDisplayNumber(order.id)}`,
+          `Order ${orderDisplayNumber(order.id)} for ${customerName} paid: GHS ${order.total.toFixed(2)}.`
+        )
+      }
+    } catch {
+      // best-effort only
     }
 
     try {
-      const storeItem = await getPrisma().orderItem.findFirst({
-        where: { orderId: order.id },
-        select: { product: { select: { storeId: true } } },
-      })
-      if (storeItem?.product?.storeId) {
-        invalidateSalesSummaryCache(storeItem.product.storeId)
+      if (storeId) {
+        invalidateSalesSummaryCache(storeId)
       }
     } catch {
       // best-effort only
