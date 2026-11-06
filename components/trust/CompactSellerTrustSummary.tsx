@@ -105,7 +105,7 @@ export function CompactSellerTrustSummary({
         role: 'status',
         'aria-label': 'Loading trust summary',
       },
-      'Loading trust…'
+      'Loading trust...'
     )
   }
 
@@ -144,7 +144,7 @@ export function CompactSellerTrustSummary({
         { className: verified ? 'text-emerald-700 font-medium' : 'text-slate-600' },
         identityLabel
       ),
-      ' · ',
+      ' ... ',
       insufficient
         ? 'New seller'
         : fulfilmentPct != null
