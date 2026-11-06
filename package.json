@@ -7,7 +7,7 @@
     "dev": "next dev",
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc --noEmit -p tsconfig.test.json",
-    "build": "prisma generate && node scripts/build-diagnostics.js && cross-env NODE_OPTIONS=--max-old-space-size=1536 next build --debug && node scripts/copy-static.js",
+    "build": "prisma generate && node scripts/build-diagnostics.js && cross-env NODE_OPTIONS=--max-old-space-size=8192 next build --debug && node scripts/copy-static.js",
     "start": "prisma migrate deploy && cross-env NODE_OPTIONS=--max-old-space-size=768 node server-entry.js",
     "lint": "next lint",
     "db:generate": "prisma generate",
