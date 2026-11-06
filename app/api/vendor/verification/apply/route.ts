@@ -8,11 +8,6 @@ export const dynamic = 'force-dynamic'
 // This endpoint now creates the application record but payment is handled separately
 // Payment initialization should use /api/verification-payment
 export async function POST(request: NextRequest) {
-  const rateLimitCheck = rateLimit('vendor-verification-apply')(request)
-  if (rateLimitCheck.success !== true) {
-    return rateLimitCheck.response
-  }
-
   try {
     const token = request.cookies.get('token')?.value
     if (!token) {
@@ -24,6 +19,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Vendors only' }, { status: 403 })
     }
     const payload = outcome
+
+    const rateLimitCheck = rateLimit('vendor-verification-apply', payload.userId)(request)
+    if (rateLimitCheck.success !== true) {
+      return rateLimitCheck.response
+    }
 
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId }

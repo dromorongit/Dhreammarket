@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // Guard for every local database command.
 //
 // A DATABASE_URL is only accepted when it points at the local development

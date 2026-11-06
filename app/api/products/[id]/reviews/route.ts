@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncProductRating } from '@/lib/rating-sync'
+import { rateLimit } from '@/lib/rate-limit'
 import { sanitizeUserContent } from '@/lib/sanitize'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
@@ -215,6 +216,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const payload = outcome
     if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can submit reviews' }, { status: 403 })
+    }
+
+    const rateLimitCheck = rateLimit('review', payload.userId)(request)
+    if (rateLimitCheck.success !== true) {
+      return rateLimitCheck.response
     }
 
     const productId = params.id

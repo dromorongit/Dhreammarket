@@ -19,11 +19,6 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const rateLimitCheck = rateLimit('checkout')(request)
-  if (rateLimitCheck.success !== true) {
-    return rateLimitCheck.response
-  }
-
   console.log('[Checkout API] Request received')
   
   try {
@@ -39,6 +34,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const payload = outcome
+
+    const rateLimitCheck = rateLimit('checkout', payload.userId)(request)
+    if (rateLimitCheck.success !== true) {
+      return rateLimitCheck.response
+    }
 
     // Check if Paystack is configured
     if (!isPaystackConfigured()) {
@@ -435,21 +435,20 @@ export async function POST(request: NextRequest) {
           console.error('Failed to create notification:', err)
         })
 
-        // Notify vendors about new orders
-        const vendorStores = new Set<string>()
-        for (const item of cart.items) {
-          vendorStores.add(item.product.storeId)
-        }
-        const vendorStoreIds = Array.from(vendorStores)
-        for (const storeId of vendorStoreIds) {
-          const store = await getPrisma().store.findUnique({
-            where: { id: storeId },
-            select: { userId: true }
+        // Notify vendors about new orders — one query for all vendor stores
+        // instead of one findUnique per store (N+1).
+        const vendorStoreIds = Array.from(new Set(cart.items.map((item) => item.product.storeId).filter(Boolean)))
+        if (vendorStoreIds.length > 0) {
+          const stores = await getPrisma().store.findMany({
+            where: { id: { in: vendorStoreIds } },
+            select: { userId: true },
           })
-          if (store?.userId) {
-            createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: GHS ${total.toFixed(2)}`).catch(err => {
-              console.error('Failed to create vendor notification:', err)
-            })
+          for (const store of stores) {
+            if (store.userId) {
+              createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: GHS ${total.toFixed(2)}`).catch(err => {
+                console.error('Failed to create vendor notification:', err)
+              })
+            }
           }
         }
 

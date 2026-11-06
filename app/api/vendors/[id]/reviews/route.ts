@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncStoreRating } from '@/lib/rating-sync'
+import { rateLimit } from '@/lib/rate-limit'
 
 /**
  * Resolve a raw URL param (which may be a store slug OR a store id) to the
@@ -72,12 +73,33 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json({ canReview: false }, { status: 200 })
       }
 
-      // Check if user already reviewed this vendor
+       // Check if user has a delivered/completed paid order containing this vendor's items
+      const eligibleOrder = await getPrisma().order.findFirst({
+        where: {
+          userId: payload.userId,
+          paymentStatus: 'PAID',
+          status: { in: ['DELIVERED', 'COMPLETED'] },
+          items: {
+            some: {
+              product: {
+                storeId: store.id,
+              },
+            },
+          },
+        },
+        select: { id: true },
+      })
+
+      if (!eligibleOrder) {
+        return NextResponse.json({ canReview: false, reason: 'not_purchased' }, { status: 200 })
+      }
+
+      // Check if user already reviewed this vendor for this order
       const existingReview = await getPrisma().vendorReview.findUnique({
         where: {
-          userId_storeId: {
+          orderId_storeId: {
             storeId: store.id,
-            userId: payload.userId,
+            orderId: eligibleOrder.id,
           },
         },
         include: {
@@ -104,31 +126,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             rating: existingReview.rating,
             comment: existingReview.comment,
             createdAt: existingReview.createdAt,
-            isVerifiedPurchase: existingReview.order !== null,
+            isVerifiedPurchase: existingReview.isVerifiedPurchase,
             reviewer: existingReview.user.profile?.firstName || 'Anonymous',
           }
         }, { status: 200 })
-      }
-
-      // Check if user has a delivered/completed paid order containing this vendor's items
-      const eligibleOrder = await getPrisma().order.findFirst({
-        where: {
-          userId: payload.userId,
-          paymentStatus: 'PAID',
-          status: { in: ['DELIVERED', 'COMPLETED'] },
-          items: {
-            some: {
-              product: {
-                storeId: store.id,
-              },
-            },
-          },
-        },
-        select: { id: true },
-      })
-
-      if (!eligibleOrder) {
-        return NextResponse.json({ canReview: false, reason: 'not_purchased' }, { status: 200 })
       }
 
       return NextResponse.json({ canReview: true, orderId: eligibleOrder.id }, { status: 200 })
@@ -210,7 +211,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       rating: review.rating,
       comment: review.comment,
       createdAt: review.createdAt,
-      isVerifiedPurchase: review.order !== null,
+      isVerifiedPurchase: review.isVerifiedPurchase,
       reviewer: review.user.profile?.firstName || 'Anonymous',
     }))
 
@@ -254,6 +255,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can submit reviews' }, { status: 403 })
     }
+
+    const rl = rateLimit('review', payload.userId)(request)
+    if (!rl.success) return rl.response
 
     // Resolve the slug-or-id to the actual store id before any related query
     const store = await resolveStoreId(params.id)
@@ -309,18 +313,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Only customers who received items from this store can review it' }, { status: 403 })
     }
 
-    // Check if user already reviewed this vendor
+    // Check if a review already exists for this order+store (duplicate order block)
     const existingReview = await getPrisma().vendorReview.findUnique({
       where: {
-        userId_storeId: {
+        orderId_storeId: {
           storeId,
-          userId: payload.userId,
+          orderId: eligibleOrder.id,
         },
       },
     })
 
     if (existingReview) {
-      return NextResponse.json({ error: 'You have already reviewed this vendor' }, { status: 400 })
+      return NextResponse.json({ error: 'You have already reviewed this vendor for this order' }, { status: 400 })
     }
 
     // Create review
@@ -329,6 +333,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         storeId,
         userId: payload.userId,
         orderId: eligibleOrder.id,
+        isVerifiedPurchase: true,
         rating,
         comment: comment?.trim() || null,
       },

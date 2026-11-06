@@ -12,6 +12,66 @@ const globalForRateLimit = globalThis as unknown as {
 // Key: IP + endpoint, Value: { count, resetTime }
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
+type RateLimitStoreName = 'memory' | 'redis' | 'upstash'
+
+function getRateLimitStore(): RateLimitStoreName {
+  const value = process.env.RATE_LIMIT_STORE
+  if (value === 'redis' || value === 'upstash') return value
+  return 'memory'
+}
+
+type RedisClient = { incr: (key: string) => Promise<number>; expire: (key: string, seconds: number) => Promise<number> } | null
+
+let redisClientPromise: Promise<RedisClient> | null = null
+
+async function getRedisClient(): Promise<RedisClient> {
+  if (redisClientPromise) return redisClientPromise
+  redisClientPromise = (async (): Promise<RedisClient> => {
+    const store = getRateLimitStore()
+    if (store === 'memory') return null
+    try {
+      if (store === 'redis') {
+        const url = process.env.REDIS_URL
+        if (!url) return null
+        const m = await import('ioredis')
+        const client = new m.default(url)
+        return {
+          incr: (key: string) => client.incr(key),
+          expire: (key: string, seconds: number) => client.expire(key, seconds),
+        }
+      }
+      if (store === 'upstash') {
+        const url = process.env.UPSTASH_REDIS_REST_URL
+        const token = process.env.UPSTASH_REDIS_REST_TOKEN
+        if (!url || !token) return null
+        const m = await import('@upstash/redis')
+        const client = new m.Redis({ url, token })
+        return {
+          incr: (key: string) => client.incr(key),
+          expire: (key: string, seconds: number) => client.expire(key, seconds),
+        }
+      }
+    } catch (error) {
+      console.warn(`Rate limit store "${store}" unavailable; falling back to in-memory`, error)
+    }
+    return null
+  })()
+  return redisClientPromise
+}
+
+async function reconcileRateLimitToRedis(
+  key: string,
+  config: RateLimitConfig,
+): Promise<void> {
+  const client = await getRedisClient()
+  if (!client) return
+  const redisKey = `ratelimit:${key}`
+  const count = await client.incr(redisKey)
+  if (count === 1) {
+    await client.expire(redisKey, Math.ceil(config.windowMs / 1000))
+  }
+}
+
 export interface RateLimitConfig {
   windowMs: number
   maxRequests: number
@@ -46,6 +106,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'admin-products': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-orders': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-service-categories': { windowMs: 60 * 1000, maxRequests: 100 },
+  review: { windowMs: 15 * 60 * 1000, maxRequests: 10 },
   'admin-services': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-advertisements': { windowMs: 60 * 1000, maxRequests: 100 },
   'support-ai-chat': { windowMs: 60 * 1000, maxRequests: 20 },
@@ -95,18 +156,30 @@ export function checkRateLimit(
   const now = Date.now()
   const record = rateLimitStore.get(key)
 
+  let result: { success: boolean; remaining?: number; resetTime?: number; limit?: number }
   if (!record || now > record.resetTime) {
     enforceRateLimitCap()
     rateLimitStore.set(key, { count: 1, resetTime: now + config.windowMs })
-    return { success: true, remaining: config.maxRequests - 1, resetTime: now + config.windowMs, limit: config.maxRequests }
+    result = { success: true, remaining: config.maxRequests - 1, resetTime: now + config.windowMs, limit: config.maxRequests }
+  } else if (record.count >= config.maxRequests) {
+    result = { success: false, remaining: 0, resetTime: record.resetTime, limit: config.maxRequests }
+  } else {
+    record.count++
+    result = { success: true, remaining: config.maxRequests - record.count, resetTime: record.resetTime, limit: config.maxRequests }
   }
 
-  if (record.count >= config.maxRequests) {
-    return { success: false, remaining: 0, resetTime: record.resetTime, limit: config.maxRequests }
-  }
+  // Reconcile to the Redis-backed store without blocking the response; the
+  // in-memory result is authoritative for this request so call sites are
+  // unchanged regardless of the configured store.
+  ;(async () => {
+    try {
+      await reconcileRateLimitToRedis(key, config)
+    } catch {
+      // best-effort; fall back to in-memory
+    }
+  })()
 
-  record.count++
-  return { success: true, remaining: config.maxRequests - record.count, resetTime: record.resetTime, limit: config.maxRequests }
+  return result
 }
 
 function rateLimitResponse(
@@ -137,12 +210,14 @@ export function rateLimitByKey(
   return { success: true }
 }
 
-export function rateLimit(endpoint: keyof typeof RATE_LIMIT_CONFIGS) {
+export function rateLimit(endpoint: keyof typeof RATE_LIMIT_CONFIGS, userId?: string) {
   return function rateLimitMiddleware(request: NextRequest):
     { success: true } | { success: false; response: NextResponse } {
-    const clientIP = getClientIP(request)
     const config = RATE_LIMIT_CONFIGS[endpoint]
-    const key = `${clientIP}:${endpoint}`
+    // Authenticated requests are limited per user so a shared IP (NAT, office,
+    // Wi-Fi) cannot throttle one customer because of another's traffic.
+    // Unauthenticated routes keep the IP based key below.
+    const key = userId ? `${userId}:${endpoint}` : `${getClientIP(request)}:${endpoint}`
 
     return rateLimitByKey(key, config)
   }
@@ -167,7 +242,7 @@ function registerCleanupInterval(): void {
   }
 
   if (typeof setInterval !== 'undefined') {
-    globalForRateLimit.cleanupInterval = setInterval(cleanupExpiredEntries, 60 * 1000)
+    globalForRateLimit.cleanupInterval = setInterval(cleanupExpiredEntries, 60 * 1000).unref()
   }
 
   const gracefulShutdown = () => {
@@ -184,6 +259,21 @@ function registerCleanupInterval(): void {
     logInfo('Graceful shutdown handlers registered for rate-limit cleanup')
   }
 }
+
+export function rateLimitStoreNeedsWarning(nodeEnv: string | undefined, store: RateLimitStoreName): boolean {
+  return nodeEnv === 'production' && store === 'memory'
+}
+
+export function logRateLimitStoreWarning(nodeEnv?: string): void {
+  const env = nodeEnv ?? process.env.NODE_ENV
+  if (rateLimitStoreNeedsWarning(env, getRateLimitStore())) {
+    console.warn(
+      'RATE_LIMIT_STORE is unset or "memory" in production; rate limits are kept in memory and will not be shared across instances',
+    )
+  }
+}
+
+logRateLimitStoreWarning()
 
 if (typeof globalThis !== 'undefined') {
   registerCleanupInterval()

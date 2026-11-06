@@ -48,6 +48,7 @@ import {
 } from '@/lib/sales-summary-cache'
 import {
   createFakeSalesPrisma,
+  fakeSalesOrders,
   type FakeOrder,
   type FakeProduct,
 } from '@/app/api/vendor/sales-summary/fake-sales-db.test-utils'
@@ -166,6 +167,12 @@ describe('the cache of the money view', () => {
       })
     )
     expect(sale.status).toBe(201)
+
+    // The fake order is stamped with "now", outside the Oct 1-31 query
+    // period. Backdate it into the period so the money view counts it.
+    const created = fakeSalesOrders().find((order) => order.idempotencyKey?.endsWith(':key_1'))
+    expect(created).toBeDefined()
+    ;(created as FakeOrder).createdAt = new Date('2026-10-15T10:00:00.000Z')
 
     // The next read is not served from the cache and holds the sale.
     const third = await GET_SUMMARY(buildSummaryRequest())

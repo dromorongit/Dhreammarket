@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { syncStoreRating } from '@/lib/rating-sync'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string; reviewId: string } }) {
   try {
@@ -23,6 +24,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can edit reviews' }, { status: 403 })
     }
+
+    const rl = rateLimit('review', payload.userId)(request)
+    if (!rl.success) return rl.response
 
     const { rating, comment } = await request.json()
 
@@ -88,6 +92,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     if (payload.role !== 'CUSTOMER') {
       return NextResponse.json({ error: 'Only customers can delete reviews' }, { status: 403 })
     }
+
+    const rl = rateLimit('review', payload.userId)(request)
+    if (!rl.success) return rl.response
 
     // Find the review and verify ownership
     const existingReview = await getPrisma().vendorReview.findUnique({
