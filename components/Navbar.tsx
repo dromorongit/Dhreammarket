@@ -585,10 +585,10 @@ export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: bo
       </div>
 
       {/* Mobile Menu */}
-        <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out relative ${
-          mobileMenuOpen ? 'max-h-[100dvh] opacity-100 z-50' : 'max-h-0 opacity-0'
-        }`}>
-          <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out relative ${
+        mobileMenuOpen ? 'max-h-[calc(100dvh-8rem)] overscroll-contain opacity-100 z-50' : 'max-h-0 opacity-0'
+      }`}>
+          <div className="px-4 py-4 space-y-1 border-t border-slate-200 bg-white max-h-[calc(100dvh-8rem)] overscroll-contain pb-28 overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6rem)' }}>
            <button
              onClick={() => navigateAndCloseMobileMenu('/')}
              className="w-full block px-4 py-3 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors text-left"
@@ -662,9 +662,15 @@ export function Navbar({ returnsFlowEnabled = false }: { returnsFlowEnabled?: bo
             <div className="border-t border-slate-200 my-2"></div>
            {user ? (
              <>
-               <div className="px-4 py-2">
-                 <p className="text-sm font-medium text-slate-700">Welcome, {getDisplayName(user)}</p>
-               </div>
+                <div className="px-4 py-2">
+                  <p className="text-sm font-medium text-slate-700">Welcome, {getDisplayName(user)}</p>
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs text-rose-600 font-medium hover:text-rose-700"
+                  >
+                    Sign Out
+                  </button>
+                </div>
                {user.role === 'SUPER_ADMIN' && (
                  <button
                    onClick={() => navigateAndCloseMobileMenu('/dashboard/super-admin')}
