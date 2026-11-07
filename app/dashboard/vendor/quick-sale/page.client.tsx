@@ -702,7 +702,7 @@ export default function VendorQuickSalePageClient() {
                   {repeatSkipped.length > 0 && (
                     <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
                       <p className="text-xs font-semibold text-amber-900 mb-1">
-                        Some items couldn't be repeated:
+                        Some items couldn&apos;t be repeated:
                       </p>
                       <ul className="text-xs text-amber-700 list-disc pl-4 space-y-1">
                         {repeatSkipped.map((name, i) => (
