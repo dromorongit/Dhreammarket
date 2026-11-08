@@ -8,6 +8,7 @@ const prismaMock = vi.hoisted(() => ({
   orderItem: { createMany: vi.fn() },
   vendorCustomer: { upsert: vi.fn() },
   $queryRaw: vi.fn(),
+  $executeRaw: vi.fn(),
   $transaction: vi.fn(),
 }))
 
@@ -101,6 +102,7 @@ const productList = [
 function mockTx(defaults: any = {}) {
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([]),
+    $executeRaw: vi.fn().mockResolvedValue(0),
     order: {
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({
@@ -123,7 +125,7 @@ function mockTx(defaults: any = {}) {
     vendorCustomer: { upsert: vi.fn().mockResolvedValue({ id: 'vc_1', storeId: 'store_1', phone: '+233242222222' }) },
     ...defaults,
   }
-  prismaMock.$transaction.mockImplementation(async (cb: any) => cb(tx))
+  prismaMock.$transaction.mockImplementation(async (cb: any, _options?: any) => cb(tx))
   return tx
 }
 
@@ -411,6 +413,7 @@ describe('POST /api/vendor/manual-orders', () => {
     function makeTx() {
       return {
         $queryRaw: vi.fn().mockResolvedValue([]),
+        $executeRaw: vi.fn().mockResolvedValue(0),
         order: {
           findFirst: vi.fn().mockResolvedValue(createdOrder),
           create: vi.fn().mockImplementation((args: any) => {
@@ -425,7 +428,7 @@ describe('POST /api/vendor/manual-orders', () => {
     }
 
     // Serialize $transaction callbacks (FIFO) to simulate advisory-lock serialization.
-    prismaMock.$transaction.mockImplementation(async (cb: any) => {
+    prismaMock.$transaction.mockImplementation(async (cb: any, _options?: any) => {
       const waitForPrevious = gate
       const proceed = new Promise<void>((resolve) => releases.push(resolve))
       gate = proceed
@@ -463,6 +466,52 @@ describe('POST /api/vendor/manual-orders', () => {
       expect(call[0].where.storeId_phone.phone).toBe('+233242222222')
       expect(call[0].where.storeId_phone.storeId).toBe('store_1')
     }
+  })
+
+  it('acquires advisory lock via $executeRaw before idempotency lookup', async () => {
+    const order: string[] = []
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      $executeRaw: vi.fn().mockImplementation(async () => {
+        order.push('lock')
+        return 0
+      }),
+      order: {
+        findFirst: vi.fn().mockImplementation(async () => {
+          order.push('lookup')
+          return null
+        }),
+        create: vi.fn().mockResolvedValue({
+          id: 'order_1',
+          receiptToken: 'ab12cd34ef56gh78ij90kl12mn34op56qr',
+          status: 'PROCESSING',
+          paymentStatus: 'PENDING',
+          paymentMethod: null,
+          subtotal: 20,
+          shipping: 0,
+          total: 20,
+          customerFirstName: 'Kofi',
+          customerPhone: '+233242222222',
+          customerEmail: 'kofi@example.com',
+          items: [],
+        }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      orderItem: { createMany: vi.fn().mockResolvedValue({ count: 2 }) },
+      vendorCustomer: {
+        upsert: vi.fn().mockResolvedValue({ id: 'vc_1', storeId: 'store_1', phone: '+233242222222' }),
+      },
+    }
+    prismaMock.$transaction.mockImplementation(async (cb: any, options?: any) => {
+      expect(options).toEqual({ maxWait: 10000, timeout: 20000 })
+      return cb(tx)
+    })
+
+    const response = await POST(buildRequest(BASE_BODY))
+    expect(response.status).toBe(201)
+    expect(tx.$executeRaw).toHaveBeenCalledTimes(1)
+    expect(tx.$queryRaw).not.toHaveBeenCalled()
+    expect(order).toEqual(['lock', 'lookup'])
   })
 
   it('vendor B replaying vendor A key creates its own order and never receives A data', async () => {
