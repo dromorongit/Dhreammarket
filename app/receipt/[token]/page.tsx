@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PaymentConfirmingNotice from './PaymentConfirmingNotice'
 import PrintButton from './PrintButton'
+import PayNowButton from './PayNowButton'
 import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
@@ -37,6 +38,12 @@ export default async function ReceiptPage({
   const hasPaymentParams = Boolean(searchParams.trxref || searchParams.reference)
   const awaitingPayment =
     hasPaymentParams && receipt.paymentStatus !== 'PAID' && receipt.status !== 'CANCELLED'
+  const payLinkEnabled = process.env.PAYLINK_ENABLED === 'true'
+  const showPayNow =
+    payLinkEnabled &&
+    receipt.paymentStatus === 'UNPAID' &&
+    receipt.status !== 'CANCELLED' &&
+    !awaitingPayment
 
   return (
     <div className="min-h-screen bg-white">
@@ -172,6 +179,10 @@ export default async function ReceiptPage({
             </Link>
           </div>
         </div>
+
+        {showPayNow && (
+          <PayNowButton token={params.token} totalLabel={formatCurrency(receipt.total)} />
+        )}
 
         <div className="mt-6 sm:mt-8">
           <PrintButton />

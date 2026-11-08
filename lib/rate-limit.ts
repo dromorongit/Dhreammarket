@@ -91,6 +91,7 @@ export const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   'vendor-customers': { windowMs: 60 * 1000, maxRequests: 60 },
   'manual-orders': { windowMs: 60 * 1000, maxRequests: 30 },
   'receipt-page': { windowMs: 60 * 1000, maxRequests: 60 },
+  'receipt-pay': { windowMs: 60 * 1000, maxRequests: 10 },
   'admin-users': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-products': { windowMs: 60 * 1000, maxRequests: 100 },
   'admin-orders': { windowMs: 60 * 1000, maxRequests: 100 },
@@ -126,7 +127,7 @@ function enforceRateLimitCap(): void {
   }
 }
 
-function getClientIP(request: NextRequest): string {
+export function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
   const realIP = request.headers.get('x-real-ip')
   const cfIP = request.headers.get('cf-connecting-ip')

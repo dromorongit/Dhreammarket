@@ -118,7 +118,7 @@ const MANUAL_STATUS_TRANSITIONS: Record<string, string[]> = {
   PENDING: ['PROCESSING', 'CANCELLED'],
 }
 
-export default function VendorOrdersPageClient() {
+export default function VendorOrdersPageClient({ payLinkEnabled }: { payLinkEnabled?: boolean }) {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -703,6 +703,8 @@ export default function VendorOrdersPageClient() {
                               paymentStatus={order.paymentStatus}
                               status={order.status}
                               customerPhone={order.customerPhone || undefined}
+                              payLinkEnabled={payLinkEnabled}
+                              payLinkSent={order.payLinkSent}
                             />
                             {order.paymentStatus !== 'PAID' && order.status !== 'CANCELLED' && (
                               <Button

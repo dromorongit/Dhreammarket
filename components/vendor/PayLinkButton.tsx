@@ -10,18 +10,27 @@ interface PayLinkButtonProps {
   paymentStatus: string
   status: string
   customerPhone?: string | null
+  payLinkEnabled?: boolean
+  payLinkSent?: boolean
 }
 
 const GENERIC_ERROR = 'Failed to create pay link. Please try again.'
 
-const PAYLINK_ENABLED = process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'
-
-export default function PayLinkButton({ orderId, source, paymentStatus, status, customerPhone }: PayLinkButtonProps) {
+export default function PayLinkButton({
+  orderId,
+  source,
+  paymentStatus,
+  status,
+  customerPhone,
+  payLinkEnabled,
+  payLinkSent,
+}: PayLinkButtonProps) {
   const [loading, setLoading] = useState(false)
   const [payLink, setPayLink] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  if (!PAYLINK_ENABLED) return null
+  const enabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'
+  if (!enabled) return null
   const eligible = source === 'MANUAL' && paymentStatus !== 'PAID' && status !== 'CANCELLED'
   if (!eligible) return null
 
@@ -88,7 +97,7 @@ export default function PayLinkButton({ orderId, source, paymentStatus, status, 
         onClick={handleCreate}
         className="min-h-[44px] text-xs px-3"
       >
-        Send pay link
+        {payLinkSent ? 'Resend pay link' : 'Send pay link'}
       </Button>
       {error && <p className="text-xs text-rose-600 mt-1">{error}</p>}
     </div>

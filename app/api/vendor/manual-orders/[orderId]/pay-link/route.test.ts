@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server'
 const prismaMock = vi.hoisted(() => ({
   store: { findUnique: vi.fn() },
   order: { findFirst: vi.fn() },
-  payment: { findUnique: vi.fn() },
+  payment: { findUnique: vi.fn(), upsert: vi.fn() },
 }))
 
 vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn(() => prismaMock) }))
@@ -76,6 +76,10 @@ beforeEach(() => {
     items: { some: {} },
   })
   mockPayment(null)
+  prismaMock.payment.upsert.mockResolvedValue({
+    authorizationUrl: 'https://paystack.co/pay/new',
+    reference: 'MAN-NEW',
+  })
   process.env.PAYLINK_ENABLED = 'true'
   delete process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN
   initializePaystackPaymentMock.mockResolvedValue({
@@ -110,7 +114,15 @@ describe('POST /api/vendor/manual-orders/[orderId]/pay-link', () => {
   })
 
   it('rejects a non-manual order with 409', async () => {
-    mockOrder({ id: 'order_1', source: 'ONLINE', status: 'PROCESSING', paymentStatus: 'PENDING' })
+    mockOrder({
+      id: 'order_1',
+      source: 'ONLINE',
+      status: 'PROCESSING',
+      paymentStatus: 'PENDING',
+      total: 25,
+      customerEmail: 'ada@example.com',
+      receiptToken: 'tok_1',
+    })
     const response = await POST(buildRequest(), PARAMS)
     expect(response.status).toBe(409)
   })
@@ -132,13 +144,15 @@ describe('POST /api/vendor/manual-orders/[orderId]/pay-link', () => {
     expect(initializePaystackPaymentMock).not.toHaveBeenCalled()
   })
 
-  it('reuses an existing PENDING pay link instead of creating a new one', async () => {
+  it('reuses an existing fresh PENDING pay link instead of creating a new one', async () => {
     mockPayment({
       id: 'pay_1',
       reference: 'MAN-EXISTING',
       amount: 25,
       status: 'PENDING',
       authorizationUrl: 'https://paystack.co/pay/existing',
+      updatedAt: new Date(),
+      createdAt: new Date(),
     })
     const response = await POST(buildRequest(), PARAMS)
     expect(response.status).toBe(200)
@@ -146,6 +160,23 @@ describe('POST /api/vendor/manual-orders/[orderId]/pay-link', () => {
     expect(json.authorizationUrl).toBe('https://paystack.co/pay/existing')
     expect(json.reference).toBe('MAN-EXISTING')
     expect(initializePaystackPaymentMock).not.toHaveBeenCalled()
+  })
+
+  it('creates a fresh link when an existing PENDING link is stale', async () => {
+    mockPayment({
+      id: 'pay_1',
+      reference: 'MAN-STALE',
+      amount: 25,
+      status: 'PENDING',
+      authorizationUrl: 'https://paystack.co/pay/stale',
+      updatedAt: new Date(Date.now() - 25 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000),
+    })
+    const response = await POST(buildRequest(), PARAMS)
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.authorizationUrl).toBe('https://paystack.co/pay/new')
+    expect(initializePaystackPaymentMock).toHaveBeenCalledTimes(1)
   })
 
   it('returns 400 when there is no customer email and no fallback domain', async () => {
@@ -165,3 +196,4 @@ describe('POST /api/vendor/manual-orders/[orderId]/pay-link', () => {
     expect(json.error).toContain('Customer email is required')
   })
 })
+

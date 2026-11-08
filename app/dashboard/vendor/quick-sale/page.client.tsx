@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Badge } from '@/components/Badge'
-import PayLinkButton from '@/components/vendor/PayLinkButton'
 import { formatCurrency } from '@/lib/currency'
 import { toPesewas, fromPesewas, computeOrderTotals, buildWhatsAppShareLink, MANUAL_CHANNELS, type ManualChannel } from '@/lib/manual-orders'
 import { buildRepeatLines, type RepeatOrderItem } from '@/app/dashboard/vendor/quick-sale/repeat-prefill'
@@ -44,7 +43,7 @@ function variantLabel(v: { color?: string | null; size?: string | null; age?: st
   return parts.length > 0 ? parts.join(' / ') : null
 }
 
-export default function VendorQuickSalePageClient() {
+export default function VendorQuickSalePageClient({ payLinkEnabled }: { payLinkEnabled?: boolean }) {
   const router = useRouter()
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const prefillPhone = searchParams.get('phone') || ''
@@ -95,6 +94,13 @@ export default function VendorQuickSalePageClient() {
 
   // Success
   const [sale, setSale] = useState<{ id: string; displayNumber: string; source: string; status: string; total: number; paymentStatus: string; receiptUrl: string | null; receiptToken: string | null } | null>(null)
+
+  // Pay link (sale recorded screen)
+  const [payLinkLoading, setPayLinkLoading] = useState(false)
+  const [payLinkError, setPayLinkError] = useState<string | null>(null)
+  const [payLinkUrl, setPayLinkUrl] = useState<string | null>(null)
+  const [payLinkCopied, setPayLinkCopied] = useState(false)
+  const effectivePayLinkEnabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'
 
   // Debounce ref
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -435,8 +441,62 @@ export default function VendorQuickSalePageClient() {
     setDeliveryFee(0)
     setDeliveryCost('')
     setSale(null)
+    setPayLinkLoading(false)
+    setPayLinkError(null)
+    setPayLinkUrl(null)
+    setPayLinkCopied(false)
     setSubmitting(false)
     setIdempotencyKey(crypto.randomUUID())
+  }
+
+  const handleSendPayLinkWhatsApp = async () => {
+    if (!sale || payLinkLoading) return
+    // iOS Safari blocks window.open after await; open synchronously on tap.
+    const popup = customerPhone ? window.open('', '_blank') : null
+
+    setPayLinkLoading(true)
+    setPayLinkError(null)
+    setPayLinkCopied(false)
+    try {
+      const res = await fetch(`/api/vendor/manual-orders/${sale.id}/pay-link`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const message = res.status === 503 ? 'Pay links are not available yet' : data.error || 'Failed to create pay link. Please try again.'
+        setPayLinkError(message)
+        if (popup) popup.close()
+        return
+      }
+      const url = data.authorizationUrl || data.receiptUrl
+      if (!url) {
+        setPayLinkError('Failed to create pay link. Please try again.')
+        if (popup) popup.close()
+        return
+      }
+      setPayLinkUrl(url)
+      if (popup) {
+        const wa = buildWhatsAppShareLink(
+          customerPhone,
+          url,
+          `Hi ${customerName || 'there'}, pay ${formatCurrency(sale.total)} for order #${sale.displayNumber}: ${url}`
+        )
+        popup.location.href = wa
+      }
+    } catch {
+      setPayLinkError('Failed to create pay link. Please try again.')
+      if (popup) popup.close()
+    } finally {
+      setPayLinkLoading(false)
+    }
+  }
+
+  const handleCopyPayLink = async () => {
+    if (!payLinkUrl) return
+    try {
+      await navigator.clipboard.writeText(payLinkUrl)
+      setPayLinkCopied(true)
+    } catch {
+      setPayLinkError('Could not copy the link')
+    }
   }
 
   const handleViewOrder = () => {
@@ -480,22 +540,72 @@ export default function VendorQuickSalePageClient() {
                 </span>
               </div>
             </div>
+            {sale && sale.paymentStatus !== 'PAID' && effectivePayLinkEnabled && (
+              <div className="mb-4 space-y-2">
+                {customerPhone.trim() ? (
+                  <Button
+                    onClick={handleSendPayLinkWhatsApp}
+                    fullWidth
+                    size="sm"
+                    loading={payLinkLoading}
+                    disabled={payLinkLoading}
+                  >
+                    Send pay link on WhatsApp
+                  </Button>
+                ) : null}
+                {(!customerPhone.trim() || payLinkUrl || payLinkError) && (
+                  <div className="space-y-2">
+                    {!payLinkUrl ? (
+                      <Button
+                        onClick={handleSendPayLinkWhatsApp}
+                        fullWidth
+                        variant={customerPhone.trim() ? 'outline' : 'primary'}
+                        size="sm"
+                        loading={payLinkLoading}
+                        disabled={payLinkLoading}
+                      >
+                        Copy pay link
+                      </Button>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-600 break-all text-left">{payLinkUrl}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button onClick={handleCopyPayLink} fullWidth variant="outline" size="sm">
+                            {payLinkCopied ? 'Copied' : 'Copy pay link'}
+                          </Button>
+                          {customerPhone.trim() ? (
+                            <Button
+                              onClick={() => {
+                                const wa = buildWhatsAppShareLink(
+                                  customerPhone,
+                                  payLinkUrl,
+                                  `Hi ${customerName || 'there'}, pay ${formatCurrency(sale.total)} for order #${sale.displayNumber}: ${payLinkUrl}`
+                                )
+                                window.open(wa, '_blank')
+                              }}
+                              fullWidth
+                              variant="outline"
+                              size="sm"
+                            >
+                              Share on WhatsApp
+                            </Button>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                {payLinkError && <p className="text-xs text-rose-600 text-left">{payLinkError}</p>}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 mb-6">
               <Button onClick={handleWhatsApp} fullWidth variant="outline" size="sm" disabled={!sale!.receiptUrl}>
-                Send on WhatsApp
+                Send receipt on WhatsApp
               </Button>
               <Button onClick={handleCopyLink} fullWidth variant="outline" size="sm" disabled={!sale!.receiptUrl}>
-                Copy link
+                Copy receipt link
               </Button>
-              {sale && (
-                <PayLinkButton
-                  orderId={sale.id}
-                  source={sale.source}
-                  paymentStatus={sale.paymentStatus}
-                  status={sale.status}
-                  customerPhone={customerPhone || undefined}
-                />
-              )}
             </div>
             <div className="space-y-2">
               <Button onClick={handleRecordAnother} fullWidth variant="outline" size="sm">

@@ -19,10 +19,15 @@ describe('receipt page client/server boundary', () => {
       path.join(process.cwd(), 'app', 'receipt', '[token]', 'PrintButton.tsx'),
       'utf8'
     )
+    const payNowButton = fs.readFileSync(
+      path.join(process.cwd(), 'app', 'receipt', '[token]', 'PayNowButton.tsx'),
+      'utf8'
+    )
 
     expect(page).not.toContain('onClick=')
     expect(page).not.toContain('window.')
     expect(page).toContain('id="receipt-content"')
     expect(printButton.startsWith("'use client'")).toBe(true)
+    expect(payNowButton.startsWith("'use client'")).toBe(true)
   })
 })
