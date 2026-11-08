@@ -11,3 +11,18 @@ describe('receipt page notFound handling', () => {
     expect(source).not.toContain('return <NotFound />')
   })
 })
+
+describe('receipt page client/server boundary', () => {
+  it('keeps interactive handlers out of the server page', () => {
+    const page = fs.readFileSync(path.join(process.cwd(), 'app', 'receipt', '[token]', 'page.tsx'), 'utf8')
+    const printButton = fs.readFileSync(
+      path.join(process.cwd(), 'app', 'receipt', '[token]', 'PrintButton.tsx'),
+      'utf8'
+    )
+
+    expect(page).not.toContain('onClick=')
+    expect(page).not.toContain('window.')
+    expect(page).toContain('id="receipt-content"')
+    expect(printButton.startsWith("'use client'")).toBe(true)
+  })
+})
