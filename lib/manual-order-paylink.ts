@@ -100,29 +100,54 @@ export async function ensurePayLinkForOrder(order: ManualOrderForPayLink): Promi
     }
   }
 
+  const rawDomain = process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN
+  let domain = rawDomain?.trim().toLowerCase()
+  if (domain) {
+    const lastAt = domain.lastIndexOf('@')
+    if (lastAt !== -1) domain = domain.slice(lastAt + 1)
+    if (domain.startsWith('www.')) domain = domain.slice(4)
+  }
+
   const email =
     order.customerEmail ||
-    (process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN
-      ? `pay+${orderDisplayNumber(order.id)}@${process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN}`
-      : undefined)
+    (domain ? `pay+${orderDisplayNumber(order.id)}@${domain}` : undefined)
 
   if (!email) {
+    if (rawDomain) {
+      console.warn('[pay-link] fallback email setting is invalid:', rawDomain)
+    }
     return {
       ok: false,
       status: 400,
-      error: 'Customer email is required and PAYLINK_FALLBACK_EMAIL_DOMAIN is not set',
+      error: 'Customer email is missing and the fallback email setting is invalid',
+    }
+  }
+
+  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/
+  if (!emailRegex.test(email)) {
+    console.warn('[pay-link] invalid fallback email:', email)
+    return {
+      ok: false,
+      status: 400,
+      error: 'Customer email is missing and the fallback email setting is invalid',
     }
   }
 
   const reference = `MAN-${crypto.randomBytes(8).toString('hex').toUpperCase()}`
 
-  const paystackResponse = await initializePaystackPayment(
-    email,
-    order.total,
-    reference,
-    `${SITE_URL}/receipt/${order.receiptToken}`,
-    { orderId: order.id, source: 'MANUAL', storeId: order.storeId }
-  )
+  let paystackResponse
+  try {
+    paystackResponse = await initializePaystackPayment(
+      email,
+      order.total,
+      reference,
+      `${SITE_URL}/receipt/${order.receiptToken}`,
+      { orderId: order.id, source: 'MANUAL', storeId: order.storeId }
+    )
+  } catch (error) {
+    console.error('[pay-link] Paystack error:', error)
+    return { ok: false, status: 502, error: 'Unable to create pay link. Please try again.' }
+  }
 
   const authorizationUrl = paystackResponse.data.authorization_url
   const paystackRef = paystackResponse.data.reference
