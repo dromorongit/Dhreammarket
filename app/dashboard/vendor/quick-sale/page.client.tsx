@@ -513,7 +513,7 @@ export default function VendorQuickSalePageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-md mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6 pb-28 sm:pb-6">
         {/* Section 1: Customer */}
         <Card>
           <CardHeader>
@@ -820,6 +820,20 @@ export default function VendorQuickSalePageClient() {
             </Button>
           </div>
         )}
+
+        <div className="hidden sm:block">
+          <Button
+            type="submit"
+            disabled={submitting || cart.length === 0}
+            fullWidth
+            className="min-h-[48px]"
+          >
+            {submitting ? 'Recording sale...' : 'Record sale'}
+          </Button>
+          {cart.length === 0 && (
+            <p className="mt-2 text-sm text-gray-500">Add at least one item to record a sale</p>
+          )}
+        </div>
 
         {/* Sticky bottom bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur border-t border-slate-200 p-4 sm:hidden z-40">
