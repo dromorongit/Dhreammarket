@@ -17,6 +17,9 @@ vi.mock('@/lib/audit-log', () => ({ createAuditLog: createAuditLogMock }))
 const createNotificationMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 vi.mock('@/lib/notifications', () => ({ createNotification: createNotificationMock }))
 
+const getPolicyMock = vi.hoisted(() => vi.fn().mockResolvedValue({ systemCutoverTimestamp: null } as any))
+vi.mock('@/lib/delivery', () => ({ getPolicy: getPolicyMock }))
+
 const NOW = new Date('2026-10-25T12:00:00.000Z')
 const CUSTOMER = 'cust_1'
 const VENDOR = 'vend_1'
@@ -245,6 +248,47 @@ describe('return-service', () => {
         })
       ).rejects.toMatchObject({ code: 'OPEN_REQUEST_EXISTS', status: 409 })
       expect(createRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('manual order follows the completedAt-based window and records the policy basis', async () => {
+      process.env.LOCATION_RETURN_WINDOW_ENABLED = 'true'
+      getPolicyMock.mockResolvedValue({ systemCutoverTimestamp: new Date('2026-09-01T00:00:00.000Z') } as any)
+      try {
+        const base = buildItem()
+        const completedAt = new Date('2026-10-20T10:00:00.000Z')
+        const createdAt = new Date('2026-10-01T00:00:00.000Z')
+        const { client } = buildClient({
+          item: {
+            ...base,
+            order: {
+              ...base.order,
+              createdAt,
+              completedAt,
+              customerRegion: 'Greater Accra',
+              status: 'DELIVERED',
+              paymentStatus: 'PAID',
+            },
+          },
+        })
+        const now = new Date(completedAt.getTime() + 23 * 60 * 60 * 1000)
+        const rr = await openReturn(client, {
+          customerId: CUSTOMER,
+          orderItemId: ORDER_ITEM,
+          reason: 'NOT_AS_DESCRIBED',
+          windowDays: 7,
+          vendorResponseHours: 72,
+          now,
+        })
+        expect(rr.status).toBe('PENDING')
+        const snap = rr.policySnapshot as any
+        expect(snap.windowDays).toBe(1)
+        expect(snap.region).toBe('Greater Accra')
+        expect(snap.ruleVersion).toBe('location-window-v1')
+        expect(snap.windowStart).toBe(completedAt.toISOString())
+        expect(createRefundMock).not.toHaveBeenCalled()
+      } finally {
+        delete process.env.LOCATION_RETURN_WINDOW_ENABLED
+      }
     })
   })
 

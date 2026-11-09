@@ -79,3 +79,9 @@ export function isTrustProfileEnabled(): boolean {
   if (value === undefined || value === null) return false
   return value.trim().toLowerCase() === 'true'
 }
+
+export function isLocationReturnWindowEnabled(): boolean {
+  const value = process.env.LOCATION_RETURN_WINDOW_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}

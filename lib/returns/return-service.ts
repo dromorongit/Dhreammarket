@@ -8,8 +8,10 @@ import { checkReturnEligibility } from './eligibility'
 import { parseAmountToPesewas } from './ui/amount'
 import { canTransition } from './state-machine'
 import { createReturnError } from './types'
-import { isReturnsFlowEnabled } from '@/lib/feature-flags'
+import { isReturnsFlowEnabled, isLocationReturnWindowEnabled } from '@/lib/feature-flags'
 import { getReturnWindowDays, getVendorResponseHours } from '@/lib/feature-flags'
+import { getPolicy } from '@/lib/delivery'
+import { windowDaysForRegion, LOCATION_WINDOW_RULE_VERSION } from './location-window'
 
 const OPEN_STATUSES = ['PENDING', 'ITEM_IN_TRANSIT', 'ITEM_RECEIVED', 'AWAITING_REFUND', 'ESCALATED']
 
@@ -79,18 +81,21 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
       deliveredAt: true,
       productId: true,
       orderId: true,
-      order: {
-        select: {
-          id: true,
-          userId: true,
-          status: true,
-          paymentStatus: true,
-          total: true,
-          payment: { select: { id: true, amount: true } },
-          items: { select: { id: true, price: true, quantity: true } },
-          refunds: { select: { amount: true, status: true, orderItemId: true } },
-        },
-      },
+          order: {
+            select: {
+              id: true,
+              userId: true,
+              status: true,
+              paymentStatus: true,
+              total: true,
+              createdAt: true,
+              completedAt: true,
+              customerRegion: true,
+              payment: { select: { id: true, amount: true } },
+              items: { select: { id: true, price: true, quantity: true } },
+              refunds: { select: { amount: true, status: true, orderItemId: true } },
+            },
+          },
       product: { select: { id: true, isReturnable: true } },
       returnRequests: { select: { id: true, status: true } },
     },
@@ -100,6 +105,26 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   const order = item.order
   const product = item.product
 
+  const locationEnabled = isLocationReturnWindowEnabled()
+  let postCutover = false
+  let cutover: Date | string | null = null
+  let windowDays = input.windowDays ?? getReturnWindowDays()
+  let regionMatched: string | null = null
+  let ruleVersion: string | null = null
+  if (locationEnabled) {
+    const policy = await getPolicy()
+    cutover = policy.systemCutoverTimestamp
+    postCutover =
+      cutover != null &&
+      order.createdAt != null &&
+      new Date(order.createdAt).getTime() >= new Date(cutover).getTime()
+    if (postCutover) {
+      windowDays = windowDaysForRegion(order)
+      regionMatched = order.customerRegion ?? null
+      ruleVersion = LOCATION_WINDOW_RULE_VERSION
+    }
+  }
+
   const existingRequests = await client.returnRequest.findMany({
     where: { orderItemId },
   })
@@ -108,7 +133,6 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
     .filter((r: any) => r.orderItemId === orderItemId && r.status !== 'FAILED')
     .reduce((s: number, r: any) => s + Number(r.amount), 0)
 
-  const windowDays = input.windowDays ?? getReturnWindowDays()
   const elig = checkReturnEligibility({
     item: { id: item.id, price: item.price, quantity: item.quantity, deliveredAt: item.deliveredAt },
     order: {
@@ -116,6 +140,9 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
       status: order.status,
       paymentStatus: order.paymentStatus,
       total: order.total,
+      createdAt: order.createdAt,
+      completedAt: order.completedAt,
+      customerRegion: order.customerRegion,
       items: (order.items || []).map((i: any) => ({ id: i.id, price: i.price, quantity: i.quantity })),
       payment: order.payment ? { id: order.payment.id, amount: order.payment.amount } : null,
       refunds: order.refunds || [],
@@ -125,6 +152,8 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
     alreadyRefunded,
     now,
     windowDays,
+    isLocationReturnWindowEnabled: locationEnabled,
+    systemCutoverTimestamp: cutover,
   })
 
   if (!elig.eligible) throw createReturnError(409, elig.reason, elig.reason)
@@ -143,10 +172,14 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   const vendorResponseHours = input.vendorResponseHours ?? getVendorResponseHours()
   const escalationDeadline = new Date(now.getTime() + vendorResponseHours * 60 * 60 * 1000)
 
+  const windowStart = postCutover ? (order.completedAt ? new Date(order.completedAt) : null) : (item.deliveredAt ? new Date(item.deliveredAt) : null)
   const policySnapshot = {
     windowDays,
     vendorResponseHours,
     deliveredAt: item.deliveredAt,
+    windowStart: windowStart ? windowStart.toISOString() : null,
+    region: regionMatched,
+    ruleVersion,
     requestedAmount: requestedAmount.toFixed(2),
     maxRefundAmount: Number(elig.maxRefundAmount.toString()).toFixed(2),
   }

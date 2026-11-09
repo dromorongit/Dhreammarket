@@ -146,4 +146,82 @@ describe('checkReturnEligibility', () => {
     )
     expect(r.eligible).toBe(true)
   })
+
+  describe('location-based return window (completedAt)', () => {
+    const CUTOVER = new Date('2026-09-01T00:00:00.000Z')
+    const COMPLETED_AT = new Date('2026-10-20T10:00:00.000Z')
+    const POST_CUTOVER_CREATED_AT = new Date('2026-10-01T00:00:00.000Z')
+    const PRE_CUTOVER_CREATED_AT = new Date('2026-08-01T00:00:00.000Z')
+
+    function locationInput(overrides: any = {}) {
+      return baseInput({
+        root: {
+          now: NOW,
+          isLocationReturnWindowEnabled: true,
+          systemCutoverTimestamp: CUTOVER,
+          ...(overrides.root ?? {}),
+        },
+        order: {
+          createdAt: POST_CUTOVER_CREATED_AT,
+          completedAt: COMPLETED_AT,
+          ...(overrides.order ?? {}),
+        },
+        item: overrides.item,
+        product: overrides.product,
+      })
+    }
+
+    it('Greater Accra: eligible at 23h from completedAt (1-day window)', () => {
+      const now = new Date(COMPLETED_AT.getTime() + 23 * 60 * 60 * 1000)
+      const r = checkReturnEligibility(locationInput({ root: { now }, order: { customerRegion: 'Greater Accra' } }))
+      expect(r.eligible).toBe(true)
+    })
+
+    it('Greater Accra: ineligible at 25h from completedAt', () => {
+      const now = new Date(COMPLETED_AT.getTime() + 25 * 60 * 60 * 1000)
+      const r = checkReturnEligibility(locationInput({ root: { now }, order: { customerRegion: 'Greater Accra' } }))
+      assertIneligible(r, 'WINDOW_EXPIRED')
+    })
+
+    it('other region: eligible at 71h from completedAt (3-day window)', () => {
+      const now = new Date(COMPLETED_AT.getTime() + 71 * 60 * 60 * 1000)
+      const r = checkReturnEligibility(locationInput({ root: { now }, order: { customerRegion: 'Ashanti' } }))
+      expect(r.eligible).toBe(true)
+    })
+
+    it('other region: ineligible at 73h from completedAt', () => {
+      const now = new Date(COMPLETED_AT.getTime() + 73 * 60 * 60 * 1000)
+      const r = checkReturnEligibility(locationInput({ root: { now }, order: { customerRegion: 'Ashanti' } }))
+      assertIneligible(r, 'WINDOW_EXPIRED')
+    })
+
+    it('completedAt null is ineligible with INVALID_COMPLETION_DATE', () => {
+      const r = checkReturnEligibility(locationInput({ order: { completedAt: null } }))
+      assertIneligible(r, 'INVALID_COMPLETION_DATE')
+    })
+
+    it('region variants match Greater Accra (1-day window)', () => {
+      const now = new Date(COMPLETED_AT.getTime() + 25 * 60 * 60 * 1000)
+      for (const region of ['Greater Accra', 'greater accra region', ' GREATER  ACCRA ']) {
+        const r = checkReturnEligibility(locationInput({ root: { now }, order: { customerRegion: region } }))
+        assertIneligible(r, 'WINDOW_EXPIRED')
+      }
+    })
+
+    it('Ashanti and missing region use the 3-day window', () => {
+      const now = new Date(COMPLETED_AT.getTime() + 25 * 60 * 60 * 1000)
+      for (const region of ['Ashanti', null]) {
+        const r = checkReturnEligibility(locationInput({ root: { now }, order: { customerRegion: region } }))
+        expect(r.eligible).toBe(true)
+      }
+    })
+
+    it('pre-cutover order keeps the deliveredAt-based window regardless of the flag', () => {
+      const now = new Date(DELIVERED.getTime() + 6 * 24 * 60 * 60 * 1000)
+      const r = checkReturnEligibility(
+        locationInput({ root: { now }, order: { createdAt: PRE_CUTOVER_CREATED_AT, completedAt: COMPLETED_AT } })
+      )
+      expect(r.eligible).toBe(true)
+    })
+  })
 })
