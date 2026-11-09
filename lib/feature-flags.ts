@@ -85,3 +85,9 @@ export function isLocationReturnWindowEnabled(): boolean {
   if (value === undefined || value === null) return false
   return value.trim().toLowerCase() === 'true'
 }
+
+export function isBusinessDayPayoutEnabled(): boolean {
+  const value = process.env.BUSINESS_DAY_PAYOUT_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}

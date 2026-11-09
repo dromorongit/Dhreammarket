@@ -1,7 +1,10 @@
-import { Prisma } from '@prisma/client'
+import { Prisma, type PlatformPolicy } from '@prisma/client'
 import type { LedgerClient } from './corrective-ledger'
 import { getPayoutHoldDays } from './payout-config'
 import { getLegacyEligibleEarnings } from './legacy-eligibility'
+import { isBusinessDayPayoutEnabled } from '../feature-flags'
+import { addBusinessDays } from './business-days'
+import { getPolicy } from '../delivery'
 
 export type StoreBalance = {
   credits: Prisma.Decimal
@@ -42,23 +45,48 @@ export async function computeStoreBalance(
   const holdDays = input.holdDays ?? getPayoutHoldDays()
   const asOf = input.now ?? new Date()
 
-  const items = await client.orderItem.findMany({
-    where: {
-      product: { storeId: input.storeId },
-      order: {
-        paymentStatus: 'PAID',
-        status: { in: ['DELIVERED', 'COMPLETED'] },
-        OR: [
-          { source: 'ONLINE' },
-          { source: 'MANUAL', payment: { status: 'PAID' } },
-        ],
-      },
-      deliveredAt: { not: null },
+  const isEnabled = isBusinessDayPayoutEnabled()
+  let policy: PlatformPolicy | null = null
+  if (isEnabled) {
+    policy = await getPolicy()
+  }
+
+  const where: any = {
+    product: { storeId: input.storeId },
+    order: {
+      paymentStatus: 'PAID',
+      status: { in: ['DELIVERED', 'COMPLETED'] },
+      OR: [
+        { source: 'ONLINE' },
+        { source: 'MANUAL', payment: { status: 'PAID' } },
+      ],
     },
-    select: { id: true, vendorEarnings: true, deliveredAt: true },
-  })
+  }
+  // When business-day payouts are active, eligibility is driven by the order's
+  // completedAt rather than deliveredAt, so do not filter on deliveredAt here.
+  if (!isEnabled) {
+    where.deliveredAt = { not: null }
+  }
+
+  const select: any = { id: true, vendorEarnings: true, deliveredAt: true }
+  if (isEnabled) {
+    select.order = { select: { createdAt: true, completedAt: true } }
+  }
+
+  const items = (await client.orderItem.findMany({ where, select } as any)) as any[]
 
   const candidateItems = items.filter((item) => {
+    const order = (item as any).order
+    const cutover = policy?.systemCutoverTimestamp
+    const postCutover =
+      isEnabled &&
+      !!cutover &&
+      !!order?.createdAt &&
+      new Date(order.createdAt).getTime() >= new Date(cutover).getTime()
+    if (postCutover) {
+      if (!order?.completedAt) return false
+      return addBusinessDays(order.completedAt, 2, policy?.holidayList ?? []).getTime() <= asOf.getTime()
+    }
     const d = item.deliveredAt
     if (!d) return false
     return d.getTime() + holdDays * 24 * 60 * 60 * 1000 <= asOf.getTime()
