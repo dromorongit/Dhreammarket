@@ -1,7 +1,7 @@
 import { getServerSession } from '@/lib/auth'
 import { getPrisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { EditDocumentForm } from './edit-form'
+import { EditDocumentForm } from '../../edit-form'
 
 const MANAGE_ROLES = ['ADMIN', 'SUPER_ADMIN']
 

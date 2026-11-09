@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter, useState } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 interface NewVersionButtonProps {
   documentId: string

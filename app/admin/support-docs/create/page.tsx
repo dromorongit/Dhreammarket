@@ -1,6 +1,6 @@
 import { getServerSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { CreateDocumentForm } from './create-form'
+import { CreateDocumentForm } from '../create-form'
 
 const MANAGE_ROLES = ['ADMIN', 'SUPER_ADMIN']
 

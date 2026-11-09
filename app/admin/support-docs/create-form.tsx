@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter, useState } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 interface CreateDocumentFormProps {}
 
@@ -77,7 +78,6 @@ export function CreateDocumentForm(): JSX.Element {
         <textarea
           name="content"
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          minRows={8}
           value={form.content}
           onChange={(e) => setForm({ ...form, content: e.target.value })}
           placeholder="Write the document content in plain text..."
