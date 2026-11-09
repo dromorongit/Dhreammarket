@@ -84,6 +84,9 @@ model User {
   vendorPostComments           VendorPostComment[]            @relation("UserVendorPostComments")
   vendorPostReports            VendorPostReport[]             @relation("UserVendorPostReports")
   vendorFollows                VendorFollow[]
+  supportDocumentAuthors       SupportDocument[]   @relation("SupportDocumentAuthor")
+  supportDocumentReviewers     SupportDocument[]   @relation("SupportDocumentReviewer")
+  supportFeedback              SupportFeedback[]   @relation("SupportFeedbackUser")
 
   @@index([referralCode])
   @@index([registrationIpAddress])
@@ -913,6 +916,7 @@ model SuperAdminSettings {
   defaultCurrency              String   @default("GHS")
   platformFee                  Float    @default(2.5)
   platformName                 String?  @default("Dhreamarket")
+  supportAiV2Enabled           Boolean  @default(false)
   platformTimezone             String   @default("Africa/Accra")
   regionalDefaults             Json     @default("{}")
   brandingPreferences          Json     @default("{}")
@@ -1001,6 +1005,56 @@ model SupportMessage {
   @@index([ticketId, createdAt])
   @@index([senderType])
   @@map("support_messages")
+}
+
+model SupportDocument {
+  id           String          @id @default(cuid())
+  slug         String          @unique
+  title        String
+  content      String
+  status       DocumentStatus  @default(DRAFT)
+  version      Int             @default(1)
+  intent       String
+  authorId     String?
+  reviewerId   String?
+  approvedAt   DateTime?
+  reviewDueAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  author       User?           @relation("SupportDocumentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  reviewer     User?           @relation("SupportDocumentReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  chunks       DocumentChunk[]
+
+  @@index([intent, status])
+  @@map("support_documents")
+}
+
+model DocumentChunk {
+  id          String   @id @default(cuid())
+  documentId  String
+  chunkIndex  Int
+  content     String
+  document    SupportDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([documentId])
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
+}
+
+model SupportFeedback {
+  id           String     @id @default(cuid())
+  conversationId String
+  traceId      String
+  helpful      Boolean
+  reason       String?
+  userId       String?
+  createdAt    DateTime   @default(now())
+  user         User?      @relation("SupportFeedbackUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([traceId])
+  @@map("support_feedback")
 }
 
 model HomepageSection {
@@ -2858,6 +2912,13 @@ enum SupportTicketPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum DocumentStatus {
+  DRAFT
+  APPROVED
+  PUBLISHED
+  RETIRED
 }
 
 enum HomepageSectionType {

@@ -39,6 +39,7 @@ yarn-error.log*
 
 # scratch / temp artifacts
 tsconfig.tsbuildinfo
+*.tsbuildinfo
 check*.js
 tmp_*.js
 q.py
