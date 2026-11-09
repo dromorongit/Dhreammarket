@@ -3,6 +3,7 @@ import { getPrisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 import { createAuditLog, captureBeforeAfter, type AuditAction } from '@/lib/audit-log'
 import { chunkSupportDocument } from '@/lib/support-documents/chunk'
+import { DocumentStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,7 @@ const ALLOWED_TARGETS: Record<string, string[]> = {
   RETIRED: [],
 }
 
-const ACTIVE_STATUSES: string[] = ['APPROVED', 'PUBLISHED']
+const ACTIVE_STATUSES: DocumentStatus[] = ['APPROVED', 'PUBLISHED']
 
 function transitionAction(target: string): AuditAction {
   switch (target) {
@@ -40,7 +41,7 @@ export async function POST(
 
   const { id } = params
   const body = (await request.json().catch(() => ({}))) as { status?: string }
-  const target: string = body.status ?? ''
+  const target: DocumentStatus = (body.status ?? '') as DocumentStatus
 
   const doc = await getPrisma().supportDocument.findUnique({ where: { id } })
   if (!doc) {
@@ -98,7 +99,7 @@ export async function POST(
       const updated = await tx.supportDocument.update({
         where: { id },
         data: {
-          status: target,
+          status: target as DocumentStatus,
           ...(ACTIVE_STATUSES.includes(target) ? { reviewerId: userId } : {}),
           ...(becomingActive ? { approvedAt: now } : {}),
           updatedAt: now,
