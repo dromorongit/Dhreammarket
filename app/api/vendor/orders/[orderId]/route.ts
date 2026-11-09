@@ -552,7 +552,15 @@ export async function PATCH(
       if ((statusChanged && newStatus === 'DELIVERED') || (fulfillmentStatusChanged && newFulfillmentStatus === 'DELIVERED')) {
         await stampOrderItems({ orderId, storeId, field: 'deliveredAt', now, tx })
       }
-      // COMPLETED alone stamps nothing (but may have already stamped deliveredAt via transition)
+      // Stamp completedAt when transitioning to COMPLETED via either path.
+      // Only set when completedAt is currently NULL (idempotent: never overwrite).
+      if (((statusChanged && newStatus === 'COMPLETED') || (fulfillmentStatusChanged && newFulfillmentStatus === 'COMPLETED')) && existingOrder.completedAt == null) {
+        await tx.order.update({
+          where: { id: orderId },
+          data: { completedAt: now },
+        })
+      }
+      // COMPLETED alone stamps nothing else (but may have already stamped deliveredAt via transition)
     })
 
     // The status of the online order changed, so what the vendor sees in the

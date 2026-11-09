@@ -539,6 +539,7 @@ model Order {
   channel               SaleChannel?
   paymentMethod         String?
   paymentConfirmedAt    DateTime?
+  completedAt           DateTime?
   receiptToken          String?                @unique
   vendorCustomerId      String?
   fulfillmentEvents     FulfillmentEvent[]
@@ -914,7 +915,7 @@ model SuperAdminSettings {
   newVendorApproval            Boolean  @default(true)
   autoApproveProducts          Boolean  @default(false)
   defaultCurrency              String   @default("GHS")
-  platformFee                  Float    @default(2.5)
+  platformFee                  Float    @default(1)
   platformName                 String?  @default("Dhreamarket")
   supportAiV2Enabled           Boolean  @default(false)
   platformTimezone             String   @default("Africa/Accra")

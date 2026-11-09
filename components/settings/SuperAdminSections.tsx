@@ -130,7 +130,7 @@ export default function SuperAdminSections({ platformName }: SuperAdminSectionsP
                 <Input
                   label=""
                   type="number"
-                  value={String(settings?.platformFee ?? 2.5)}
+                  value={String(settings?.platformFee ?? 1)}
                   onChange={(e) => updateSetting('platformFee', parseFloat(e.target.value) || 0)}
                   disabled={saving}
                 />
