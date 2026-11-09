@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
-import { getAvailableRegions } from '@/lib/shipping'
+import { GHANA_REGIONS } from '@/lib/cancellation-policy'
 import { PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import NeedHelpButton from '@/components/NeedHelpButton'
 import CompactSellerTrustSummary from '@/components/trust/CompactSellerTrustSummary'
@@ -655,8 +655,8 @@ export default function CheckoutContent() {
      }
    }, [processing, verificationTimeout])
 
-   const totalQuantity = contextCart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
-   const availableRegions = useMemo(() => getAvailableRegions(), [])
+    const totalQuantity = contextCart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+    const availableRegions = GHANA_REGIONS
 
    if (processing) {
      if (verificationTimeout || processingScreenTimeout) {

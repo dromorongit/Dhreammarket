@@ -91,3 +91,9 @@ export function isBusinessDayPayoutEnabled(): boolean {
   if (value === undefined || value === null) return false
   return value.trim().toLowerCase() === 'true'
 }
+
+export function isCancellationPolicyEnabled(): boolean {
+  const value = process.env.CANCELLATION_POLICY_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}

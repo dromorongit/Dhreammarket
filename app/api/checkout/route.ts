@@ -13,6 +13,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { getUnitPrice } from '@/lib/pricing'
 import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
+import { isValidGhanaRegion } from '@/lib/cancellation-policy'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -110,6 +111,14 @@ export async function POST(request: NextRequest) {
 
     // Parse customer and shipping info from request
     const { customerInfo, shippingInfo, idempotencyKey, useWalletBalance, walletAmount } = await request.json()
+
+    // Validate the delivery region against the canonical Ghana region list.
+    if (!isValidGhanaRegion(customerInfo?.region)) {
+      return NextResponse.json(
+        { error: 'Invalid region. Please select a valid Ghana region.' },
+        { status: 400 }
+      )
+    }
 
     // Calculate subtotal
     const itemsWithPrice = cart.items.map((item: any) => ({
