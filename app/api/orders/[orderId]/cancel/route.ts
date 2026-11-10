@@ -640,7 +640,7 @@ export async function PATCH(
             refundAmount: outcomeResult.refundAmount,
           }
         : {}),
-      ...(outcomeResult.walletRestored > 0 ? { walletRestored: outcomeResult.walletRestored } : {}),
+      ...((outcomeResult.walletRestored ?? 0) > 0 ? { walletRestored: outcomeResult.walletRestored ?? 0 } : {}),
     })
   } catch (error) {
     if (error instanceof CancelRejectedError) {
