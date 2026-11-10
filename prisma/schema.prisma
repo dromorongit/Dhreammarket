@@ -542,6 +542,8 @@ model Order {
   paymentMethod         String?
   paymentConfirmedAt    DateTime?
   completedAt           DateTime?
+  completionReminder1At DateTime?   @map("completion_reminder_1_at")
+  completionReminder2At DateTime?   @map("completion_reminder_2_at")
   receiptToken          String?                @unique
   vendorCustomerId      String?
   fulfillmentEvents     FulfillmentEvent[]

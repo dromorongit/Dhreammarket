@@ -109,3 +109,9 @@ export function isRegionEnforcementEnabled(): boolean {
   if (value === undefined || value === null) return false
   return value.trim().toLowerCase() === 'true'
 }
+
+export function isVendorCompletionReminderEnabled(): boolean {
+  const value = process.env.VENDOR_COMPLETION_REMINDER_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}
