@@ -109,13 +109,11 @@ export function makePorts(actor: Actor) {
       const doc = await getPrisma().supportDocument.findFirst({
         where: { status: { in: APPROVED_STATUSES }, intent },
         orderBy: { version: 'desc' },
-        include: { chunks: { orderBy: { chunkIndex: 'asc' }, take: 1 } },
       })
-      const chunk = doc?.chunks[0]
-      if (!chunk) {
+      if (!doc) {
         throw new Error(`no approved document for intent ${intent}`)
       }
-      return { text: `${chunk.content}\n\nSource: ${doc.title}` }
+      return { text: `${doc.content}\n\nSource: ${doc.title}` }
     },
   }
 

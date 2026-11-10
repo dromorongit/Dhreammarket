@@ -73,7 +73,7 @@ export async function computeStoreBalance(
     select.order = { select: { createdAt: true, completedAt: true } }
   }
 
-  const items = (await client.orderItem.findMany({ where, select } as any)) as any[]
+  const items = (await client.orderItem.findMany({ where, select: select } as any)) as any[]
 
   const candidateItems = items.filter((item) => {
     const order = (item as any).order

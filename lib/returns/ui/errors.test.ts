@@ -15,6 +15,7 @@ const REASONS: EligibilityReason[] = [
   'FULLY_REFUNDED',
   'OPEN_REQUEST_EXISTS',
   'INVALID_DELIVERY_DATE',
+  'INVALID_COMPLETION_DATE',
 ]
 
 describe('errors', () => {

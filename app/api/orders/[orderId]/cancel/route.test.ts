@@ -54,6 +54,7 @@ function baseOrder(): any {
     shipping: 0,
     tax: 0,
     createdAt: new Date('2026-01-01T10:00:00Z'),
+    paymentConfirmedAt: new Date('2026-01-01T10:00:00Z'),
     source: 'ONLINE',
     orderType: 'NORMAL',
     fulfillmentStatus: 'PENDING',
@@ -203,7 +204,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
   it('cancels free within 60 minutes and records a counter row', async () => {
     vi.setSystemTime(NOW)
     const { response, ctx } = await invoke(
-      { ...baseOrder(), createdAt: new Date('2026-01-01T11:01:00Z'), paymentStatus: 'PAID' },
+      { ...baseOrder(), createdAt: new Date('2026-01-01T11:01:00Z'), paymentConfirmedAt: new Date('2026-01-01T11:01:00Z'), paymentStatus: 'PAID' },
       baseUser(),
       new Date('2026-01-01T00:00:00Z'),
       true
@@ -223,7 +224,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
   it('is free at exactly 60 minutes', async () => {
     vi.setSystemTime(NOW)
     const { response } = await invoke(
-      { ...baseOrder(), createdAt: new Date('2026-01-01T11:00:00Z'), paymentStatus: 'PAID' },
+      { ...baseOrder(), createdAt: new Date('2026-01-01T11:00:00Z'), paymentConfirmedAt: new Date('2026-01-01T11:00:00Z'), paymentStatus: 'PAID' },
       baseUser(),
       new Date('2026-01-01T00:00:00Z'),
       true
@@ -237,7 +238,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
   it('charges GHS 5 at 61 minutes', async () => {
     vi.setSystemTime(NOW)
     const { response, ctx } = await invoke(
-      { ...baseOrder(), createdAt: new Date('2026-01-01T10:59:00Z'), paymentStatus: 'PAID' },
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:59:00Z'), paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'), paymentStatus: 'PAID' },
       baseUser(),
       new Date('2026-01-01T00:00:00Z'),
       true
@@ -256,6 +257,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
         ...baseOrder(),
         total: 3,
         createdAt: new Date('2026-01-01T10:59:00Z'),
+        paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'),
         paymentStatus: 'PAID',
         items: [{ ...baseOrder().items[0], price: 3 }],
       },
@@ -272,7 +274,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
   it('never puts the Paystack processing fee into refundAmount', async () => {
     vi.setSystemTime(NOW)
     const { response } = await invoke(
-      { ...baseOrder(), total: 100, createdAt: new Date('2026-01-01T10:59:00Z'), paymentStatus: 'PAID' },
+      { ...baseOrder(), total: 100, createdAt: new Date('2026-01-01T10:59:00Z'), paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'), paymentStatus: 'PAID' },
       baseUser(),
       new Date('2026-01-01T00:00:00Z'),
       true
@@ -414,7 +416,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
       { id: 'cc_c', createdAt: new Date('2026-01-01T10:00:00Z'), feeAmount: 0 },
     ]
     const ctx = buildMockPrisma(
-      { ...baseOrder(), createdAt: new Date('2026-01-01T11:00:00Z') },
+      { ...baseOrder(), createdAt: new Date('2026-01-01T11:00:00Z'), paymentConfirmedAt: new Date('2026-01-01T11:00:00Z') },
       baseUser(),
       new Date('2026-01-01T00:00:00Z')
     )

@@ -22,6 +22,7 @@ import {
   pesewasToGhs,
   isBlocked,
   isWithinFreeWindow,
+  computeCancellationQuote,
 } from '@/lib/cancellation-policy'
 
 export const dynamic = 'force-dynamic'
@@ -80,6 +81,7 @@ const ORDER_SELECT = {
   tax: true,
   userId: true,
   createdAt: true,
+  paymentConfirmedAt: true,
   source: true,
   orderType: true,
   fulfillmentStatus: true,
@@ -308,13 +310,15 @@ export async function PATCH(
       let free = false
 
       if (policyActive) {
-        free = isWithinFreeWindow(order.createdAt, now)
-        if (!free) {
-          const totalPesewas = toPesewas(order.total)
-          const feePesewas = Math.min(toPesewas(CANCELLATION_FEE_GHS), totalPesewas)
-          feeAmount = pesewasToGhs(feePesewas)
-          refundAmount = pesewasToGhs(totalPesewas - feePesewas)
-        }
+        const quote = computeCancellationQuote({
+          order,
+          payment: order.payment,
+          now,
+          policyActive: true,
+        })
+        free = quote.free
+        feeAmount = quote.feeAmount
+        refundAmount = quote.refundAmount
 
         // Every paid non-manual cancellation counts, including free ones.
         await tx.customerCancellation.create({

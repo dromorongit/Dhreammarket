@@ -117,6 +117,48 @@ describe('lib/support-ai-v2/ports', () => {
     expect(result.violations).toEqual([])
   })
 
+  it('the generator returns the full multi-chunk document content and the validator passes', async () => {
+    const chunk1 = 'Delivery times vary by seller location.'
+    const chunk2 = 'Standard delivery typically takes 3-7 business days.'
+    const doc = {
+      id: 'doc-2',
+      slug: 'delivery-info',
+      title: 'Delivery times',
+      content: chunk1 + '\n\n' + chunk2,
+      status: 'APPROVED',
+      version: 1,
+      intent: 'buyer.delivery_info',
+    }
+    const chunks = [
+      { id: 'c1', documentId: 'doc-2', chunkIndex: 0, content: chunk1, document: { title: 'Delivery times' } },
+      { id: 'c2', documentId: 'doc-2', chunkIndex: 1, content: chunk2, document: { title: 'Delivery times' } },
+    ]
+    mockGetPrisma.mockReturnValue(buildPrisma({ doc, chunks }))
+    const { generator, validator } = makePorts(actor)
+
+    const draft = await generator.generate(
+      'buyer.delivery_info',
+      '',
+      { usableChunkCount: 2, coverage: 1, topChunkScore: 0.9, conflicts: [], stale: [] },
+      actor,
+    )
+
+    expect(draft.text).toContain(chunk1)
+    expect(draft.text).toContain(chunk2)
+    expect(draft.text).toContain('Source: Delivery times')
+    expect(draft.text).not.toBe(chunk1)
+
+    const validation = await validator.validate(
+      draft,
+      'buyer.delivery_info',
+      { level: 'low', reasons: [] },
+      { usableChunkCount: 2, coverage: 1, topChunkScore: 0.9, conflicts: [], stale: [] },
+      actor,
+    )
+    expect(validation.ok).toBe(true)
+    expect(validation.violations).toEqual([])
+  })
+
   it('a DRAFT document never returns chunks', async () => {
     const draftDoc = {
       ...approvedDoc('Delivery times vary by seller location and shipping method.'),

@@ -92,3 +92,49 @@ export function isBlocked(blockedUntil: Date | null, now: Date): boolean {
 export function isWithinFreeWindow(orderCreatedAt: Date, now: Date): boolean {
   return now.getTime() <= orderCreatedAt.getTime() + FREE_WINDOW_MINUTES * 60 * 1000
 }
+
+export interface CancellationQuote {
+  policyActive: boolean
+  free: boolean
+  feeAmount: number
+  refundAmount: number
+}
+
+export function computeCancellationQuote({
+  order,
+  payment,
+  now,
+  policyActive,
+}: {
+  order: {
+    total: number
+    paymentStatus: string
+    source: string | null | undefined
+    createdAt: Date | string
+    paymentConfirmedAt: Date | string | null | undefined
+  }
+  payment: { status: string; createdAt: Date | string } | null | undefined
+  now: Date
+  policyActive: boolean
+}): CancellationQuote {
+  const manual = order.source === 'MANUAL'
+  const paid = order.paymentStatus === 'PAID'
+  const freeWindowStart = getFreeWindowStart(order, payment)
+
+  if (!policyActive || manual || !paid) {
+    return { policyActive, free: true, feeAmount: 0, refundAmount: order.total }
+  }
+
+  const free = isWithinFreeWindow(freeWindowStart, now)
+  let feeAmount = 0
+  let refundAmount = order.total
+
+  if (!free) {
+    const totalPesewas = toPesewas(order.total)
+    const feePesewas = Math.min(toPesewas(CANCELLATION_FEE_GHS), totalPesewas)
+    feeAmount = pesewasToGhs(feePesewas)
+    refundAmount = pesewasToGhs(totalPesewas - feePesewas)
+  }
+
+  return { policyActive, free, feeAmount, refundAmount }
+}

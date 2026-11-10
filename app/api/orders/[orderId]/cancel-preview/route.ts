@@ -2,15 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import {
-  CANCELLATION_FEE_GHS,
   BLOCK_THRESHOLD,
   BLOCK_WINDOW_DAYS,
-  toPesewas,
-  pesewasToGhs,
   isBlocked,
-  isWithinFreeWindow,
   isCancellationPolicyActiveNow,
-  getFreeWindowStart,
+  computeCancellationQuote,
 } from '@/lib/cancellation-policy'
 
 export const dynamic = 'force-dynamic'
@@ -105,31 +101,15 @@ export async function GET(
     // cancellation would trigger it when 3 are already in the window.
     const wouldTriggerBlock = !blocked && cancellationsInLast30Days >= BLOCK_THRESHOLD - 1
 
-    let free = false
-    let feeAmount = 0
-    let refundAmount = order.total
-
-    if (manual || !paid) {
-      // Manual and unpaid orders cancel with no fee under the policy too.
-      free = true
-      feeAmount = 0
-      refundAmount = order.total
-    } else if (!blocked) {
-      free = isWithinFreeWindow(getFreeWindowStart(order, order.payment), now)
-      if (!free) {
-        const totalPesewas = toPesewas(order.total)
-        const feePesewas = Math.min(toPesewas(CANCELLATION_FEE_GHS), totalPesewas)
-        feeAmount = pesewasToGhs(feePesewas)
-        refundAmount = pesewasToGhs(totalPesewas - feePesewas)
-      }
-    } else {
-      // Blocked: cancellation is refused, but report the would-be fee for
-      // transparency. The UI shows the blocked date instead of the cost.
-      const totalPesewas = toPesewas(order.total)
-      const feePesewas = Math.min(toPesewas(CANCELLATION_FEE_GHS), totalPesewas)
-      feeAmount = pesewasToGhs(feePesewas)
-      refundAmount = pesewasToGhs(totalPesewas - feePesewas)
-    }
+    const quote = computeCancellationQuote({
+      order,
+      payment: order.payment,
+      now,
+      policyActive: true,
+    })
+    const free = quote.free
+    const feeAmount = quote.feeAmount
+    const refundAmount = quote.refundAmount
 
     return NextResponse.json({
       policyActive: true,
