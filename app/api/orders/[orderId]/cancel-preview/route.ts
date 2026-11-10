@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
-import { isCancellationPolicyEnabled } from '@/lib/feature-flags'
 import {
   CANCELLATION_FEE_GHS,
   BLOCK_THRESHOLD,
@@ -10,6 +9,8 @@ import {
   pesewasToGhs,
   isBlocked,
   isWithinFreeWindow,
+  isCancellationPolicyActiveNow,
+  getFreeWindowStart,
 } from '@/lib/cancellation-policy'
 
 export const dynamic = 'force-dynamic'
@@ -40,7 +41,16 @@ export async function GET(
     // to other users' orders).
     const order = await getPrisma().order.findFirst({
       where: { id: orderId, userId: outcome.userId, deletedAt: null },
-      select: { id: true, total: true, paymentStatus: true, source: true, createdAt: true, orderType: true },
+      select: {
+        id: true,
+        total: true,
+        paymentStatus: true,
+        source: true,
+        createdAt: true,
+        orderType: true,
+        paymentConfirmedAt: true,
+        payment: { select: { status: true, createdAt: true } },
+      },
     })
 
     if (!order) {
@@ -69,8 +79,7 @@ export async function GET(
     const cutover = policy?.systemCutoverTimestamp
 
     const policyActive =
-      isCancellationPolicyEnabled() &&
-      Boolean(cutover) &&
+      isCancellationPolicyActiveNow(cutover) &&
       order.createdAt.getTime() >= new Date(cutover as Date).getTime()
 
     if (!policyActive) {
@@ -106,7 +115,7 @@ export async function GET(
       feeAmount = 0
       refundAmount = order.total
     } else if (!blocked) {
-      free = isWithinFreeWindow(order.createdAt, now)
+      free = isWithinFreeWindow(getFreeWindowStart(order, order.payment), now)
       if (!free) {
         const totalPesewas = toPesewas(order.total)
         const feePesewas = Math.min(toPesewas(CANCELLATION_FEE_GHS), totalPesewas)

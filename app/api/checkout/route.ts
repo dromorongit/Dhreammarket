@@ -13,7 +13,8 @@ import { rateLimit } from '@/lib/rate-limit'
 import { getUnitPrice } from '@/lib/pricing'
 import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
-import { isValidGhanaRegion } from '@/lib/cancellation-policy'
+import { isValidGhanaRegion, normaliseGhanaRegion } from '@/lib/cancellation-policy'
+import { isRegionEnforcementEnabled } from '@/lib/feature-flags'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -113,7 +114,17 @@ export async function POST(request: NextRequest) {
     const { customerInfo, shippingInfo, idempotencyKey, useWalletBalance, walletAmount } = await request.json()
 
     // Validate the delivery region against the canonical Ghana region list.
-    if (!isValidGhanaRegion(customerInfo?.region)) {
+    // Region enforcement is opt-in via REGION_ENFORCEMENT_ENABLED. When off,
+    // any region is accepted and canonical spellings are normalised. When on,
+    // unknown values are rejected with 400.
+    const regionRaw = customerInfo?.region
+    let regionValue: string | undefined =
+      typeof regionRaw === 'string' ? regionRaw : undefined
+    if (regionValue != null && regionValue.trim() !== '') {
+      const normalised = normaliseGhanaRegion(regionValue)
+      if (normalised) regionValue = normalised
+    }
+    if (isRegionEnforcementEnabled() && !isValidGhanaRegion(regionValue)) {
       return NextResponse.json(
         { error: 'Invalid region. Please select a valid Ghana region.' },
         { status: 400 }
@@ -281,7 +292,7 @@ export async function POST(request: NextRequest) {
      customerPhone: customerInfo?.phone || '',
      customerAddress: customerInfo?.address || '',
      customerCity: customerInfo?.city || '',
-     customerRegion: customerInfo?.region || '',
+      customerRegion: regionValue ?? '',
      // Store shipping info
      shippingZone: shippingInfo?.zone || 'Other Locations',
      shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,

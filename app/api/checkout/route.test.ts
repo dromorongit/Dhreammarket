@@ -113,28 +113,86 @@ describe('POST /api/checkout region validation', () => {
     ctx = c
   })
 
-  it('rejects an unknown region with 400 and does not create an order or call Paystack', async () => {
-    const response = await POST(requestWithToken({
-      customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region: 'Nowhere', city: 'Accra', address: '123 Street', notes: '' },
-      idempotencyKey: 'key_1',
-    }) as any)
-    expect(response.status).toBe(400)
-    expect(ctx.orderCreate).not.toHaveBeenCalled()
-    expect(mocks.initializePaystackPayment).not.toHaveBeenCalled()
+  it('rejects an unknown region with 400 when region enforcement is on', async () => {
+    process.env.REGION_ENFORCEMENT_ENABLED = 'true'
+    try {
+      const response = await POST(requestWithToken({
+        customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region: 'Nowhere', city: 'Accra', address: '123 Street', notes: '' },
+        idempotencyKey: 'key_1',
+      }) as any)
+      expect(response.status).toBe(400)
+      expect(ctx.orderCreate).not.toHaveBeenCalled()
+      expect(mocks.initializePaystackPayment).not.toHaveBeenCalled()
+    } finally {
+      delete process.env.REGION_ENFORCEMENT_ENABLED
+    }
   })
 
   it('accepts each of the 16 Ghana regions and stores the canonical name', async () => {
-    for (const region of GHANA_REGIONS) {
+    process.env.REGION_ENFORCEMENT_ENABLED = 'true'
+    try {
+      for (const region of GHANA_REGIONS) {
+        ctx.orderCreate.mockClear()
+        mocks.initializePaystackPayment.mockClear()
+        const response = await POST(requestWithToken({
+          customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region, city: 'Accra', address: '123 Street', notes: '' },
+          idempotencyKey: `key_${region}`,
+        }) as any)
+        expect(response.status).toBe(200)
+        expect(ctx.orderCreate).toHaveBeenCalledTimes(1)
+        expect(ctx.orderCreate.mock.calls[0][0].data.customerRegion).toBe(region)
+        expect(mocks.initializePaystackPayment).toHaveBeenCalledTimes(1)
+      }
+    } finally {
+      delete process.env.REGION_ENFORCEMENT_ENABLED
+    }
+  })
+
+  it('flag off: accepts any region (legacy values) without 400', async () => {
+    delete process.env.REGION_ENFORCEMENT_ENABLED
+    const response = await POST(requestWithToken({
+      customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region: 'Nowhere', city: 'Accra', address: '123 Street', notes: '' },
+      idempotencyKey: 'key_legacy',
+    }) as any)
+    expect(response.status).toBe(200)
+    expect(ctx.orderCreate).toHaveBeenCalledTimes(1)
+    expect(ctx.orderCreate.mock.calls[0][0].data.customerRegion).toBe('Nowhere')
+    expect(mocks.initializePaystackPayment).toHaveBeenCalledTimes(1)
+  })
+
+  it('flag off: normalises legacy spellings of the 16 regions', async () => {
+    delete process.env.REGION_ENFORCEMENT_ENABLED
+    const cases: Array<[string, string]> = [
+      ['greater accra region', 'Greater Accra'],
+      ['  ASHANTI  ', 'Ashanti'],
+      ['volta region', 'Volta'],
+      ['WESTERN NORTH', 'Western North'],
+    ]
+    for (const [input, expected] of cases) {
       ctx.orderCreate.mockClear()
       mocks.initializePaystackPayment.mockClear()
       const response = await POST(requestWithToken({
-        customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region, city: 'Accra', address: '123 Street', notes: '' },
-        idempotencyKey: `key_${region}`,
+        customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region: input, city: 'Accra', address: '123 Street', notes: '' },
+        idempotencyKey: `key_norm_${input}`,
       }) as any)
       expect(response.status).toBe(200)
       expect(ctx.orderCreate).toHaveBeenCalledTimes(1)
-      expect(ctx.orderCreate.mock.calls[0][0].data.customerRegion).toBe(region)
+      expect(ctx.orderCreate.mock.calls[0][0].data.customerRegion).toBe(expected)
       expect(mocks.initializePaystackPayment).toHaveBeenCalledTimes(1)
+    }
+  })
+
+  it('flag on: rejects unknown values with 400', async () => {
+    process.env.REGION_ENFORCEMENT_ENABLED = 'true'
+    try {
+      const response = await POST(requestWithToken({
+        customerInfo: { firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.test', phone: '0550000000', region: 'Nowhere', city: 'Accra', address: '123 Street', notes: '' },
+        idempotencyKey: 'key_on',
+      }) as any)
+      expect(response.status).toBe(400)
+      expect(ctx.orderCreate).not.toHaveBeenCalled()
+    } finally {
+      delete process.env.REGION_ENFORCEMENT_ENABLED
     }
   })
 })

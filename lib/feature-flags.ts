@@ -97,3 +97,9 @@ export function isCancellationPolicyEnabled(): boolean {
   if (value === undefined || value === null) return false
   return value.trim().toLowerCase() === 'true'
 }
+
+export function isRegionEnforcementEnabled(): boolean {
+  const value = process.env.REGION_ENFORCEMENT_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}

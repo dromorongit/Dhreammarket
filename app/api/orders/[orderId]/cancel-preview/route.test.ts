@@ -162,4 +162,86 @@ describe('GET /api/orders/[orderId]/cancel-preview', () => {
     expect(json.cancellationsInLast30Days).toBe(3)
     expect(json.wouldTriggerBlock).toBe(true)
   })
+
+  it('59 minutes from payment confirmation: free', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    const ctx = buildMockPrisma(
+      {
+        ...baseOrder(),
+        createdAt: new Date('2026-01-01T10:00:00Z'),
+        paymentConfirmedAt: new Date('2026-01-01T11:01:00Z'),
+        payment: { status: 'PAID', createdAt: new Date('2026-01-01T11:01:00Z') },
+      },
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx as any)
+    const response = await GET(requestWithToken(), { params: { orderId: 'order_1' } } as any)
+    const json = await response.json()
+    expect(json.policyActive).toBe(true)
+    expect(json.free).toBe(true)
+    expect(json.feeAmount).toBe(0)
+    expect(json.refundAmount).toBe(100)
+  })
+
+  it('61 minutes from payment confirmation: GHS 5 fee', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    const ctx = buildMockPrisma(
+      {
+        ...baseOrder(),
+        createdAt: new Date('2026-01-01T10:00:00Z'),
+        paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'),
+        payment: { status: 'PAID', createdAt: new Date('2026-01-01T10:59:00Z') },
+      },
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx as any)
+    const response = await GET(requestWithToken(), { params: { orderId: 'order_1' } } as any)
+    const json = await response.json()
+    expect(json.policyActive).toBe(true)
+    expect(json.free).toBe(false)
+    expect(json.feeAmount).toBe(5)
+    expect(json.refundAmount).toBe(95)
+  })
+
+  it('order created 3 hours before it was paid: still free', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    const ctx = buildMockPrisma(
+      {
+        ...baseOrder(),
+        createdAt: new Date('2026-01-01T09:00:00Z'),
+        paymentConfirmedAt: new Date('2026-01-01T11:01:00Z'),
+        payment: { status: 'PAID', createdAt: new Date('2026-01-01T11:01:00Z') },
+      },
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx as any)
+    const response = await GET(requestWithToken(), { params: { orderId: 'order_1' } } as any)
+    const json = await response.json()
+    expect(json.policyActive).toBe(true)
+    expect(json.free).toBe(true)
+    expect(json.refundAmount).toBe(100)
+  })
+
+  it('fallback: paid order with no payment confirmation timestamp uses order.createdAt', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    const ctx = buildMockPrisma(
+      {
+        ...baseOrder(),
+        createdAt: new Date('2026-01-01T11:01:00Z'),
+        paymentConfirmedAt: null,
+        payment: null,
+      },
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx as any)
+    const response = await GET(requestWithToken(), { params: { orderId: 'order_1' } } as any)
+    const json = await response.json()
+    expect(json.policyActive).toBe(true)
+    expect(json.free).toBe(true)
+    expect(json.refundAmount).toBe(100)
+  })
 })
