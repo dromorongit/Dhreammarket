@@ -11,7 +11,7 @@ import { reverseInfluencerOrderCashback } from '@/lib/influencer/order-cashback'
 import { notifySuperAdminsRefundRequested } from '@/lib/refunds/admin-notify'
 import { isManualOrder } from '@/lib/order-source'
 import { invalidateSalesSummaryCaches } from '@/lib/sales-summary-cache'
-import { isCancellationPolicyEnabled } from '@/lib/feature-flags'
+import { isCancellationPolicyEnabled, isWalletRestoreOnCancelEnabled } from '@/lib/feature-flags'
 import {
   CANCELLATION_FEE_GHS,
   FREE_WINDOW_MINUTES,
@@ -355,6 +355,49 @@ export async function PATCH(
         }
       }
 
+      // Wallet credit restore on paid cancellation (flagged, idempotent).
+      // Restores the wallet portion, minus any part of the cancellation fee
+      // the cash portion cannot cover. A reversal RewardRedemption is keyed by
+      // orderId so a second cancel cannot credit twice.
+      let walletRestored = 0
+      const walletAmountApplied = Number(order.walletAmountApplied ?? 0)
+      if (
+        isWalletRestoreOnCancelEnabled() &&
+        !manual &&
+        order.paymentStatus === 'PAID' &&
+        walletAmountApplied > 0
+      ) {
+        const alreadyReversed = await tx.rewardRedemption.findFirst({
+          where: { orderId: order.id, type: 'MIXED', description: { contains: 'Wallet credit restored' } },
+        })
+        if (!alreadyReversed) {
+          const cashPortion = Math.max(0, Number(order.total) - walletAmountApplied)
+          // Fee applies only when the cancellation policy is active and not free.
+          const fee = policyActive && !free ? feeAmount : 0
+          const feeFromCash = Math.min(fee, cashPortion)
+          const feeFromWallet = Math.max(0, fee - feeFromCash)
+          walletRestored = Math.max(0, walletAmountApplied - feeFromWallet)
+
+          if (walletRestored > 0) {
+            await tx.customerLoyalty.update({
+              where: { userId: payload.userId },
+              data: { walletBalance: { increment: walletRestored } },
+            })
+          }
+
+          await tx.rewardRedemption.create({
+            data: {
+              userId: payload.userId,
+              type: 'MIXED',
+              amount: walletRestored,
+              orderId: order.id,
+              description: `Wallet credit restored on cancelled order #${order.id.slice(0, 8)}`,
+              status: 'COMPLETED',
+            },
+          })
+        }
+      }
+
       return {
         count: result.count,
         order,
@@ -365,6 +408,7 @@ export async function PATCH(
         free,
         feeAmount,
         refundAmount,
+        walletRestored,
       }
     })
 
@@ -490,10 +534,17 @@ export async function PATCH(
       // super admin's approval, and no RefundStatus value means "requested".
       // The SUPER_ADMIN approves by issuing the real refund from the admin
       // panel (POST /api/admin/refunds -> createRefund).
-      const policyData = (outcomeResult as { policyActive?: boolean; free?: boolean; feeAmount?: number; refundAmount?: number })
+      const policyData = (outcomeResult as {
+        policyActive?: boolean
+        free?: boolean
+        feeAmount?: number
+        refundAmount?: number
+        walletRestored?: number
+      })
       const eventData: Record<string, unknown> = {
         refundAmount: policyData.refundAmount,
         feeAmount: policyData.feeAmount,
+        walletRestored: policyData.walletRestored,
         note: 'Paystack processing fee is not refunded',
       }
       recordFulfillmentEvent(orderId, 'REFUND_REQUESTED', payload.userId, eventData).catch(
@@ -512,6 +563,7 @@ export async function PATCH(
           walletAssisted: (order.walletAmountApplied ?? 0) > 0,
           reason,
           feeAmount: policyData.feeAmount,
+          walletRestored: policyData.walletRestored,
           refundAmount: policyData.refundAmount,
         },
         ipAddress:
@@ -535,6 +587,8 @@ export async function PATCH(
         total: order.total,
         storeName: storeNames.length === 1 ? storeNames[0] : null,
         source: 'CUSTOMER_CANCEL',
+        feeAmount: policyData.feeAmount,
+        walletRestored: policyData.walletRestored,
       }).catch(err =>
         console.error('Failed to notify super admins about the refund request:', err)
       )
@@ -586,6 +640,7 @@ export async function PATCH(
             refundAmount: outcomeResult.refundAmount,
           }
         : {}),
+      ...(outcomeResult.walletRestored > 0 ? { walletRestored: outcomeResult.walletRestored } : {}),
     })
   } catch (error) {
     if (error instanceof CancelRejectedError) {

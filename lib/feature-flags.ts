@@ -98,6 +98,12 @@ export function isCancellationPolicyEnabled(): boolean {
   return value.trim().toLowerCase() === 'true'
 }
 
+export function isWalletRestoreOnCancelEnabled(): boolean {
+  const value = process.env.WALLET_RESTORE_ON_CANCEL_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}
+
 export function isRegionEnforcementEnabled(): boolean {
   const value = process.env.REGION_ENFORCEMENT_ENABLED
   if (value === undefined || value === null) return false

@@ -8,6 +8,7 @@ import {
   isCancellationPolicyActiveNow,
   computeCancellationQuote,
 } from '@/lib/cancellation-policy'
+import { isWalletRestoreOnCancelEnabled } from '@/lib/feature-flags'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,6 +46,7 @@ export async function GET(
         createdAt: true,
         orderType: true,
         paymentConfirmedAt: true,
+        walletAmountApplied: true,
         payment: { select: { status: true, createdAt: true } },
       },
     })
@@ -111,11 +113,27 @@ export async function GET(
     const feeAmount = quote.feeAmount
     const refundAmount = quote.refundAmount
 
+    const walletAmountApplied = Number(order.walletAmountApplied ?? 0)
+    let walletRestored = 0
+    if (
+      isWalletRestoreOnCancelEnabled() &&
+      !manual &&
+      paid &&
+      walletAmountApplied > 0
+    ) {
+      const cashPortion = Math.max(0, Number(order.total) - walletAmountApplied)
+      const fee = policyActive && !free ? feeAmount : 0
+      const feeFromCash = Math.min(fee, cashPortion)
+      const feeFromWallet = Math.max(0, fee - feeFromCash)
+      walletRestored = Math.max(0, walletAmountApplied - feeFromWallet)
+    }
+
     return NextResponse.json({
       policyActive: true,
       free,
       feeAmount,
       refundAmount,
+      walletRestored,
       cancellationsInLast30Days,
       blockedUntil: blockedUntil ? blockedUntil.toISOString() : null,
       wouldTriggerBlock,

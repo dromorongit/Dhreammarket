@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   notifySuperAdminsRefundRequested: vi.fn(),
   invalidateSalesSummaryCaches: vi.fn(),
   isCancellationPolicyEnabled: vi.fn(),
+  isWalletRestoreOnCancelEnabled: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn() }))
@@ -34,6 +35,7 @@ vi.mock('@/lib/sales-summary-cache', () => ({
 }))
 vi.mock('@/lib/feature-flags', () => ({
   isCancellationPolicyEnabled: mocks.isCancellationPolicyEnabled,
+  isWalletRestoreOnCancelEnabled: mocks.isWalletRestoreOnCancelEnabled,
 }))
 
 import { getPrisma } from '@/lib/prisma'
@@ -136,6 +138,19 @@ function buildMockPrisma(order: any, user: any, cutover: Date | null = null) {
           }),
           count: vi.fn(async () => txCancellations.length),
         },
+        customerLoyalty: {
+          update: vi.fn(async (args: any) => {
+            updateCalls.push(args)
+            return { id: 'loyalty_1', ...args.data }
+          }),
+        },
+        rewardRedemption: {
+          findFirst: vi.fn(async () => null),
+          create: vi.fn(async (args: any) => {
+            createCalls.push(args)
+            return { id: 'rr_1', ...args.data }
+          }),
+        },
       }
       return callback(tx)
     }),
@@ -195,6 +210,7 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     mocks.createNotification.mockResolvedValue(undefined)
     mocks.notifySuperAdminsRefundRequested.mockResolvedValue(undefined)
     mocks.invalidateSalesSummaryCaches.mockResolvedValue(undefined)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(false)
   })
 
   afterEach(() => {
@@ -458,5 +474,142 @@ describe('PATCH /api/orders/[orderId]/cancel', () => {
     expect(json.refundRequested).toBe(true)
     expect(ctx.createCalls).toHaveLength(0)
     expect(ctx.updateCalls).toHaveLength(0)
+  })
+
+  it('fully wallet-paid order restores wallet minus the GHS 5 fee when policy applies', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(95)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(95)
+    const reversal = ctx.createCalls.find(
+      (c: any) => c.data.orderId === 'order_1' && String(c.data.description).includes('Wallet credit restored')
+    )
+    expect(reversal.data.amount).toBe(95)
+    expect(reversal.data.status).toBe('COMPLETED')
+  })
+
+  it('fully wallet-paid pre-cutover order restores the full wallet amount with no fee', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2025-12-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(100)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(100)
+  })
+
+  it('part-wallet paid order restores wallet portion with the fee taken from cash', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 30 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(30)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(30)
+  })
+
+  it('cash below fee deducts the remainder from the wallet restore, never below zero', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), total: 100, createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 97 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(95)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(95)
+  })
+
+  it('double cancel credits wallet once (idempotent)', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const ctx = buildMockPrisma(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    ctx.setUpdateManyResults([{ count: 1 }, { count: 0 }])
+    const r1 = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(r1.status).toBe(200)
+    const r2 = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(r2.status).toBe(400)
+    const loyaltyUpdates = ctx.updateCalls.filter((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdates).toHaveLength(1)
+    expect(loyaltyUpdates[0].data.walletBalance.increment).toBe(95)
+    const reversals = ctx.createCalls.filter(
+      (c: any) => String(c.data.description).includes('Wallet credit restored')
+    )
+    expect(reversals).toHaveLength(1)
+  })
+
+  it('unpaid order: no wallet change even with the flag on', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), paymentStatus: 'PENDING', walletAmountApplied: 100 },
+      baseUser(),
+      null,
+      false
+    )
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls.filter((c: any) => c.data.walletBalance)).toHaveLength(0)
+    expect(
+      ctx.createCalls.filter((c: any) => String(c.data.description).includes('Wallet credit restored'))
+    ).toHaveLength(0)
+  })
+
+  it('manual order: no wallet change even with the flag on', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), source: 'MANUAL', paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      null,
+      false
+    )
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls.filter((c: any) => c.data.walletBalance)).toHaveLength(0)
+  })
+
+  it('flag off: no wallet change even for a wallet-paid order', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls.filter((c: any) => c.data.walletBalance)).toHaveLength(0)
+    expect(
+      ctx.createCalls.filter((c: any) => String(c.data.description).includes('Wallet credit restored'))
+    ).toHaveLength(0)
   })
 })

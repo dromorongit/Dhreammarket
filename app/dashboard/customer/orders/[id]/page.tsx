@@ -176,6 +176,7 @@ export default function CustomerOrderDetailPage() {
     free: boolean
     feeAmount: number
     refundAmount: number
+    walletRestored: number
     cancellationsInLast30Days: number
     blockedUntil: string | null
     wouldTriggerBlock: boolean
@@ -970,6 +971,11 @@ export default function CustomerOrderDetailPage() {
                   Please provide a reason for cancelling this order. Orders can only be cancelled before they are shipped.
                   {order.paymentStatus === 'PAID' && ' A refund request will be created automatically and is pending review by our team.'}
                 </p>
+                {cancelPreview && cancelPreview.walletRestored > 0 && (
+                  <p className="text-sm text-gray-600 mb-4">
+                    The wallet credit you used will be returned to your wallet.
+                  </p>
+                )}
                 {cancelPreview && cancelPreview.policyActive && (
                   <p className="text-sm text-gray-600 mb-4">
                     {cancelPreview.blockedUntil

@@ -4,12 +4,14 @@ import { NextRequest } from 'next/server'
 const mocks = vi.hoisted(() => ({
   verifyToken: vi.fn(),
   isCancellationPolicyEnabled: vi.fn(),
+  isWalletRestoreOnCancelEnabled: vi.fn(),
 }))
 
 vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn() }))
 vi.mock('@/lib/auth-middleware', () => ({ verifyToken: mocks.verifyToken }))
 vi.mock('@/lib/feature-flags', () => ({
   isCancellationPolicyEnabled: mocks.isCancellationPolicyEnabled,
+  isWalletRestoreOnCancelEnabled: mocks.isWalletRestoreOnCancelEnabled,
 }))
 
 import { getPrisma } from '@/lib/prisma'
@@ -58,6 +60,7 @@ describe('GET /api/orders/[orderId]/cancel-preview', () => {
       role: 'CUSTOMER',
       sessionId: 'sess_1',
     })
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(false)
   })
 
   afterEach(() => {
