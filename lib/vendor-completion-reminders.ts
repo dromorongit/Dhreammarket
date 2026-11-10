@@ -52,16 +52,14 @@ export async function runVendorCompletionReminders(now: Date = new Date()) {
 
   // Order has no order-level deliveredAt; delivery is stamped per item
   // (lib/order-delivery-stamps.ts), so the order's delivery time is the
-  // latest deliveredAt among its items.
+  // latest deliveredAt among its items. Select only the order fields the run
+  // actually reads so the cost-bearing order row is not returned whole;
+  // items are loaded through a nested select inside the same query.
   const orders = await prisma.order.findMany({
-    where: {
-      deletedAt: null,
-      status: 'DELIVERED',
-      completedAt: null,
-      createdAt: { gte: cutover },
-      OR: [{ completionReminder1At: null }, { completionReminder2At: null }],
-    },
-    include: {
+    select: {
+      id: true,
+      completionReminder1At: true,
+      completionReminder2At: true,
       items: {
         where: { deliveredAt: { not: null } },
         select: {
@@ -69,6 +67,13 @@ export async function runVendorCompletionReminders(now: Date = new Date()) {
           product: { select: { store: { select: { userId: true } } } },
         },
       },
+    },
+    where: {
+      deletedAt: null,
+      status: 'DELIVERED',
+      completedAt: null,
+      createdAt: { gte: cutover },
+      OR: [{ completionReminder1At: null }, { completionReminder2At: null }],
     },
     take: BATCH_SIZE,
     orderBy: { createdAt: 'asc' },
