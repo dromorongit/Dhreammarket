@@ -115,3 +115,15 @@ export function isVendorCompletionReminderEnabled(): boolean {
   if (value === undefined || value === null) return false
   return value.trim().toLowerCase() === 'true'
 }
+
+export function isBusinessDayReturnReviewEnabled(): boolean {
+  const value = process.env.BUSINESS_DAY_RETURN_REVIEW_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}
+
+export function isRefundAlertEnabled(): boolean {
+  const value = process.env.REFUND_ALERT_ENABLED
+  if (value === undefined || value === null) return false
+  return value.trim().toLowerCase() === 'true'
+}

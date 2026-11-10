@@ -8,10 +8,17 @@ import { checkReturnEligibility } from './eligibility'
 import { parseAmountToPesewas } from './ui/amount'
 import { canTransition } from './state-machine'
 import { createReturnError } from './types'
-import { isReturnsFlowEnabled, isLocationReturnWindowEnabled } from '@/lib/feature-flags'
+import {
+  isReturnsFlowEnabled,
+  isLocationReturnWindowEnabled,
+  isBusinessDayReturnReviewEnabled,
+} from '@/lib/feature-flags'
 import { getReturnWindowDays, getVendorResponseHours } from '@/lib/feature-flags'
 import { getPolicy } from '@/lib/delivery'
 import { windowDaysForRegion, LOCATION_WINDOW_RULE_VERSION } from './location-window'
+import { addBusinessDays } from '@/lib/ledger/business-days'
+import { getPrisma } from '@/lib/prisma'
+import { sendEmail } from '@/lib/email'
 
 const OPEN_STATUSES = ['PENDING', 'ITEM_IN_TRANSIT', 'ITEM_RECEIVED', 'AWAITING_REFUND', 'ESCALATED']
 
@@ -96,7 +103,7 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
               refunds: { select: { amount: true, status: true, orderItemId: true } },
             },
           },
-      product: { select: { id: true, isReturnable: true } },
+      product: { select: { id: true, isReturnable: true, store: { select: { userId: true, name: true } } } },
       returnRequests: { select: { id: true, status: true } },
     },
   })
@@ -106,23 +113,19 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   const product = item.product
 
   const locationEnabled = isLocationReturnWindowEnabled()
-  let postCutover = false
-  let cutover: Date | string | null = null
+  const policy = await getPolicy()
+  const cutover = policy.systemCutoverTimestamp
+  const postCutover =
+    cutover != null &&
+    order.createdAt != null &&
+    new Date(order.createdAt).getTime() >= new Date(cutover).getTime()
   let windowDays = input.windowDays ?? getReturnWindowDays()
   let regionMatched: string | null = null
   let ruleVersion: string | null = null
-  if (locationEnabled) {
-    const policy = await getPolicy()
-    cutover = policy.systemCutoverTimestamp
-    postCutover =
-      cutover != null &&
-      order.createdAt != null &&
-      new Date(order.createdAt).getTime() >= new Date(cutover).getTime()
-    if (postCutover) {
-      windowDays = windowDaysForRegion(order)
-      regionMatched = order.customerRegion ?? null
-      ruleVersion = LOCATION_WINDOW_RULE_VERSION
-    }
+  if (locationEnabled && postCutover) {
+    windowDays = windowDaysForRegion(order)
+    regionMatched = order.customerRegion ?? null
+    ruleVersion = LOCATION_WINDOW_RULE_VERSION
   }
 
   const existingRequests = await client.returnRequest.findMany({
@@ -170,10 +173,16 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   if (toPesewas(requestedAmount) > toPesewas(elig.maxRefundAmount)) throw createReturnError(400, 'Requested amount exceeds max refundable', 'ITEM_CAP_EXCEEDED')
 
   const vendorResponseHours = input.vendorResponseHours ?? getVendorResponseHours()
-  const escalationDeadline = new Date(now.getTime() + vendorResponseHours * 60 * 60 * 1000)
+  let escalationDeadline = new Date(now.getTime() + vendorResponseHours * 60 * 60 * 1000)
+  let businessDayRule = false
+  if (isBusinessDayReturnReviewEnabled() && postCutover) {
+    const holidays = Array.isArray(policy.holidayList) ? policy.holidayList : []
+    escalationDeadline = addBusinessDays(now, 1, holidays)
+    businessDayRule = true
+  }
 
   const windowStart = postCutover ? (order.completedAt ? new Date(order.completedAt) : null) : (item.deliveredAt ? new Date(item.deliveredAt) : null)
-  const policySnapshot = {
+  const policySnapshot: any = {
     windowDays,
     vendorResponseHours,
     deliveredAt: item.deliveredAt,
@@ -182,6 +191,12 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
     ruleVersion,
     requestedAmount: requestedAmount.toFixed(2),
     maxRefundAmount: Number(elig.maxRefundAmount.toString()).toFixed(2),
+  }
+
+  if (businessDayRule) {
+    policySnapshot.businessDayRule = true
+    policySnapshot.businessDays = 1
+    policySnapshot.returnReviewRuleVersion = 'business-day-1'
   }
 
   const result = await client.$transaction(async (tx: any) => {
@@ -244,10 +259,70 @@ export async function openReturn(client: any, input: OpenReturnInput, nowArg?: a
   } catch { /* ignore */ }
 
   try {
-    // notify vendor? need store owner; skip if not available
+    const storeOwnerId = item.product?.store?.userId
+    if (storeOwnerId) {
+      await notifyStoreOwnerOfReturnOpened({
+        orderRef: `#${order.id.slice(-8).toUpperCase()}`,
+        storeOwnerId,
+        businessDayRule,
+      })
+    }
   } catch { /* ignore */ }
 
   return result
+}
+
+const RETURN_REQUESTED_VENDOR_BODY =
+  'A customer has requested a return on order {orderNumber}. Open your returns page to approve or reject it.'
+const RETURN_REQUESTED_BUSINESS_DAY_APPEND = ' Please respond within 1 business day.'
+
+type NotifyStoreOwnerOfReturnOpenedInput = {
+  orderRef: string
+  storeOwnerId: string
+  businessDayRule: boolean
+}
+
+async function notifyStoreOwnerOfReturnOpened(input: NotifyStoreOwnerOfReturnOpenedInput): Promise<void> {
+  let message = RETURN_REQUESTED_VENDOR_BODY.replace('{orderNumber}', input.orderRef)
+  if (input.businessDayRule) message += RETURN_REQUESTED_BUSINESS_DAY_APPEND
+
+  let owner: any
+  try {
+    owner = await getPrisma().user.findUnique({
+      where: { id: input.storeOwnerId },
+      select: { id: true, email: true, profile: { select: { emailNotifications: true } } },
+    })
+  } catch {
+    return
+  }
+  if (!owner) return
+
+  // In-app notification is always sent: it does not apply the notifyNewOrders
+  // opt-out. A failure must never fail opening the return.
+  try {
+    await getPrisma().notification.create({
+      data: {
+        userId: owner.id,
+        type: 'ORDER_STATUS_UPDATED',
+        title: 'Return requested',
+        message,
+      },
+    })
+  } catch { /* ignore */ }
+
+  // Email respects the email opt-out (profile.emailNotifications, default on).
+  const emailEnabled = owner.profile?.emailNotifications ?? true
+  if (owner.email && emailEnabled) {
+    try {
+      await sendEmail({
+        to: owner.email,
+        subject: `Return requested - Order ${input.orderRef}`,
+        htmlContent: `<p>${message}</p>`,
+        textContent: message,
+        emailType: 'RETURN_REQUESTED',
+      })
+    } catch { /* ignore */ }
+  }
 }
 
 function requestedAmountFromSnapshot(snapshot: any): number | null {

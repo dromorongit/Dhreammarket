@@ -8,6 +8,11 @@ export interface StatusCopy {
   nextStep: string
 }
 
+export interface ReturnReviewContext {
+  businessDayRule?: boolean
+  escalationDeadline?: Date | string | null
+}
+
 export const STATUS_COPY: Record<ReturnStatus, StatusCopy> = {
   PENDING: {
     label: 'Waiting for the seller',
@@ -69,7 +74,15 @@ export function statusToneToBadgeVariant(tone: StatusCopy['tone']) {
   }
 }
 
-export function getStatusCopy(status: string): StatusCopy {
+export function getStatusCopy(status: string, ctx?: ReturnReviewContext): StatusCopy {
+  if (status === 'PENDING' && ctx?.businessDayRule) {
+    return {
+      label: 'Waiting for the seller',
+      description: 'The seller has 1 business day to respond to your return request.',
+      tone: 'info',
+      nextStep: 'The seller will review your request and respond. If they do not respond in time, Dhream reviews it.',
+    }
+  }
   const known = status as ReturnStatus
   if (known in STATUS_COPY) return STATUS_COPY[known]
   return {

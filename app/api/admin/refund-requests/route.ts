@@ -36,6 +36,13 @@ type RefundRequestItem = {
    */
   refundedPesewas: number
   /**
+   * The recorded cancellation refundAmount (CustomerCancellation.refundAmount),
+   * in GHS. Read-only: this is what was recorded when the cancellation refund
+   * request was created and is not changed by this screen. Null when the
+   * cancellation was not recorded through the cancellation policy.
+   */
+  recordedRefundAmount: number | null
+  /**
    * The order's charged amount in integer pesewas. The comparison
    * "refundedPesewas >= paymentPesewas" is how a reader tells whether the
    * refunds cover the payment, without ever trusting floating-point money.
@@ -144,6 +151,7 @@ export async function GET(request: NextRequest) {
           select: { status: true, createdAt: true, amount: true },
           orderBy: { createdAt: 'desc' },
         },
+        customerCancellations: { select: { refundAmount: true, createdAt: true } },
       },
       orderBy: [{ updatedAt: 'asc' }, { id: 'asc' }],
       take: MAX_CANDIDATES,
@@ -231,6 +239,10 @@ export async function GET(request: NextRequest) {
 
         const paymentPesewas = toPesewas(order.payment?.amount ?? order.total)
         const refundedPesewas = refundedPesewasByOrder.get(order.id) ?? 0
+        const recordedRefundAmount =
+          order.customerCancellations?.[0]?.refundAmount == null
+            ? null
+            : Number(order.customerCancellations[0].refundAmount.toString())
 
         return {
           orderId: order.id,
@@ -239,6 +251,7 @@ export async function GET(request: NextRequest) {
           requestSource: requestSourceByOrder.get(order.id) ?? 'NONE_RECORDED',
           total: order.total,
           refundedPesewas,
+          recordedRefundAmount,
           paymentPesewas,
           currency: order.payment?.currency ?? null,
           walletAssisted: (order.walletAmountApplied ?? 0) > 0,

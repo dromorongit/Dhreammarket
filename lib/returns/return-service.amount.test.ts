@@ -16,6 +16,9 @@ vi.mock('@/lib/audit-log', () => ({ createAuditLog: createAuditLogMock }))
 const createNotificationMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 vi.mock('@/lib/notifications', () => ({ createNotification: createNotificationMock }))
 
+const getPolicyMock = vi.hoisted(() => vi.fn().mockResolvedValue({ systemCutoverTimestamp: null } as any))
+vi.mock('@/lib/delivery', () => ({ getPolicy: getPolicyMock }))
+
 const NOW = new Date('2026-10-25T12:00:00.000Z')
 const CUSTOMER = 'cust_1'
 const VENDOR = 'vend_1'

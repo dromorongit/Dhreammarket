@@ -37,4 +37,24 @@ describe('status-copy', () => {
     expect(copy.label).toBe('Return request')
     expect(copy.tone).toBe('neutral')
   })
+
+  describe('business day return review', () => {
+    it('tells the customer the seller has 1 business day when the rule applies', () => {
+      const copy = getStatusCopy('PENDING', {
+        businessDayRule: true,
+        escalationDeadline: new Date('2026-10-27T17:00:00.000Z'),
+      })
+      expect(copy.description).toBe('The seller has 1 business day to respond to your return request.')
+    })
+
+    it('keeps the hours-based copy when the rule does not apply', () => {
+      const copy = getStatusCopy('PENDING', { businessDayRule: false })
+      expect(copy.description).toContain('hours to respond to your return request')
+    })
+
+    it('keeps the hours-based copy when no context is given', () => {
+      const copy = getStatusCopy('PENDING')
+      expect(copy.description).toContain('hours to respond to your return request')
+    })
+  })
 })

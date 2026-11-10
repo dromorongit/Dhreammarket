@@ -17,8 +17,22 @@ vi.mock('@/lib/audit-log', () => ({ createAuditLog: createAuditLogMock }))
 const createNotificationMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
 vi.mock('@/lib/notifications', () => ({ createNotification: createNotificationMock }))
 
+import { getPrisma } from '@/lib/prisma'
+import { sendEmail } from '@/lib/email'
+const getPrismaMock = vi.mocked(getPrisma)
+const sendEmailMock = vi.mocked(sendEmail)
+
 const getPolicyMock = vi.hoisted(() => vi.fn().mockResolvedValue({ systemCutoverTimestamp: null } as any))
 vi.mock('@/lib/delivery', () => ({ getPolicy: getPolicyMock }))
+
+const mockPrisma = vi.hoisted(() => ({
+  user: { findUnique: vi.fn() },
+  notification: { create: vi.fn() },
+}))
+vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn(() => mockPrisma) }))
+
+const mockSendEmail = vi.hoisted(() => vi.fn(async () => ({ success: true })))
+vi.mock('@/lib/email', () => ({ sendEmail: mockSendEmail }))
 
 const NOW = new Date('2026-10-25T12:00:00.000Z')
 const CUSTOMER = 'cust_1'
@@ -863,6 +877,205 @@ describe('return-service', () => {
           code: 'UNKNOWN_FIELD',
         })
       }
+    })
+  })
+
+  describe('openReturn store owner notification', () => {
+    const OWNER = { id: VENDOR, email: 'vendor@example.com', profile: { emailNotifications: true } }
+
+    beforeEach(() => {
+      process.env.BUSINESS_DAY_RETURN_REVIEW_ENABLED = 'false'
+      getPolicyMock.mockResolvedValue({ systemCutoverTimestamp: null } as any)
+      mockPrisma.user.findUnique.mockResolvedValue(OWNER)
+      mockPrisma.notification.create.mockResolvedValue({ id: 'notif_1' })
+      mockSendEmail.mockResolvedValue({ success: true })
+    })
+
+    afterEach(() => {
+      delete process.env.BUSINESS_DAY_RETURN_REVIEW_ENABLED
+      vi.clearAllMocks()
+      createRefundMock.mockResolvedValue({ refunds: [{ alreadyExisted: false }] })
+    })
+
+    function itemWithStore(overrides: any = {}) {
+      return buildItem({
+        product: { id: 'p_1', isReturnable: true, store: { userId: VENDOR, name: 'Store 1' } },
+        ...overrides,
+      })
+    }
+
+    it('notifies the store owner once in-app and by email when a return is opened', async () => {
+      const { client } = buildClient({ item: itemWithStore() })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: NOW,
+      })
+      expect(result.status).toBe('PENDING')
+      expect(mockPrisma.notification.create).toHaveBeenCalledTimes(1)
+      expect(mockPrisma.notification.create).toHaveBeenCalledWith({
+        data: {
+          userId: VENDOR,
+          type: 'ORDER_STATUS_UPDATED',
+          title: 'Return requested',
+          message: expect.stringContaining('A customer has requested a return on order #ORDER_1'),
+        },
+      })
+      expect(mockSendEmail).toHaveBeenCalledTimes(1)
+      const emailParams = ((mockSendEmail.mock.calls as any)[0] ?? [])[0] as any
+      expect(emailParams.to).toBe('vendor@example.com')
+      expect(emailParams.subject).toContain('#ORDER_1')
+    })
+
+    it('sends the in-app notification but no email when email notifications are opted out', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({ ...OWNER, profile: { emailNotifications: false } })
+      const { client } = buildClient({ item: itemWithStore() })
+      await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'DAMAGED',
+        quantity: 1,
+        now: NOW,
+      })
+      expect(mockPrisma.notification.create).toHaveBeenCalledTimes(1)
+      expect(mockSendEmail).not.toHaveBeenCalled()
+    })
+
+    it('skips notification entirely when there is no store owner', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      const { client } = buildClient({ item: itemWithStore() })
+      await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: NOW,
+      })
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(1)
+      expect(mockPrisma.notification.create).not.toHaveBeenCalled()
+      expect(mockSendEmail).not.toHaveBeenCalled()
+    })
+
+    it('never fails the return when the notification fails', async () => {
+      mockPrisma.notification.create.mockRejectedValue(new Error('notification down'))
+      const { client } = buildClient({ item: itemWithStore() })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: NOW,
+      })
+      expect(result.status).toBe('PENDING')
+      expect(result.id).toBe('rr_1')
+    })
+
+    it('does not notify when getPrisma fails to resolve the owner', async () => {
+      getPrismaMock.mockReturnValueOnce(({ user: { findUnique: vi.fn(() => { throw new Error('db down') }) } } as any))
+      const { client } = buildClient({ item: itemWithStore() })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: NOW,
+      })
+      expect(result.status).toBe('PENDING')
+    })
+  })
+
+  describe('openReturn business-day return review deadline', () => {
+    const CUTOVER = new Date('2026-10-01T00:00:00.000Z')
+    const FRIDAY = new Date('2026-10-23T17:00:00.000Z')
+
+    function postCutoverOrder() {
+      return {
+        id: ORDER,
+        userId: CUSTOMER,
+        status: 'DELIVERED',
+        paymentStatus: 'PAID',
+        total: 100,
+        payment: { id: 'pay_1', amount: 100 },
+        items: [{ id: ORDER_ITEM, price: 100, quantity: 1 }],
+        refunds: [],
+        createdAt: new Date('2026-10-23T10:00:00.000Z'),
+        completedAt: undefined,
+      }
+    }
+
+    function preCutoverOrder() {
+      return { ...postCutoverOrder(), createdAt: new Date('2026-09-10T10:00:00.000Z') }
+    }
+
+    beforeEach(() => {
+      process.env.BUSINESS_DAY_RETURN_REVIEW_ENABLED = 'true'
+      mockSendEmail.mockResolvedValue({ success: true })
+    })
+
+    afterEach(() => {
+      delete process.env.BUSINESS_DAY_RETURN_REVIEW_ENABLED
+      vi.clearAllMocks()
+      createRefundMock.mockResolvedValue({ refunds: [{ alreadyExisted: false }] })
+    })
+
+    it('Friday 17:00 gives Monday 17:00 with no holidays', async () => {
+      getPolicyMock.mockResolvedValue({ systemCutoverTimestamp: CUTOVER, holidayList: [] } as any)
+      const { client } = buildClient({ item: buildItem({ order: postCutoverOrder() }) })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: FRIDAY,
+      })
+      expect(result.escalationDeadline).toEqual(new Date('2026-10-26T17:00:00.000Z'))
+      expect(result.policySnapshot.businessDayRule).toBe(true)
+      expect(result.policySnapshot.businessDays).toBe(1)
+      expect(result.policySnapshot.returnReviewRuleVersion).toBe('business-day-1')
+    })
+
+    it('a Monday holiday pushes the deadline to Tuesday 17:00', async () => {
+      getPolicyMock.mockResolvedValue({ systemCutoverTimestamp: CUTOVER, holidayList: ['2026-10-26'] } as any)
+      const { client } = buildClient({ item: buildItem({ order: postCutoverOrder() }) })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'DAMAGED',
+        quantity: 1,
+        now: FRIDAY,
+      })
+      expect(result.escalationDeadline).toEqual(new Date('2026-10-27T17:00:00.000Z'))
+    })
+
+    it('flag off keeps the 72-hour behaviour', async () => {
+      process.env.BUSINESS_DAY_RETURN_REVIEW_ENABLED = 'false'
+      getPolicyMock.mockResolvedValue({ systemCutoverTimestamp: CUTOVER, holidayList: [] } as any)
+      const { client } = buildClient({ item: buildItem({ order: postCutoverOrder() }) })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: FRIDAY,
+      })
+      expect(result.escalationDeadline).toEqual(new Date('2026-10-26T17:00:00.000Z'))
+      expect(result.policySnapshot.businessDayRule).toBeUndefined()
+    })
+
+    it('pre-cutover orders keep the 72-hour behaviour even with the flag on', async () => {
+      getPolicyMock.mockResolvedValue({ systemCutoverTimestamp: CUTOVER, holidayList: [] } as any)
+      const { client } = buildClient({ item: buildItem({ order: preCutoverOrder() }) })
+      const result = await openReturn(client, {
+        customerId: CUSTOMER,
+        orderItemId: ORDER_ITEM,
+        reason: 'NOT_AS_DESCRIBED',
+        quantity: 1,
+        now: FRIDAY,
+      })
+      expect(result.escalationDeadline).toEqual(new Date('2026-10-26T17:00:00.000Z'))
+      expect(result.policySnapshot.businessDayRule).toBeUndefined()
     })
   })
 })

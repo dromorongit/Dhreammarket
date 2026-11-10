@@ -43,6 +43,31 @@ describe('getSellerStatusCopy', () => {
   })
 })
 
+describe('getSellerStatusCopy business day return review', () => {
+  it('tells the seller they have 1 business day with the deadline when the rule applies', () => {
+    const copy = getSellerStatusCopy('PENDING', {
+      businessDayRule: true,
+      escalationDeadline: new Date('2026-10-27T17:00:00.000Z'),
+    })
+    expect(copy.description).toBe(
+      'The seller has 1 business day to respond to your return request. Please respond by 2026-10-27T17:00:00.000Z.'
+    )
+  })
+
+  it('omits the deadline when the rule applies but no deadline is known', () => {
+    const copy = getSellerStatusCopy('PENDING', { businessDayRule: true })
+    expect(copy.description).toBe('The seller has 1 business day to respond to your return request.')
+  })
+
+  it('keeps the deadline-based copy when the rule does not apply', () => {
+    const copy = getSellerStatusCopy('PENDING', {
+      businessDayRule: false,
+      escalationDeadline: new Date('2026-10-27T17:00:00.000Z'),
+    })
+    expect(copy.description).toBe('A customer is waiting for your decision. Respond before the deadline passes.')
+  })
+})
+
 describe('sellerStatusIsActionable', () => {
   it('is actionable only for PENDING', () => {
     expect(sellerStatusIsActionable('PENDING')).toBe(true)
