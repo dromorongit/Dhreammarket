@@ -708,7 +708,7 @@ export async function sendRefundConfirmationEmail(
         <td style="padding: 12px; border: 1px solid #e5e7eb; color: #1a1a2e;">${formattedAmount}</td>
       </tr>
     </table>
-    <p style="margin: 0 0 12px 0; font-size: 14px; color: #6b7280;">Refunds typically take 5-10 business days to appear on your original payment method.</p>
+    <p style="margin: 0 0 12px 0; font-size: 14px; color: #6b7280;">Dhream Market processes refunds within 24 hours after approval. Time for the refund to reach your account depends on your payment provider.</p>
     <p style="margin: 0; font-size: 14px; color: #6b7280;">If you have any questions, contact us at support@dhreamarket.com</p>
   `
   const htmlContent = getEmailTemplate(content, 'Questions? Contact us at support@dhreamarket.com')
@@ -717,7 +717,7 @@ export async function sendRefundConfirmationEmail(
     to: customerEmail,
     subject,
     htmlContent,
-    textContent: `A refund of ${formattedAmount} has been processed for your order #${orderId.slice(0, 8)}. Refunds typically take 5-10 business days to appear on your original payment method.`,
+    textContent: `A refund of ${formattedAmount} has been processed for your order #${orderId.slice(0, 8)}. Dhream Market processes refunds within 24 hours after approval. Time for the refund to reach your account depends on your payment provider.`,
     emailType: 'REFUND',
     retryPayload: { customerEmail, customerName, orderId },
   })

@@ -88,7 +88,7 @@ export default function PreordersGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Can I cancel a preorder?</h3>
-                <p className="text-slate-600">Yes, you can cancel before shipment. Contact the vendor to initiate cancellation.</p>
+                <p className="text-slate-600">Cancellation is free within 1 hour of payment confirmation if the order has not shipped. After the first hour and before shipment, a GHS 5 fee applies, deducted from the refund. Once the vendor ships the order, it cannot be cancelled.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">When will I receive my preorder?</h3>

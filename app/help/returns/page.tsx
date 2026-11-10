@@ -36,7 +36,7 @@ export default function ReturnsGuide() {
                   Return Policy Overview
                 </h2>
                 <p className="text-slate-600 mb-4">
-                  Returns must be initiated within 3 days of receiving your order. Items must be in original condition with packaging intact.
+                  A return must be started within 1 day of the vendor marking the order completed if the delivery address is in the Greater Accra Region, and within 3 days otherwise. Items must be in original condition with packaging intact.
                 </p>
                 <p className="text-slate-600">
                   Contact the vendor directly through your order page to start the return process.
@@ -54,7 +54,7 @@ export default function ReturnsGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Get Approval</h3>
                 <p className="text-slate-600 mb-3">
-                  Vendor reviews your request and provides return instructions within 3 business days.
+                  The vendor reviews your request and provides return instructions within 1 business day of submission.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 3: Ship Item Back</h3>
                 <p className="text-slate-600 mb-3">
@@ -62,7 +62,7 @@ export default function ReturnsGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Receive Refund</h3>
                 <p className="text-slate-600">
-                  After vendor receives and inspects item, refund is processed in 3-5 business days. Depending on your bank, the credit may take 10-14 business days to appear in your account.
+                  After the vendor approves your return, Dhream Market processes the refund within 24 hours. Time for the refund to reach your account depends on your payment provider.
                 </p>
               </section>
 
@@ -87,7 +87,7 @@ export default function ReturnsGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long do returns take?</h3>
-                <p className="text-slate-600">Return review takes 3 business days. After approval, refund processing takes 3-5 business days. Depending on your bank, the credit may take 10-14 business days to appear in your account.</p>
+                <p className="text-slate-600">Return review takes 1 business day after you submit your request. After approval, Dhream Market processes the refund within 24 hours. Time for the refund to reach your account depends on your payment provider.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Who pays return shipping?</h3>
@@ -95,7 +95,7 @@ export default function ReturnsGuide() {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn&apos;t respond?</h3>
-                <p className="text-slate-600">Contact our support team to open a dispute if the vendor doesn&apos;t respond within 3 business days.</p>
+                <p className="text-slate-600">Contact our support team to open a dispute if the vendor doesn&apos;t respond within 1 business day.</p>
               </div>
             </div>
           </CardContent>
