@@ -123,7 +123,7 @@ export async function ensurePayLinkForOrder(order: ManualOrderForPayLink): Promi
     }
   }
 
-  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) {
     console.warn('[pay-link] invalid fallback email:', email)
     return {

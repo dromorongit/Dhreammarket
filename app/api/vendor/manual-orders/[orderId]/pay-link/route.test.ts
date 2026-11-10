@@ -193,7 +193,7 @@ describe('POST /api/vendor/manual-orders/[orderId]/pay-link', () => {
     const response = await POST(buildRequest(), PARAMS)
     expect(response.status).toBe(400)
     const json = await response.json()
-    expect(json.error).toContain('Customer email is required')
+    expect(json.error).toContain('Customer email is missing and the fallback email setting is invalid')
   })
 })
 
