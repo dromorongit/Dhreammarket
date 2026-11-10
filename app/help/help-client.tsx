@@ -38,6 +38,7 @@ const vendorGuides = [
   { title: 'Fulfillment Workflow', href: '/help/fulfillment-workflow', icon: '🚚' },
   { title: 'Restock Orders', href: '/help/restock-orders', icon: '📥' },
   { title: 'Purchase Orders', href: '/help/purchase-orders', icon: '📋' },
+  { title: 'Manual Orders', href: '/help/manual-orders', icon: '🧾' },
 ]
 
 const faqData: FAQ[] = [

@@ -7,6 +7,13 @@ import { Badge } from "@/components/Badge";
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
 import { FAQJsonLd } from "@/components/seo/FAQJsonLd";
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  CANCELLATION_FAQ_SHORT,
+  REFUND_TIMING,
+  RETURN_REVIEW,
+  PAYOUT_RULE,
+} from "@/lib/policy-copy";
 
 interface FAQ {
   id: string;
@@ -56,7 +63,7 @@ const faqData: FAQ[] = [
     category: "Vendor FAQs",
     question: "How are vendor payouts calculated?",
     answer:
-      "Vendors receive 100% of the product price minus 1% platform commission on the product price only (not shipping), deducted before payout. Paystack processing fees are added to the customer's payment and are not deducted from the vendor. Payouts are released within 2 business days after the vendor marks the order completed, only if there are no open returns or disputes. Business days are Monday to Friday, excluding Ghanaian public holidays.",
+      `${PAYOUT_RULE} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: "7",
@@ -70,7 +77,8 @@ const faqData: FAQ[] = [
     category: "Payments & Refunds",
     question: "How do I request a refund?",
     answer:
-      "Contact the seller directly through your order page to initiate a refund request. If unresolved, our support team can assist. The vendor reviews return requests within 1 business day of submission. Once a return is approved, Dhream Market processes the refund within 24 hours. Time for the refund to reach your account depends on your payment provider.",
+      "Contact the seller directly through your order page to initiate a refund request. If unresolved, our support team can assist. " +
+      `${RETURN_REVIEW} ${REFUND_TIMING} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: "9",
@@ -91,7 +99,7 @@ const faqData: FAQ[] = [
     category: "Orders & Delivery",
     question: "Can I modify or cancel my order?",
     answer:
-      "Cancellation is free within 1 hour of payment confirmation if the order has not shipped. After the first hour and before shipment, a GHS 5 fee applies, deducted from the refund. Once the vendor ships the order, it cannot be cancelled. Paystack's processing fee is not refunded. See the Refund and Return Policy for full cancellation rules.",
+      `${CANCELLATION_FAQ_SHORT} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: "12",

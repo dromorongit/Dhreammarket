@@ -1,4 +1,13 @@
 import type { SupportIntent } from './types'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  RETURNS_RULE,
+  RETURN_REVIEW,
+  REFUND_TIMING,
+  CANCELLATION_PARAGRAPH,
+  PAYOUT_RULE,
+  MANUAL_ORDERS_COMMISSION,
+} from '@/lib/policy-copy'
 
 export const supportKnowledgeBase: SupportIntent[] = [
   {
@@ -19,7 +28,8 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/refund/page.tsx (Sections 2-7)',
-    response: 'A return must be started within 1 day of the vendor marking the order completed if the delivery address is in the Greater Accra Region, and within 3 days otherwise. Manual orders always use the 3-day return window. The product must be in its original condition with all packaging and tags intact. Returns must be initiated by contacting the vendor through your order. The vendor reviews return requests within 1 business day of submission. Once a return is approved, Dhream Market processes the refund within 24 hours. Time for the refund to reach your account depends on your payment provider. For returns of manual orders, the vendor refunds the buyer directly. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility.',
+    response:
+      `${RETURNS_RULE} The product must be in its original condition with all packaging and tags intact. Returns must be initiated by contacting the vendor through your order. ${RETURN_REVIEW} ${REFUND_TIMING} For returns of manual orders, the vendor refunds the buyer directly. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility. ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'delivery-shipping',
@@ -59,7 +69,8 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/terms/page.tsx (Section 16: Marketplace Payment Processing & Vendor Payout Policy) and app/faq/faq-client.tsx (FAQ #6)',
-    response: 'All customer payments are processed through Dhream Market\'s centralized Paystack account. Vendors do NOT receive payments directly from customers. Vendors receive 100% of the product price minus 1% platform commission on the product price only (not shipping), deducted before payout. Paystack processing fees are added to the customer\'s payment and are not deducted from the vendor\'s payout. Payouts are released within 2 business days after the vendor marks the order completed, only if there are no open returns or disputes. Business days are Monday to Friday, excluding Ghanaian public holidays. Manual orders carry 0% commission, and the vendor pays the Paystack processing fee on a manual order.',
+    response:
+      `All customer payments are processed through Dhream Market\'s centralized Paystack account. Vendors do NOT receive payments directly from customers. ${PAYOUT_RULE} ${MANUAL_ORDERS_COMMISSION} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'how-to-contact-support',
@@ -141,7 +152,8 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: true,
     isDynamic: false,
     sourceFile: 'app/faq/faq-client.tsx (FAQ #11)',
-    response: 'Cancellation is free within 1 hour of payment confirmation if the order has not shipped. After the first hour and before shipment, a GHS 5 fee applies, deducted from the refund. Once the vendor ships the order, it cannot be cancelled. Paystack\'s processing fee is not refunded. Every paid cancellation counts, including free ones. Cancelling 4 orders within any 30 days blocks all cancellations for the next 3 months, starting right after the 4th cancellation. Unpaid and manual orders are exempt. Wallet credit used on the order is returned to the wallet. Once a cancellation refund is approved, Dhream Market processes it within 24 hours; time for it to reach your account depends on your payment provider.',
+    response:
+      `${CANCELLATION_PARAGRAPH} ${REFUND_TIMING} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'damaged-order',

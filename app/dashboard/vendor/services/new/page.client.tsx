@@ -378,7 +378,7 @@ export default function VendorNewServicePageClient() {
                     type="text"
                     value={formData.estimatedDeliveryTime}
                     onChange={handleChange}
-                    placeholder="e.g., 2-3 days"
+                    placeholder="e.g., 3-5 days"
                   />
                 </div>
               </div>

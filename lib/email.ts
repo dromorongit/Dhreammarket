@@ -314,7 +314,7 @@ export async function sendOrderStatusUpdateEmail(
     SHIPPED: 'Your order has been shipped and is on its way.',
     DELIVERED: 'Your order has been delivered.',
     COMPLETED: 'Your order is complete. Thank you for shopping with us!',
-    CANCELLED: 'Your order has been cancelled. A refund will be processed if applicable.'
+    CANCELLED: 'Your order has been cancelled. Refunds follow the cancellation policy: free within 1 hour of payment confirmation if the order has not shipped; after the first hour and before shipment a GHS 5 fee applies; no cancellation once the vendor ships; Paystack\'s processing fee is not refunded.'
   }
   
   const statusColors: Record<string, string> = {
