@@ -6,6 +6,10 @@ import { makePorts } from '@/lib/support-ai-v2/ports'
 import { resolveRole } from '@/lib/support-ai-v2/src/identity/resolve-role'
 import type { Actor } from '@/lib/support-ai-v2/src/types'
 import { redact } from '@/lib/support-ai-v2/src/sanitize/redact'
+import {
+  isValidSupportAiConversationId,
+  userOwnsConversation,
+} from '@/lib/support-ai-v2/conversation-ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -38,19 +42,23 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) ?? {}
     const { conversationId, note } = body
 
-    if (typeof conversationId !== 'string' || conversationId.trim().length === 0) {
+    if (!isValidSupportAiConversationId(conversationId)) {
       return NextResponse.json({ error: 'conversationId is required' }, { status: 400 })
     }
     if (note !== undefined && (typeof note !== 'string' || note.length > MAX_NOTE_CHARS)) {
       return NextResponse.json({ error: `note must be a string of ${MAX_NOTE_CHARS} characters or fewer` }, { status: 400 })
     }
 
-    const trimmedConversationId = conversationId.trim()
     const redactedNote = note ? redact(note).text : null
 
-    // Idempotency: the same conversation escalates to a single ticket.
+    const owns = await userOwnsConversation(appSession.userId, conversationId)
+    if (!owns) {
+      return NextResponse.json({ error: 'Conversation not found.' }, { status: 404 })
+    }
+
+    // Idempotency: the same conversation escalates to a single ticket for this user.
     const existing = await getPrisma().supportTicket.findFirst({
-      where: { conversationRef: trimmedConversationId },
+      where: { conversationRef: conversationId, userId: appSession.userId },
       select: { id: true },
     })
     if (existing) {
@@ -65,13 +73,13 @@ export async function POST(request: NextRequest) {
         'general',
         'normal',
         'ESCALATED_GENERIC',
-        trimmedConversationId,
+        conversationId,
         redactedNote ?? undefined,
       )
     } catch {
       // Another request may have created the ticket concurrently (conversationRef is unique).
       const fallback = await getPrisma().supportTicket.findFirst({
-        where: { conversationRef: trimmedConversationId },
+        where: { conversationRef: conversationId, userId: appSession.userId },
         select: { id: true },
       })
       if (fallback) {
