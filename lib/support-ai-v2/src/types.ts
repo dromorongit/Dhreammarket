@@ -318,7 +318,7 @@ export interface ValidatorPort {
 }
 
 export interface EscalationPort {
-  escalate(tag: string, queueCategory: string, priority: string, templateId: string): Promise<string>
+  escalate(tag: string, queueCategory: string, priority: string, templateId: string, conversationRef?: string, escalationReason?: string): Promise<string>
 }
 
 export interface AuditSink {
