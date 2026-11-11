@@ -6,6 +6,11 @@ import { handleSupportMessage } from '@/lib/support-ai-v2/src/pipeline/handle-me
 import { resolveRole } from '@/lib/support-ai-v2/src/identity/resolve-role'
 import { makePorts } from '@/lib/support-ai-v2/ports'
 import type { Actor, Session } from '@/lib/support-ai-v2/src/types'
+import {
+  conversationIdUsedByOtherUser,
+  isValidSupportAiConversationId,
+  userOwnsConversation,
+} from '@/lib/support-ai-v2/conversation-ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -100,8 +105,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const convId =
-      typeof conversationId === 'string' && conversationId.length > 0 ? conversationId : generateRequestId()
+    let convId: string
+    if (conversationId === undefined || conversationId === null || conversationId === '') {
+      convId = crypto.randomUUID()
+    } else if (!isValidSupportAiConversationId(conversationId)) {
+      return NextResponse.json({ error: 'Invalid conversation.' }, { status: 400 })
+    } else if (await userOwnsConversation(appSession.userId, conversationId)) {
+      convId = conversationId
+    } else if (await conversationIdUsedByOtherUser(appSession.userId, conversationId)) {
+      return NextResponse.json({ error: 'Invalid conversation.' }, { status: 400 })
+    } else {
+      convId = conversationId
+    }
 
     const result = await handleSupportMessage(
       { text: message.trim(), conversationId: convId },

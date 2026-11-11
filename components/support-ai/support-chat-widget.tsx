@@ -631,7 +631,7 @@ function V2Flow({ userRole }: { userRole?: string | null }) {
   const [v2Messages, setV2Messages] = useState<V2SupportMessageUI[]>([])
   const [v2Input, setV2Input] = useState('')
   const [v2Loading, setV2Loading] = useState(false)
-  const [v2ConversationId] = useState(() => `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`)
+  const [v2ConversationId] = useState(() => crypto.randomUUID())
   const [v2LastUserMessage, setV2LastUserMessage] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
