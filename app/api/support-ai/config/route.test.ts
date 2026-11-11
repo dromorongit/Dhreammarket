@@ -3,8 +3,8 @@ import { GET } from './route'
 import { getPrisma } from '../../../../lib/prisma'
 import { getServerSession } from '../../../../lib/auth'
 
-vi.mock('../../../../../lib/prisma', () => ({ getPrisma: vi.fn() }))
-vi.mock('../../../../../lib/auth', () => ({ getServerSession: vi.fn() }))
+vi.mock('../../../../lib/prisma', () => ({ getPrisma: vi.fn() }))
+vi.mock('../../../../lib/auth', () => ({ getServerSession: vi.fn() }))
 
 const mockGetPrisma = getPrisma as any
 const mockGetServerSession = getServerSession as any
