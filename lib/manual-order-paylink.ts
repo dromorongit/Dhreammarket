@@ -100,36 +100,46 @@ export async function ensurePayLinkForOrder(order: ManualOrderForPayLink): Promi
     }
   }
 
-  const rawDomain = process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN
-  let domain = rawDomain?.trim().toLowerCase()
-  if (domain) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  let email: string | undefined
+
+  if (order.customerEmail) {
+    email = order.customerEmail
+  } else {
+    const rawDomain = process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN
+    if (rawDomain == null || rawDomain.trim() === '') {
+      return {
+        ok: false,
+        status: 400,
+        error: 'Customer email is required and no fallback email domain is set',
+      }
+    }
+
+    let domain = rawDomain.trim().toLowerCase()
     const lastAt = domain.lastIndexOf('@')
     if (lastAt !== -1) domain = domain.slice(lastAt + 1)
     if (domain.startsWith('www.')) domain = domain.slice(4)
+
+    if (!domain || !/^[^\s@]+\.[^\s@]+$/.test(domain)) {
+      console.warn('[pay-link] fallback email setting is malformed:', rawDomain)
+      return {
+        ok: false,
+        status: 400,
+        error: 'Fallback email domain setting is malformed',
+      }
+    }
+
+    email = `pay+${orderDisplayNumber(order.id)}@${domain}`
   }
 
-  const email =
-    order.customerEmail ||
-    (domain ? `pay+${orderDisplayNumber(order.id)}@${domain}` : undefined)
-
-  if (!email) {
-    if (rawDomain) {
-      console.warn('[pay-link] fallback email setting is invalid:', rawDomain)
-    }
-    return {
-      ok: false,
-      status: 400,
-      error: 'Customer email is missing and the fallback email setting is invalid',
-    }
-  }
-
-  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/
   if (!emailRegex.test(email)) {
-    console.warn('[pay-link] invalid fallback email:', email)
+    console.warn('[pay-link] invalid email:', email)
     return {
       ok: false,
       status: 400,
-      error: 'Customer email is missing and the fallback email setting is invalid',
+      error: order.customerEmail
+        ? 'Customer email is invalid'
+        : 'Fallback email domain setting is malformed',
     }
   }
 
