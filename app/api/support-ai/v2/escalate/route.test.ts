@@ -20,6 +20,7 @@ const mockUserOwnsConversation = userOwnsConversation as any
 function buildPrisma(over: Record<string, any> = {}) {
   const tickets: any[] = over.tickets ?? []
   return {
+    superAdminSettings: { findFirst: vi.fn(async () => ({ id: 's1', supportAiV2Enabled: true })) },
     supportTicket: {
       findFirst: vi.fn(async (args: any) => {
         const where = args?.where ?? {}
@@ -59,6 +60,7 @@ function post(ip: string, body: any) {
 describe('app/api/support-ai/v2/escalate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('SUPPORT_AI_V2_ENABLED', 'true')
     mockGetPrisma.mockReturnValue(buildPrisma())
     mockGetServerSession.mockResolvedValue(session('CUSTOMER', 'esc-u-1'))
     mockUserOwnsConversation.mockResolvedValue(true)
@@ -72,6 +74,30 @@ describe('app/api/support-ai/v2/escalate', () => {
     mockGetServerSession.mockResolvedValue(null)
     const res = await post('10.0.2.1', { conversationId: 'conv-1' })
     expect(res.status).toBe(401)
+  })
+
+  it('returns 404 when the flag is off or unset', async () => {
+    vi.stubEnv('SUPPORT_AI_V2_ENABLED', 'false')
+    const res = await post('10.0.2.20', { conversationId: 'conv-1' })
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'Not found' })
+
+    vi.unstubAllEnvs()
+    mockGetPrisma.mockReturnValue({
+      ...buildPrisma(),
+      superAdminSettings: { findFirst: vi.fn(async () => ({ id: 's1', supportAiV2Enabled: false })) },
+    })
+    const res2 = await post('10.0.2.21', { conversationId: 'conv-1' })
+    expect(res2.status).toBe(404)
+    expect(await res2.json()).toEqual({ error: 'Not found' })
+  })
+
+  it('works as before when flag is on', async () => {
+    const res = await post('10.0.2.22', { conversationId: 'conv-1', note: 'Please help' })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(typeof body.reference).toBe('string')
+    expect(mockGetPrisma().supportTicket.create).toHaveBeenCalledTimes(1)
   })
 
   it('user B cannot escalate or read the ticket reference for user A\'s conversation (404)', async () => {

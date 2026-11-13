@@ -8,12 +8,19 @@ import {
   isValidSupportAiTraceId,
   userOwnsConversation,
 } from '@/lib/support-ai-v2/conversation-ownership'
+import { supportAiV2Enabled } from '@/lib/support-ai-v2/flag'
 
 function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 }
 
 export async function POST(request: NextRequest) {
+  // Kill switch -- never accept feedback when the feature is off.
+  const enabled = await supportAiV2Enabled()
+  if (!enabled) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   // Rate limited like support-ai-chat.
   const rateLimitCheck = rateLimit('support-ai-chat')(request)
   if (rateLimitCheck.success !== true) {

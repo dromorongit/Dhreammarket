@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { POST } from './route'
 import { getPrisma } from '../../../../../lib/prisma'
 import { getServerSession } from '../../../../../lib/auth'
@@ -19,6 +19,7 @@ const mockUserOwnsConversation = userOwnsConversation as any
 
 function buildPrisma() {
   return {
+    superAdminSettings: { findFirst: vi.fn(async () => ({ id: 's1', supportAiV2Enabled: true })) },
     supportFeedback: { create: vi.fn(async () => ({ id: 'FB-1' })) },
     auditLog: { create: vi.fn(async () => {}) },
   } as any
@@ -41,15 +42,43 @@ function post(ip: string, body: any) {
 describe('app/api/support-ai/v2/feedback', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubEnv('SUPPORT_AI_V2_ENABLED', 'true')
     mockGetPrisma.mockReturnValue(buildPrisma())
     mockGetServerSession.mockResolvedValue(session('CUSTOMER', 'u-1'))
     mockUserOwnsConversation.mockResolvedValue(true)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   it('returns 401 when there is no session', async () => {
     mockGetServerSession.mockResolvedValue(null)
     const res = await post('10.0.1.0', { conversationId: 'conv-1', traceId: 'trace-1', helpful: true })
     expect(res.status).toBe(401)
+  })
+
+  it('returns 404 when the flag is off or unset', async () => {
+    vi.stubEnv('SUPPORT_AI_V2_ENABLED', 'false')
+    const res = await post('10.0.1.20', { conversationId: 'conv-1', traceId: 'trace-1', helpful: true })
+    expect(res.status).toBe(404)
+    expect(await res.json()).toEqual({ error: 'Not found' })
+
+    vi.unstubAllEnvs()
+    mockGetPrisma.mockReturnValue({
+      ...buildPrisma(),
+      superAdminSettings: { findFirst: vi.fn(async () => ({ id: 's1', supportAiV2Enabled: false })) },
+    })
+    const res2 = await post('10.0.1.21', { conversationId: 'conv-1', traceId: 'trace-1', helpful: true })
+    expect(res2.status).toBe(404)
+    expect(await res2.json()).toEqual({ error: 'Not found' })
+  })
+
+  it('works as before when flag is on', async () => {
+    const res = await post('10.0.1.22', { conversationId: 'conv-1', traceId: 'trace-1', helpful: true })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({ ok: true })
+    expect(mockGetPrisma().supportFeedback.create).toHaveBeenCalledTimes(1)
   })
 
   it('user B cannot post feedback on user A\'s conversation (404)', async () => {
