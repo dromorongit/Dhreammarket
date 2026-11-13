@@ -93,6 +93,7 @@ function buildMockPrisma() {
         }
         return { ...u }
       }),
+      findMany: vi.fn(async () => []),
     },
     cart: {
       findUnique: vi.fn(async ({ where }: any) => carts.find((x) => x.userId === where.userId) || null),

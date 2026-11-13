@@ -101,6 +101,7 @@ function buildMockPrisma() {
     },
     user: {
       findUnique: vi.fn(async ({ where }: any) => users.find((x) => x.id === where.id) || null),
+      findMany: vi.fn(async () => []),
     },
     store: {
       findUnique: vi.fn(async ({ where }: any) => stores.find((x) => x.id === where.id) || null),
