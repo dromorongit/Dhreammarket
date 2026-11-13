@@ -20,8 +20,17 @@ function buildPrisma(over: Record<string, any> = {}) {
       findFirst: vi.fn(async () => over.doc ?? null),
     },
     documentChunk: { findMany: vi.fn(async () => over.chunks ?? []) },
-    supportTicket: { create: vi.fn(async () => ({ id: 'TICKET-1' })) },
-    auditLog: { create: vi.fn(async () => {}) },
+    supportTicket: {
+      create: vi.fn(async () => ({ id: 'TICKET-1' })),
+      findFirst: vi.fn(async () => over.ownedTicket ?? null),
+    },
+    auditLog: {
+      create: vi.fn(async () => {}),
+      findFirst: vi.fn(async (args: any) => {
+        if (typeof over.auditLogFindFirst === 'function') return over.auditLogFindFirst(args)
+        return over.auditLogFindFirst ?? null
+      }),
+    },
     $queryRawUnsafe: vi.fn(async () => over.rows ?? []),
   }
   return prisma
@@ -211,5 +220,72 @@ describe('app/api/support-ai/v2/chat', () => {
     const retrieverCalled = mockGetPrisma().supportDocument.findMany.mock.calls[0][0].where
     expect(retrieverCalled.status).toEqual({ in: ['APPROVED', 'PUBLISHED'] })
     expect(retrieverCalled.intent).toBe('buyer.delivery_info')
+  })
+
+  it('user B cannot reuse user A conversationId in chat (400)', async () => {
+    mockGetPrisma.mockReturnValue(
+      buildPrisma({
+        auditLogFindFirst: (args: any) => {
+          if (args?.where?.userId === 'u-2') return null
+          if (args?.where?.NOT?.userId === 'u-2') return { id: 'audit-a' }
+          return null
+        },
+      }),
+    )
+    mockGetServerSession.mockResolvedValue(session('CUSTOMER', 'u-2'))
+
+    const res = await post('10.0.0.40', { message: 'delivery times', conversationId: 'conv-a' })
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'Invalid conversation.' })
+  })
+
+  it('owner can continue their own conversation', async () => {
+    mockGetPrisma.mockReturnValue(
+      buildPrisma({
+        docs: [deliveryDoc],
+        doc: deliveryDoc,
+        chunks: deliveryDoc.chunks.map((c) => ({ ...c, document: { title: deliveryDoc.title } })),
+        rows: deliveryRows,
+        auditLogFindFirst: (args: any) => {
+          if (args?.where?.userId === 'u-1') return { id: 'audit-own' }
+          return null
+        },
+      }),
+    )
+
+    const res = await post('10.0.0.41', { message: 'What are the delivery times?', conversationId: 'conv-own' })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.action).toBe('ANSWER')
+  })
+
+  it('a new unseen conversation id is accepted', async () => {
+    mockGetPrisma.mockReturnValue(
+      buildPrisma({
+        docs: [deliveryDoc],
+        doc: deliveryDoc,
+        chunks: deliveryDoc.chunks.map((c) => ({ ...c, document: { title: deliveryDoc.title } })),
+        rows: deliveryRows,
+        auditLogFindFirst: async () => null,
+      }),
+    )
+
+    const res = await post('10.0.0.42', {
+      message: 'What are the delivery times?',
+      conversationId: '550e8400-e29b-41d4-a716-446655440000',
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.action).toBe('ANSWER')
+  })
+
+  it('invalid conversation formats give 400', async () => {
+    const res1 = await post('10.0.0.43', { message: 'delivery times', conversationId: 'bad id' })
+    expect(res1.status).toBe(400)
+    expect(await res1.json()).toEqual({ error: 'Invalid conversation.' })
+    const res2 = await post('10.0.0.44', { message: 'delivery times', conversationId: 'a'.repeat(101) })
+    expect(res2.status).toBe(400)
+    const res3 = await post('10.0.0.45', { message: 'delivery times', conversationId: 'conv/1' })
+    expect(res3.status).toBe(400)
   })
 })

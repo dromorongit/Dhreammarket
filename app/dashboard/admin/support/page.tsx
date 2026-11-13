@@ -19,6 +19,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
     priority: string
     createdAt: string
     updatedAt: string
+    conversationRef?: string | null
+    escalationReason?: string | null
     user?: {
       id: string
       email: string
@@ -541,6 +543,21 @@ export default function AdminSupportPage() {
                     <div className="bg-gray-50 rounded-xl p-4">
                       <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
                     </div>
+                    {selectedTicket.conversationRef || selectedTicket.escalationReason ? (
+                      <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                        <p className="text-xs font-medium text-blue-800 mb-1">Support AI v2 (read-only)</p>
+                        {selectedTicket.conversationRef && (
+                          <p className="text-xs text-blue-700">
+                            <span className="font-medium">Conversation:</span> {selectedTicket.conversationRef}
+                          </p>
+                        )}
+                        {selectedTicket.escalationReason && (
+                          <p className="text-xs text-blue-700">
+                            <span className="font-medium">Reason:</span> {selectedTicket.escalationReason}
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="border-t pt-6">
@@ -657,6 +674,21 @@ export default function AdminSupportPage() {
                     <div className="bg-gray-50 rounded-xl p-4">
                       <p className="text-gray-700 whitespace-pre-wrap">{selectedTicket.message}</p>
                     </div>
+                    {selectedTicket.conversationRef || selectedTicket.escalationReason ? (
+                      <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                        <p className="text-xs font-medium text-blue-800 mb-1">Support AI v2 (read-only)</p>
+                        {selectedTicket.conversationRef && (
+                          <p className="text-xs text-blue-700">
+                            <span className="font-medium">Conversation:</span> {selectedTicket.conversationRef}
+                          </p>
+                        )}
+                        {selectedTicket.escalationReason && (
+                          <p className="text-xs text-blue-700">
+                            <span className="font-medium">Reason:</span> {selectedTicket.escalationReason}
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="border-t pt-6">

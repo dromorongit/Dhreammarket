@@ -133,7 +133,7 @@ export function makePorts(actor: Actor) {
   }
 
   const escalation: EscalationPort = {
-    escalate: async (tag, queueCategory, priority, _templateId): Promise<string> => {
+    escalate: async (tag, queueCategory, priority, _templateId, conversationRef, escalationReason): Promise<string> => {
       const ticket = await getPrisma().supportTicket.create({
         data: {
           subject: `Support AI v2: ${tag}`,
@@ -142,6 +142,8 @@ export function makePorts(actor: Actor) {
           status: 'OPEN',
           priority: mapPriority(priority),
           userId: userId ?? undefined,
+          ...(conversationRef ? { conversationRef } : {}),
+          ...(escalationReason ? { escalationReason } : {}),
         },
       })
       if (userId) {

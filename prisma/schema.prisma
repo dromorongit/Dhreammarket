@@ -956,6 +956,7 @@ model SupportTicket {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   conversationRef  String?               @unique @db.VarChar(32)
+  escalationReason String?
   guestToken       String?               @unique @db.VarChar(64)
   assignedAdminId  String?
   lastMessageAt    DateTime?             @default(now())

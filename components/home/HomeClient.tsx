@@ -74,17 +74,17 @@ import HowItWorksSection from '@/components/HowItWorksSection'
 import PromotionalFeatureImageStrip from '@/components/PromotionalFeatureImageStrip'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import { FirstOrderDiscountBanner } from '@/components/FirstOrderDiscountBanner'
-import { RecentActivityTicker } from '@/components/RecentActivityTicker'
 import TrustStatsStrip from '@/components/TrustStatsStrip'
 import RecentlyViewedSection from '@/components/RecentlyViewedSection'
 import BlogTeaserSection from '@/components/BlogTeaserSection'
 import BlogArticleModal from '@/components/BlogArticleModal'
 import { BLOG_ARTICLES } from '@/lib/blog-content'
+import HeroSection from './HeroSection'
 
 import { collectProductIds } from '@/lib/homepage-product-utils'
 import { isManagedSectionSlug } from '@/lib/homepage-constants'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_5COL, CARD_IMAGE_SIZES_3COL, CARD_IMAGE_SIZES_2COL, VENDOR_LOGO_SIZES, HERO_IMAGE_SIZES } from '@/lib/image-utils'
-import { getOptimizedCloudinaryVideoUrl, getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 
 interface Category {
   id: string
@@ -150,98 +150,9 @@ export default function HomeClient() {
   return (
     <div className="min-h-screen bg-slate-50">
       <WhatsAppFloatButton />
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        {/* Video background */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          preload="metadata"
-        >
-          <source src={getOptimizedCloudinaryVideoUrl('https://res.cloudinary.com/doqfxvcy2/video/upload/v1789091410/dhream-market/videos/fcmhzl7vpvkiadslezii.mp4')} type="video/mp4" />
-        </video>
-        {/* Overlay gradient for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-deep-navy/80 via-royal-blue/70 to-purple-900/60"></div>
+        <HeroSection />
 
-        {/* Decorative elements - positioned below navbar to prevent bleeding */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 -right-40 w-80 h-80 bg-royal-blue/20 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-0 -left-40 w-80 h-80 bg-premium-gold/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.15),transparent_70%)]"></div>
-        </div>
-
-        {/* Nav spacer */}
-        <div className="h-16 sm:h-20"></div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Trust badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mb-3 animate-fade-in-up">
-              <Badge variant="verified" size="sm">
-                Where Ghana&apos;s Businesses Grow
-              </Badge>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 tracking-tight leading-tight animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              Powering Digital Trade
-              <br />
-              <span className="bg-gradient-to-r from-royal-blue via-purple-400 to-premium-gold bg-clip-text text-transparent">
-                The Smart Way
-              </span>
-            </h1>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              <Link href="/register">
-              <Button size="md" className="rounded-full shadow-lg shadow-royal-blue/30">
-                Start Selling
-              </Button>
-              </Link>
-              <Link href="/marketplace">
-              <Button variant="outline" size="md" className="border-white/30 text-white hover:bg-white/10">
-                Shop Now
-              </Button>
-              </Link>
-            </div>
-
-            {/* Trust indicators */}
-            <div className="flex flex-wrap justify-center gap-8 mt-10 text-slate-400 text-sm animate-fade-in-up" style={{ animationDelay: '0.8s' }}>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Secure Payments
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                24/7 Support
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Verified Sellers
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <svg className="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </div>
-      </section>
-
-      {/* ─── Recent Marketplace Activity Ticker ─── */}
-      <RecentActivityTicker />
-
-      {/* ─── Continuous Infinite Banner Rail ─── */}
+        {/* ─── Continuous Infinite Banner Rail ─── */}
       <InfiniteBannerRail />
 
        {/* ─── Registration Call-to-Action ─── */}

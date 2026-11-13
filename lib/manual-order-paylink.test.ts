@@ -103,4 +103,118 @@ describe('ensurePayLinkForOrder', () => {
       expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
     )
   })
+
+  it('accepts a plain customer email', async () => {
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: 'ada@example.com' })
+    expect(result.ok).toBe(true)
+    expect(initializePaystackPaymentMock).toHaveBeenCalledWith(
+      'ada@example.com',
+      25,
+      expect.stringMatching(/^MAN-/),
+      expect.stringContaining('/receipt/'),
+      expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
+    )
+  })
+
+  it('accepts plus-addressing in customer email', async () => {
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: 'pay+ORDER_1@paylinks.example.com' })
+    expect(result.ok).toBe(true)
+    expect(initializePaystackPaymentMock).toHaveBeenCalledWith(
+      'pay+ORDER_1@paylinks.example.com',
+      25,
+      expect.stringMatching(/^MAN-/),
+      expect.stringContaining('/receipt/'),
+      expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
+    )
+  })
+
+  it('accepts subdomain customer email', async () => {
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: 'ada@mail.example.co.uk' })
+    expect(result.ok).toBe(true)
+    expect(initializePaystackPaymentMock).toHaveBeenCalledWith(
+      'ada@mail.example.co.uk',
+      25,
+      expect.stringMatching(/^MAN-/),
+      expect.stringContaining('/receipt/'),
+      expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
+    )
+  })
+
+  it('accepts uppercase customer email', async () => {
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: 'ADA@EXAMPLE.COM' })
+    expect(result.ok).toBe(true)
+    expect(initializePaystackPaymentMock).toHaveBeenCalledWith(
+      'ADA@EXAMPLE.COM',
+      25,
+      expect.stringMatching(/^MAN-/),
+      expect.stringContaining('/receipt/'),
+      expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
+    )
+  })
+
+  it('normalises fallback domain setting with email to domain', async () => {
+    process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN = 'info@dhreamarket.com'
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: null })
+    expect(result.ok).toBe(true)
+    expect(initializePaystackPaymentMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^pay\+.+@dhreamarket\.com$/),
+      25,
+      expect.stringMatching(/^MAN-/),
+      expect.stringContaining('/receipt/'),
+      expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
+    )
+  })
+
+  it('normalises uppercase fallback domain setting', async () => {
+    process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN = 'WWW.PAYLINKS.EXAMPLE.COM'
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: null })
+    expect(result.ok).toBe(true)
+    expect(initializePaystackPaymentMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^pay\+.+@paylinks\.example\.com$/),
+      25,
+      expect.stringMatching(/^MAN-/),
+      expect.stringContaining('/receipt/'),
+      expect.objectContaining({ orderId: 'order_1', source: 'MANUAL', storeId: 'store_1' })
+    )
+  })
+
+  it('returns distinct error when no fallback domain is set', async () => {
+    delete process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: null })
+    expect(result).toEqual({
+      ok: false,
+      status: 400,
+      error: 'Customer email is required and no fallback email domain is set',
+    })
+  })
+
+  it('returns distinct error when fallback domain is empty', async () => {
+    process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN = '   '
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: null })
+    expect(result).toEqual({
+      ok: false,
+      status: 400,
+      error: 'Customer email is required and no fallback email domain is set',
+    })
+  })
+
+  it('returns distinct error when fallback domain is malformed', async () => {
+    process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN = 'not-a-domain'
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: null })
+    expect(result).toEqual({
+      ok: false,
+      status: 400,
+      error: 'Fallback email domain setting is malformed',
+    })
+  })
+
+  it('returns distinct error when fallback domain normalizes to invalid value', async () => {
+    process.env.PAYLINK_FALLBACK_EMAIL_DOMAIN = '@@@'
+    const result = await ensurePayLinkForOrder({ ...baseOrder, customerEmail: null })
+    expect(result).toEqual({
+      ok: false,
+      status: 400,
+      error: 'Fallback email domain setting is malformed',
+    })
+  })
 })

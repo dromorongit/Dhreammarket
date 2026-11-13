@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
         adminReply: true,
         createdAt: true,
         updatedAt: true,
+        conversationRef: true,
+        escalationReason: true,
         user: {
           select: {
             id: true,

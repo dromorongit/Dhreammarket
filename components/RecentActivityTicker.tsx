@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Card } from '@/components/Card'
 
 interface Activity {
   type: 'PRODUCT' | 'SERVICE'
@@ -17,7 +16,17 @@ interface RecentActivityResponse {
   activities: Activity[]
 }
 
-export function RecentActivityTicker() {
+import { Card } from '@/components/Card'
+
+interface RecentActivityTickerProps {
+  variant?: 'default' | 'hero'
+}
+
+const LIVE_GREEN = '#00A383'
+const DIVIDER = '#CBD5E1'
+const BUTTON_BLUE = '#00399C'
+
+export function RecentActivityTicker({ variant = 'default' }: RecentActivityTickerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isVisible, setIsVisible] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
@@ -83,6 +92,37 @@ export function RecentActivityTicker() {
   const current = activities[currentIndex]
 
   if (isLoading) {
+    if (variant === 'hero') {
+      return (
+        <div
+          style={{
+            width: 758,
+            height: 57,
+            background: '#fff',
+            borderRadius: 9999,
+            padding: '0 36px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            boxShadow: '0 10px 30px rgba(15,35,80,0.10)',
+          }}
+        >
+          <span
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 14,
+              height: 14,
+              borderRadius: 9999,
+              background: LIVE_GREEN,
+            }}
+          />
+          <span style={{ color: '#bbb', fontSize: 12 }}>{'·'.repeat(10)}</span>
+        </div>
+      )
+    }
     return (
       <section className="relative bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,6 +137,88 @@ export function RecentActivityTicker() {
 
   if (activities.length === 0) {
     return null
+  }
+
+  if (variant === 'hero') {
+    return (
+      <section
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          width: 758,
+          height: 57,
+          background: '#fff',
+          borderRadius: 9999,
+          padding: '0 36px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 10px 30px rgba(15,35,80,0.10)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+          <span
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 14,
+              height: 14,
+              borderRadius: 9999,
+              background: LIVE_GREEN,
+              boxShadow: '0 0 0 2px rgba(0,163,131,0.35)',
+            }}
+          />
+          <span
+            style={{
+              color: LIVE_GREEN,
+              fontSize: 18,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            LIVE ACTIVITY
+          </span>
+          <span style={{ width: 1, height: 24, background: DIVIDER, display: 'inline-block', margin: '0 10px' }} />
+          <div style={{ overflow: 'hidden', minWidth: 0 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 21,
+                fontWeight: 600,
+                color: '#14203C',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                transition: 'opacity 0.5s ease',
+                opacity: isVisible ? 1 : 0,
+              }}
+            >
+              {current.message}
+            </p>
+          </div>
+        </div>
+        {activities.length > 1 && !prefersReducedMotion && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {activities.slice(0, 5).map((_, idx) => (
+              <span
+                key={idx}
+                style={{
+                  width: idx === currentIndex ? 22 : 7,
+                  height: 7,
+                  borderRadius: idx === currentIndex ? 9999 : 9999,
+                  background: idx === currentIndex ? BUTTON_BLUE : '#CBD5E1',
+                  flexShrink: 0,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    )
   }
 
   return (
