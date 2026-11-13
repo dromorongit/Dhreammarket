@@ -31,8 +31,10 @@ function isExcluded(filePath: string): boolean {
 function* walk(dir: string): Generator<string> {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) yield* walk(full)
-    else if (entry.isFile() && (full.endsWith('.ts') || full.endsWith('.tsx'))) yield full
+    if (entry.isDirectory()) {
+      if (/^(node_modules|\.next|\.git|docs)$/i.test(entry.name)) continue
+      yield* walk(full)
+    } else if (entry.isFile() && (full.endsWith('.ts') || full.endsWith('.tsx'))) yield full
   }
 }
 
