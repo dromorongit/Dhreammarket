@@ -218,20 +218,18 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         })
       })
 
-      if (payment.userId) {
-        await createAuditLog({
-          userId: payment.userId,
-          userRole: 'SYSTEM',
-          action: 'PAYMENT_FAILED',
-          entityType: 'ORDER',
-          entityId: payment.orderId,
-          afterData: {
-            paymentId: payment.id,
-            reference: payment.reference,
-            status: failedStatus,
-          },
-        })
-      }
+      await createAuditLog({
+        userId: payment.userId,
+        userRole: 'SYSTEM',
+        action: 'PAYMENT_FAILED',
+        entityType: 'ORDER',
+        entityId: payment.orderId,
+        afterData: {
+          paymentId: payment.id,
+          reference: payment.reference,
+          status: failedStatus,
+        },
+      })
 
       const orderForRelease = await getPrisma().order.findUnique({
         where: { id: payment.orderId },
