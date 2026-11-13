@@ -418,20 +418,18 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       }
     }
 
-    if (payment.userId) {
-      await createAuditLog({
-        userId: payment.userId,
-        userRole: 'SYSTEM',
-        action: 'PAYMENT_CONFIRMED',
-        entityType: 'ORDER',
-        entityId: payment.orderId,
-        afterData: {
-          paymentId: payment.id,
-          reference: payment.reference,
-          amount: payment.amount,
-        },
-      })
-    }
+    await createAuditLog({
+      userId: payment.userId,
+      userRole: 'SYSTEM',
+      action: 'PAYMENT_CONFIRMED',
+      entityType: 'ORDER',
+      entityId: payment.orderId,
+      afterData: {
+        paymentId: payment.id,
+        reference: payment.reference,
+        amount: payment.amount,
+      },
+    })
 
     return NextResponse.json({ received: true })
   } catch (error) {
