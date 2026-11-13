@@ -383,7 +383,7 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       console.error('Influencer qualification check failed after payment webhook:', qualifyError)
     }
 
-    if (order && order.walletAmountApplied && order.walletAmountApplied > 0) {
+    if (order && order.walletAmountApplied && order.walletAmountApplied > 0 && payment.userId) {
       await getPrisma().$transaction(async (tx: any) => {
         await tx.customerLoyalty.update({
           where: { userId: payment.userId },

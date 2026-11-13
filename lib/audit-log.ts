@@ -1,4 +1,5 @@
 import { getPrisma } from './prisma'
+import { logError } from './logger'
 
 export type EntityType = 'USER' | 'VENDOR' | 'SESSION' | 'PRODUCT' | 'SERVICE' | 'ORDER' | 'ORDER_ITEM' | 'SUPPORT_TICKET'   | 'RESTOCK_ORDER' | 'PURCHASE_ORDER' | 'KYC_APPLICATION' | 'INVENTORY' | 'SYSTEM' | 'PAYMENT_METHOD' | 'ADDRESS' | 'SERVICE_CATEGORY' | 'SUBSCRIPTION' | 'VENDOR_PAYOUT_METHOD' | 'SUPPORT_DOCUMENT'
 
@@ -23,7 +24,7 @@ export type AuditAction =
   | 'ORDER_DELETED' | 'ORDER_DELETE_REFUSED'
 
 interface AuditLogData {
-  userId: string
+  userId: string | null
   userRole: string
   action: AuditAction
   entityType: EntityType
@@ -50,7 +51,7 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
       },
     })
   } catch (error) {
-    console.error('Failed to create audit log:', error)
+    logError('Failed to create audit log', error)
   }
 }
 
