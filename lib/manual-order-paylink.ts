@@ -132,7 +132,6 @@ export async function ensurePayLinkForOrder(order: ManualOrderForPayLink): Promi
     email = `pay+${orderDisplayNumber(order.id)}@${domain}`
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) {
     console.warn('[pay-link] invalid email:', email)
     return {
