@@ -83,7 +83,7 @@ export default function RestockOrdersGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Can I cancel a backorder?</h3>
-                <p className="text-slate-600">Customers can cancel backorders before shipment. Notify them when stock arrives.</p>
+                <p className="text-slate-600">Customers may cancel under the platform cancellation policy: free within 1 hour of payment confirmation if not shipped, with a GHS 5 fee after the first hour and before shipment. Once the vendor ships the order, it cannot be cancelled. Notify customers when stock arrives.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How are backorder payments handled?</h3>

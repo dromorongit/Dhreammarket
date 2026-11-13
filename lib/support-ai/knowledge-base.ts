@@ -1,4 +1,13 @@
 import type { SupportIntent } from './types'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  RETURNS_RULE,
+  RETURN_REVIEW,
+  REFUND_TIMING,
+  CANCELLATION_PARAGRAPH,
+  PAYOUT_RULE,
+  MANUAL_ORDERS_COMMISSION,
+} from '@/lib/policy-copy'
 
 export const supportKnowledgeBase: SupportIntent[] = [
   {
@@ -9,7 +18,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/payment-policy/page.tsx and app/faq/faq-client.tsx (FAQ #7)',
-    response: 'Dhream Market processes all payments through Paystack, our secure centralized payment system. We accept all major credit/debit cards, mobile money, and bank transfers. You do not pay vendors directly — all payments are made through our platform at checkout. Paystack transaction fees may apply.',
+    response: 'Dhream Market processes all payments through Paystack, our secure centralized payment system. We accept all major credit/debit cards, mobile money, and bank transfers. You do not pay vendors directly — all payments are made through our platform at checkout. Paystack processing fees are added to the customer\'s payment and are not deducted from the vendor\'s payout.',
   },
   {
     id: 'refund-policy',
@@ -19,7 +28,8 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/refund/page.tsx (Sections 2-7)',
-    response: 'Products may be returned within 3 days of receiving them if they do not match the description, are damaged or defective on arrival, or if you received the wrong item. Returns must be initiated by contacting the vendor through your order. The vendor reviews requests within 3 business days. Refunds are processed within 3-5 business days after approval, credited to your original payment method. Depending on your bank, the credit may take 10-14 business days to appear in your account. Items that cannot be returned include opened personal care products, digital goods, final sale items, and products returned after the 3-day window. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility.',
+    response:
+      `${RETURNS_RULE} The product must be in its original condition with all packaging and tags intact. Returns must be initiated by contacting the vendor through your order. ${RETURN_REVIEW} ${REFUND_TIMING} For returns of manual orders, the vendor refunds the buyer directly. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility. ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'delivery-shipping',
@@ -59,7 +69,8 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/terms/page.tsx (Section 16: Marketplace Payment Processing & Vendor Payout Policy) and app/faq/faq-client.tsx (FAQ #6)',
-    response: 'All customer payments are processed through Dhream Market\'s centralized Paystack account. Vendors do NOT receive payments directly from customers. Dhream Market aggregates and reconciles completed sales before payouts are made. Vendors receive 100% of the product price minus platform commission (if applicable) and payment processing fees. When there is no open dispute, vendors receive payouts within 2 business days. If a dispute is being settled, the platform decides when the payout is released. Dhream Market reserves the right to determine payout schedules, holding periods, and settlement timelines. Payouts may be temporarily held in cases of suspicious activity, fraud investigation, disputes, policy violations, or compliance reviews. It is the vendor\'s responsibility to ensure their payout banking details are accurate.',
+    response:
+      `All customer payments are processed through Dhream Market\'s centralized Paystack account. Vendors do NOT receive payments directly from customers. ${PAYOUT_RULE} ${MANUAL_ORDERS_COMMISSION} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'how-to-contact-support',
@@ -141,7 +152,8 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: true,
     isDynamic: false,
     sourceFile: 'app/faq/faq-client.tsx (FAQ #11)',
-    response: 'Orders can only be modified or cancelled within 1 hour of placement, and only if they haven\'t already entered processing or shipping. To request changes: go to your Dashboard > Orders, find the relevant order, and if the timeframe allows, select "Cancel Order" or contact the seller directly through the order page. After 1 hour or once the order is in processing, cancellation requests must go through the support team for review. Refunds for approved cancellations are processed within 3-5 business days.',
+    response:
+      `${CANCELLATION_PARAGRAPH} ${REFUND_TIMING} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'damaged-order',

@@ -1,6 +1,10 @@
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
 import Image from 'next/image'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  CANCELLATION_PARAGRAPH,
+} from '@/lib/policy-copy'
 
 export const metadata = {
   title: 'Preorders - Help Center - Dhream Market',
@@ -88,7 +92,9 @@ export default function PreordersGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Can I cancel a preorder?</h3>
-                <p className="text-slate-600">Yes, you can cancel before shipment. Contact the vendor to initiate cancellation.</p>
+                <p className="text-slate-600">
+                  {CANCELLATION_PARAGRAPH} {POLICY_EFFECTIVE_DATE_DISPLAY}
+                </p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">When will I receive my preorder?</h3>

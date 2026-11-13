@@ -1,6 +1,10 @@
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  CANCELLATION_PARAGRAPH,
+} from '@/lib/policy-copy'
 
 export const metadata = {
   title: 'Backorders - Help Center - Dhream Market',
@@ -86,7 +90,9 @@ export default function BackordersGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Can I cancel a backorder?</h3>
-                <p className="text-slate-600">Yes, you can cancel anytime before shipment. Contact the vendor to cancel.</p>
+                <p className="text-slate-600">
+                  {CANCELLATION_PARAGRAPH} {POLICY_EFFECTIVE_DATE_DISPLAY}
+                </p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long does restocking take?</h3>

@@ -1,6 +1,12 @@
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  CANCELLATION_PARAGRAPH,
+  RETURN_REVIEW,
+  REFUND_TIMING,
+} from '@/lib/policy-copy'
 
 export const metadata = {
   title: 'Refunds - Help Center - Dhream Market',
@@ -40,10 +46,10 @@ export default function RefundsGuide() {
                   Contact the vendor directly through your order to initiate a refund request.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 1 (Alternative): Cancel Before Shipping</h3>
-<p className="text-slate-600 mb-3">
-                   If your order hasn&apos;t been shipped yet, you can cancel it directly from your order details page.
-                   For paid orders, you can also request a refund during cancellation.
-                 </p>
+                <p className="text-slate-600 mb-3">
+                  {CANCELLATION_PARAGRAPH}
+                </p>
+                <p className="text-slate-600 mb-3">{POLICY_EFFECTIVE_DATE_DISPLAY}</p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Provide Details</h3>
                 <p className="text-slate-600 mb-3">
                   Explain the issue and provide photos if applicable. Include your order number.
@@ -54,7 +60,7 @@ export default function RefundsGuide() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Process Refund</h3>
                 <p className="text-slate-600">
-                  After return is received and inspected, refund is processed to your original payment method.
+                  {REFUND_TIMING}
                 </p>
               </section>
 
@@ -64,9 +70,9 @@ export default function RefundsGuide() {
                   Refund Timeline
                 </h2>
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Request Review:</strong> 1-3 business days</span></li>
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Return Processing:</strong> 3-5 business days after receipt</span></li>
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Bank Processing:</strong> 10-14 business days for refund to appear</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Request Review:</strong> 1 business day after you submit your return request</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Refund Processing:</strong> within 24 hours after approval</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span><span className="text-slate-600"><strong>Credit to Account:</strong> depends on your payment provider</span></li>
                 </ul>
               </section>
 
@@ -91,7 +97,9 @@ export default function RefundsGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long does a refund take?</h3>
-                <p className="text-slate-600">Refunds are processed within 3-5 business days after the vendor receives returned items. Depending on your bank, the credit may take 10-14 business days to appear in your account.</p>
+                <p className="text-slate-600">
+                  {RETURN_REVIEW} {REFUND_TIMING} {POLICY_EFFECTIVE_DATE_DISPLAY}
+                </p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Will I get a full refund?</h3>

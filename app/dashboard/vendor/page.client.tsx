@@ -219,7 +219,7 @@ export default function VendorDashboardPage() {
 
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
           <p className="text-sm text-blue-800">
-            Vendors pay a 1% platform commission on all completed orders. Payouts are processed after 2 business days.
+            Vendors pay a 1% platform commission on all completed orders. Manual orders: 0% commission. Payouts are processed after 2 business days.
           </p>
         </div>
 

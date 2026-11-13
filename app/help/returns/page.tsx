@@ -1,6 +1,10 @@
+import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
-import Image from 'next/image'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  RETURN_REVIEW,
+} from '@/lib/policy-copy'
 
 export const metadata = {
   title: 'Returns - Help Center - Dhream Market',
@@ -36,8 +40,9 @@ export default function ReturnsGuide() {
                   Return Policy Overview
                 </h2>
                 <p className="text-slate-600 mb-4">
-                  Returns must be initiated within 3 days of receiving your order. Items must be in original condition with packaging intact.
+                  A return must be started within 1 day of the vendor marking the order completed if the delivery address is in the Greater Accra Region, and within 3 days otherwise. Items must be in original condition with packaging intact.
                 </p>
+                <p className="text-slate-600 mb-4">{POLICY_EFFECTIVE_DATE_DISPLAY}</p>
                 <p className="text-slate-600">
                   Contact the vendor directly through your order page to start the return process.
                 </p>
@@ -53,16 +58,14 @@ export default function ReturnsGuide() {
                   Contact the vendor through your order page with reason and photos if applicable.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Get Approval</h3>
-                <p className="text-slate-600 mb-3">
-                  Vendor reviews your request and provides return instructions within 3 business days.
-                </p>
+                <p className="text-slate-600 mb-3">{RETURN_REVIEW}</p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 3: Ship Item Back</h3>
                 <p className="text-slate-600 mb-3">
                   Package item securely and ship using tracked method. Keep your receipt.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Receive Refund</h3>
                 <p className="text-slate-600">
-                  After vendor receives and inspects item, refund is processed in 3-5 business days. Depending on your bank, the credit may take 10-14 business days to appear in your account.
+                  After the vendor approves your return, Dhream Market processes the refund within 24 hours. Time for the refund to reach your account depends on your payment provider.
                 </p>
               </section>
 
@@ -87,7 +90,9 @@ export default function ReturnsGuide() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">How long do returns take?</h3>
-                <p className="text-slate-600">Return review takes 3 business days. After approval, refund processing takes 3-5 business days. Depending on your bank, the credit may take 10-14 business days to appear in your account.</p>
+                <p className="text-slate-600">
+                  Return review takes 1 business day after you submit your request. After approval, Dhream Market processes the refund within 24 hours. Time for the refund to reach your account depends on your payment provider. {POLICY_EFFECTIVE_DATE_DISPLAY}
+                </p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Who pays return shipping?</h3>
@@ -95,7 +100,7 @@ export default function ReturnsGuide() {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn&apos;t respond?</h3>
-                <p className="text-slate-600">Contact our support team to open a dispute if the vendor doesn&apos;t respond within 3 business days.</p>
+                <p className="text-slate-600">Contact our support team to open a dispute if the vendor doesn&apos;t respond within 1 business day.</p>
               </div>
             </div>
           </CardContent>
@@ -112,25 +117,25 @@ export default function ReturnsGuide() {
           </CardContent>
         </Card>
 
-<Card variant="elevated">
-           <CardContent className="p-6 sm:p-8">
-             <h2 className="text-2xl font-semibold text-deep-navy mb-4">Need Help?</h2>
-             <p className="text-slate-600 mb-4">
-               If you need assistance with a return, our support team is here to help.
-             </p>
-             <div className="flex flex-col sm:flex-row gap-4">
-               <a href="/help" className="text-royal-blue hover:underline">Visit Help Center</a>
-               <a href="/contact" className="text-royal-blue hover:underline">Contact Support</a>
-               <div className="flex flex-col sm:flex-row gap-2">
-                 <a href="tel:+233596522239" className="text-royal-blue hover:underline">+233 59 652 2239</a>
-                 <span className="text-slate-400 hidden sm:inline">|</span>
-                 <a href="tel:+233508548181" className="text-royal-blue hover:underline">+233 50 854 8181</a>
-                 <span className="text-slate-400 hidden sm:inline">|</span>
-                 <a href="tel:+233279354362" className="text-royal-blue hover:underline">+233 27 935 4362</a>
-               </div>
-             </div>
-           </CardContent>
-         </Card>
+        <Card variant="elevated">
+          <CardContent className="p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold text-deep-navy mb-4">Need Help?</h2>
+            <p className="text-slate-600 mb-4">
+              If you need assistance with a return, our support team is here to help.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a href="/help" className="text-royal-blue hover:underline">Visit Help Center</a>
+              <a href="/contact" className="text-royal-blue hover:underline">Contact Support</a>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <a href="tel:+233596522239" className="text-royal-blue hover:underline">+233 59 652 2239</a>
+                <span className="text-slate-400 hidden sm:inline">|</span>
+                <a href="tel:+233508548181" className="text-royal-blue hover:underline">+233 50 854 8181</a>
+                <span className="text-slate-400 hidden sm:inline">|</span>
+                <a href="tel:+233279354362" className="text-royal-blue hover:underline">+233 27 935 4362</a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

@@ -7,6 +7,13 @@ import { Badge } from "@/components/Badge";
 import { Input } from "@/components/Input";
 import { Button } from "@/components/Button";
 import { FAQJsonLd } from "@/components/seo/FAQJsonLd";
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  CANCELLATION_FAQ_SHORT,
+  REFUND_TIMING,
+  RETURN_REVIEW,
+  PAYOUT_RULE,
+} from "@/lib/policy-copy";
 
 interface FAQ {
   id: string;
@@ -56,7 +63,7 @@ const faqData: FAQ[] = [
     category: "Vendor FAQs",
     question: "How are vendor payouts calculated?",
     answer:
-      "Vendors receive 100% of the product price minus platform commission (if applicable) and payment processing fees. When there is no open dispute, vendors receive payouts within 2 business days. If a dispute is being settled, the platform decides when the payout is released.",
+      `${PAYOUT_RULE} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: "7",
@@ -70,7 +77,8 @@ const faqData: FAQ[] = [
     category: "Payments & Refunds",
     question: "How do I request a refund?",
     answer:
-      "Contact the seller directly through your order page to initiate a refund request. If unresolved, our support team can assist. Refunds are processed within 3-5 business days after approval. Depending on your bank, the credit may take 10-14 business days to appear in your account.",
+      "Contact the seller directly through your order page to initiate a refund request. If unresolved, our support team can assist. " +
+      `${RETURN_REVIEW} ${REFUND_TIMING} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: "9",
@@ -91,7 +99,7 @@ const faqData: FAQ[] = [
     category: "Orders & Delivery",
     question: "Can I modify or cancel my order?",
     answer:
-      "Orders can only be modified or cancelled within 1 hour of placement if they haven't entered processing. Contact support immediately for assistance.",
+      `${CANCELLATION_FAQ_SHORT} ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: "12",
