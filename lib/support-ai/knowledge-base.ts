@@ -18,7 +18,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/payment-policy/page.tsx and app/faq/faq-client.tsx (FAQ #7)',
-    response: 'Dhream Market processes all payments through Paystack, our secure centralized payment system. We accept all major credit/debit cards, mobile money, and bank transfers. You do not pay vendors directly â€” all payments are made through our platform at checkout. Paystack processing fees are added to the customer\'s payment and are not deducted from the vendor\'s payout.',
+    response: 'Dhream Market processes all payments through Paystack, our secure centralized payment system. We accept all major credit/debit cards, mobile money, and bank transfers. You do not pay vendors directly — all payments are made through our platform at checkout. Paystack processing fees are added to the customer\'s payment and are not deducted from the vendor\'s payout.',
   },
   {
     id: 'refund-policy',
