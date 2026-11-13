@@ -1,4 +1,4 @@
-﻿import { getPrisma } from '@/lib/prisma'
+import { getPrisma } from '@/lib/prisma'
 
 /** Kill switch: env override is hard, otherwise the SuperAdminSettings flag (default off). */
 export async function supportAiV2Enabled(): Promise<boolean> {
