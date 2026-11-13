@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit } from '@/lib/rate-limit'
 import { getServerSession } from '@/lib/auth'
-import { getPrisma } from '@/lib/prisma'
 import { handleSupportMessage } from '@/lib/support-ai-v2/src/pipeline/handle-message'
 import { resolveRole } from '@/lib/support-ai-v2/src/identity/resolve-role'
 import { makePorts } from '@/lib/support-ai-v2/ports'
@@ -11,6 +10,7 @@ import {
   isValidSupportAiConversationId,
   userOwnsConversation,
 } from '@/lib/support-ai-v2/conversation-ownership'
+import { supportAiV2Enabled } from '@/lib/support-ai-v2/flag'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -27,20 +27,6 @@ function sanitizeError(error: unknown): { name: string; message: string } {
     return { name: error.name, message: '[REDACTED]' }
   }
   return { name: 'UnknownError', message: '[REDACTED]' }
-}
-
-/** Kill switch: env override is hard, otherwise the SuperAdminSettings flag (default off). */
-async function supportAiV2Enabled(): Promise<boolean> {
-  const envOverride = process.env.SUPPORT_AI_V2_ENABLED
-  if (envOverride !== undefined && envOverride !== '') {
-    return envOverride.trim().toLowerCase() === 'true'
-  }
-  try {
-    const settings = await getPrisma().superAdminSettings.findFirst()
-    return settings?.supportAiV2Enabled === true
-  } catch {
-    return false
-  }
 }
 
 export async function POST(request: NextRequest) {

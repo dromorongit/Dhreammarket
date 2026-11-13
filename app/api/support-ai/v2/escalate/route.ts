@@ -10,6 +10,7 @@ import {
   isValidSupportAiConversationId,
   userOwnsConversation,
 } from '@/lib/support-ai-v2/conversation-ownership'
+import { supportAiV2Enabled } from '@/lib/support-ai-v2/flag'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -21,6 +22,12 @@ function generateRequestId(): string {
 const MAX_NOTE_CHARS = 500
 
 export async function POST(request: NextRequest) {
+  // Kill switch -- never accept escalation when the feature is off.
+  const enabled = await supportAiV2Enabled()
+  if (!enabled) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   // 1. Authenticate -- logged-out visitors cannot escalate in v2.
   let appSession: { userId: string; role: string; sessionId: string } | null = null
   try {
