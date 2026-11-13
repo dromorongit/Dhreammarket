@@ -44,6 +44,7 @@ interface VendorSettings {
   notifyLowStock?: boolean
   notifyCustomerMessages?: boolean
   notifySettlements?: boolean
+  notifyDailySummary?: boolean
   notificationChannels?: Record<string, any>
 }
 
@@ -753,6 +754,7 @@ export default function VendorSections({ initialStore }: VendorSectionsProps) {
             <Toggle label="Low Stock Alerts" description="Get notified when inventory is low" checked={vendorSettings?.notifyLowStock ?? true} onChange={() => updateVendorSetting('notifyLowStock', !(vendorSettings?.notifyLowStock))} disabled={settingsSaving} />
             <Toggle label="Customer Messages" description="Get notified when a customer sends a message" checked={vendorSettings?.notifyCustomerMessages ?? true} onChange={() => updateVendorSetting('notifyCustomerMessages', !(vendorSettings?.notifyCustomerMessages))} disabled={settingsSaving} />
             <Toggle label="Settlements" description="Get notified about payout and settlement updates" checked={vendorSettings?.notifySettlements ?? true} onChange={() => updateVendorSetting('notifySettlements', !(vendorSettings?.notifySettlements))} disabled={settingsSaving} />
+            <Toggle label="Daily sales summary (7 PM)" description="Get a daily summary of your sales by email and in-app" checked={vendorSettings?.notifyDailySummary ?? true} onChange={() => updateVendorSetting('notifyDailySummary', !(vendorSettings?.notifyDailySummary))} disabled={settingsSaving} />
           </div>
         )}
       </SettingsSection>

@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader } from '@/components/Card'
 import { Button } from '@/components/Button'
 import { Badge } from '@/components/Badge'
@@ -38,7 +39,12 @@ const RESTOCK_TRANSITIONS: Record<string, string[]> = {
   CANCELLED: [],
 }
 
-export default function VendorRestockPageClient() {
+function RestockPageInner() {
+  const searchParams = useSearchParams()
+  const productIdParam = searchParams?.get('productId')
+  const quantityParam = searchParams?.get('quantity')
+  const prefillQuantity = quantityParam ? parseInt(quantityParam, 10) : 0
+
   const [restockOrders, setRestockOrders] = useState<RestockOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -53,6 +59,17 @@ export default function VendorRestockPageClient() {
     fetchRestockOrders()
     fetchProducts()
   }, [])
+
+  // Preselect and prefill the create modal when arriving from a product's
+  // Reorder link. Ignore unknown productIds.
+  useEffect(() => {
+    if (!productIdParam || !products.length) return
+    const match = products.find(p => p.id === productIdParam)
+    if (!match) return
+    setSelectedProductId(match.id)
+    setQuantity(prefillQuantity > 0 ? prefillQuantity : 0)
+    setShowCreateModal(true)
+  }, [productIdParam, prefillQuantity, products])
 
   const fetchRestockOrders = async () => {
     try {
@@ -241,7 +258,7 @@ export default function VendorRestockPageClient() {
           <Card>
             <CardContent className="p-12 text-center">
               <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10l8 4"></path>
               </svg>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No restock orders</h3>
               <p className="text-gray-600 mb-4">Create your first restock order to manage incoming inventory.</p>
@@ -321,5 +338,13 @@ export default function VendorRestockPageClient() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function VendorRestockPageClient() {
+  return (
+    <Suspense fallback={null}>
+      <RestockPageInner />
+    </Suspense>
   )
 }

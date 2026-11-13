@@ -9,6 +9,7 @@ const prismaMock = vi.hoisted(() => ({
   orderItem: { createMany: vi.fn() },
   vendorCustomer: { upsert: vi.fn() },
   $queryRaw: vi.fn(),
+  $executeRaw: vi.fn(),
   $transaction: vi.fn(),
 }))
 
@@ -66,6 +67,7 @@ let productList: any[] = []
 function mockTx() {
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([]),
+    $executeRaw: vi.fn().mockResolvedValue(0),
     order: {
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockImplementation(async ({ data }: any) => ({
@@ -90,7 +92,7 @@ function mockTx() {
       upsert: vi.fn().mockResolvedValue({ id: 'vc_1', storeId: 'store_1', phone: '+233242222222' }),
     },
   }
-  prismaMock.$transaction.mockImplementation(async (cb: any) => cb(tx))
+  prismaMock.$transaction.mockImplementation(async (cb: any, _options?: any) => cb(tx))
   return tx
 }
 

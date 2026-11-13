@@ -63,6 +63,7 @@ const ITEM_KEYS = [
   'requestSource',
   'total',
   'refundedPesewas',
+  'recordedRefundAmount',
   'paymentPesewas',
   'currency',
   'walletAssisted',
@@ -158,6 +159,39 @@ describe('GET /api/admin/refund-requests', () => {
     const body = await response.json()
 
     expect(body.items[0].walletAssisted).toBe(true)
+  })
+
+  it('displays the recorded cancellation refundAmount when present', async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({ customerCancellations: [{ refundAmount: 95, createdAt: new Date('2026-10-01T01:00:00.000Z') }] }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items[0].recordedRefundAmount).toBe(95)
+  })
+
+  it('records null recordedRefundAmount when there is no cancellation row', async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({ customerCancellations: [] }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items[0].recordedRefundAmount).toBeNull()
+  })
+
+  it('records null recordedRefundAmount when the cancellation refundAmount is null', async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      buildOrder({ customerCancellations: [{ refundAmount: null, createdAt: new Date('2026-10-01T01:00:00.000Z') }] }),
+    ])
+
+    const response = await GET(buildRequest())
+    const body = await response.json()
+
+    expect(body.items[0].recordedRefundAmount).toBeNull()
   })
 
   it('derives CUSTOMER_CANCEL from the latest refund-request audit log', async () => {

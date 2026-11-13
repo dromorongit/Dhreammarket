@@ -6,6 +6,10 @@ import { sendPaymentConfirmationEmail } from '@/lib/email'
 import { canSendCustomerEmail, shouldSendNotification } from '@/lib/notification-preferences'
 import { calculateFinancialBreakdown, formatFinancialBreakdown } from '@/lib/revenue'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
+import { handleLatePayment } from '@/lib/late-payment'
+import { checkPaystackAmount } from '@/lib/payment-checks'
+import { createRefund } from '@/lib/refunds/refund-service'
+import { createNotification } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
 
@@ -92,34 +96,156 @@ export async function POST(request: NextRequest) {
     // Check both Paystack status and our payment status
     const paymentStatus = paystackResponse.data.status
 
-    const paystackAmountGhs = Math.round((paystackResponse.data.amount / 100) * 100) / 100
-    if (Math.abs(paystackAmountGhs - payment.amount) > 0.01) {
-      console.error('[Payment Verify API] Amount mismatch:', {
-        reference,
-        paystackAmountGhs,
-        storedAmount: payment.amount,
-        difference: Math.round((paystackAmountGhs - payment.amount) * 100) / 100,
-      })
-      createAuditLog({
-        userId: payment.userId,
-        userRole: 'SYSTEM',
-        action: 'PAYMENT_FAILED',
-        entityType: 'ORDER',
-        entityId: payment.orderId,
-        afterData: {
-          paymentId: payment.id,
-          reference,
-          paystackAmountGhs,
-          storedAmount: payment.amount,
-          difference: Math.round((paystackAmountGhs - payment.amount) * 100) / 100,
-          AMOUNT_MISMATCH: true,
-        },
-      }).catch(() => {})
+    // Amount and currency validation against Paystack's charged amount.
+    // payment.amount is chargeTotal (checkout/route.ts:302), exactly what is
+    // sent to Paystack (lib/paystack.ts:127). A mismatch indicates an error,
+    // never a legitimate wallet/discount/fee variation.
+    if (paymentStatus === 'success') {
+      const amountCheck = checkPaystackAmount(paystackResponse.data, payment)
+      if (amountCheck.wrongCurrency || amountCheck.underpaid) {
+        // Mark payment PAID (customer did pay) for idempotency on repeat calls.
+        await getPrisma().payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'PAID',
+            message: `Amount mismatch - ${amountCheck.wrongCurrency ? 'wrong currency' : 'underpaid'}`,
+            paystackRef: payment.reference,
+          },
+        })
+        // Cancel the order and release any reserved stock.
+        await getPrisma().order.update({
+          where: { id: payment.orderId },
+          data: { status: 'CANCELLED', paymentStatus: 'PAID' },
+        })
+        const orderForRelease = await getPrisma().order.findUnique({
+          where: { id: payment.orderId },
+          select: { orderType: true },
+        })
+        if (orderForRelease && orderForRelease.orderType === 'NORMAL') {
+          await releaseStock(payment.orderId).catch(err => {
+            console.error('Failed to release stock for amount mismatch:', err)
+          })
+        }
+
+        if (amountCheck.wrongCurrency) {
+          // Wrong currency: do not auto-refund. Mark needs-attention and
+          // notify super admins with the reference, paid amount, and currency.
+          const superAdmins = await getPrisma().user.findMany({
+            where: { role: 'SUPER_ADMIN' },
+            select: { id: true },
+          })
+          for (const admin of superAdmins) {
+            await createNotification(
+              admin.id,
+              'ORDER_STATUS_UPDATED',
+              'Wrong currency payment needs review',
+              `Order ${payment.orderId} received ${amountCheck.paystackAmountGhs} ${paystackResponse.data.currency} but expected ${amountCheck.storedAmountGhs} ${payment.currency}. Reference: ${payment.reference}`,
+            ).catch(() => {})
+          }
+          return NextResponse.json({
+            success: false,
+            orderId: payment.orderId,
+            error: 'Payment currency mismatch',
+            amountCheck,
+          }, { status: 400 })
+        }
+
+        // Underpaid, correct currency: refund exactly the amount Paystack
+        // received, then cancel and release stock.
+        try {
+          const orderItems = await getPrisma().orderItem.findMany({
+            where: { orderId: payment.orderId },
+            select: { id: true, price: true, quantity: true },
+          })
+          const remainingPesewas = Math.round(amountCheck.paystackAmountGhs * 100)
+          const refundItems: Array<{ orderItemId: string; amount: number }> = []
+          let remaining = remainingPesewas
+          for (const item of orderItems) {
+            if (remaining <= 0) break
+            const itemGrossPesewas = Math.round((item.price ?? 0) * item.quantity * 100)
+            const amountPesewas = Math.min(itemGrossPesewas, remaining)
+            if (amountPesewas > 0) {
+              refundItems.push({ orderItemId: item.id, amount: amountPesewas / 100 })
+              remaining -= amountPesewas
+            }
+          }
+          if (refundItems.length > 0) {
+            await createRefund({
+              orderId: payment.orderId,
+              items: refundItems,
+              source: 'CUSTOMER_CANCEL',
+              reference: payment.reference,
+              actor: {
+                triggeredByUserId: payment.userId,
+                triggeredByRole: 'SYSTEM',
+              },
+            })
+          }
+        } catch (refundErr) {
+          // Refund could not be started - notify admins for manual review.
+          const superAdmins = await getPrisma().user.findMany({
+            where: { role: 'SUPER_ADMIN' },
+            select: { id: true },
+          })
+          for (const admin of superAdmins) {
+            await createNotification(
+              admin.id,
+              'ORDER_STATUS_UPDATED',
+              'Underpaid refund needs manual review',
+              `Order ${payment.orderId} was underpaid by Paystack and the automatic refund could not be started. Reference: ${payment.reference}`,
+            ).catch(() => {})
+          }
+        }
+        return NextResponse.json({
+          success: false,
+          orderId: payment.orderId,
+          error: 'Payment amount mismatch',
+          amountCheck,
+        }, { status: 400 })
+      }
+      if (amountCheck.overpaid) {
+        const superAdmins = await getPrisma().user.findMany({
+          where: { role: 'SUPER_ADMIN' },
+          select: { id: true },
+        })
+        for (const admin of superAdmins) {
+          await createNotification(
+            admin.id,
+            'ORDER_STATUS_UPDATED',
+            'Payment overpaid',
+            `Order ${payment.orderId} was overpaid: Paystack charged ${amountCheck.paystackAmountGhs} GHS, expected ${amountCheck.storedAmountGhs} GHS. Reference: ${payment.reference}`,
+          ).catch(() => {})
+        }
+      }
     }
     
     // CRITICAL: Early return if payment already verified (idempotency protection)
     // This prevents double stock deduction, double order processing, and double notifications
-    if (payment.status === 'PAID' || payment.order?.status !== 'PENDING') {
+    if (payment.status === 'PAID') {
+      // Payment already processed - return success without re-processing
+      console.log('[Payment Verify API] Payment already processed - returning success')
+      return NextResponse.json({
+        success: true,
+        orderId: payment.orderId,
+        message: 'Payment already verified',
+        alreadyProcessed: true,
+      })
+    }
+
+    // Late payment: order was cancelled by the expiry cron but Paystack
+    // confirms the transaction succeeded. Attempt to fulfil or refund.
+    if (payment.order?.status === 'CANCELLED' && payment.status === 'FAILED' && paymentStatus === 'success') {
+      const late = await handleLatePayment(payment.orderId, payment.reference, paystackResponse.data)
+      return NextResponse.json({
+        success: late.fulfilled,
+        orderId: payment.orderId,
+        message: 'Late payment processed',
+        alreadyProcessed: late.alreadyProcessed,
+        latePayment: late,
+      })
+    }
+
+    if (payment.order?.status !== 'PENDING') {
       // Payment already processed - return success without re-processing
       console.log('[Payment Verify API] Payment already processed - returning success')
       return NextResponse.json({

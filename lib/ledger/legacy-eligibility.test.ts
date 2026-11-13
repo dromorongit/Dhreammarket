@@ -20,7 +20,7 @@ describe('legacy eligibility', () => {
     expect(client.orderItem.aggregate).toHaveBeenCalledWith({
       where: {
         product: { storeId: 'store-1' },
-        order: { paymentStatus: 'PAID', status: { in: ['DELIVERED', 'COMPLETED'] }, source: 'ONLINE' },
+        order: { paymentStatus: 'PAID', status: { in: ['DELIVERED', 'COMPLETED'] }, OR: [ { source: 'ONLINE' }, { source: 'MANUAL', payment: { status: 'PAID' } } ] },
       },
       _sum: { vendorEarnings: true },
     })

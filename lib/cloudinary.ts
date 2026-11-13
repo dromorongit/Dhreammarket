@@ -179,14 +179,98 @@ export async function uploadMultipleVideos(
   return Promise.all(uploadPromises);
 }
 
+export function isPublicUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Upload a KYC document as a private/authenticated Cloudinary asset.
+ * KYC documents must never go through the public upload helper.
+ * PDFs are uploaded as resource_type 'raw', images as 'image'.
+ * The stored path is the Cloudinary public_id (never a public URL).
+ */
+export async function uploadKycDocument(
+  file: File | Buffer,
+  folder: string = 'dhream-market/verification-documents',
+  mimeType?: string
+): Promise<{ url: string; publicId: string; resourceType: 'image' | 'raw'; size: number }> {
+  configureCloudinary();
+
+  const fileName = file instanceof File ? file.name : 'upload';
+  const fileType = mimeType || (file instanceof File ? file.type : '');
+  const fileSize = file instanceof File ? file.size : Buffer.byteLength(file);
+  const buffer = file instanceof File ? Buffer.from(await file.arrayBuffer()) : file;
+
+  const resourceType: 'image' | 'raw' = fileType.startsWith('image/') ? 'image' : 'raw';
+  const safePublicId = `kyc/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: resourceType,
+        type: 'authenticated',
+        public_id: safePublicId,
+        allowed_formats:
+          resourceType === 'image'
+            ? ['jpg', 'jpeg', 'png', 'webp']
+            : ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+      },
+      (error, result) => {
+        if (error) {
+          console.error('[Cloudinary] KYC upload error:', { error, folder, fileName, fileType, fileSize, resourceType });
+          reject(new Error(`Cloudinary KYC upload failed: ${error.message || JSON.stringify(error)}`));
+        } else if (result) {
+          console.log('[Cloudinary] KYC upload success:', { publicId: result.public_id, resourceType, folder });
+          resolve({
+            url: result.public_id,
+            publicId: result.public_id,
+            resourceType,
+            size: fileSize,
+          });
+        } else {
+          reject(new Error('Cloudinary KYC upload returned no result'));
+        }
+      }
+    );
+
+    stream.end(buffer);
+  });
+}
+
+/**
+ * Issue a real short-lived Cloudinary signed download URL for an authenticated
+ * (private) asset. The URL is never a permanent public URL.
+ */
+export function getSignedDocumentDownloadUrl(
+  publicId: string,
+  options: { resourceType?: 'image' | 'raw'; ttlSeconds?: number } = {}
+): { url: string; expiresAt: Date } {
+  configureCloudinary();
+  const expiresAt = new Date(Date.now() + (options.ttlSeconds ?? 15 * 60) * 1000);
+
+  const url = cloudinary.utils.private_download_url(publicId, '', {
+    type: 'authenticated',
+    resource_type: options.resourceType ?? 'image',
+    expires_at: Math.floor(expiresAt.getTime() / 1000),
+  })
+
+  return { url, expiresAt };
+}
+
 /**
  * Delete an image from Cloudinary by public ID
  * @param publicId - The public ID of the image to delete
  */
-export async function deleteImage(publicId: string): Promise<void> {
+export async function deleteImage(publicId: string, resourceType: 'image' | 'raw' | 'video' = 'image'): Promise<void> {
   configureCloudinary();
   return new Promise((resolve, reject) => {
-    cloudinary.uploader.destroy(publicId, (error, result) => {
+    cloudinary.uploader.destroy(publicId, { resource_type: resourceType, invalidate: true }, (error, result) => {
       if (error) {
         reject(error);
       } else {

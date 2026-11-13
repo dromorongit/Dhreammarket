@@ -19,6 +19,7 @@ model User {
   resetPasswordExpires         DateTime?
   emailVerifiedAt              DateTime?
   isEmailVerified              Boolean                        @default(false)
+  cancellationBlockedUntil     DateTime?
   behavioralTrackingConsent    Boolean                        @default(true)
   referralCode                 String?                        @unique @db.VarChar(32)
   registrationIpAddress        String?                        @db.VarChar(64)
@@ -78,12 +79,16 @@ model User {
   influencerCashbacks          InfluencerCashback[]
   returnRequests               ReturnRequest[]
   refunds                      Refund[]
+  customerCancellations        CustomerCancellation[]
   vendorBalanceAdjustments     VendorBalanceAdjustment[]
   vendorPosts                  VendorPost[]                   @relation("UserVendorPosts")
   vendorPostLikes              VendorPostLike[]               @relation("UserVendorPostLikes")
   vendorPostComments           VendorPostComment[]            @relation("UserVendorPostComments")
   vendorPostReports            VendorPostReport[]             @relation("UserVendorPostReports")
   vendorFollows                VendorFollow[]
+  supportDocumentAuthors       SupportDocument[]   @relation("SupportDocumentAuthor")
+  supportDocumentReviewers     SupportDocument[]   @relation("SupportDocumentReviewer")
+  supportFeedback              SupportFeedback[]   @relation("SupportFeedbackUser")
 
   @@index([referralCode])
   @@index([registrationIpAddress])
@@ -272,6 +277,7 @@ model Product {
   stock                    Int                         @default(0)
   reservedQuantity         Int                         @default(0)
   lowStockThreshold        Int                         @default(5)
+  lowStockAlertedAt        DateTime?
   createdAt                DateTime                    @default(now())
   updatedAt                DateTime                    @updatedAt
   averageRating            Float                       @default(0)
@@ -526,6 +532,8 @@ model Order {
   orderType             OrderType              @default(NORMAL)
   fulfillmentStatus     OrderFulfillmentStatus @default(PENDING)
   inventoryConsumedAt   DateTime?
+  stockReservedAt       DateTime?
+  reservationExpiredAt  DateTime?
   allocatedAt           DateTime?
   idempotencyKey        String?
   walletAmountApplied   Float?
@@ -533,6 +541,9 @@ model Order {
   channel               SaleChannel?
   paymentMethod         String?
   paymentConfirmedAt    DateTime?
+  completedAt           DateTime?
+  completionReminder1At DateTime?   @map("completion_reminder_1_at")
+  completionReminder2At DateTime?   @map("completion_reminder_2_at")
   receiptToken          String?                @unique
   payToken              String?                @unique
   paymentRequestedAt    DateTime?
@@ -542,6 +553,7 @@ model Order {
   fulfillmentEvents     FulfillmentEvent[]
   items                 OrderItem[]
   orderMessages         OrderMessage[]
+  customerCancellations CustomerCancellation[]
   user                  User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   vendorCustomer        VendorCustomer?        @relation(fields: [vendorCustomerId], references: [id], onDelete: SetNull)
   payment               Payment?
@@ -596,38 +608,39 @@ model OrderItem {
 }
 
 model Payment {
-  id          String        @id @default(cuid())
-  userId      String?
-  orderId     String        @unique
-  amount      Float
-  currency    String        @default("GHS")
-  status      PaymentStatus @default(PENDING)
-  reference   String        @unique
-  paystackRef String?
-  message     String?
-  reviewReason String?
-  reviewFlaggedAt DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  refunds     Refund[]
-  paymentAttempts PaymentAttempt[]
+  id               String           @id @default(cuid())
+  userId           String?
+  orderId          String           @unique
+  amount           Float
+  currency         String           @default("GHS")
+  status           PaymentStatus    @default(PENDING)
+  reference        String           @unique
+  paystackRef      String?
+  authorizationUrl String?
+  message          String?
+  reviewReason     String?
+  reviewFlaggedAt  DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  order            Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user             User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refunds          Refund[]
+  paymentAttempts  PaymentAttempt[]
 
   @@map("payments")
 }
 
 model PaymentAttempt {
-  id             String           @id @default(cuid())
-  paymentId      String
-  reference      String           @unique
-  status         PaymentStatus    @default(PENDING)
-  amount         Float
+  id               String        @id @default(cuid())
+  paymentId        String
+  reference        String        @unique
+  status           PaymentStatus @default(PENDING)
+  amount           Float
   authorizationUrl String?
-  accessCode     String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  payment        Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  accessCode       String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  payment          Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   @@index([paymentId])
   @@map("payment_attempts")
@@ -654,21 +667,22 @@ model ProductReview {
 }
 
 model VendorReview {
-  id         String   @id @default(cuid())
-  rating     Int
-  comment    String?
-  userId     String
-  storeId    String
-  orderId    String?
-  isApproved Boolean  @default(true)
-  isHidden   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  order      Order?   @relation(fields: [orderId], references: [id])
-  store      Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  rating            Int
+  comment           String?
+  userId            String
+  storeId           String
+  orderId           String?
+  isVerifiedPurchase Boolean  @default(false)
+  isApproved        Boolean  @default(true)
+  isHidden          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  order             Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, storeId])
+  @@unique([orderId, storeId])
   @@index([storeId, isApproved, isHidden])
   @@map("vendor_reviews")
 }
@@ -761,6 +775,7 @@ model VendorVerificationApplication {
   paymentCompletedAt DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
+  revokedAt          DateTime?
   paystackRef        String?
   store              Store                  @relation(fields: [storeId], references: [id], onDelete: Cascade)
   vendor             User                   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -798,7 +813,8 @@ model VerificationDocument {
   id            String                        @id @default(cuid())
   applicationId String
   documentType  String
-  documentUrl   String
+  documentPath  String
+  resourceType  String?
   fileName      String?
   createdAt     DateTime                      @default(now())
   application   VendorVerificationApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -883,6 +899,8 @@ model VendorSettings {
   notifyLowStock             Boolean  @default(true)
   notifyCustomerMessages     Boolean  @default(true)
   notifySettlements          Boolean  @default(true)
+  notifyDailySummary         Boolean  @default(true)
+  lastDailySummaryDate       DateTime?
   notificationChannels       Json     @default("{}")
   createdAt                  DateTime @default(now())
   updatedAt                  DateTime @updatedAt
@@ -925,8 +943,9 @@ model SuperAdminSettings {
   newVendorApproval            Boolean  @default(true)
   autoApproveProducts          Boolean  @default(false)
   defaultCurrency              String   @default("GHS")
-  platformFee                  Float    @default(2.5)
+  platformFee                  Float    @default(1)
   platformName                 String?  @default("Dhreamarket")
+  supportAiV2Enabled           Boolean  @default(false)
   platformTimezone             String   @default("Africa/Accra")
   regionalDefaults             Json     @default("{}")
   brandingPreferences          Json     @default("{}")
@@ -960,6 +979,7 @@ model SupportTicket {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   conversationRef  String?               @unique @db.VarChar(32)
+  escalationReason String?
   guestToken       String?               @unique @db.VarChar(64)
   assignedAdminId  String?
   lastMessageAt    DateTime?             @default(now())
@@ -1015,6 +1035,56 @@ model SupportMessage {
   @@index([ticketId, createdAt])
   @@index([senderType])
   @@map("support_messages")
+}
+
+model SupportDocument {
+  id           String          @id @default(cuid())
+  slug         String          @unique
+  title        String
+  content      String
+  status       DocumentStatus  @default(DRAFT)
+  version      Int             @default(1)
+  intent       String
+  authorId     String?
+  reviewerId   String?
+  approvedAt   DateTime?
+  reviewDueAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  author       User?           @relation("SupportDocumentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  reviewer     User?           @relation("SupportDocumentReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  chunks       DocumentChunk[]
+
+  @@index([intent, status])
+  @@map("support_documents")
+}
+
+model DocumentChunk {
+  id          String   @id @default(cuid())
+  documentId  String
+  chunkIndex  Int
+  content     String
+  document    SupportDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([documentId])
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
+}
+
+model SupportFeedback {
+  id           String     @id @default(cuid())
+  conversationId String
+  traceId      String
+  helpful      Boolean
+  reason       String?
+  userId       String?
+  createdAt    DateTime   @default(now())
+  user         User?      @relation("SupportFeedbackUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId])
+  @@index([traceId])
+  @@map("support_feedback")
 }
 
 model HomepageSection {
@@ -2579,6 +2649,20 @@ model PlatformPolicy {
   @@map("platform_policy")
 }
 
+model CustomerCancellation {
+  id          String   @id @default(cuid())
+  userId      String
+  orderId     String   @unique
+  feeAmount   Decimal  @default(0) @db.Decimal(12, 2)
+  refundAmount Decimal? @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("customer_cancellations")
+}
+
 model Refund {
   id                 String                    @id @default(cuid())
   paymentId          String
@@ -2831,6 +2915,8 @@ enum NotificationType {
   VERIFICATION_CHANGES_REQUESTED
   VERIFICATION_REVOKED
   VERIFICATION_SUBMITTED
+  LOW_STOCK
+  DAILY_SUMMARY
 }
 
 enum FeedbackType {
@@ -2872,6 +2958,13 @@ enum SupportTicketPriority {
   URGENT
 }
 
+enum DocumentStatus {
+  DRAFT
+  APPROVED
+  PUBLISHED
+  RETIRED
+}
+
 enum HomepageSectionType {
   PRODUCT_GRID
   QUICKLINK_CARD_GRID
@@ -2900,6 +2993,7 @@ enum VerificationStatus {
   PENDING_REVIEW
   APPROVED
   REJECTED
+  REVOKED
   CHANGES_REQUESTED
 }
 
@@ -2909,9 +3003,11 @@ enum VerificationAction {
   KYC_SUBMITTED
   ADMIN_APPROVED
   ADMIN_REJECTED
+  ADMIN_REVOKED
   ADMIN_REQUESTED_CHANGES
   VENDOR_RESUBMITTED
   PAYMENT_REINITIATED
+  DOCUMENT_ACCESSED
 }
 
 enum VendorBadgeTier {

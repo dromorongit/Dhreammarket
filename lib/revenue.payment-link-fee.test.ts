@@ -47,8 +47,6 @@ describe('payment-link fee math (characterization)', () => {
       commissionRate: itemBreakdown.commissionRate,
     }
 
-    console.log('FEE_MATH_PLATFORM_2_5_ORDER', JSON.stringify(storedOrder))
-    console.log('FEE_MATH_PLATFORM_2_5_ITEM', JSON.stringify(storedItem))
 
     expect(storedOrder).toEqual({
       grossAmount: 100,
@@ -70,7 +68,6 @@ describe('payment-link fee math (characterization)', () => {
     // platform net after Paystack real fee (1.95% of chargeTotal)
     const paystackFee = Math.round(actualChargedAmount * 0.0195 * 100) / 100
     const platformNet = Math.round((orderBreakdown.platformCommission - paystackFee) * 100) / 100
-    console.log('FEE_MATH_PLATFORM_2_5_PLATFORM_NET_AFTER_PAYSTACK', platformNet, 'paystackFee', paystackFee)
     expect(platformNet).toBe(0.55)
   })
 
@@ -96,7 +93,6 @@ describe('payment-link fee math (characterization)', () => {
       commissionRate: orderBreakdown.commissionRate,
     }
 
-    console.log('FEE_MATH_FALLBACK_1PCT_ORDER', JSON.stringify(storedOrder))
     expect(storedOrder).toEqual({
       grossAmount: 100,
       processorFee: 0,
@@ -108,7 +104,6 @@ describe('payment-link fee math (characterization)', () => {
 
     const paystackFee = Math.round(actualChargedAmount * 0.0195 * 100) / 100
     const platformNet = Math.round((orderBreakdown.platformCommission - paystackFee) * 100) / 100
-    console.log('FEE_MATH_FALLBACK_1PCT_PLATFORM_NET_AFTER_PAYSTACK', platformNet, 'paystackFee', paystackFee)
     expect(platformNet).toBe(-0.95)
   })
 
@@ -146,8 +141,6 @@ describe('payment-link fee math (characterization)', () => {
       commissionRate: itemBreakdown.commissionRate,
     }
 
-    console.log('FEE_MATH_REAL_2_5_ORDER', JSON.stringify(storedOrder))
-    console.log('FEE_MATH_REAL_2_5_ITEM', JSON.stringify(storedItem))
 
     expect(storedOrder).toEqual({
       grossAmount: 101.99,
@@ -168,7 +161,6 @@ describe('payment-link fee math (characterization)', () => {
 
     const paystackFee = Math.round(actualChargedAmount * 0.0195 * 100) / 100
     const platformNet = Math.round((orderBreakdown.platformCommission - paystackFee) * 100) / 100
-    console.log('FEE_MATH_REAL_2_5_PLATFORM_NET_AFTER_PAYSTACK', platformNet, 'paystackFee', paystackFee)
     expect(platformNet).toBe(0.51)
   })
 
@@ -194,7 +186,6 @@ describe('payment-link fee math (characterization)', () => {
       commissionRate: orderBreakdown.commissionRate,
     }
 
-    console.log('FEE_MATH_REAL_FALLBACK_ORDER', JSON.stringify(storedOrder))
 
     expect(storedOrder).toEqual({
       grossAmount: 101.99,
@@ -207,7 +198,6 @@ describe('payment-link fee math (characterization)', () => {
 
     const paystackFee = Math.round(actualChargedAmount * 0.0195 * 100) / 100
     const platformNet = Math.round((orderBreakdown.platformCommission - paystackFee) * 100) / 100
-    console.log('FEE_MATH_REAL_FALLBACK_PLATFORM_NET_AFTER_PAYSTACK', platformNet, 'paystackFee', paystackFee)
     expect(platformNet).toBe(-0.99)
   })
 })

@@ -21,19 +21,34 @@ export async function GET(request: NextRequest) {
       where: { vendorId: payload.userId },
       include: {
         kycInfo: true,
-        documents: true,
-auditLogs: {
+        documents: {
+          select: {
+            id: true,
+            documentType: true,
+            fileName: true,
+            createdAt: true,
+          },
+        },
+        auditLogs: {
            orderBy: { createdAt: 'desc' },
-         },
-         payments: true,
-       }
+          },
+          payments: true,
+        }
     })
 
     if (!application) {
       return NextResponse.json({ application: null })
     }
 
-    return NextResponse.json({ application })
+    const applicationWithoutDocumentPaths = {
+      ...application,
+      documents: application.documents.map((doc: any) => {
+        const { documentPath, ...rest } = doc
+        return rest
+      }),
+    }
+
+    return NextResponse.json({ application: applicationWithoutDocumentPaths })
   } catch (error) {
     console.error('Error fetching vendor verification:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

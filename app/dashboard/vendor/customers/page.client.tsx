@@ -354,14 +354,28 @@ export default function VendorCustomersPageClient() {
 
               <Card>
                 <CardContent className="p-6 space-y-5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/dashboard/vendor/quick-sale?phone=${encodeURIComponent(detail.phone)}`}>
-                        New sale
-                      </Link>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Order History</h3>
+                <div className="flex gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/vendor/quick-sale?phone=${encodeURIComponent(detail.phone)}`}>
+                      New sale
+                    </Link>
+                  </Button>
+                  {detail.lastOrderedItems && detail.lastOrderedItems.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        window.location.href = `/dashboard/vendor/quick-sale?phone=${encodeURIComponent(detail.phone)}&repeat=1`
+                      }}
+                      className="min-h-[44px]"
+                    >
+                      Repeat last order
                     </Button>
-                  </div>
+                  )}
+                </div>
+              </div>
                   <div className="space-y-3">
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                       <span>Orders</span>

@@ -26,7 +26,7 @@ import { AICrossSelling } from '@/components/ai'
 import { getTelLink, formatGhanaPhoneNumber } from '@/lib/phone'
 import { addRecentlyViewed } from '@/lib/recently-viewed'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
-
+import CompactSellerTrustSummary from '@/components/trust/CompactSellerTrustSummary'
 interface ProductImage {
   id: string
   url: string
@@ -832,6 +832,12 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
                   </button>
                 </div>
               </div>
+
+              {product.store?.id ? (
+                <div className="mb-4">
+                  <CompactSellerTrustSummary storeId={product.store.id} />
+                </div>
+              ) : null}
 
               <div className="space-y-3 mb-6">
                 <Button

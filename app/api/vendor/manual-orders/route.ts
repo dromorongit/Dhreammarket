@@ -287,9 +287,10 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const receiptToken = generateReceiptToken()
 
-    const result = await prisma.$transaction(async (tx) => {
-      // Advisory lock on the namespaced idempotency key, held for the whole transaction.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${namespacedIdempotencyKey})::bigint)`
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Advisory lock on the namespaced idempotency key, held for the whole transaction.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${namespacedIdempotencyKey})::bigint)`
 
       const existing = await tx.order.findFirst({
         where: { idempotencyKey: namespacedIdempotencyKey },
@@ -443,8 +444,10 @@ export async function POST(request: NextRequest) {
         }).catch((err) => console.error('Failed to create price override audit log:', err))
       }
 
-      return { kind: 'created', order, lines: resolvedLines } as TxResult
-    })
+        return { kind: 'created', order, lines: resolvedLines } as TxResult
+      },
+      { maxWait: 10000, timeout: 20000 }
+    )
 
     if (result.kind === 'replay') {
       return NextResponse.json({ order: buildOrderResponse(result.order) }, { status: 200 })
@@ -480,10 +483,16 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       )
     }
-    console.error('Error creating manual order:', error)
+    console.error('[manual-order] failed', {
+      code: (error as any)?.code,
+      message: (error as any)?.message,
+    })
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Internal server error', details: process.env.NODE_ENV === 'development' ? errorMessage : undefined },
+      {
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
       { status: 500 }
     )
   }

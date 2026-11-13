@@ -14,6 +14,16 @@ describe('checkMigrationEncoding', () => {
     expect(result.problems).toEqual([])
   })
 
+  it('rejects a UTF-8 buffer with a BOM', () => {
+    const buffer = Buffer.concat([
+      Buffer.from([0xef, 0xbb, 0xbf]),
+      Buffer.from('CREATE TABLE "Order" (id TEXT PRIMARY KEY);\n', 'utf8'),
+    ])
+    const result = checkMigrationEncoding(buffer)
+    expect(result.ok).toBe(false)
+    expect(result.problems.some((problem) => problem.kind === 'bom')).toBe(true)
+  })
+
   it('rejects a UTF-16LE buffer with a BOM', () => {
     const buffer = Buffer.concat([
       Buffer.from([0xff, 0xfe]),

@@ -381,9 +381,10 @@ export function createFakeSalesPrisma(options: FakeSalesDbOptions = {}): FakeSal
   }
 
   // The transaction of a manual sale runs against the very same rows.
-  prisma.$transaction = vi.fn(async (callback: any) =>
+  prisma.$transaction = vi.fn(async (callback: any, _options?: any) =>
     callback({
       $queryRaw: vi.fn().mockResolvedValue([]),
+      $executeRaw: vi.fn().mockResolvedValue(0),
       order: prisma.order,
       orderItem: prisma.orderItem,
       vendorCustomer: prisma.vendorCustomer,

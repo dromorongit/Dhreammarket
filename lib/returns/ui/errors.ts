@@ -34,6 +34,10 @@ export const ELIGIBILITY_ERROR_COPY: Record<EligibilityReason, ErrorCopy> = {
     message: "We couldn't confirm a delivery date for this item.",
     action: 'Contact support for help.',
   },
+  INVALID_COMPLETION_DATE: {
+    message: "We couldn't confirm a completion date for this order.",
+    action: 'Contact support for help.',
+  },
 }
 
 export const API_ERROR_COPY: Record<number, ErrorCopy> = {

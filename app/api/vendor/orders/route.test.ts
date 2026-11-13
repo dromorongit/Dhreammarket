@@ -5,6 +5,7 @@ const prismaMock = vi.hoisted(() => ({
   store: { findUnique: vi.fn() },
   order: { findMany: vi.fn(), count: vi.fn() },
   orderItem: { findMany: vi.fn() },
+  payment: { findMany: vi.fn() },
 }))
 
 vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn(() => prismaMock) }))
@@ -39,6 +40,7 @@ beforeEach(() => {
   prismaMock.order.findMany.mockResolvedValue([])
   prismaMock.order.count.mockResolvedValue(0)
   prismaMock.orderItem.findMany.mockResolvedValue([])
+  prismaMock.payment.findMany.mockResolvedValue([])
 })
 
 describe('GET /api/vendor/orders', () => {
@@ -46,19 +48,19 @@ describe('GET /api/vendor/orders', () => {
     const res = await GET(buildRequest('http://localhost/api/vendor/orders?source=MANUAL'))
     expect(res.status).toBe(200)
     const where = prismaMock.order.findMany.mock.calls[0]?.[0].where
-    expect(where.source).toBe('MANUAL')
+    expect(where.AND).toEqual([{ source: 'MANUAL' }])
   })
 
   it('source=ONLINE filters to online rows', async () => {
     await GET(buildRequest('http://localhost/api/vendor/orders?source=ONLINE'))
     const where = prismaMock.order.findMany.mock.calls[0]?.[0].where
-    expect(where.source).toBe('ONLINE')
+    expect(where.AND).toEqual([{ source: 'ONLINE' }])
   })
 
   it('unpaid=true sets paymentStatus not PAID', async () => {
     await GET(buildRequest('http://localhost/api/vendor/orders?unpaid=true'))
     const where = prismaMock.order.findMany.mock.calls[0]?.[0].where
-    expect(where.paymentStatus).toEqual({ not: 'PAID' })
+    expect(where.AND).toEqual([{ paymentStatus: { not: 'PAID' }, status: { not: 'CANCELLED' } }])
   })
 
   it('unpaid never returns ONLINE PENDING: base OR + not PAID excludes online pending', async () => {
@@ -66,7 +68,7 @@ describe('GET /api/vendor/orders', () => {
     const where = prismaMock.order.findMany.mock.calls[0]?.[0].where
     // base OR still present
     expect(where.OR).toEqual([{ paymentStatus: 'PAID' }, { source: 'MANUAL' }])
-    expect(where.paymentStatus).toEqual({ not: 'PAID' })
+    expect(where.AND).toEqual([{ paymentStatus: { not: 'PAID' }, status: { not: 'CANCELLED' } }])
   })
 
   it('MANUAL-only fields absent on ONLINE rows', async () => {

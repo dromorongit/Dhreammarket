@@ -51,9 +51,12 @@ const updated = await prisma.product.findMany({
        orderBy: { name: 'asc' }
      })
 
-     const formatted = updated.map((p: any) => ({
-       ...p,
-       availabilityType: p.availabilityType,
+      const formatted = updated.map((p: any) => ({
+        ...p,
+        store: p.store
+          ? { ...p.store, badgeTier: p.store.isVerified ? p.store.badgeTier : null }
+          : p.store,
+        availabilityType: p.availabilityType,
        expectedArrivalDate: p.expectedArrivalDate,
        estimatedFulfillmentDays: p.estimatedFulfillmentDays,
        preOrderNotes: p.preOrderNotes,

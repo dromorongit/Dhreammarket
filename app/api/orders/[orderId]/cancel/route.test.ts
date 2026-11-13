@@ -1,531 +1,615 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
-// Tests for PATCH /api/orders/[orderId]/cancel.
-//
-// Started as characterization tests pinning the pre-fix behaviour; the tests
-// that pinned behaviour this task intentionally changed were updated in the
-// fix commit (app/api/orders/[orderId]/cancel/route.ts) and carry a comment
-// explaining why. All data below is obviously fake.
-
-const prismaMock = vi.hoisted(() => ({
-  order: {
-    findFirst: vi.fn(),
-    update: vi.fn(),
-    updateMany: vi.fn(),
-  },
-  $transaction: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  verifyToken: vi.fn(),
+  recordFulfillmentEvent: vi.fn(),
+  createAuditLog: vi.fn(),
+  releaseStock: vi.fn(),
+  restoreManualSaleStock: vi.fn(),
+  createNotification: vi.fn(),
+  reverseInfluencerOrderCashback: vi.fn(),
+  notifySuperAdminsRefundRequested: vi.fn(),
+  invalidateSalesSummaryCaches: vi.fn(),
+  isCancellationPolicyEnabled: vi.fn(),
+  isWalletRestoreOnCancelEnabled: vi.fn(),
 }))
 
-vi.mock('@/lib/prisma', () => ({
-  getPrisma: vi.fn(() => prismaMock),
-}))
-
-const verifyTokenMock = vi.hoisted(() => vi.fn())
-vi.mock('@/lib/auth-middleware', () => ({
-  verifyToken: verifyTokenMock,
-}))
-
-const recordFulfillmentEventMock = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(null)
-)
-vi.mock('@/lib/fulfillment-events', () => ({
-  recordFulfillmentEvent: recordFulfillmentEventMock,
-}))
-
-const createAuditLogMock = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
-vi.mock('@/lib/audit-log', () => ({
-  createAuditLog: createAuditLogMock,
-}))
-
-const releaseStockMock = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ success: true, releasedItems: [] })
-)
+vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn() }))
+vi.mock('@/lib/auth-middleware', () => ({ verifyToken: mocks.verifyToken }))
+vi.mock('@/lib/fulfillment-events', () => ({ recordFulfillmentEvent: mocks.recordFulfillmentEvent }))
+vi.mock('@/lib/audit-log', () => ({ createAuditLog: mocks.createAuditLog }))
 vi.mock('@/lib/stock-reservation', () => ({
-  releaseStock: releaseStockMock,
+  releaseStock: mocks.releaseStock,
+  restoreManualSaleStock: mocks.restoreManualSaleStock,
 }))
-
-const createNotificationMock = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(undefined)
-)
-vi.mock('@/lib/notifications', () => ({
-  createNotification: createNotificationMock,
-}))
-
-const notifySuperAdminsRefundRequestedMock = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(undefined)
-)
-vi.mock('@/lib/refunds/admin-notify', () => ({
-  notifySuperAdminsRefundRequested: notifySuperAdminsRefundRequestedMock,
-}))
-
-const reverseInfluencerOrderCashbackMock = vi.hoisted(() =>
-  vi.fn().mockResolvedValue(undefined)
-)
+vi.mock('@/lib/notifications', () => ({ createNotification: mocks.createNotification }))
 vi.mock('@/lib/influencer/order-cashback', () => ({
-  reverseInfluencerOrderCashback: reverseInfluencerOrderCashbackMock,
+  reverseInfluencerOrderCashback: mocks.reverseInfluencerOrderCashback,
+}))
+vi.mock('@/lib/refunds/admin-notify', () => ({
+  notifySuperAdminsRefundRequested: mocks.notifySuperAdminsRefundRequested,
+}))
+vi.mock('@/lib/sales-summary-cache', () => ({
+  invalidateSalesSummaryCaches: mocks.invalidateSalesSummaryCaches,
+}))
+vi.mock('@/lib/feature-flags', () => ({
+  isCancellationPolicyEnabled: mocks.isCancellationPolicyEnabled,
+  isWalletRestoreOnCancelEnabled: mocks.isWalletRestoreOnCancelEnabled,
 }))
 
+import { getPrisma } from '@/lib/prisma'
 import { PATCH } from '@/app/api/orders/[orderId]/cancel/route'
 
-const BUYER = {
-  authenticated: true,
-  userId: 'buyer_1',
-  role: 'CUSTOMER',
-  sessionId: 'sess_1',
-}
+const mockGetPrisma = vi.mocked(getPrisma)
 
-function buildRequest(body: unknown, withToken = true): NextRequest {
-  return new NextRequest('http://localhost/api/orders/order_1/cancel', {
-    method: 'PATCH',
-    headers: {
-      'content-type': 'application/json',
-      ...(withToken ? { cookie: 'token=test-token' } : {}),
-    },
-    body: JSON.stringify(body),
-  })
-}
+const NOW = new Date('2026-01-01T12:00:00Z')
 
-function buildOrder(overrides: Record<string, unknown> = {}) {
+function baseOrder(): any {
   return {
     id: 'order_1',
-    userId: 'buyer_1',
-    status: 'PROCESSING',
+    userId: 'user_1',
+    status: 'PENDING',
     paymentStatus: 'PAID',
-    fulfillmentStatus: 'PROCESSING',
-    orderType: 'NORMAL',
     total: 100,
+    subtotal: 100,
+    shipping: 0,
+    tax: 0,
+    createdAt: new Date('2026-01-01T10:00:00Z'),
+    paymentConfirmedAt: new Date('2026-01-01T10:00:00Z'),
+    source: 'ONLINE',
+    orderType: 'NORMAL',
+    fulfillmentStatus: 'PENDING',
     walletAmountApplied: 0,
+    deletedAt: null,
     items: [
       {
-        product: {
-          id: 'prod_1',
-          name: 'Fake Product',
-          store: { userId: 'vendor_1', name: 'Fake Store' },
-        },
+        id: 'item_1',
+        productId: 'p1',
+        productVariantId: null,
+        quantity: 1,
+        price: 100,
+        shippedAt: null,
+        product: { store: { id: 's1', userId: 'vendor_1', name: 'Store' } },
       },
     ],
-    payment: { id: 'pay_1', status: 'PAID' },
-    ...overrides,
+    payment: {
+      id: 'pay_1',
+      amount: 105,
+      currency: 'GHS',
+      status: 'PAID',
+      reference: 'DHV-REF',
+      paystackRef: 'ps_ref',
+      message: null,
+      createdAt: NOW,
+    },
   }
 }
 
-const PARAMS = { params: { orderId: 'order_1' } }
+function baseUser(): any {
+  return { id: 'user_1', cancellationBlockedUntil: null }
+}
 
-// The base where clause of the atomic conditional update for a NORMAL order.
-const NORMAL_WHERE = {
-  id: 'order_1',
-  userId: 'buyer_1',
-  deletedAt: null,
-  status: { in: ['PENDING', 'PROCESSING'] },
+function buildMockPrisma(order: any, user: any, cutover: Date | null = null) {
+  const createCalls: any[] = []
+  const updateCalls: any[] = []
+  let txCancellations: any[] = []
+  let updateManyResults: { count: number }[] = [{ count: 1 }]
+  let updateManyCallIndex = 0
+
+  const mockPrisma = {
+    $transaction: vi.fn(async (callback: any) => {
+      const tx = {
+        $queryRaw: vi.fn(async () => []),
+        order: {
+          findFirst: vi.fn(async () => order),
+          updateMany: vi.fn(async () => {
+            const result = updateManyResults[updateManyCallIndex] ?? { count: 1 }
+            updateManyCallIndex++
+            return result
+          }),
+        },
+        platformPolicy: { findUnique: vi.fn(async () => ({ systemCutoverTimestamp: cutover })) },
+        user: {
+          findUnique: vi.fn(async () => user),
+          update: vi.fn(async (args: any) => {
+            updateCalls.push(args)
+            return { id: user.id, ...args.data }
+          }),
+        },
+        customerCancellation: {
+          create: vi.fn(async (args: any) => {
+            createCalls.push(args)
+            txCancellations.push({ id: 'cc_1', createdAt: new Date(), ...args.data })
+            return { id: 'cc_1', ...args.data }
+          }),
+          findMany: vi.fn(async (args: any) => {
+            let rows = txCancellations
+            if (args?.where?.createdAt?.gte) {
+              const gte = new Date(args.where.createdAt.gte)
+              rows = rows.filter((r) => new Date(r.createdAt).getTime() >= gte.getTime())
+            }
+            if (args?.orderBy?.createdAt === 'asc') {
+              rows = [...rows].sort(
+                (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              )
+            }
+            return rows
+          }),
+          count: vi.fn(async () => txCancellations.length),
+        },
+        customerLoyalty: {
+          update: vi.fn(async (args: any) => {
+            updateCalls.push(args)
+            return { id: 'loyalty_1', ...args.data }
+          }),
+        },
+        rewardRedemption: {
+          findFirst: vi.fn(async () => null),
+          create: vi.fn(async (args: any) => {
+            createCalls.push(args)
+            return { id: 'rr_1', ...args.data }
+          }),
+        },
+      }
+      return callback(tx)
+    }),
+    order: { findFirst: vi.fn(async () => order) },
+    customerCancellation: {
+      create: vi.fn(async (args: any) => { createCalls.push(args); return { id: 'cc_1', ...args.data } }),
+      findMany: vi.fn(async () => txCancellations),
+      count: vi.fn(async () => txCancellations.length),
+    },
+    user: { update: vi.fn(async (args: any) => { updateCalls.push(args); return { id: user.id } }) },
+  }
+  return {
+    mockPrisma,
+    get createCalls() { return createCalls },
+    get updateCalls() { return updateCalls },
+    setCancellations(arr: any[]) { txCancellations = arr },
+    setUpdateManyResults(results: { count: number }[]) { updateManyResults = [...results] },
+    resetCallIndex() { updateManyCallIndex = 0 },
+  }
+}
+
+function requestWithToken(body: any) {
+  return new NextRequest('http://localhost/api/orders/order_1/cancel', {
+    method: 'PATCH',
+    headers: { cookie: 'token=token_user_1', 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  }) as any
+}
+
+async function invoke(order: any, user: any, cutover: Date | null = null, flagOn = false, updateManyResults?: { count: number }[]) {
+  const ctx = buildMockPrisma(order, user, cutover)
+  mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+  mocks.isCancellationPolicyEnabled.mockReturnValue(flagOn)
+  if (updateManyResults) {
+    ctx.setUpdateManyResults(updateManyResults)
+    ctx.resetCallIndex()
+  }
+  const response = await PATCH(requestWithToken({ reason: 'changed my mind' }), { params: { orderId: 'order_1' } } as any)
+  return { response, ctx }
 }
 
 describe('PATCH /api/orders/[orderId]/cancel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    verifyTokenMock.mockResolvedValue(BUYER)
-    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock))
-    prismaMock.order.updateMany.mockResolvedValue({ count: 1 })
-    // clearAllMocks also clears implementations, so the default resolution is
-    // re-established here.
-    notifySuperAdminsRefundRequestedMock.mockResolvedValue(undefined)
-  })
-
-  it('returns 401 when no token cookie is present', async () => {
-    const response = await PATCH(buildRequest({ reason: 'x' }, false), PARAMS)
-
-    expect(response.status).toBe(401)
-    expect(prismaMock.order.findFirst).not.toHaveBeenCalled()
-  })
-
-  it('returns 401 when the token is not authenticated', async () => {
-    verifyTokenMock.mockResolvedValue({ authenticated: false, reason: 'invalid_token' })
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(401)
-    expect(prismaMock.order.findFirst).not.toHaveBeenCalled()
-  })
-
-  it('returns 403 when the caller is not a customer', async () => {
-    verifyTokenMock.mockResolvedValue({ ...BUYER, role: 'VENDOR', userId: 'vendor_1' })
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(403)
-    expect(prismaMock.order.findFirst).not.toHaveBeenCalled()
-  })
-
-  it('returns 404 when the order does not belong to the caller', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(null)
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(404)
-    const body = await response.json()
-    expect(body.error).toBe('Order not found or access denied')
-    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
-  })
-
-  it('scopes the order lookup to the authenticated buyer', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(prismaMock.order.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          id: 'order_1',
-          userId: 'buyer_1',
-          deletedAt: null,
-        }),
-      })
-    )
-  })
-
-  it('refuses to cancel a SHIPPED order with the status message', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder({ status: 'SHIPPED' }))
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(400)
-    const body = await response.json()
-    expect(body.error).toBe(
-      'Cannot cancel order with status: SHIPPED. Only orders pending or processing can be cancelled.'
-    )
-    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
-  })
-
-  it('refuses to cancel a DELIVERED order', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder({ status: 'DELIVERED' }))
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(400)
-    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
-  })
-
-  it('refuses to cancel an already CANCELLED order', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder({ status: 'CANCELLED' }))
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(400)
-    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
-  })
-
-  it('refuses a non-NORMAL order at a late fulfillment stage', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ orderType: 'PREORDER', fulfillmentStatus: 'SHIPPED' })
-    )
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(400)
-    const body = await response.json()
-    expect(body.error).toBe('This order cannot be cancelled at its current fulfillment stage.')
-    expect(prismaMock.order.updateMany).not.toHaveBeenCalled()
-  })
-
-  it('allows a non-NORMAL order that is still awaiting stock', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ status: 'PENDING', orderType: 'BACKORDER', fulfillmentStatus: 'AWAITING_RESTOCK' })
-    )
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: {
-        ...NORMAL_WHERE,
-        id: 'order_1',
-        fulfillmentStatus: {
-          in: ['PENDING', 'PROCESSING', 'AWAITING_STOCK', 'AWAITING_RESTOCK'],
-        },
-      },
-      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
+    vi.useRealTimers()
+    mocks.verifyToken.mockResolvedValue({
+      authenticated: true,
+      userId: 'user_1',
+      role: 'CUSTOMER',
+      sessionId: 'sess_1',
     })
+    mocks.reverseInfluencerOrderCashback.mockResolvedValue(undefined)
+    mocks.recordFulfillmentEvent.mockResolvedValue(undefined)
+    mocks.createAuditLog.mockResolvedValue(undefined)
+    mocks.releaseStock.mockResolvedValue({ success: true })
+    mocks.restoreManualSaleStock.mockResolvedValue({ success: true })
+    mocks.createNotification.mockResolvedValue(undefined)
+    mocks.notifySuperAdminsRefundRequested.mockResolvedValue(undefined)
+    mocks.invalidateSalesSummaryCaches.mockResolvedValue(undefined)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(false)
   })
 
-  it('allows a NORMAL order even at a late fulfillment stage (current bypass)', async () => {
-    // Current behaviour: the fulfillment-stage guard is skipped entirely for
-    // NORMAL orders. Pinned here; not changed by this task (report-only).
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ orderType: 'NORMAL', fulfillmentStatus: 'SHIPPED' })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('cancels free within 60 minutes and records a counter row', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T11:01:00Z'), paymentConfirmedAt: new Date('2026-01-01T11:01:00Z'), paymentStatus: 'PAID' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
     )
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
     expect(response.status).toBe(200)
-    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: NORMAL_WHERE,
-      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
-    })
+    const json = await response.json()
+    expect(json.success).toBe(true)
+    expect(json.refundRequested).toBe(true)
+    expect(json.free).toBe(true)
+    expect(json.feeAmount).toBe(0)
+    expect(json.refundAmount).toBe(100)
+    expect(ctx.createCalls).toHaveLength(1)
+    expect(ctx.createCalls[0].data).toMatchObject({ feeAmount: 0, refundAmount: 100 })
+    expect(ctx.updateCalls).toHaveLength(0)
   })
 
-  it('cancels an unpaid order without recording any refund request', async () => {
-    // CHANGED in the Stage 1.5 commit: requestRefund no longer controls
-    // anything, so even with the flag set an unpaid order records no request.
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ status: 'PENDING', paymentStatus: 'PENDING' })
+  it('is free at exactly 60 minutes', async () => {
+    vi.setSystemTime(NOW)
+    const { response } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T11:00:00Z'), paymentConfirmedAt: new Date('2026-01-01T11:00:00Z'), paymentStatus: 'PAID' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
     )
-
-    const response = await PATCH(
-      buildRequest({ reason: 'x', requestRefund: true }),
-      PARAMS
-    )
-
-    expect(response.status).toBe(200)
-    expect(prismaMock.order.updateMany).toHaveBeenCalledWith({
-      where: { ...NORMAL_WHERE, status: { in: ['PENDING', 'PROCESSING'] } },
-      data: { status: 'CANCELLED', fulfillmentStatus: 'CANCELLED' },
-    })
-    const body = await response.json()
-    expect(body.refundRequested).toBe(false)
-    expect(recordFulfillmentEventMock).not.toHaveBeenCalledWith(
-      'order_1',
-      'REFUND_REQUESTED',
-      'buyer_1'
-    )
-    expect(createAuditLogMock).not.toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'ORDER_REFUND_REQUESTED' })
-    )
+    const json = await response.json()
+    expect(json.free).toBe(true)
+    expect(json.feeAmount).toBe(0)
+    expect(json.refundAmount).toBe(100)
   })
 
-  it('records a pending refund request for every paid cancellation, flag or not', async () => {
-    // CHANGED in the Stage 1.5 commit: previously the request was only
-    // recorded when requestRefund was true. It is now automatic for every
-    // paid order; the body flag is accepted but ignored.
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
-      'order_1',
-      'REFUND_REQUESTED',
-      'buyer_1'
+  it('charges GHS 5 at 61 minutes', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:59:00Z'), paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'), paymentStatus: 'PAID' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
     )
-    expect(createAuditLogMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'ORDER_REFUND_REQUESTED',
-        entityType: 'ORDER',
-        entityId: 'order_1',
-        afterData: expect.objectContaining({
-          source: 'CUSTOMER_CANCEL',
-          total: 100,
-          walletAssisted: false,
-        }),
-      })
-    )
-    const body = await response.json()
-    expect(body.refundRequested).toBe(true)
-    expect(body.order.paymentStatus).toBe('PAID')
+    const json = await response.json()
+    expect(json.free).toBe(false)
+    expect(json.feeAmount).toBe(5)
+    expect(json.refundAmount).toBe(95)
+    expect(ctx.createCalls[0].data).toMatchObject({ feeAmount: 5, refundAmount: 95 })
   })
 
-  it('notifies the super admins that a refund request is waiting', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledTimes(1)
-    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledWith({
-      orderId: 'order_1',
-      total: 100,
-      storeName: 'Fake Store',
-      source: 'CUSTOMER_CANCEL',
-    })
-  })
-
-  it('names no store when the cancelled order spans several stores', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({
-        items: [
-          { product: { store: { userId: 'vendor_1', name: 'Store One' } } },
-          { product: { store: { userId: 'vendor_2', name: 'Store Two' } } },
-        ],
-      })
-    )
-
-    await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(notifySuperAdminsRefundRequestedMock).toHaveBeenCalledWith(
-      expect.objectContaining({ storeName: null, source: 'CUSTOMER_CANCEL' })
-    )
-  })
-
-  it('does not notify super admins when nothing was charged', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ status: 'PENDING', paymentStatus: 'PENDING' })
-    )
-    prismaMock.order.updateMany.mockResolvedValue({ count: 1 })
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    expect(notifySuperAdminsRefundRequestedMock).not.toHaveBeenCalled()
-  })
-
-  it('still cancels when the super admin notification fails', async () => {
-    notifySuperAdminsRefundRequestedMock.mockRejectedValueOnce(new Error('mail down'))
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    const body = await response.json()
-    expect(body.success).toBe(true)
-    expect(body.order.status).toBe('CANCELLED')
-  })
-
-  it('flags wallet-assisted orders in the refund request metadata', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ walletAmountApplied: 25 })
-    )
-
-    await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(createAuditLogMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'ORDER_REFUND_REQUESTED',
-        afterData: expect.objectContaining({
-          source: 'CUSTOMER_CANCEL',
-          walletAssisted: true,
-        }),
-      })
-    )
-  })
-
-  it('records exactly one refund request when the buyer double submits', async () => {
-    // The atomic conditional update from the integrity branch makes the
-    // second submit fail, so the request is recorded exactly once.
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-    prismaMock.order.updateMany
-      .mockResolvedValueOnce({ count: 1 })
-      .mockResolvedValueOnce({ count: 0 })
-    prismaMock.order.findFirst
-      .mockResolvedValueOnce(buildOrder())
-      .mockResolvedValueOnce(buildOrder())
-      .mockResolvedValueOnce({ id: 'order_1', status: 'CANCELLED' })
-
-    const first = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-    const second = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(first.status).toBe(200)
-    expect(second.status).toBe(400)
-    expect(
-      createAuditLogMock.mock.calls.filter(
-        call => (call[0] as { action?: string }).action === 'ORDER_REFUND_REQUESTED'
-      )
-    ).toHaveLength(1)
-    expect(
-      recordFulfillmentEventMock.mock.calls.filter(
-        call => call[1] === 'REFUND_REQUESTED'
-      )
-    ).toHaveLength(1)
-  })
-
-  it('treats a lost race as not cancellable and runs no side effects', async () => {
-    // CHANGED in the fix commit: the conditional updateMany replaced the
-    // check-then-update, so a second rapid cancel loses the race.
-    prismaMock.order.findFirst
-      .mockResolvedValueOnce(buildOrder())
-      .mockResolvedValueOnce({ id: 'order_1', status: 'CANCELLED' })
-    prismaMock.order.updateMany.mockResolvedValue({ count: 0 })
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(400)
-    const body = await response.json()
-    expect(body.error).toBe(
-      'Cannot cancel order with status: CANCELLED. Only orders pending or processing can be cancelled.'
-    )
-    expect(reverseInfluencerOrderCashbackMock).not.toHaveBeenCalled()
-    expect(recordFulfillmentEventMock).not.toHaveBeenCalled()
-    expect(createAuditLogMock).not.toHaveBeenCalled()
-    expect(releaseStockMock).not.toHaveBeenCalled()
-    expect(createNotificationMock).not.toHaveBeenCalled()
-  })
-
-  it('keeps the cancellation and flags it when stock release fails', async () => {
-    // CHANGED in the fix commit: releaseStock is now awaited and its failure
-    // is recorded in the audit log instead of being a silent fire-and-forget.
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-    releaseStockMock.mockResolvedValue({ success: false, error: 'db down' })
-
-    const response = await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(response.status).toBe(200)
-    expect(releaseStockMock).toHaveBeenCalledWith('order_1', 'buyer_1')
-    expect(createAuditLogMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'ORDER_CANCELLED',
-        afterData: expect.objectContaining({ stockReleaseFailed: true }),
-      })
-    )
-  })
-
-  it('records the cancellation side effects', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    await PATCH(buildRequest({ reason: 'changed my mind' }), PARAMS)
-
-    expect(reverseInfluencerOrderCashbackMock).toHaveBeenCalledWith('order_1')
-    expect(recordFulfillmentEventMock).toHaveBeenCalledWith(
-      'order_1',
-      'CANCELLED',
-      'buyer_1',
-      { description: 'changed my mind' }
-    )
-    expect(createAuditLogMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'buyer_1',
-        userRole: 'CUSTOMER',
-        action: 'ORDER_CANCELLED',
-        entityType: 'ORDER',
-        entityId: 'order_1',
-      })
-    )
-    expect(releaseStockMock).toHaveBeenCalledWith('order_1', 'buyer_1')
-    expect(createNotificationMock).toHaveBeenCalledWith(
-      'vendor_1',
-      'ORDER_STATUS_UPDATED',
-      'Order Cancelled by Customer',
-      expect.stringContaining('cancelled')
-    )
-  })
-
-  it('does not release stock for non-NORMAL orders', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(
-      buildOrder({ status: 'PENDING', orderType: 'PREORDER', fulfillmentStatus: 'AWAITING_STOCK' })
-    )
-
-    await PATCH(buildRequest({ reason: 'x' }), PARAMS)
-
-    expect(releaseStockMock).not.toHaveBeenCalled()
-  })
-
-  it('returns the documented response shape', async () => {
-    prismaMock.order.findFirst.mockResolvedValue(buildOrder())
-
-    const response = await PATCH(
-      buildRequest({ reason: 'x', requestRefund: true }),
-      PARAMS
-    )
-
-    expect(response.status).toBe(200)
-    const body = await response.json()
-    expect(body).toEqual({
-      success: true,
-      order: {
-        id: 'order_1',
-        status: 'CANCELLED',
-        fulfillmentStatus: 'CANCELLED',
+  it('fee never exceeds the refund base when the total is under GHS 5', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      {
+        ...baseOrder(),
+        total: 3,
+        createdAt: new Date('2026-01-01T10:59:00Z'),
+        paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'),
         paymentStatus: 'PAID',
-        vendorRejected: true,
+        items: [{ ...baseOrder().items[0], price: 3 }],
       },
-      refundRequested: true,
-    })
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    const json = await response.json()
+    expect(json.free).toBe(false)
+    expect(json.feeAmount).toBe(3)
+    expect(json.refundAmount).toBe(0)
+  })
+
+  it('never puts the Paystack processing fee into refundAmount', async () => {
+    vi.setSystemTime(NOW)
+    const { response } = await invoke(
+      { ...baseOrder(), total: 100, createdAt: new Date('2026-01-01T10:59:00Z'), paymentConfirmedAt: new Date('2026-01-01T10:59:00Z'), paymentStatus: 'PAID' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    const json = await response.json()
+    // refundAmount derives from the product total (100) minus the cancellation fee (5),
+    // not from the amount paid including the Paystack fee (105).
+    expect(json.refundAmount).toBe(95)
+    expect(json.feeAmount).toBe(5)
+  })
+
+  it('unpaid cancel: no fee, no counter row, not blocked', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), paymentStatus: 'PENDING' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.refundRequested).toBe(false)
+    expect(ctx.createCalls).toHaveLength(0)
+    expect(ctx.updateCalls).toHaveLength(0)
+  })
+
+  it('manual order: no fee, no counter row, not blocked', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), source: 'MANUAL', paymentStatus: 'PAID' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.refundRequested).toBe(false)
+    expect(ctx.createCalls).toHaveLength(0)
+    expect(ctx.updateCalls).toHaveLength(0)
+  })
+
+  it('rejects an order with a shipped item', async () => {
+    vi.setSystemTime(NOW)
+    const { response } = await invoke(
+      { ...baseOrder(), items: [{ ...baseOrder().items[0], shippedAt: new Date('2026-01-01T11:00:00Z') }] },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(400)
+  })
+
+  it('rejects shipped / delivered / completed / cancelled order statuses', async () => {
+    for (const status of ['SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'] as const) {
+      const { response } = await invoke(
+        { ...baseOrder(), status, paymentStatus: 'PAID' },
+        baseUser(),
+        new Date('2026-01-01T00:00:00Z'),
+        true
+      )
+      expect(response.status).toBe(400)
+    }
+  })
+
+  it('concurrent double cancel creates one row and one cancellation', async () => {
+    vi.setSystemTime(NOW)
+    const ctx = buildMockPrisma(baseOrder(), baseUser(), new Date('2026-01-01T00:00:00Z'))
+    mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    ctx.setUpdateManyResults([{ count: 1 }, { count: 0 }])
+    ctx.resetCallIndex()
+
+    const first = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(first.status).toBe(200)
+
+    const second = await PATCH(requestWithToken({ reason: 'b' }), { params: { orderId: 'order_1' } } as any)
+    expect(second.status).toBe(400)
+
+    expect(ctx.createCalls).toHaveLength(1)
+  })
+
+  it('4th cancellation within 30 days succeeds and sets the block (clean)', async () => {
+    vi.setSystemTime(NOW)
+    const prior = [
+      { id: 'cc_a', createdAt: new Date('2026-01-01T09:00:00Z') },
+      { id: 'cc_b', createdAt: new Date('2026-01-01T09:30:00Z') },
+      { id: 'cc_c', createdAt: new Date('2026-01-01T10:00:00Z') },
+    ]
+    const ctx = buildMockPrisma(baseOrder(), baseUser(), new Date('2026-01-01T00:00:00Z'))
+    mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    ctx.setCancellations(prior)
+    const response = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls).toHaveLength(1)
+    // The 4th row is the current cancellation (created at now), so the block
+    // runs from now plus 3 calendar months.
+    expect(ctx.updateCalls[0].data.cancellationBlockedUntil).toEqual(
+      new Date('2026-04-01T12:00:00Z')
+    )
+  })
+
+  it('5th cancellation is rejected 403 with the blocked date', async () => {
+    vi.setSystemTime(NOW)
+    const { response } = await invoke(
+      baseOrder(),
+      { ...baseUser(), cancellationBlockedUntil: new Date('2026-06-01T00:00:00Z') },
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(403)
+    const json = await response.json()
+    expect(json.error).toContain('2026-06-01')
+  })
+
+  it('a cancellation on day 31 is outside the 30-day window', async () => {
+    vi.setSystemTime(NOW)
+    const prior = [
+      { id: 'cc_a', createdAt: new Date('2025-11-30T09:00:00Z') },
+      { id: 'cc_b', createdAt: new Date('2025-12-15T09:00:00Z') },
+      { id: 'cc_c', createdAt: new Date('2025-12-20T09:00:00Z') },
+    ]
+    const ctx = buildMockPrisma(baseOrder(), baseUser(), new Date('2026-01-01T00:00:00Z'))
+    mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    ctx.setCancellations(prior)
+    const response = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(response.status).toBe(200)
+    // Only Dec 15 + Dec 20 fall in the window; plus this one = 3 < 4, no block.
+    expect(ctx.updateCalls).toHaveLength(0)
+    expect(ctx.createCalls).toHaveLength(1)
+  })
+
+  it('free cancellations count toward the 30-day total', async () => {
+    vi.setSystemTime(NOW)
+    const prior = [
+      { id: 'cc_a', createdAt: new Date('2026-01-01T09:00:00Z'), feeAmount: 0 },
+      { id: 'cc_b', createdAt: new Date('2026-01-01T09:30:00Z'), feeAmount: 0 },
+      { id: 'cc_c', createdAt: new Date('2026-01-01T10:00:00Z'), feeAmount: 0 },
+    ]
+    const ctx = buildMockPrisma(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T11:00:00Z'), paymentConfirmedAt: new Date('2026-01-01T11:00:00Z') },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    ctx.setCancellations(prior)
+    const response = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.free).toBe(true)
+    expect(ctx.updateCalls).toHaveLength(1)
+  })
+
+  it('flag off behaves exactly as before: no counter row, no block', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID' },
+      baseUser(),
+      null,
+      false
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.refundRequested).toBe(true)
+    expect(ctx.createCalls).toHaveLength(0)
+    expect(ctx.updateCalls).toHaveLength(0)
+  })
+
+  it('pre-cutover order behaves as before even with the flag on', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2025-12-01T10:00:00Z'), paymentStatus: 'PAID' },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.refundRequested).toBe(true)
+    expect(ctx.createCalls).toHaveLength(0)
+    expect(ctx.updateCalls).toHaveLength(0)
+  })
+
+  it('fully wallet-paid order restores wallet minus the GHS 5 fee when policy applies', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(95)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(95)
+    const reversal = ctx.createCalls.find(
+      (c: any) => c.data.orderId === 'order_1' && String(c.data.description).includes('Wallet credit restored')
+    )
+    expect(reversal.data.amount).toBe(95)
+    expect(reversal.data.status).toBe('COMPLETED')
+  })
+
+  it('fully wallet-paid pre-cutover order restores the full wallet amount with no fee', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2025-12-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(100)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(100)
+  })
+
+  it('part-wallet paid order restores wallet portion with the fee taken from cash', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 30 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(30)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(30)
+  })
+
+  it('cash below fee deducts the remainder from the wallet restore, never below zero', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), total: 100, createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 97 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    const json = await response.json()
+    expect(json.walletRestored).toBe(95)
+    const loyaltyUpdate = ctx.updateCalls.find((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdate.data.walletBalance.increment).toBe(95)
+  })
+
+  it('double cancel credits wallet once (idempotent)', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const ctx = buildMockPrisma(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z')
+    )
+    mockGetPrisma.mockReturnValue(ctx.mockPrisma as any)
+    mocks.isCancellationPolicyEnabled.mockReturnValue(true)
+    ctx.setUpdateManyResults([{ count: 1 }, { count: 0 }])
+    const r1 = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(r1.status).toBe(200)
+    const r2 = await PATCH(requestWithToken({ reason: 'a' }), { params: { orderId: 'order_1' } } as any)
+    expect(r2.status).toBe(400)
+    const loyaltyUpdates = ctx.updateCalls.filter((c: any) => c.data.walletBalance)
+    expect(loyaltyUpdates).toHaveLength(1)
+    expect(loyaltyUpdates[0].data.walletBalance.increment).toBe(95)
+    const reversals = ctx.createCalls.filter(
+      (c: any) => String(c.data.description).includes('Wallet credit restored')
+    )
+    expect(reversals).toHaveLength(1)
+  })
+
+  it('unpaid order: no wallet change even with the flag on', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), paymentStatus: 'PENDING', walletAmountApplied: 100 },
+      baseUser(),
+      null,
+      false
+    )
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls.filter((c: any) => c.data.walletBalance)).toHaveLength(0)
+    expect(
+      ctx.createCalls.filter((c: any) => String(c.data.description).includes('Wallet credit restored'))
+    ).toHaveLength(0)
+  })
+
+  it('manual order: no wallet change even with the flag on', async () => {
+    vi.setSystemTime(NOW)
+    mocks.isWalletRestoreOnCancelEnabled.mockReturnValue(true)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), source: 'MANUAL', paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      null,
+      false
+    )
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls.filter((c: any) => c.data.walletBalance)).toHaveLength(0)
+  })
+
+  it('flag off: no wallet change even for a wallet-paid order', async () => {
+    vi.setSystemTime(NOW)
+    const { response, ctx } = await invoke(
+      { ...baseOrder(), createdAt: new Date('2026-01-01T10:00:00Z'), paymentStatus: 'PAID', walletAmountApplied: 100 },
+      baseUser(),
+      new Date('2026-01-01T00:00:00Z'),
+      true
+    )
+    expect(response.status).toBe(200)
+    expect(ctx.updateCalls.filter((c: any) => c.data.walletBalance)).toHaveLength(0)
+    expect(
+      ctx.createCalls.filter((c: any) => String(c.data.description).includes('Wallet credit restored'))
+    ).toHaveLength(0)
   })
 })

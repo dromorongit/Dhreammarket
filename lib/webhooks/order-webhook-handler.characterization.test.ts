@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 
-const SECRET = 'sk_test_webhook_char_secret'
+const SECRET = process.env.PAYSTACK_TEST_SECRET || 'sk_test_webhook_char_secret'
 
 vi.mock('@/lib/prisma', () => ({ getPrisma: vi.fn() }))
 vi.mock('@/lib/paystack', () => ({ verifyPaystackPayment: vi.fn() }))

@@ -158,8 +158,15 @@ export async function GET(request: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
+    const servicesPublic = services.map((s) => ({
+      ...s,
+      store: s.store
+        ? { ...s.store, badgeTier: s.store.isVerified ? s.store.badgeTier : null }
+        : s.store,
+    }))
+
     const response = NextResponse.json({
-      services,
+      services: servicesPublic,
       pagination: { page, limit, total, totalPages },
     })
     response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300, max-age=30')

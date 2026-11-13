@@ -29,12 +29,21 @@ function makeClient(overrides: any = {}) {
         calls.push({ delegate: 'order', method: 'findFirst', args })
         return overrides.firstOrder ?? null
       }),
-      findMany: vi.fn(async () => []),
+      findMany: vi.fn(async (args: any) => {
+        calls.push({ delegate: 'order', method: 'findMany', args })
+        return overrides.paidOrders ?? []
+      }),
     },
     orderItem: {
       findMany: vi.fn(async (args: any) => {
         calls.push({ delegate: 'orderItem', method: 'findMany', args })
         return overrides.deliveryItems ?? []
+      }),
+    },
+    platformPolicy: {
+      findUnique: vi.fn(async (args: any) => {
+        calls.push({ delegate: 'platformPolicy', method: 'findUnique', args })
+        return { dispatchTargetDaysAfterPayment: 3 }
       }),
     },
     returnRequest: {
@@ -101,7 +110,62 @@ describe('loadSellerTrustProfile', () => {
     await loadSellerTrustProfile(client, { storeId: 'store-1', now: new Date() })
     const writes = calls.filter((c) => /create|update|delete|upsert/.test(c.method))
     expect(writes.length).toBe(0)
-    // store, completed window, completed lifetime, cancelled, delivery, returns, firstSale, productAgg, vendorAgg = 9
-    expect(calls.length).toBe(9)
+    // store, completed window, completed lifetime, cancelled, delivery, policy, returns, firstSale, productAgg, vendorAgg, response orders = 11
+    expect(calls.length).toBe(11)
+  })
+
+  it('response samples start at payment date and skip unpaid orders', async () => {
+    const now = new Date('2025-01-10T00:00:00Z')
+    const { client } = makeClient({
+      paidOrders: [
+        { id: 'o-1', paymentConfirmedAt: new Date('2025-01-01T00:00:00Z'), createdAt: new Date('2024-12-01T00:00:00Z'), orderMessages: [{ createdAt: new Date('2025-01-01T08:00:00Z') }] },
+        { id: 'o-2', paymentConfirmedAt: null, createdAt: new Date('2024-12-01T00:00:00Z'), orderMessages: [{ createdAt: new Date('2025-01-02T00:00:00Z') }] },
+      ],
+    })
+    const res = await loadSellerTrustProfile(client, { storeId: 'store-1', now })
+    if (res.found) {
+      expect(res.data.responseSamples).toEqual([
+        { orderDate: new Date('2025-01-01T00:00:00Z'), firstVendorReplyAt: new Date('2025-01-01T08:00:00Z') },
+      ])
+    }
+  })
+
+  it('system messages are not treated as the first vendor reply', async () => {
+    const now = new Date('2025-01-10T00:00:00Z')
+    const { client } = makeClient({
+      paidOrders: [
+        {
+          id: 'o-1',
+          paymentConfirmedAt: new Date('2025-01-01T00:00:00Z'),
+          createdAt: new Date('2024-12-01T00:00:00Z'),
+          orderMessages: [
+            { userRole: 'SYSTEM', createdAt: new Date('2025-01-01T01:00:00Z') },
+            { userRole: 'VENDOR', createdAt: new Date('2025-01-01T09:00:00Z') },
+          ],
+        },
+      ],
+    })
+    const res = await loadSellerTrustProfile(client, { storeId: 'store-1', now })
+    if (res.found) {
+      expect(res.data.responseSamples).toEqual([
+        { orderDate: new Date('2025-01-01T00:00:00Z'), firstVendorReplyAt: new Date('2025-01-01T09:00:00Z') },
+      ])
+    }
+  })
+
+  it('delivery samples start at payment date and skip unpaid orders', async () => {
+    const now = new Date('2025-01-10T00:00:00Z')
+    const { client } = makeClient({
+      deliveryItems: [
+        { id: 'i-1', deliveredAt: new Date('2025-01-04T00:00:00Z'), expectedArrivalDate: null, order: { paymentConfirmedAt: new Date('2025-01-01T00:00:00Z'), createdAt: new Date('2024-12-01T00:00:00Z') } },
+        { id: 'i-2', deliveredAt: new Date('2025-01-04T00:00:00Z'), expectedArrivalDate: null, order: { paymentConfirmedAt: null, createdAt: new Date('2024-12-01T00:00:00Z') } },
+      ],
+    })
+    const res = await loadSellerTrustProfile(client, { storeId: 'store-1', now })
+    if (res.found) {
+      expect(res.data.deliveries).toEqual([
+        { deliveredAt: new Date('2025-01-04T00:00:00Z'), expectedAt: null, orderDate: new Date('2025-01-01T00:00:00Z') },
+      ])
+    }
   })
 })

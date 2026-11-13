@@ -1,5 +1,8 @@
 import { Suspense } from 'react'
 import CheckoutContent from './CheckoutContent'
+import { getPrisma } from '@/lib/prisma'
+import { isCancellationPolicyActiveNow } from '@/lib/cancellation-policy'
+import { CANCELLATION_POLICY_CHECKOUT_NOTICE } from '@/lib/cancellation-policy'
 
 function LoadingState() {
   return (
@@ -11,9 +14,21 @@ function LoadingState() {
   )
 }
 
-export default function Checkout() {
+export default async function Checkout() {
+  const policy = await getPrisma().platformPolicy.findUnique({
+    where: { id: 'singleton' },
+    select: { systemCutoverTimestamp: true },
+  })
+  const showCancellationNotice = isCancellationPolicyActiveNow(policy?.systemCutoverTimestamp)
   return (
     <Suspense fallback={<LoadingState />}>
+      {showCancellationNotice && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm text-amber-800">{CANCELLATION_POLICY_CHECKOUT_NOTICE}</p>
+          </div>
+        </div>
+      )}
       <CheckoutContent />
     </Suspense>
   )

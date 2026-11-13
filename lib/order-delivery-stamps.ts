@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client'
+import { DELIVERY_WINDOW_DAYS } from './trust/constants'
 
 type StampField = 'shippedAt' | 'deliveredAt'
 
@@ -46,15 +47,25 @@ export async function stampOrderItems(options: StampOptions): Promise<number> {
 
   const itemIds = items.map(i => i.id)
   const updateData: Record<string, Date> = { [field]: now }
-  
+  const whereExtra: Record<string, unknown> = {}
+
   if (field === 'deliveredAt') {
     updateData.shippedAt = now
+  }
+
+  // When items are dispatched, stamp the expected arrival date:
+  // dispatch date + the delivery window. Never clobber a value already set
+  // (e.g. a seller-provided estimate).
+  if (field === 'shippedAt') {
+    updateData.expectedArrivalDate = new Date(now.getTime() + DELIVERY_WINDOW_DAYS * 86400000)
+    whereExtra.expectedArrivalDate = null
   }
 
   const result = await tx.orderItem.updateMany({
     where: {
       id: { in: itemIds },
-      [field]: null
+      [field]: null,
+      ...whereExtra,
     },
     data: updateData
   })

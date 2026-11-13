@@ -7,6 +7,11 @@ export interface SellerStatusCopy {
   nextStep: string
 }
 
+export interface ReturnReviewContext {
+  businessDayRule?: boolean
+  escalationDeadline?: Date | string | null
+}
+
 export const SELLER_STATUS_COPY: Record<ReturnStatus, SellerStatusCopy> = {
   PENDING: {
     label: 'Needs your response',
@@ -52,7 +57,18 @@ export const SELLER_STATUS_COPY: Record<ReturnStatus, SellerStatusCopy> = {
   },
 }
 
-export function getSellerStatusCopy(status: string): SellerStatusCopy {
+export function getSellerStatusCopy(status: string, ctx?: ReturnReviewContext): SellerStatusCopy {
+  if (status === 'PENDING' && ctx?.businessDayRule) {
+    const deadline = ctx.escalationDeadline
+      ? ` Please respond by ${new Date(ctx.escalationDeadline).toISOString()}.`
+      : ''
+    return {
+      label: 'Needs your response',
+      description: `The seller has 1 business day to respond to your return request.${deadline}`,
+      tone: 'warning',
+      nextStep: 'Accept or reject the return before the response deadline.',
+    }
+  }
   const known = status as ReturnStatus
   if (known in SELLER_STATUS_COPY) return SELLER_STATUS_COPY[known]
   return {

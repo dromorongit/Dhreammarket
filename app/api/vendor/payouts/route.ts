@@ -418,7 +418,10 @@ async function getVendorUnpaidEligibleEarnings(vendorId: string) {
         status: {
           in: ['DELIVERED', 'COMPLETED'],
         },
-        source: 'ONLINE',
+        OR: [
+          { source: 'ONLINE' },
+          { source: 'MANUAL', payment: { status: 'PAID' } },
+        ],
       },
     },
     _sum: {

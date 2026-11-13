@@ -1,17 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  typescript: { tsconfigPath: 'tsconfig.json' },
   compress: true,
   poweredByHeader: false,
   generateEtags: true,
   reactStrictMode: true,
   swcMinify: true,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     webpackBuildWorker: false,
     cpus: 1,
@@ -20,6 +15,7 @@ const nextConfig = {
       'prisma',
       '@prisma/adapter-pg',
       'cloudinary',
+      'ioredis',
       'pg',
     ],
     optimizePackageImports: ['react-icons', 'lucide-react'],

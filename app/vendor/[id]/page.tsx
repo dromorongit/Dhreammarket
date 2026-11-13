@@ -2,6 +2,10 @@ import { Metadata, Viewport } from 'next'
 import { getPrisma } from '@/lib/prisma'
 import { SITE_URL } from '@/lib/site-config'
 import VendorClient from './vendor-client'
+import { isTrustProfileEnabled } from '@/lib/feature-flags'
+import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
+import { composeProfile } from '@/lib/trust/metrics'
+import { rehydrateProfileInput } from '@/lib/trust/rehydrate'
 
 const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/images/dhreamarket.png`
 
@@ -47,8 +51,27 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const vendor = await getVendorInfo(params.id)
   if (!vendor) return { title: 'Vendor - Dhream Market' }
 
+  let description = vendor.description || `Shop products and services from ${vendor.name} on Dhream Market.`
+
+  if (isTrustProfileEnabled() && vendor?.id) {
+    try {
+      const cached = await getCachedSellerTrustProfile(vendor.id)
+      if (cached.found) {
+        const profile = composeProfile(rehydrateProfileInput(cached.data))
+        const verified = profile.identity.status === 'VERIFIED' ? 'Verified seller' : 'Unverified seller'
+        const ratingPart =
+          profile.ratings.state === 'OK' && profile.ratings.value
+            ? `${profile.ratings.value.average.toFixed(1)}★ (${profile.ratings.value.count} verified purchases)`
+            : ''
+        const parts = [vendor.name, verified, `${profile.orders.lifetimeCompleted} completed orders`, ratingPart].filter(Boolean)
+        description = `${parts.join(' · ')}. ${vendor.description || `Shop products and services from ${vendor.name} on Dhream Market.`}`
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   const title = `${vendor.name} - Dhream Market`
-  const description = vendor.description || `Shop products and services from ${vendor.name} on Dhream Market.`
   const imageUrl = vendor.logo || vendor.banner || DEFAULT_OG_IMAGE
   const url = `${SITE_URL}/vendor/${vendor.slug ?? vendor.id}`
 

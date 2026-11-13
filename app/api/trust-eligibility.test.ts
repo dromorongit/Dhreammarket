@@ -188,6 +188,7 @@ describe('Review eligibility and trust aggregates', () => {
     const { POST } = await import('@/app/api/products/[id]/reviews/route')
     const request = {
       cookies: { get: () => ({ value: 'fake-token' }) },
+      headers: { get: () => null },
       json: async () => ({ rating: 5, comment: 'Great product' }),
     } as any
     const params = { id: 'product-1' }
@@ -206,6 +207,7 @@ describe('Review eligibility and trust aggregates', () => {
     const { POST } = await import('@/app/api/products/[id]/reviews/route')
     const request = {
       cookies: { get: () => ({ value: 'fake-token' }) },
+      headers: { get: () => null },
       json: async () => ({ rating: 5, comment: 'Great product' }),
     } as any
     const params = { id: 'product-1' }
@@ -231,6 +233,7 @@ describe('Review eligibility and trust aggregates', () => {
     const { POST } = await import('@/app/api/products/[id]/reviews/route')
     const request = {
       cookies: { get: () => ({ value: 'fake-token' }) },
+      headers: { get: () => null },
       json: async () => ({ rating: 5, comment: 'Great product' }),
     } as any
     const params = { id: 'product-1' }
@@ -256,6 +259,7 @@ describe('Review eligibility and trust aggregates', () => {
     const { POST } = await import('@/app/api/products/[id]/reviews/route')
     const request = {
       cookies: { get: () => ({ value: 'fake-token' }) },
+      headers: { get: () => null },
       json: async () => ({ rating: 5, comment: 'Great product' }),
     } as any
     const params = { id: 'product-1' }
@@ -282,6 +286,7 @@ describe('Review eligibility and trust aggregates', () => {
     const { POST } = await import('@/app/api/products/[id]/reviews/route')
     const request = {
       cookies: { get: () => ({ value: 'fake-token' }) },
+      headers: { get: () => null },
       json: async () => ({ rating: 5, comment: 'Great product' }),
     } as any
     const params = { id: 'product-1' }

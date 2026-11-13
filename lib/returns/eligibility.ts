@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { Caps } from '@/lib/refunds/process-refund'
+import { windowDaysForRegion } from './location-window'
 import type { EligibilityReason, EligibilityResult } from './types'
 
 type Item = {
@@ -17,6 +18,9 @@ type Order = {
   items?: Item[]
   payment?: { id?: string; amount?: number | string | Prisma.Decimal } | null
   refunds?: { amount: number | string | Prisma.Decimal | null; status: string; orderItemId?: string | null }[]
+  createdAt?: Date | string | null
+  completedAt?: Date | string | null
+  customerRegion?: string | null
 }
 
 type Product = {
@@ -33,6 +37,8 @@ export type CheckReturnEligibilityInput = {
   alreadyRefunded?: number | string | Prisma.Decimal
   now: Date | string | number
   windowDays: number
+  isLocationReturnWindowEnabled?: boolean
+  systemCutoverTimestamp?: Date | string | null
 }
 
 const OPEN_STATUSES = new Set([
@@ -49,15 +55,30 @@ export function checkReturnEligibility(
   const { item, order, product, existingRequests, now, windowDays } = input
   const nowDate = now instanceof Date ? now : new Date(now)
 
-  const deliveredAt =
-    item.deliveredAt instanceof Date
-      ? item.deliveredAt
-      : item.deliveredAt
-      ? new Date(item.deliveredAt)
-      : null
+  const useCompletedAtWindow =
+    input.isLocationReturnWindowEnabled === true &&
+    input.systemCutoverTimestamp != null &&
+    order.createdAt != null &&
+    new Date(order.createdAt).getTime() >= new Date(input.systemCutoverTimestamp).getTime()
 
-  if (!deliveredAt || deliveredAt.getTime() > nowDate.getTime()) {
-    return { eligible: false, reason: 'INVALID_DELIVERY_DATE' }
+  let windowStart: Date
+  if (useCompletedAtWindow) {
+    const completedAt = order.completedAt ? new Date(order.completedAt) : null
+    if (!completedAt || completedAt.getTime() > nowDate.getTime()) {
+      return { eligible: false, reason: 'INVALID_COMPLETION_DATE' }
+    }
+    windowStart = completedAt
+  } else {
+    const deliveredAt =
+      item.deliveredAt instanceof Date
+        ? item.deliveredAt
+        : item.deliveredAt
+        ? new Date(item.deliveredAt)
+        : null
+    if (!deliveredAt || deliveredAt.getTime() > nowDate.getTime()) {
+      return { eligible: false, reason: 'INVALID_DELIVERY_DATE' }
+    }
+    windowStart = deliveredAt
   }
 
   if (order.status !== 'DELIVERED' && order.status !== 'COMPLETED') {
@@ -72,7 +93,8 @@ export function checkReturnEligibility(
     return { eligible: false, reason: 'NOT_RETURNABLE_PRODUCT' }
   }
 
-  const deadline = new Date(deliveredAt.getTime() + windowDays * 24 * 60 * 60 * 1000)
+  const resolvedWindowDays = useCompletedAtWindow ? windowDaysForRegion(order) : windowDays
+  const deadline = new Date(windowStart.getTime() + resolvedWindowDays * 24 * 60 * 60 * 1000)
   if (nowDate.getTime() > deadline.getTime()) {
     return { eligible: false, reason: 'WINDOW_EXPIRED' }
   }

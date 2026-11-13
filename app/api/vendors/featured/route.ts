@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       name: store.name,
       description: store.description,
       isVerified: store.isVerified,
-      badgeTier: store.badgeTier,
+      badgeTier: store.isVerified ? store.badgeTier : null,
       logo: store.logo,
       banner: store.banner,
       rating: avgRatingByStore.get(store.id) || 0,

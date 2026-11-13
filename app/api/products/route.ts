@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
     const maxPrice = url.searchParams.get('maxPrice')
     const availabilityType = url.searchParams.get('availabilityType')
     const search = (url.searchParams.get('search') || '').trim()
+    const lowStock = url.searchParams.get('lowStock') === 'true'
 
     if (createdAtMin && isNaN(new Date(createdAtMin).getTime())) {
       return NextResponse.json({ error: 'Invalid createdAtMin date format' }, { status: 400 })
@@ -88,10 +89,18 @@ export async function GET(request: NextRequest) {
         vendorWhere.name = { contains: search, mode: 'insensitive' }
       }
 
+      // lowStock cannot be expressed in a Prisma where clause (stock -
+      // reservedQuantity <= lowStockThreshold). When requested, fetch the full
+      // vendor catalog and filter in memory so the count and results reflect
+      // low stock only. This param is optional and leaves other responses
+      // unchanged.
+      const lowStockTake = lowStock ? 1000 : limit
+      const lowStockSkip = lowStock ? 0 : skip
+
       const vendorProducts = await getPrisma().product.findMany({
         where: vendorWhere,
-        skip,
-        take: limit,
+        skip: lowStockSkip,
+        take: lowStockTake,
         orderBy: {
           [sortBy]: sortOrder,
         },
@@ -126,7 +135,6 @@ export async function GET(request: NextRequest) {
       })
 
       const vendorTotal = await getPrisma().product.count({ where: vendorWhere })
-      perf.markPrismaEnd(prismaPerfStart)
 
       const productsWithStock = vendorProducts.map((p) => ({
         ...p,
@@ -134,9 +142,20 @@ export async function GET(request: NextRequest) {
         variantCount: p._count.variants,
       }))
 
+      let filteredProducts = productsWithStock
+      let total = vendorTotal
+      if (lowStock) {
+        filteredProducts = productsWithStock.filter(
+          (p) => p.availableStock <= (p.lowStockThreshold ?? 5)
+        )
+        total = filteredProducts.length
+      }
+
+      perf.markPrismaEnd(prismaPerfStart)
+
       const response = NextResponse.json({
-        products: productsWithStock,
-        pagination: { page, limit, total: vendorTotal, totalPages: Math.ceil(vendorTotal / limit) },
+        products: filteredProducts,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       })
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
       response.headers.set('Pragma', 'no-cache')

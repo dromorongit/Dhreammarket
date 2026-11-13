@@ -402,7 +402,7 @@ function SearchPageContent() {
                               <p className="text-xs text-slate-500 flex items-center gap-1.5">
                                 {vendor.productCount} products
                                 {vendor.category && ` · ${vendor.category.name}`}
-                                {vendor.badgeTier && (
+                                {vendor.isVerified && vendor.badgeTier && (
                                   <Badge variant={getVendorBadgeInfo(vendor.badgeTier as any)?.variant} size="sm" className="text-[8px] px-1 py-0">
                                     {getVendorBadgeInfo(vendor.badgeTier as any)?.tier === 'PLATINUM' ? 'Platinum' : getVendorBadgeInfo(vendor.badgeTier as any)?.tier === 'PREMIUM' ? 'Premium' : 'Trusted'}
                                   </Badge>

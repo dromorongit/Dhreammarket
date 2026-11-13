@@ -14,6 +14,8 @@ interface ImageUploadProps {
   label?: string;
   hint?: string;
   uploadUrl?: string;
+  allowedTypes?: string[];
+  allowedExtensions?: string[];
 }
 
 export default function ImageUpload({
@@ -25,6 +27,8 @@ export default function ImageUpload({
   label = 'Images',
   hint,
   uploadUrl,
+  allowedTypes,
+  allowedExtensions,
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
@@ -46,12 +50,14 @@ export default function ImageUpload({
       }
 
       // Validate each file
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'];
+      const allowedMimeTypes = allowedTypes ?? ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm'];
+      const allowedExts = allowedExtensions ?? ['.jpg', '.jpeg', '.png', '.webp', '.mp4', '.mov', '.webm'];
       const maxSize = maxSizeMB * 1024 * 1024;
 
       for (const file of fileArray) {
-        if (!allowedTypes.includes(file.type)) {
-          setError(`Invalid file type: ${file.name}. Only JPG, PNG, WebP, MP4, MOV, and WebM allowed.`);
+        const fileExtension = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')).toLowerCase() : ''
+        if (!allowedMimeTypes.includes(file.type) || !allowedExts.includes(fileExtension)) {
+          setError(`Invalid file type: ${file.name}. Only JPG, PNG, WebP, MP4, MOV, WebM, and PDF allowed.`);
           return;
         }
         if (file.size > maxSize) {
@@ -166,7 +172,7 @@ export default function ImageUpload({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+          accept={allowedTypes ? allowedTypes.map((t) => (t === 'application/pdf' ? '.pdf' : t)).join(',') : 'image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime,video/webm'}
           multiple
           onChange={handleInputChange}
           className="hidden"

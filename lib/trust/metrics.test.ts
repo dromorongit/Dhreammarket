@@ -4,12 +4,13 @@ import {
   computeFulfilmentSignal,
   computeCancellationSignal,
   computeDeliverySignal,
+  computeResponseRateSignal,
   computeReturnSignal,
   computeRatingSignal,
   computeTenure,
   composeProfile,
 } from './metrics'
-import { MIN_ORDERS_FOR_RATES, MIN_REVIEWS_FOR_RATING, SUPPRESSION_THRESHOLD } from './constants'
+import { MIN_ORDERS_FOR_RATES, MIN_REVIEWS_FOR_RATING, SUPPRESSION_THRESHOLD, RESPONSE_WINDOW_DAYS } from './constants'
 
 describe('computeRate', () => {
   it('zero denominator -> insufficient', () => {
@@ -71,19 +72,125 @@ describe('fulfilment/cancellation', () => {
 })
 
 describe('delivery', () => {
-  it('median odd', () => {
-    const d = computeDeliverySignal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 10)
+  const sample = (deliveredAt: string, expectedAt: string | null, orderDate: string) => ({
+    deliveredAt: new Date(deliveredAt),
+    expectedAt: expectedAt ? new Date(expectedAt) : null,
+    orderDate: new Date(orderDate),
+  })
+  it('on-time rate when all delivered on or before the promised date', () => {
+    const base = new Date('2025-01-01T00:00:00Z')
+    const samples = Array(10).fill(null).map((_, i) => sample('2025-01-03T00:00:00Z', null, '2025-01-01T00:00:00Z'))
+    const d = computeDeliverySignal(samples, 10, 3)
     expect(d.state).toBe('OK')
-    expect(d.value?.medianDays).toBe(5.5)
+    expect(d.value?.onTimePercentage).toBe(100)
+    expect(d.counts).toEqual({ numerator: 10, denominator: 10 })
   })
-  it('boundary', () => {
-    expect(computeDeliverySignal(Array(9).fill(1), 10).state).toBe('INSUFFICIENT_DATA')
-    expect(computeDeliverySignal(Array(10).fill(1), 10).state).toBe('OK')
-    expect(computeDeliverySignal(Array(11).fill(1), 10).state).toBe('OK')
+  it('on-time rate compares deliveredAt to expectedAt', () => {
+    const samples = [
+      sample('2025-01-02T00:00:00Z', '2025-01-03T00:00:00Z', '2025-01-01T00:00:00Z'), // on time
+      sample('2025-01-05T00:00:00Z', '2025-01-03T00:00:00Z', '2025-01-01T00:00:00Z'), // late
+    ]
+    const d = computeDeliverySignal(samples, 1, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(50)
+    expect(d.counts).toEqual({ numerator: 1, denominator: 2 })
   })
-  it('window boundaries one second either side handled by caller; median finite', () => {
-    const d = computeDeliverySignal([0.5, 1.5], 1)
-    expect(Number.isFinite(d.value?.medianDays ?? 0)).toBe(true)
+  it('falls back to dispatch target + delivery window when expectedAt is absent', () => {
+    const samples = [
+      sample('2025-01-04T00:00:00Z', null, '2025-01-01T00:00:00Z'), // promised = Jan 7 (3+3 days) -> on time
+      sample('2025-01-05T00:00:00Z', null, '2025-01-01T00:00:00Z'), // promised = Jan 7 -> on time
+      sample('2025-01-08T00:00:00Z', null, '2025-01-01T00:00:00Z'), // promised = Jan 7 -> late
+    ]
+    const d = computeDeliverySignal(samples, 3, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(66.7)
+  })
+  it('normally-timed delivery counts as on time with fallback deadline', () => {
+    // Order on Jan 1, dispatch target 3 days, delivery window 3 days -> promised Jan 7
+    // Delivered Jan 5 (within window) -> on time
+    const samples = [
+      sample('2025-01-05T00:00:00Z', null, '2025-01-01T00:00:00Z'),
+      sample('2025-01-06T00:00:00Z', null, '2025-01-01T00:00:00Z'),
+      sample('2025-01-07T00:00:00Z', null, '2025-01-01T00:00:00Z'), // exactly on deadline -> on time (ms <= 0)
+    ]
+    const d = computeDeliverySignal(samples, 3, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(100)
+  })
+  it('delivery after fallback deadline counts as late', () => {
+    // Promised = Jan 7 (Jan 1 + 3 dispatch + 3 delivery window)
+    const samples = [
+      sample('2025-01-08T00:00:00Z', null, '2025-01-01T00:00:00Z'), // late
+    ]
+    const d = computeDeliverySignal(samples, 1, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(0)
+  })
+  it('median days retained as secondary field', () => {
+    const samples = [
+      sample('2025-01-02T00:00:00Z', null, '2025-01-01T00:00:00Z'), // 1 day
+      sample('2025-01-04T00:00:00Z', null, '2025-01-01T00:00:00Z'), // 3 days
+      sample('2025-01-06T00:00:00Z', null, '2025-01-01T00:00:00Z'), // 5 days
+    ]
+    const d = computeDeliverySignal(samples, 3, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.medianDays).toBe(3)
+  })
+  it('boundary min sample', () => {
+    const samples = Array(9).fill(null).map(() => sample('2025-01-02T00:00:00Z', null, '2025-01-01T00:00:00Z'))
+    expect(computeDeliverySignal(samples, 10, 3).state).toBe('INSUFFICIENT_DATA')
+    expect(computeDeliverySignal(Array(10).fill(null).map(() => sample('2025-01-02T00:00:00Z', null, '2025-01-01T00:00:00Z')), 10, 3).state).toBe('OK')
+    expect(computeDeliverySignal(Array(11).fill(null).map(() => sample('2025-01-02T00:00:00Z', null, '2025-01-01T00:00:00Z')), 10, 3).state).toBe('OK')
+  })
+  it('zero orders -> insufficient', () => {
+    const d = computeDeliverySignal([], 10, 3)
+    expect(d.state).toBe('INSUFFICIENT_DATA')
+    expect(Number.isNaN(d.counts.numerator)).toBe(false)
+  })
+})
+
+describe('response rate after payment', () => {
+  const orderSample = (orderDate: string, firstVendorReplyAt: string | null) => ({
+    orderDate: new Date(orderDate),
+    firstVendorReplyAt: firstVendorReplyAt ? new Date(firstVendorReplyAt) : null,
+  })
+  it('all responsive within window', () => {
+    const samples = Array(10).fill(null).map((_, i) => orderSample('2025-01-01T00:00:00Z', '2025-01-01T12:00:00Z'))
+    const r = computeResponseRateSignal(samples, MIN_ORDERS_FOR_RATES, RESPONSE_WINDOW_DAYS)
+    expect(r.state).toBe('OK')
+    expect(r.value?.percentage).toBe(100)
+    expect(r.counts).toEqual({ numerator: 10, denominator: 10 })
+  })
+  it('reply outside the window is not responsive', () => {
+    const samples = [
+      orderSample('2025-01-01T00:00:00Z', '2025-01-01T12:00:00Z'), // within 2 days
+      orderSample('2025-01-01T00:00:00Z', '2025-01-04T00:00:00Z'), // outside 2-day window
+    ]
+    const r = computeResponseRateSignal(samples, 1, RESPONSE_WINDOW_DAYS)
+    expect(r.state).toBe('OK')
+    expect(r.value?.percentage).toBe(50)
+  })
+  it('no vendor reply counts as not responsive', () => {
+    const samples = [
+      orderSample('2025-01-01T00:00:00Z', null),
+      orderSample('2025-01-01T00:00:00Z', '2025-01-01T12:00:00Z'),
+    ]
+    const r = computeResponseRateSignal(samples, 1, RESPONSE_WINDOW_DAYS)
+    expect(r.state).toBe('OK')
+    expect(r.value?.percentage).toBe(50)
+  })
+  it('reply before payment date is not counted', () => {
+    const samples = [orderSample('2025-01-02T00:00:00Z', '2025-01-01T00:00:00Z')]
+    const r = computeResponseRateSignal(samples, 1, RESPONSE_WINDOW_DAYS)
+    expect(r.state).toBe('OK')
+    expect(r.value?.percentage).toBe(0)
+  })
+  it('boundary min sample and zero orders', () => {
+    expect(computeResponseRateSignal(Array(9).fill(null).map(() => orderSample('2025-01-01T00:00:00Z', '2025-01-01T12:00:00Z')), MIN_ORDERS_FOR_RATES, RESPONSE_WINDOW_DAYS).state).toBe('INSUFFICIENT_DATA')
+    expect(computeResponseRateSignal(Array(10).fill(null).map(() => orderSample('2025-01-01T00:00:00Z', '2025-01-01T12:00:00Z')), MIN_ORDERS_FOR_RATES, RESPONSE_WINDOW_DAYS).state).toBe('OK')
+    const r = computeResponseRateSignal([], MIN_ORDERS_FOR_RATES, RESPONSE_WINDOW_DAYS)
+    expect(r.state).toBe('INSUFFICIENT_DATA')
+    expect(Number.isNaN(r.counts.numerator)).toBe(false)
   })
 })
 
@@ -142,7 +249,16 @@ describe('composeProfile', () => {
       completedInWindow: 10,
       completedLifetime: 20,
       vendorCancelledInWindow: 1,
-      deliveryDays: Array(10).fill(2),
+      deliveries: Array(10).fill(null).map(() => ({
+        deliveredAt: new Date('2025-01-03T00:00:00Z'),
+        expectedAt: null,
+        orderDate: new Date('2025-01-01T00:00:00Z'),
+      })),
+      responseSamples: Array(10).fill(null).map(() => ({
+        orderDate: new Date('2025-01-01T00:00:00Z'),
+        firstVendorReplyAt: new Date('2025-01-01T12:00:00Z'),
+      })),
+      deliveryPolicyDays: 3,
       sellerFaultReturnsInWindow: 0,
       reviewCount: 5,
       reviewSum: 25,
@@ -161,7 +277,9 @@ describe('composeProfile', () => {
       completedInWindow: 0,
       completedLifetime: 0,
       vendorCancelledInWindow: 0,
-      deliveryDays: [],
+      deliveries: [],
+      responseSamples: [],
+      deliveryPolicyDays: 3,
       sellerFaultReturnsInWindow: 0,
       reviewCount: 0,
       reviewSum: 0,

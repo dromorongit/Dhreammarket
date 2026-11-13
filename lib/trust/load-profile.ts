@@ -54,6 +54,9 @@ export async function loadSellerTrustProfile(
   }
   const vendorCancelledInWindow = await client.order.count({ where: cancelledWhere })
 
+  const policy = await client.platformPolicy.findUnique({ where: { id: 'singleton' } })
+  const deliveryPolicyDays = policy?.dispatchTargetDaysAfterPayment ?? 3
+
   const deliveryItems = await client.orderItem.findMany({
     where: {
       deliveredAt: { not: null, gte: windowStart },
@@ -62,20 +65,66 @@ export async function loadSellerTrustProfile(
     },
     select: {
       deliveredAt: true,
+      expectedArrivalDate: true,
       order: { select: { paymentConfirmedAt: true, createdAt: true } },
     },
     orderBy: { deliveredAt: 'desc' },
     take: 5000,
   })
-  const deliveryDays = (deliveryItems ?? [])
+  const deliveries = (deliveryItems ?? [])
     .map((it: any) => {
-      const start = it?.order?.paymentConfirmedAt ?? it?.order?.createdAt
-      const end = it?.deliveredAt
-      if (!start || !end) return null
-      const ms = new Date(end).getTime() - new Date(start).getTime()
-      return ms < 0 ? 0 : ms / 86400000
+      const deliveredAt = it?.deliveredAt
+      // Count the delivery clock from the payment date (paidAt), not the
+      // order date. Orders that were never paid are excluded.
+      const paidAt = it?.order?.paymentConfirmedAt
+      if (!deliveredAt || !paidAt) return null
+      return {
+        deliveredAt: new Date(deliveredAt),
+        expectedAt: it?.expectedArrivalDate ? new Date(it.expectedArrivalDate) : null,
+        orderDate: new Date(paidAt),
+      }
     })
-    .filter((n: any) => n !== null)
+    .filter((d: any) => d !== null)
+
+  const paidOrders = await client.order.findMany({
+    where: {
+      paymentStatus: 'PAID',
+      source: 'ONLINE',
+      createdAt: { gte: windowStart },
+      items: { some: { product: { storeId: actualId } } },
+    },
+    select: {
+      id: true,
+      paymentConfirmedAt: true,
+      createdAt: true,
+      orderMessages: {
+        where: {
+          userRole: 'VENDOR',
+          // Exclude system/automated rows (e.g. webhook-triggered notices) even
+          // if they were persisted with a vendor role.
+          NOT: { userRole: 'SYSTEM' },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 1,
+        select: { createdAt: true, userRole: true },
+      },
+    },
+    take: 5000,
+    orderBy: { createdAt: 'desc' },
+  })
+  const responseSamples = (paidOrders ?? [])
+    .map((o: any) => {
+      // Response window starts at payment (paidAt), not the order date.
+      const paidAt = o?.paymentConfirmedAt
+      if (!paidAt) return null
+      return {
+        orderDate: new Date(paidAt),
+        firstVendorReplyAt: (o?.orderMessages ?? []).find((m: any) => m?.userRole !== 'SYSTEM')?.createdAt
+          ? new Date((o.orderMessages ?? []).find((m: any) => m?.userRole !== 'SYSTEM').createdAt)
+          : null,
+      }
+    })
+    .filter((r: any) => r !== null)
 
   const sellerFaultReturnsInWindow = await client.returnRequest.count({
     where: {
@@ -136,7 +185,9 @@ export async function loadSellerTrustProfile(
     completedInWindow,
     completedLifetime,
     vendorCancelledInWindow,
-    deliveryDays,
+    deliveries,
+    responseSamples,
+    deliveryPolicyDays,
     sellerFaultReturnsInWindow,
     reviewCount,
     reviewSum,

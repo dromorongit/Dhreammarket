@@ -61,6 +61,7 @@ export async function PUT(request: NextRequest) {
       'dateFormat', 'itemsPerPage', 'widgetVisibility', 'productDisplayPreferences',
       'orderManagementPreferences', 'inventoryPreferences',
       'notifyNewOrders', 'notifyLowStock', 'notifyCustomerMessages', 'notifySettlements',
+      'notifyDailySummary',
       'notificationChannels',
     ]
 

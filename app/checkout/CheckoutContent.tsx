@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -12,9 +12,10 @@ import { EmptyState } from '@/components/EmptyState'
 import { Input } from '@/components/Input'
 import { Textarea } from '@/components/Textarea'
 import { formatPrice } from '@/lib/currency'
-import { getAvailableRegions } from '@/lib/shipping'
+import { GHANA_REGIONS } from '@/lib/cancellation-policy'
 import { PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import CompactSellerTrustSummary from '@/components/trust/CompactSellerTrustSummary'
 import { useCart, dispatchCartUpdate } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { getBlurDataURL, SEARCH_THUMB_SIZES } from '@/lib/image-utils'
@@ -41,6 +42,7 @@ interface CartItem {
       url: string
       alt: string | null
     }>
+    storeId?: string | null
   }
   productVariant?: {
     id: string
@@ -653,8 +655,8 @@ export default function CheckoutContent() {
      }
    }, [processing, verificationTimeout])
 
-   const totalQuantity = contextCart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
-   const availableRegions = useMemo(() => getAvailableRegions(), [])
+    const totalQuantity = contextCart?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+    const availableRegions = GHANA_REGIONS
 
    if (processing) {
      if (verificationTimeout || processingScreenTimeout) {
@@ -945,6 +947,9 @@ export default function CheckoutContent() {
           <div className="mt-6 lg:mt-0 lg:col-span-4 w-full max-w-full">
             <div className="lg:sticky lg:top-28 space-y-4">
               <OrderSummaryDesktop items={contextCart.items} subtotal={subtotal} />
+              {Array.from(new Set((contextCart.items ?? []).map((i: any) => i.product?.storeId).filter(Boolean))).map((id: any) => (
+                <CompactSellerTrustSummary key={id} storeId={String(id)} />
+              ))}
               {influencerCashback && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                   <p className="text-sm font-medium text-emerald-800">
@@ -985,6 +990,11 @@ export default function CheckoutContent() {
 
         {/* Mobile: Collapsible Order Summary */}
         <div className="mt-6 lg:hidden">
+          {Array.from(new Set((contextCart.items ?? []).map((i: any) => i.product?.storeId).filter(Boolean))).map((id: any) => (
+            <div key={id} className="mb-3">
+              <CompactSellerTrustSummary storeId={String(id)} />
+            </div>
+          ))}
           <MobileOrderSummary
             items={contextCart.items}
             totalQuantity={totalQuantity}

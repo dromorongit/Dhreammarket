@@ -292,7 +292,10 @@ describe('POST /api/vendor/payouts', () => {
             status: {
               in: ['DELIVERED', 'COMPLETED'],
             },
-            source: 'ONLINE',
+            OR: [
+              { source: 'ONLINE' },
+              { source: 'MANUAL', payment: { status: 'PAID' } },
+            ],
           },
         },
         _sum: {

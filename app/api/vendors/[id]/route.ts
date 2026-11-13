@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
-import { PaymentStatus } from '@prisma/client'
-import { countAttributableVendorCancelledOrders, vendorRejectedOrdersWhere } from '@/lib/trust-metrics'
+import { getCachedSellerTrustProfile } from '@/lib/trust/cached-profile'
+import { composeProfile } from '@/lib/trust/metrics'
+import { rehydrateProfileInput } from '@/lib/trust/rehydrate'
+import type { SellerTrustProfile } from '@/lib/trust/types'
 import {
   PUBLIC_PRODUCT_IMAGE_SELECT,
   PUBLIC_PRODUCT_SELECT,
@@ -139,138 +141,23 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const actualStoreId = store.id
 
-    // Calculate average rating from vendor reviews
-    const allReviews = await getPrisma().vendorReview.findMany({
-      where: {
-        storeId: actualStoreId,
-      },
-      select: {
-        rating: true,
-      },
-    })
+    // Seller metrics are computed by lib/trust (composeProfile) and exposed via
+    // /api/trust/sellers/[storeId]. This route reuses the same profile so the
+    // vendor API and the trust API return identical numbers.
+    let trustProfile: SellerTrustProfile | null = null
+    try {
+      const loaded = await getCachedSellerTrustProfile(actualStoreId)
+      if (loaded.found) {
+        trustProfile = composeProfile(rehydrateProfileInput(loaded.data))
+      }
+    } catch (err) {
+      console.error('Failed to load seller trust profile:', err)
+    }
 
-    const averageRating = allReviews.length > 0
-      ? allReviews.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / allReviews.length
-      : 0
-
-    const totalReviews = allReviews.length
     const followerCount = await getPrisma().vendorFollow.count({ where: { vendorId: actualStoreId } })
 
-    let completedOrderCount: number | null = null
-    let productVerifiedCount: number | null = null
-    let vendorVerifiedCount: number | null = null
-    let vendorCancelledCountValue: number | null = null
-
-    const settled = await Promise.allSettled([
-      getPrisma().order.count({
-        where: {
-          paymentStatus: 'PAID',
-          status: { in: ['DELIVERED', 'COMPLETED'] },
-          source: 'ONLINE',
-          items: {
-            some: {
-              product: {
-                storeId: actualStoreId,
-              },
-            },
-          },
-        },
-      }),
-      getPrisma().productReview.count({
-        where: {
-          product: {
-            storeId: actualStoreId,
-          },
-          orderId: { not: null },
-        },
-      }),
-      getPrisma().vendorReview.count({
-        where: {
-          storeId: actualStoreId,
-          orderId: { not: null },
-        },
-      }),
-      (async () => {
-        // A rejected order used to be written to paymentStatus REFUNDED on
-        // the spot, so it left the PAID bucket and the cancellation count was
-        // effectively zero. The refund is now settled by the pipeline, so a
-        // rejected order can sit in EITHER state: PAID while the refund
-        // request is pending, or REFUNDED once it has been paid back. Both
-        // count, exactly once, and the single-store attribution rule below is
-        // unchanged.
-        const rejectedWhere = vendorRejectedOrdersWhere(actualStoreId)
-        const [orders, orderItems, products] = await Promise.all([
-          getPrisma().order.findMany({
-            where: rejectedWhere,
-            select: {
-              id: true,
-              paymentStatus: true,
-              vendorRejected: true,
-              items: {
-                select: {
-                  product: {
-                    select: {
-                      storeId: true,
-                    },
-                  },
-                },
-              },
-            },
-          }),
-          getPrisma().orderItem.findMany({
-            where: {
-              order: rejectedWhere,
-            },
-            select: {
-              orderId: true,
-              productId: true,
-            },
-          }),
-          getPrisma().product.findMany({
-            select: {
-              id: true,
-              storeId: true,
-            },
-          }),
-        ])
-        return countAttributableVendorCancelledOrders(orders, orderItems, products, actualStoreId)
-      })(),
-    ])
-
-    if (settled[0].status === 'fulfilled') {
-      completedOrderCount = settled[0].value
-    } else {
-      console.error('Failed to compute completed order count:', settled[0].reason)
-    }
-
-    if (settled[1].status === 'fulfilled') {
-      productVerifiedCount = settled[1].value
-    } else {
-      console.error('Failed to compute product verified review count:', settled[1].reason)
-    }
-
-    if (settled[2].status === 'fulfilled') {
-      vendorVerifiedCount = settled[2].value
-    } else {
-      console.error('Failed to compute vendor verified review count:', settled[2].reason)
-    }
-
-    if (settled[3].status === 'fulfilled') {
-      vendorCancelledCountValue = settled[3].value
-    } else {
-      console.error('Failed to compute vendor cancelled count:', settled[3].reason)
-    }
-
-    const safeCompletedOrderCount = completedOrderCount ?? 0
-    const safeVendorCancelledCount = vendorCancelledCountValue ?? 0
-    const totalCompletedOrCancelled = safeCompletedOrderCount + safeVendorCancelledCount
-    const vendorCancellationRate =
-      completedOrderCount === null || vendorCancelledCountValue === null
-        ? null
-        : totalCompletedOrCancelled >= 10
-          ? safeVendorCancelledCount / totalCompletedOrCancelled
-          : null
-    const isNewSeller = totalCompletedOrCancelled < 10
+    const ratingsValue = trustProfile?.ratings.value
+    const cancellationSignal = trustProfile?.cancellation
 
     // Check if featured status is still valid
     const isCurrentlyFeatured = store.isFeatured &&
@@ -284,19 +171,22 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       description: store.description,
       isVerified: store.isVerified,
       isFeatured: isCurrentlyFeatured,
-      badgeTier: store.badgeTier,
+      badgeTier: store.isVerified ? store.badgeTier : null,
       logo: store.logo,
       banner: store.banner,
-      rating: Math.round(averageRating * 10) / 10,
-      totalReviews,
+      rating: Math.round((ratingsValue?.average ?? 0) * 10) / 10,
+      totalReviews: ratingsValue?.count ?? 0,
       followerCount,
       createdAt: store.createdAt,
       memberSince: store.createdAt,
-      completedOrders: completedOrderCount,
-      vendorCancelledCount: safeVendorCancelledCount,
-      vendorCancellationRate,
-      isNewSeller,
-      verifiedPurchaseReviewCount: (productVerifiedCount ?? 0) + (vendorVerifiedCount ?? 0),
+      completedOrders: trustProfile?.orders.completed ?? 0,
+      vendorCancelledCount: cancellationSignal?.counts?.numerator ?? 0,
+      vendorCancellationRate:
+        cancellationSignal?.state === 'OK' && cancellationSignal.value
+          ? cancellationSignal.value.percentage / 100
+          : null,
+      isNewSeller: trustProfile?.fulfilment.state === 'INSUFFICIENT_DATA',
+      verifiedPurchaseReviewCount: ratingsValue?.count ?? 0,
       category: store.vendor_categories,
       mainPhoneNumber: store.mainPhoneNumber,
       alternativePhoneNumber: store.alternativePhoneNumber,

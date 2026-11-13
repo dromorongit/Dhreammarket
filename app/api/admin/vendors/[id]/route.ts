@@ -149,7 +149,7 @@ case 'verify':
         // Revoke the vendor (set isVerified to false)
         updatedStore = await prisma.store.update({
           where: { id },
-          data: { isVerified: false },
+          data: { isVerified: false, badgeTier: null },
           include: {
             user: {
               select: {
@@ -185,7 +185,7 @@ case 'verify':
         )
         updatedStore = await prisma.store.update({
           where: { id },
-          data: { isVerified: false, isFeatured: false, featuredUntil: null },
+          data: { isVerified: false, isFeatured: false, featuredUntil: null, badgeTier: null },
           include: {
             user: {
               select: {

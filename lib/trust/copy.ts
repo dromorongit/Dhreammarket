@@ -1,4 +1,5 @@
 import type { Signal, SuppressedBand, RateValue, DeliveryValue, RatingValue, SignalState } from './types'
+import { RESPONSE_WINDOW_DAYS } from './constants'
 
 export function signalStateLabel(state: SignalState): string {
   switch (state) {
@@ -29,8 +30,20 @@ export function formatDelivery(signal: Signal<DeliveryValue>): string {
   if (signal.state !== 'OK' || !signal.value) {
     return 'Not available'
   }
-  const { numerator } = signal.counts
-  return `Median delivery time: ${signal.value.medianDays.toFixed(1)} days (${numerator} delivered)`
+  const { numerator, denominator } = signal.counts
+  const median = signal.value.medianDays != null ? `, median ${signal.value.medianDays.toFixed(1)} days` : ''
+  return `On-time delivery: ${numerator} of ${denominator} (${signal.value.onTimePercentage.toFixed(1)}%)${median}`
+}
+
+export function formatResponseRate(signal: Signal<RateValue>): string {
+  if (signal.state === 'INSUFFICIENT_DATA') {
+    return 'Not enough orders yet'
+  }
+  if (signal.state !== 'OK' || !signal.value) {
+    return 'Not available'
+  }
+  const { numerator, denominator } = signal.counts
+  return `First reply within ${RESPONSE_WINDOW_DAYS} days: ${numerator} of ${denominator} (${signal.value.percentage.toFixed(1)}%)`
 }
 
 export function formatReturns(signal: Signal<RateValue> | SuppressedBand): string {

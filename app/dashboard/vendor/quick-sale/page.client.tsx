@@ -9,6 +9,7 @@ import { Input } from '@/components/Input'
 import { Badge } from '@/components/Badge'
 import { formatCurrency } from '@/lib/currency'
 import { toPesewas, fromPesewas, computeOrderTotals, buildWhatsAppShareLink, MANUAL_CHANNELS, type ManualChannel } from '@/lib/manual-orders'
+import { buildRepeatLines, type RepeatOrderItem } from '@/app/dashboard/vendor/quick-sale/repeat-prefill'
 
 const PAYMENT_METHODS = [
   { value: 'MOBILE_MONEY', label: 'Mobile Money' },
@@ -42,10 +43,11 @@ function variantLabel(v: { color?: string | null; size?: string | null; age?: st
   return parts.length > 0 ? parts.join(' / ') : null
 }
 
-export default function VendorQuickSalePageClient() {
+export default function VendorQuickSalePageClient({ payLinkEnabled }: { payLinkEnabled?: boolean }) {
   const router = useRouter()
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
   const prefillPhone = searchParams.get('phone') || ''
+  const isRepeat = searchParams.get('repeat') === '1'
 
   // --- Form state ---
   const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID())
@@ -55,9 +57,15 @@ export default function VendorQuickSalePageClient() {
   const [customerPhone, setCustomerPhone] = useState(prefillPhone)
   const [customerName, setCustomerName] = useState('')
   const [channel, setChannel] = useState<ManualChannel>('WHATSAPP')
-  const [lookupResult, setLookupResult] = useState<{ found: boolean; name: string | null; orderCount: number } | null>(null)
+  const [lookupResult, setLookupResult] = useState<{ found: boolean; name: string | null; orderCount: number; id: string | null } | null>(null)
   const [lookupLoading, setLookupLoading] = useState(false)
   const [customerError, setCustomerError] = useState<string | null>(null)
+
+  // Repeat last order state
+  const [repeatLoading, setRepeatLoading] = useState(false)
+  const [repeatSkipped, setRepeatSkipped] = useState<string[]>([])
+  const [repeatError, setRepeatError] = useState<string | null>(null)
+  const repeatPrefilled = useRef(false)
 
   // Items
   const [products, setProducts] = useState<ProductOption[]>([])
@@ -85,7 +93,14 @@ export default function VendorQuickSalePageClient() {
   const [submitError, setSubmitError] = useState<{ message: string; products?: Array<{ productName: string }> } | null>(null)
 
   // Success
-  const [sale, setSale] = useState<{ displayNumber: string; total: number; paymentStatus: string; receiptUrl: string | null; receiptToken: string | null } | null>(null)
+  const [sale, setSale] = useState<{ id: string; displayNumber: string; source: string; status: string; total: number; paymentStatus: string; receiptUrl: string | null; receiptToken: string | null } | null>(null)
+
+  // Pay link (sale recorded screen)
+  const [payLinkLoading, setPayLinkLoading] = useState(false)
+  const [payLinkError, setPayLinkError] = useState<string | null>(null)
+  const [payLinkUrl, setPayLinkUrl] = useState<string | null>(null)
+  const [payLinkCopied, setPayLinkCopied] = useState(false)
+  const effectivePayLinkEnabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'
 
   // Debounce ref
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -114,13 +129,18 @@ export default function VendorQuickSalePageClient() {
       setLookupLoading(true)
       try {
         const res = await fetch(`/api/vendor/customers/lookup?phone=${encodeURIComponent(phone)}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.found && data.customer) {
-            setLookupResult({ found: true, name: data.customer.name || null, orderCount: data.customer.orderCount || 0 })
-            if (data.customer.name && !customerName) setCustomerName(data.customer.name)
-          } else {
-            setLookupResult({ found: false, name: null, orderCount: 0 })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.found && data.customer) {
+              setLookupResult({
+                found: true,
+                name: data.customer.name || null,
+                orderCount: data.customer.orderCount || 0,
+                id: data.customer.id || null,
+              })
+              if (data.customer.name && !customerName) setCustomerName(data.customer.name)
+            } else {
+            setLookupResult({ found: false, name: null, orderCount: 0, id: null })
           }
         }
       } catch {
@@ -162,6 +182,40 @@ export default function VendorQuickSalePageClient() {
       .finally(() => { if (!cancelled) setProductsLoading(false) })
     return () => { cancelled = true }
   }, [productSearch])
+
+  // Prefill the cart from the customer's last order when ?repeat=1.
+  // Nothing is saved until the seller confirms the cart.
+  useEffect(() => {
+    if (!isRepeat || repeatPrefilled.current) return
+    if (!lookupResult?.found || !lookupResult.id) return
+    if (productsLoading) return
+
+    ;(async () => {
+      setRepeatLoading(true)
+      setRepeatError(null)
+      try {
+        const customerId = lookupResult.id
+        const res = await fetch(`/api/vendor/customers/${customerId}`)
+        if (!res.ok) throw new Error('Failed to load last order')
+        const data = await res.json()
+        const lastItems: RepeatOrderItem[] = (data.customer?.lastOrderedItems || []) as RepeatOrderItem[]
+        const repeatProducts = products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          availableStock: p.availableStock,
+        }))
+        const { lines, skipped } = buildRepeatLines(lastItems, repeatProducts)
+        setCart(lines)
+        setRepeatSkipped(skipped)
+        repeatPrefilled.current = true
+      } catch (err) {
+        setRepeatError(err instanceof Error ? err.message : 'Repeat failed')
+      } finally {
+        setRepeatLoading(false)
+      }
+    })()
+  }, [isRepeat, lookupResult, products, productsLoading])
 
   // Reset variant selection when product changes
   useEffect(() => {
@@ -345,7 +399,10 @@ export default function VendorQuickSalePageClient() {
 
       const order = data.order
       setSale({
+        id: order.id,
         displayNumber: order.displayNumber,
+        source: order.source,
+        status: order.status,
         total: order.total,
         paymentStatus: order.paymentStatus,
         receiptUrl: order.receiptUrl || null,
@@ -384,8 +441,62 @@ export default function VendorQuickSalePageClient() {
     setDeliveryFee(0)
     setDeliveryCost('')
     setSale(null)
+    setPayLinkLoading(false)
+    setPayLinkError(null)
+    setPayLinkUrl(null)
+    setPayLinkCopied(false)
     setSubmitting(false)
     setIdempotencyKey(crypto.randomUUID())
+  }
+
+  const handleSendPayLinkWhatsApp = async () => {
+    if (!sale || payLinkLoading) return
+    // iOS Safari blocks window.open after await; open synchronously on tap.
+    const popup = customerPhone ? window.open('', '_blank') : null
+
+    setPayLinkLoading(true)
+    setPayLinkError(null)
+    setPayLinkCopied(false)
+    try {
+      const res = await fetch(`/api/vendor/manual-orders/${sale.id}/pay-link`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const message = res.status === 503 ? 'Pay links are not available yet' : data.error || 'Failed to create pay link. Please try again.'
+        setPayLinkError(message)
+        if (popup) popup.close()
+        return
+      }
+      const url = data.authorizationUrl || data.receiptUrl
+      if (!url) {
+        setPayLinkError('Failed to create pay link. Please try again.')
+        if (popup) popup.close()
+        return
+      }
+      setPayLinkUrl(url)
+      if (popup) {
+        const wa = buildWhatsAppShareLink(
+          customerPhone,
+          url,
+          `Hi ${customerName || 'there'}, pay ${formatCurrency(sale.total)} for order #${sale.displayNumber}: ${url}`
+        )
+        popup.location.href = wa
+      }
+    } catch {
+      setPayLinkError('Failed to create pay link. Please try again.')
+      if (popup) popup.close()
+    } finally {
+      setPayLinkLoading(false)
+    }
+  }
+
+  const handleCopyPayLink = async () => {
+    if (!payLinkUrl) return
+    try {
+      await navigator.clipboard.writeText(payLinkUrl)
+      setPayLinkCopied(true)
+    } catch {
+      setPayLinkError('Could not copy the link')
+    }
   }
 
   const handleViewOrder = () => {
@@ -429,12 +540,71 @@ export default function VendorQuickSalePageClient() {
                 </span>
               </div>
             </div>
+            {sale && sale.paymentStatus !== 'PAID' && effectivePayLinkEnabled && (
+              <div className="mb-4 space-y-2">
+                {customerPhone.trim() ? (
+                  <Button
+                    onClick={handleSendPayLinkWhatsApp}
+                    fullWidth
+                    size="sm"
+                    loading={payLinkLoading}
+                    disabled={payLinkLoading}
+                  >
+                    Send pay link on WhatsApp
+                  </Button>
+                ) : null}
+                {(!customerPhone.trim() || payLinkUrl || payLinkError) && (
+                  <div className="space-y-2">
+                    {!payLinkUrl ? (
+                      <Button
+                        onClick={handleSendPayLinkWhatsApp}
+                        fullWidth
+                        variant={customerPhone.trim() ? 'outline' : 'primary'}
+                        size="sm"
+                        loading={payLinkLoading}
+                        disabled={payLinkLoading}
+                      >
+                        Copy pay link
+                      </Button>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-600 break-all text-left">{payLinkUrl}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button onClick={handleCopyPayLink} fullWidth variant="outline" size="sm">
+                            {payLinkCopied ? 'Copied' : 'Copy pay link'}
+                          </Button>
+                          {customerPhone.trim() ? (
+                            <Button
+                              onClick={() => {
+                                const wa = buildWhatsAppShareLink(
+                                  customerPhone,
+                                  payLinkUrl,
+                                  `Hi ${customerName || 'there'}, pay ${formatCurrency(sale.total)} for order #${sale.displayNumber}: ${payLinkUrl}`
+                                )
+                                window.open(wa, '_blank')
+                              }}
+                              fullWidth
+                              variant="outline"
+                              size="sm"
+                            >
+                              Share on WhatsApp
+                            </Button>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                {payLinkError && <p className="text-xs text-rose-600 text-left">{payLinkError}</p>}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 mb-6">
               <Button onClick={handleWhatsApp} fullWidth variant="outline" size="sm" disabled={!sale!.receiptUrl}>
-                Send on WhatsApp
+                Send receipt on WhatsApp
               </Button>
               <Button onClick={handleCopyLink} fullWidth variant="outline" size="sm" disabled={!sale!.receiptUrl}>
-                Copy link
+                Copy receipt link
               </Button>
             </div>
             <div className="space-y-2">
@@ -453,7 +623,7 @@ export default function VendorQuickSalePageClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-md mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6 pb-28 sm:pb-6">
         {/* Section 1: Customer */}
         <Card>
           <CardHeader>
@@ -634,10 +804,29 @@ export default function VendorQuickSalePageClient() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-              {itemsError && <p className="text-sm text-rose-600">{itemsError}</p>}
+                      ))}
+                    </div>
+                  )}
+                  {repeatLoading && <p className="text-xs text-gray-500">Prefilling last order...</p>}
+                  {repeatError && <p className="text-sm text-rose-600">{repeatError}</p>}
+                  {repeatSkipped.length > 0 && (
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+                      <p className="text-xs font-semibold text-amber-900 mb-1">
+                        Some items couldn&apos;t be repeated:
+                      </p>
+                      <ul className="text-xs text-amber-700 list-disc pl-4 space-y-1">
+                        {repeatSkipped.map((name, i) => (
+                          <li key={i}>
+                            {name} (no longer available or out of stock)
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-amber-600 mt-2">
+                        Only available items were added to your cart. Review before recording the sale.
+                      </p>
+                    </div>
+                  )}
+                  {itemsError && <p className="text-sm text-rose-600">{itemsError}</p>}
             </div>
           </CardContent>
         </Card>
@@ -741,6 +930,20 @@ export default function VendorQuickSalePageClient() {
             </Button>
           </div>
         )}
+
+        <div className="hidden sm:block">
+          <Button
+            type="submit"
+            disabled={submitting || cart.length === 0}
+            fullWidth
+            className="min-h-[48px]"
+          >
+            {submitting ? 'Recording sale...' : 'Record sale'}
+          </Button>
+          {cart.length === 0 && (
+            <p className="mt-2 text-sm text-gray-500">Add at least one item to record a sale</p>
+          )}
+        </div>
 
         {/* Sticky bottom bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur border-t border-slate-200 p-4 sm:hidden z-40">

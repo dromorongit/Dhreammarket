@@ -25,6 +25,10 @@ export type RefundRequestNotice = {
   storeName: string | null
   /** Which cancellation path produced this request. */
   source: 'CUSTOMER_CANCEL' | 'VENDOR_REJECTION'
+  /** Cancellation fee applied, in GHS. */
+  feeAmount?: number
+  /** Wallet credit restored to the buyer, in GHS. */
+  walletRestored?: number
 }
 
 /**
@@ -51,11 +55,14 @@ export async function notifySuperAdminsRefundRequested(notice: RefundRequestNoti
       currency: 'GHS',
     }).format(notice.total)
 
+    const feeLabel = notice.feeAmount != null && notice.feeAmount > 0 ? `, fee ${new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(notice.feeAmount)}` : ''
+    const walletLabel = notice.walletRestored != null && notice.walletRestored > 0 ? `, wallet credit returned ${new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(notice.walletRestored)}` : ''
+
     // No customer email, name, address, phone or payment reference: the
     // message carries only the order reference, the store name and the
     // amount, which is what an admin needs to act on it.
     const storeLabel = notice.storeName ?? 'a store'
-    const inAppMessage = `A refund request is waiting for a decision. Order ${orderRef} was cancelled by the customer. Amount ${formattedAmount}. Store: ${storeLabel}. Review it in the refund request queue.`
+    const inAppMessage = `A refund request is waiting for a decision. Order ${orderRef} was cancelled by the customer. Amount ${formattedAmount}${feeLabel}${walletLabel}. Store: ${storeLabel}. Review it in the refund request queue.`
     const emailSubject = `Refund request waiting - Order ${orderRef}`
     const emailBody = `
       <p>A refund request is waiting for your decision.</p>

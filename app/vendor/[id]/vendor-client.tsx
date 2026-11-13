@@ -14,8 +14,9 @@ import { formatPrice } from '@/lib/currency'
 import { formatGhanaPhoneNumber, getWhatsAppLink, getTelLink, getWhatsAppLinks } from '@/lib/phone'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
+import { MIN_ORDERS_FOR_RATES, RESPONSE_WINDOW_DAYS } from '@/lib/trust/constants'
 import { MdVerified } from 'react-icons/md'
-import { FiShield, FiCheckCircle, FiPackage, FiXCircle, FiStar, FiCalendar } from 'react-icons/fi'
+import { FiShield, FiCheckCircle, FiPackage, FiXCircle, FiStar, FiCalendar, FiTruck, FiMail } from 'react-icons/fi'
 import { FaCrown } from 'react-icons/fa'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
 import { ProductStockIndicator } from '@/components/ProductStockIndicator'
@@ -107,6 +108,30 @@ interface VendorData {
   followerCount: number
 }
 
+interface TrustSignal {
+  state: string
+  counts: { numerator: number; denominator: number }
+  value?: {
+    percentage: number
+    average: number
+    onTimePercentage: number
+    medianDays?: number
+    count: number
+  }
+}
+
+interface SellerTrustProfile {
+  identity: { status: 'VERIFIED' | 'UNVERIFIED'; verifiedSince?: string }
+  tenure: { daysOnPlatform: number; firstSaleAt?: string }
+  orders: { completed: number; lifetimeCompleted: number }
+  fulfilment: TrustSignal
+  cancellation: TrustSignal
+  delivery: TrustSignal
+  responseRate: TrustSignal
+  ratings: TrustSignal
+  computedAt: string
+}
+
 interface User {
   id: string
   role: string
@@ -137,6 +162,8 @@ export default function VendorProfilePage() {
   const [userReview, setUserReview] = useState<VendorReview | null>(null)
   const [editingReview, setEditingReview] = useState<VendorReview | null>(null)
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
+  const [trust, setTrust] = useState<SellerTrustProfile | null>(null)
+  const [trustLoading, setTrustLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'products' | 'services' | 'about' | 'reviews' | 'feed'>('products')
   const [feedPosts, setFeedPosts] = useState<Array<{
     id: string
@@ -201,6 +228,30 @@ export default function VendorProfilePage() {
     }
 
     fetchVendor()
+  }, [vendorId])
+
+  useEffect(() => {
+    if (!vendorId) return
+
+    const fetchTrust = async () => {
+      setTrustLoading(true)
+      try {
+        const response = await fetch(`/api/trust/sellers/${vendorId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setTrust(data as SellerTrustProfile)
+        } else {
+          setTrust(null)
+        }
+      } catch (err) {
+        console.error('Failed to fetch seller trust profile:', err)
+        setTrust(null)
+      } finally {
+        setTrustLoading(false)
+      }
+    }
+
+    fetchTrust()
   }, [vendorId])
 
   useEffect(() => {
@@ -503,6 +554,44 @@ export default function VendorProfilePage() {
     )
   }
 
+  const formatTimeOnPlatform = (days: number): string => {
+    const years = Math.floor(days / 365)
+    if (years > 0) return `${years} year${years === 1 ? '' : 's'} on platform`
+    const months = Math.floor(days / 30)
+    if (months > 0) return `${months} month${months === 1 ? '' : 's'} on platform`
+    return `${days} day${days === 1 ? '' : 's'} on platform`
+  }
+
+  const isVerified = trust ? trust.identity.status === 'VERIFIED' : Boolean(vendor.isVerified)
+  const completedOrders = trust ? trust.orders.completed : (vendor?.completedOrders ?? 0)
+  const isNewSeller = trust
+    ? trust.fulfilment.state === 'INSUFFICIENT_DATA'
+    : vendor?.isNewSeller ?? completedOrders < MIN_ORDERS_FOR_RATES
+  const fulfilmentRate =
+    trust?.fulfilment.state === 'OK' && trust.fulfilment.value
+      ? `${trust.fulfilment.value.percentage}%`
+      : '—'
+  const cancellationRate =
+    trust?.cancellation.state === 'OK' && trust.cancellation.value
+      ? `${trust.cancellation.value.percentage}%`
+      : '—'
+  const deliveryReliability =
+    trust?.delivery.state === 'OK' && trust.delivery.value
+      ? `${trust.delivery.value.onTimePercentage}% on-time${trust.delivery.value.medianDays != null ? ', ' + trust.delivery.value.medianDays.toFixed(1) + ' days median' : ''}`
+      : '—'
+  const responseRateLabel = `Replies within ${RESPONSE_WINDOW_DAYS} days of payment`
+  const responseRate =
+    trust?.responseRate.state === 'OK' && trust.responseRate.value
+      ? `${trust.responseRate.value.percentage}%`
+      : '—'
+  const timeOnPlatform = trust
+    ? formatTimeOnPlatform(trust.tenure.daysOnPlatform)
+    : vendor?.memberSince
+      ? `Selling since ${new Date(vendor.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`
+      : '—'
+  const ratingAverage = trust?.ratings.state === 'OK' && trust.ratings.value ? trust.ratings.value.average : null
+  const ratingCount = trust?.ratings.state === 'OK' && trust.ratings.value ? trust.ratings.value.count : 0
+
   return (
     <div className="min-h-screen bg-slate-50">
       {vendor.banner && (
@@ -542,7 +631,7 @@ export default function VendorProfilePage() {
                 <h1 className="text-3xl font-bold text-deep-navy">{truncateVendorName(vendor.name)}</h1>
                 {(() => {
                   const badgeInfo = getVendorBadgeInfo(vendor.badgeTier as any)
-                  if (badgeInfo) {
+                  if (badgeInfo && vendor.isVerified) {
                     const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                     return (
                       <>
@@ -698,7 +787,7 @@ export default function VendorProfilePage() {
                   <p className="text-xs text-blue-100">Checked by Dhream Market</p>
                 </div>
               </div>
-              {vendor.badgeTier && (
+              {vendor.isVerified && vendor.badgeTier && (
                 <div className="hidden sm:flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-300 to-yellow-500 px-3 py-1">
                   <FaCrown className="h-3.5 w-3.5 text-amber-700" />
                   <span className="text-xs font-semibold text-amber-700">{vendor.badgeTier}</span>
@@ -709,11 +798,11 @@ export default function VendorProfilePage() {
 
           <div className="px-6 py-4">
             <div className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 ${
-              vendor.isVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+              isVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
             }`}>
-              <FiCheckCircle className={`h-4 w-4 ${vendor.isVerified ? 'text-emerald-500' : 'text-slate-400'}`} />
+              <FiCheckCircle className={`h-4 w-4 ${isVerified ? 'text-emerald-500' : 'text-slate-400'}`} />
               <span className="text-sm font-medium">
-                {vendor.isVerified ? 'Identity verified' : 'Not yet verified'}
+                {isVerified ? 'Identity verified' : 'Identity not verified'}
               </span>
             </div>
           </div>
@@ -726,40 +815,49 @@ export default function VendorProfilePage() {
                 </div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Completed Orders</span>
               </div>
-              <p className="text-xl font-bold text-slate-900">{vendor.completedOrders}</p>
-              {vendor.completedOrders < 10 && (
-                <p className="text-xs text-slate-500">New seller</p>
-              )}
+              <p className="text-xl font-bold text-slate-900">{completedOrders}</p>
+              {isNewSeller && <p className="text-xs text-slate-500">New seller</p>}
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className={`flex h-6 w-6 items-center justify-center rounded-md ${
-                  (vendor.vendorCancelledCount ?? 0) === 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
-                }`}>
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-100 text-emerald-600">
+                  <FiCheckCircle className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Fulfilment Rate</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">{fulfilmentRate}</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-rose-100 text-rose-600">
                   <FiXCircle className="h-3.5 w-3.5" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Cancellations</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Cancellation Rate</span>
               </div>
-              <p className="text-xl font-bold text-slate-900">{vendor.vendorCancelledCount ?? 0}</p>
-              <p className="text-xs text-slate-500">Vendor-cancelled</p>
+              <p className="text-xl font-bold text-slate-900">{cancellationRate}</p>
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-100 text-amber-600">
-                  <FiStar className="h-3.5 w-3.5" />
+                  <FiTruck className="h-3.5 w-3.5" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rating</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Delivery Reliability</span>
               </div>
-              <p className="text-xl font-bold text-slate-900">
-                {vendor.verifiedPurchaseReviewCount > 0 ? `${vendor.rating.toFixed(1)} / 5` : '—'}
-              </p>
-              <p className="text-xs text-slate-500">
-                {vendor.verifiedPurchaseReviewCount > 0
-                  ? `${vendor.verifiedPurchaseReviewCount} verified review${vendor.verifiedPurchaseReviewCount !== 1 ? 's' : ''}`
-                  : 'No reviews yet'}
-              </p>
+              <p className="text-xl font-bold text-slate-900">{deliveryReliability}</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-purple-100 text-purple-600">
+                  <FiMail className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Response Rate</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">{responseRate}</p>
+              <p className="text-xs text-slate-500">{responseRateLabel}</p>
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
@@ -767,10 +865,25 @@ export default function VendorProfilePage() {
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-100 text-indigo-600">
                   <FiCalendar className="h-3.5 w-3.5" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Selling Since</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Time on Platform</span>
+              </div>
+              <p className="text-xl font-bold text-slate-900">{timeOnPlatform}</p>
+            </div>
+
+            <div className="col-span-2 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-100 text-amber-600">
+                  <FiStar className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rating</span>
               </div>
               <p className="text-xl font-bold text-slate-900">
-                {new Date(vendor.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                {ratingAverage !== null ? `${ratingAverage.toFixed(1)} / 5` : '—'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {ratingCount > 0
+                  ? `${ratingCount} verified purchase review${ratingCount !== 1 ? 's' : ''}`
+                  : 'No verified reviews yet'}
               </p>
             </div>
           </div>

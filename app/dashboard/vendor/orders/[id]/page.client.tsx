@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/currency'
 import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 import { Textarea } from '@/components/Textarea'
 import NeedHelpButton from '@/components/NeedHelpButton'
+import PayLinkButton from '@/components/vendor/PayLinkButton'
 
 interface OrderItem {
   id: string
@@ -46,6 +47,13 @@ interface Order {
   vendorAccepted: boolean
   vendorRejected: boolean
   vendorRejectionReason?: string | null
+  source?: string
+  channel?: string | null
+  receiptToken?: string | null
+  receiptUrl?: string | null
+  displayNumber?: string
+  payLinkSent?: boolean
+  paymentNeedsReview?: boolean
   items: OrderItem[]
   payment: Payment | null
   vendorTotal: number
@@ -136,7 +144,7 @@ const FULFILLMENT_PROGRESSION: Record<string, string[]> = {
   BACKORDER: ['AWAITING_RESTOCK', 'READY_TO_FULFILL', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'],
 }
 
-export default function VendorOrderDetailPageClient() {
+export default function VendorOrderDetailPageClient({ payLinkEnabled }: { payLinkEnabled?: boolean }) {
   const params = useParams()
   const orderId = params!.id as string
   const [order, setOrder] = useState<Order | null>(null)
@@ -877,6 +885,23 @@ export default function VendorOrderDetailPageClient() {
 
             {/* Fulfillment Progress */}
             {renderFulfillmentProgress()}
+
+            {order.source === 'MANUAL' && (
+              <div className="mb-4">
+                <PayLinkButton
+                  orderId={order.id}
+                  source={order.source}
+                  paymentStatus={order.paymentStatus}
+                  status={order.status}
+                  customerPhone={order.customerPhone || undefined}
+                  payLinkEnabled={payLinkEnabled}
+                  payLinkSent={order.payLinkSent}
+                />
+                {order.paymentNeedsReview && (
+                  <p className="mt-2 text-xs text-amber-700">Payment received, needs review.</p>
+                )}
+              </div>
+            )}
 
             {/* Vendor Total */}
             <div className="bg-slate-50 rounded-xl p-4 mb-4">

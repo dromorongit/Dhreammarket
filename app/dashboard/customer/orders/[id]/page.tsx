@@ -171,6 +171,16 @@ export default function CustomerOrderDetailPage() {
   const [cancelReason, setCancelReason] = useState('')
   const [cancellingOrder, setCancellingOrder] = useState(false)
   const [confirmingDelivery, setConfirmingDelivery] = useState<Record<string, boolean>>({})
+  const [cancelPreview, setCancelPreview] = useState<{
+    policyActive: boolean
+    free: boolean
+    feeAmount: number
+    refundAmount: number
+    walletRestored: number
+    cancellationsInLast30Days: number
+    blockedUntil: string | null
+    wouldTriggerBlock: boolean
+  } | null>(null)
 
   useEffect(() => {
     if (orderId) {
@@ -231,6 +241,25 @@ export default function CustomerOrderDetailPage() {
       setLoadingMessages(false)
     }
   }
+
+  const fetchCancelPreview = async () => {
+    if (!orderId) return
+    setCancelPreview(null)
+    try {
+      const response = await fetch(`/api/orders/${orderId}/cancel-preview`)
+      if (response.ok) {
+        setCancelPreview(await response.json())
+      }
+    } catch (err) {
+      console.error('Failed to fetch cancel preview:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (showCancelDialog && order) {
+      fetchCancelPreview()
+    }
+  }, [showCancelDialog, order, orderId])
 
   const handleSendMessage = async (type: 'GENERAL' | 'REFUND_REQUEST' = 'GENERAL', messageContent?: string) => {
     const contentToSend = messageContent || newMessage
@@ -942,6 +971,26 @@ export default function CustomerOrderDetailPage() {
                   Please provide a reason for cancelling this order. Orders can only be cancelled before they are shipped.
                   {order.paymentStatus === 'PAID' && ' A refund request will be created automatically and is pending review by our team.'}
                 </p>
+                {cancelPreview && cancelPreview.walletRestored > 0 && (
+                  <p className="text-sm text-gray-600 mb-4">
+                    The wallet credit you used will be returned to your wallet.
+                  </p>
+                )}
+                {cancelPreview && cancelPreview.policyActive && (
+                  <p className="text-sm text-gray-600 mb-4">
+                    {cancelPreview.blockedUntil
+                      ? `Cancellations are blocked until ${new Date(cancelPreview.blockedUntil).toLocaleString('en-GH', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}. You cannot cancel any order for 3 months after 4 cancellations in the last 30 days.`
+                      : `Cancelling now will ${cancelPreview.free
+                          ? 'be free.'
+                          : `cost ${formatPrice(cancelPreview.feeAmount)}, deducted from your refund.`} Paystack's processing fee will not be refunded. This will be cancellation number ${cancelPreview.cancellationsInLast30Days + 1} in the last 30 days. After 4, you cannot cancel any order for 3 months.`}
+                  </p>
+                )}
                 <Textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}

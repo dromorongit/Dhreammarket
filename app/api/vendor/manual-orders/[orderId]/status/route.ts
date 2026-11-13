@@ -12,14 +12,15 @@ import type { OrderFulfillmentStatus, OrderStatus } from '@prisma/client'
 export const dynamic = 'force-dynamic'
 
 // Manual order fulfillment graph: PROCESSING -> SHIPPED -> DELIVERED -> COMPLETED,
-// plus CANCELLED from PROCESSING or SHIPPED. Payment status never gates a transition.
+// plus CANCELLED from PROCESSING or SHIPPED. PENDING can be started (PROCESSING)
+// or cancelled. Payment status never gates a transition.
 const MANUAL_STATUS_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['PROCESSING', 'CANCELLED'],
   PROCESSING: ['SHIPPED', 'CANCELLED'],
   SHIPPED: ['DELIVERED', 'CANCELLED'],
   DELIVERED: ['COMPLETED'],
   COMPLETED: [],
   CANCELLED: [],
-  PENDING: [],
 }
 
 export async function PATCH(

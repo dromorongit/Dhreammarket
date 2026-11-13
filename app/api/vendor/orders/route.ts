@@ -13,6 +13,7 @@ import {
   VENDOR_ORDER_ITEM_SELECT,
   VENDOR_ORDER_SELECT,
 } from '@/lib/public-selects'
+import { SaleChannel } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,13 +30,11 @@ export async function GET(request: NextRequest) {
     }
     const payload = outcome
 
-    // Check if vendor has completed onboarding (store and category)
     const isOnboarded = await isVendorOnboarded(payload.userId)
     if (!isOnboarded) {
       return NextResponse.json({ orders: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }, error: 'Complete store setup to view orders' }, { status: 403 })
     }
 
-    // Get vendor's store
     const store = await getPrisma().store.findUnique({
       where: { userId: payload.userId },
       include: {
@@ -51,12 +50,10 @@ export async function GET(request: NextRequest) {
 
     const productIds = store.products?.map((p) => p.id) || []
     
-    // If no products, return empty orders
     if (productIds.length === 0) {
       return NextResponse.json({ orders: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } })
     }
 
-    // Get query parameters for pagination and search
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -66,45 +63,52 @@ export async function GET(request: NextRequest) {
     const fulfillmentStatus = searchParams.get('fulfillmentStatus') || ''
     const source = searchParams.get('source') || ''
     const unpaid = searchParams.get('unpaid') === 'true'
+    const channel = searchParams.get('channel') || ''
+    const toDispatch = searchParams.get('toDispatch') === 'true'
 
-const skip = (page - 1) * limit
+    const skip = (page - 1) * limit
 
-    // Build where clause for orders
+    const validChannels = Object.values(SaleChannel) as string[]
+    const channelFilter = channel && validChannels.includes(channel) ? channel : undefined
+
     const orderWhere: Record<string, unknown> = {
-      deletedAt: null, // Exclude soft-deleted orders
-      // Show paid online orders and all manual (off-platform) orders.
+      deletedAt: null,
       OR: [
         { paymentStatus: 'PAID' },
         { source: 'MANUAL' },
       ],
     }
 
-    // Filter by order status
+    const extraFilters: Record<string, unknown>[] = []
+
     if (status && status !== 'all') {
-      orderWhere.status = status
+      extraFilters.push({ status })
     }
 
-    // Filter by order source (ONLINE / MANUAL)
     if (source && source !== 'all') {
-      orderWhere.source = source
+      extraFilters.push({ source })
     }
 
-    // Filter by unpaid only
     if (unpaid) {
-      orderWhere.paymentStatus = { not: 'PAID' }
+      extraFilters.push({ paymentStatus: { not: 'PAID' }, status: { not: 'CANCELLED' } })
     }
 
-    // Filter by order type (PREORDER/BACKORDER)
+    if (channelFilter) {
+      extraFilters.push({ channel: channelFilter })
+    }
+
     if (orderType && orderType !== 'all') {
-      orderWhere.orderType = orderType
+      extraFilters.push({ orderType })
     }
 
-    // Filter by fulfillment status
     if (fulfillmentStatus && fulfillmentStatus !== 'all') {
-      orderWhere.fulfillmentStatus = fulfillmentStatus
+      extraFilters.push({ fulfillmentStatus })
     }
 
-    // Search by customer email or order ID
+    if (toDispatch) {
+      extraFilters.push({ status: 'PROCESSING' })
+    }
+
     if (search) {
       orderWhere.OR = [
         { user: { email: { contains: search, mode: 'insensitive' } } },
@@ -112,84 +116,114 @@ const skip = (page - 1) * limit
       ]
     }
 
-    // Get orders containing vendor's products
+    if (extraFilters.length > 0) {
+      orderWhere.AND = extraFilters
+    }
+
+    const vendorWhere: Record<string, unknown> = {
+      ...orderWhere,
+      items: {
+        some: {
+          productId: { in: productIds },
+        },
+      },
+    }
+
     const [orders, total] = await Promise.all([
       getPrisma().order.findMany({
-         where: {
-           ...orderWhere,
-           items: {
-             some: {
-               productId: { in: productIds },
-             },
-           },
-         },
-         select: {
-           ...VENDOR_ORDER_SELECT,
-           // The vendor's own rider cost. It is stripped from the answer
-           // again below unless this is a manual order that only holds their
-           // own lines: on a shared order it belongs to another vendor.
-           deliveryCost: true,
-           items: {
-             where: {
-               productId: { in: productIds },
-             },
-             select: {
-               ...VENDOR_ORDER_ITEM_SELECT,
-               product: {
-                 select: {
-                   id: true,
-                   name: true,
-                   availabilityType: true,
-                   costPrice: true,
-                 },
-               },
-               productVariant: {
-                 select: {
-                   id: true,
-                   costPrice: true,
-                 },
-               },
-             },
-           },
-           user: {
-             select: {
-               id: true,
-               email: true,
-               profile: {
-                 select: {
-                   firstName: true,
-                   lastName: true,
-                 },
-               },
-             },
-           },
-           payment: {
-             select: {
-               id: true,
-               status: true,
-               reference: true,
-               amount: true,
-             },
-           },
-         },
-         orderBy: { createdAt: 'desc' },
-         skip,
-         take: limit,
-       }),
-       getPrisma().order.count({
-          where: {
-            ...orderWhere,
-            items: {
-              some: {
-                productId: { in: productIds },
+        where: vendorWhere,
+        select: {
+          ...VENDOR_ORDER_SELECT,
+          deliveryCost: true,
+          items: {
+            where: {
+              productId: { in: productIds },
+            },
+            select: {
+              ...VENDOR_ORDER_ITEM_SELECT,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  availabilityType: true,
+                  costPrice: true,
+                },
+              },
+              productVariant: {
+                select: {
+                  id: true,
+                  costPrice: true,
+                },
               },
             },
           },
-        }),
-     ])
+          user: {
+            select: {
+              id: true,
+              email: true,
+              profile: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      getPrisma().order.count({
+        where: vendorWhere,
+      }),
+    ])
 
-    // Calculate vendor totals for each order
+    let counts: { unpaid: number; toDispatch: number } | undefined
+    if (page === 1) {
+      const countWhere: Record<string, unknown> = {
+        deletedAt: null,
+        OR: [
+          { paymentStatus: 'PAID' },
+          { source: 'MANUAL' },
+        ],
+        items: {
+          some: {
+            productId: { in: productIds },
+          },
+        },
+      }
+      const [unpaidCount, toDispatchCount] = await Promise.all([
+        getPrisma().order.count({
+          where: {
+            ...countWhere,
+            paymentStatus: { not: 'PAID' },
+            status: { not: 'CANCELLED' },
+          },
+        }),
+        getPrisma().order.count({
+          where: {
+            ...countWhere,
+            status: 'PROCESSING',
+          },
+        }),
+      ])
+      counts = { unpaid: unpaidCount, toDispatch: toDispatchCount }
+    }
+
     const pageOrderIds = orders.map((order) => order.id)
+    const payments = await getPrisma().payment.findMany({
+      where: { orderId: { in: pageOrderIds } },
+      select: {
+        id: true,
+        orderId: true,
+        status: true,
+        amount: true,
+        authorizationUrl: true,
+      },
+    })
+    const paymentMap = new Map(payments.map((p) => [p.orderId, p]))
+
     const otherVendorItems = await getPrisma().orderItem.findMany({
       where: {
         orderId: { in: pageOrderIds },
@@ -204,38 +238,42 @@ const skip = (page - 1) * limit
         (sum, item) => sum + (item.price * item.quantity),
         0
       )
-      // Manual-only fields should not appear on ONLINE rows.
       const {
         customerFirstName: _cfn,
         customerLastName: _cln,
         customerPhone: _cpf,
         paymentMethod: _pm,
         receiptToken: _rt,
-        // The delivery cost of a shared order belongs to whoever delivered
-        // it, and on an online order it is the platform's delivery bill.
-        // It is added back below for the vendor's own manual orders only.
         deliveryCost: _dc,
         ...orderRest
       } = order
       const hasOtherVendorItems = otherVendorOrderIds.has(order.id)
+
+      const orderPayment = paymentMap.get(order.id)
+      const paymentOutput = orderPayment ? {
+        id: orderPayment.id,
+        status: orderPayment.status,
+        amount: orderPayment.amount,
+      } : null
+      const payLinkSent = orderPayment?.status === 'PENDING' && !!orderPayment?.authorizationUrl
+      const paymentNeedsReview = orderPayment?.status === 'PAID' && order.paymentStatus !== 'PAID'
+
       const baseRow = {
         ...orderRest,
         vendorTotal,
         source: order.source,
         channel: order.channel,
         hasOtherVendorItems,
+        payment: paymentOutput,
+        payLinkSent,
+        paymentNeedsReview,
       }
 
-      // Additive fields for MANUAL orders only — ONLINE rows are unchanged.
       if (order.source === 'MANUAL') {
         const customerName = [order.customerFirstName, order.customerLastName]
           .filter(Boolean)
           .join(' ')
 
-        // Profit for a manual sale: the order total, minus what the items
-        // cost, minus what the vendor paid the rider. It is only reported
-        // when every line has a known cost, so the vendor is never shown a
-        // profit that silently ignores missing cost prices.
         const cost = orderCogsPesawas({
           id: order.id,
           source: 'MANUAL',
@@ -299,11 +337,11 @@ const skip = (page - 1) * limit
         total,
         totalPages,
       },
+      ...(counts ? { counts } : {}),
     })
   } catch (error) {
     console.error('Error fetching vendor orders:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    // Return safe defaults even on error to prevent client-side crashes
     return NextResponse.json({ 
       orders: [],
       pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },

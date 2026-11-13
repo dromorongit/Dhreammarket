@@ -22,7 +22,7 @@ vi.mock('@/lib/notifications', () => ({
 }))
 
 vi.mock('@/lib/email', () => ({
-  sendVerificationStatusEmail: vi.fn(),
+  sendVerificationStatusEmail: vi.fn().mockResolvedValue(undefined),
 }))
 
 import { getPrisma } from '@/lib/prisma'
@@ -226,6 +226,82 @@ describe('Admin verification API security', () => {
 
       const response = await PATCH(request)
       expect(response.status).toBe(400)
+    })
+
+    it('revoke sets REVOKED status, revokedAt, clears badgeTier and unverifies the store', async () => {
+      mockRequireAdmin.mockResolvedValue({ userId: 'admin-1', role: 'ADMIN' } as any)
+      const fixedDate = new Date('2026-01-01T00:00:00.000Z')
+      vi.useFakeTimers().setSystemTime(fixedDate)
+      ctx.applications.push({
+        id: 'app-1',
+        paymentStatus: 'PAID',
+        status: 'APPROVED',
+        storeId: 'store-1',
+        vendorId: 'vendor-1',
+        store: { id: 'store-1', name: 'Store 1', isVerified: true, badgeTier: 'PLATINUM' },
+        vendor: { id: 'vendor-1', email: 'vendor@test.com', profile: { firstName: 'John', lastName: 'Doe' } },
+        documents: [],
+        payments: [],
+        auditLogs: [],
+      })
+      ctx.stores.push({ id: 'store-1', name: 'Store 1', isVerified: true, badgeTier: 'PLATINUM' })
+
+      const { PATCH } = await import('@/app/api/admin/verification/route')
+      const request = {
+        url: 'http://localhost/api/admin/verification?applicationId=app-1',
+        headers: { get: () => null },
+        json: async () => ({ action: 'revoke' }),
+      } as any
+
+      const response = await PATCH(request)
+      const data = await response.json()
+
+      vi.useRealTimers()
+
+      expect(response.status).toBe(200)
+      expect(data.application.status).toBe('REVOKED')
+      expect(data.application.revokedAt).toBeDefined()
+      expect(mockPrisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-1' },
+        data: { isVerified: false, badgeTier: null },
+      })
+      expect(mockPrisma.verificationAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'ADMIN_REVOKED' }) }),
+      )
+    })
+
+    it('approve verifies the store and keeps badgeTier', async () => {
+      mockRequireAdmin.mockResolvedValue({ userId: 'admin-1', role: 'ADMIN' } as any)
+      ctx.applications.push({
+        id: 'app-2',
+        paymentStatus: 'PAID',
+        status: 'PENDING_REVIEW',
+        storeId: 'store-2',
+        vendorId: 'vendor-2',
+        store: { id: 'store-2', name: 'Store 2', isVerified: false, badgeTier: 'TRUSTED' },
+        vendor: { id: 'vendor-2', email: 'vendor2@test.com', profile: { firstName: 'Jane', lastName: 'Doe' } },
+        documents: [],
+        payments: [],
+        auditLogs: [],
+      })
+      ctx.stores.push({ id: 'store-2', name: 'Store 2', isVerified: false, badgeTier: 'TRUSTED' })
+
+      const { PATCH } = await import('@/app/api/admin/verification/route')
+      const request = {
+        url: 'http://localhost/api/admin/verification?applicationId=app-2',
+        headers: { get: () => null },
+        json: async () => ({ action: 'approve' }),
+      } as any
+
+      const response = await PATCH(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.application.status).toBe('APPROVED')
+      expect(mockPrisma.store.update).toHaveBeenCalledWith({
+        where: { id: 'store-2' },
+        data: { isVerified: true },
+      })
     })
   })
 })

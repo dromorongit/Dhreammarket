@@ -61,7 +61,10 @@ describe('payout eligibility excludes MANUAL orders', () => {
 
     const aggregateCall = mockPrisma.orderItem.aggregate.mock.calls[0]
     const where = aggregateCall[0].where
-    expect(where.order.source).toBe('ONLINE')
+    expect(where.order.OR).toEqual([
+      { source: 'ONLINE' },
+      { source: 'MANUAL', payment: { status: 'PAID' } },
+    ])
     expect(where.order.paymentStatus).toBe('PAID')
     expect(where.order.status).toEqual({ in: ['DELIVERED', 'COMPLETED'] })
   })

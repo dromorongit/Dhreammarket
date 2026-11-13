@@ -12,17 +12,15 @@ import crypto from 'crypto'
 import { rateLimit } from '@/lib/rate-limit'
 import { getUnitPrice } from '@/lib/pricing'
 import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
+import { reserveStock, releaseStock } from '@/lib/stock-reservation'
+import { isValidGhanaRegion, normaliseGhanaRegion } from '@/lib/cancellation-policy'
+import { isRegionEnforcementEnabled } from '@/lib/feature-flags'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
-  const rateLimitCheck = rateLimit('checkout')(request)
-  if (rateLimitCheck.success !== true) {
-    return rateLimitCheck.response
-  }
-
   console.log('[Checkout API] Request received')
   
   try {
@@ -38,6 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const payload = outcome
+
+    const rateLimitCheck = rateLimit('checkout', payload.userId)(request)
+    if (rateLimitCheck.success !== true) {
+      return rateLimitCheck.response
+    }
 
     // Check if Paystack is configured
     if (!isPaystackConfigured()) {
@@ -109,6 +112,24 @@ export async function POST(request: NextRequest) {
 
     // Parse customer and shipping info from request
     const { customerInfo, shippingInfo, idempotencyKey, useWalletBalance, walletAmount } = await request.json()
+
+    // Validate the delivery region against the canonical Ghana region list.
+    // Region enforcement is opt-in via REGION_ENFORCEMENT_ENABLED. When off,
+    // any region is accepted and canonical spellings are normalised. When on,
+    // unknown values are rejected with 400.
+    const regionRaw = customerInfo?.region
+    let regionValue: string | undefined =
+      typeof regionRaw === 'string' ? regionRaw : undefined
+    if (regionValue != null && regionValue.trim() !== '') {
+      const normalised = normaliseGhanaRegion(regionValue)
+      if (normalised) regionValue = normalised
+    }
+    if (isRegionEnforcementEnabled() && !isValidGhanaRegion(regionValue)) {
+      return NextResponse.json(
+        { error: 'Invalid region. Please select a valid Ghana region.' },
+        { status: 400 }
+      )
+    }
 
     // Calculate subtotal
     const itemsWithPrice = cart.items.map((item: any) => ({
@@ -271,7 +292,7 @@ export async function POST(request: NextRequest) {
      customerPhone: customerInfo?.phone || '',
      customerAddress: customerInfo?.address || '',
      customerCity: customerInfo?.city || '',
-     customerRegion: customerInfo?.region || '',
+      customerRegion: regionValue ?? '',
      // Store shipping info
      shippingZone: shippingInfo?.zone || 'Other Locations',
      shippingDaysMin: shippingInfo?.estimatedDays?.min || 3,
@@ -354,6 +375,36 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // Reserve stock for NORMAL, non-wallet-covered orders before Paystack init.
+    // Fully wallet-covered orders skip Paystack entirely and never reach
+    // reserveStock later (verify/webhook return early on payment.status === 'PAID').
+    if (orderType === 'NORMAL' && !fullyCoveredByWallet) {
+      const reservationItems = itemsWithPrice
+        .filter((item: any) => item.availabilityType === 'IN_STOCK')
+        .map((item: any) => ({
+          productId: item.productId,
+          productVariantId: item.productVariantId || undefined,
+          quantity: item.quantity,
+          availabilityType: item.product.availabilityType,
+        }))
+
+      if (reservationItems.length > 0) {
+        const reservation = await reserveStock(result.order.id, reservationItems)
+        if (!reservation.success) {
+          // Insufficient stock: cancel the just-created order and mark payment failed.
+          await getPrisma().payment.update({
+            where: { id: result.payment.id },
+            data: { status: 'FAILED', message: reservation.error || 'Insufficient stock' },
+          })
+          await getPrisma().order.update({
+            where: { id: result.order.id },
+            data: { status: 'CANCELLED', paymentStatus: 'FAILED' },
+          })
+          return NextResponse.json({ error: 'Item out of stock' }, { status: 409 })
+        }
+      }
+    }
+
     // Initialize Paystack payment
     const callbackUrl = `${SITE_URL}/checkout`
     console.log('[Checkout API] Paystack initialization started - reference:', reference, 'callbackUrl:', callbackUrl)
@@ -404,21 +455,20 @@ export async function POST(request: NextRequest) {
           console.error('Failed to create notification:', err)
         })
 
-        // Notify vendors about new orders
-        const vendorStores = new Set<string>()
-        for (const item of cart.items) {
-          vendorStores.add(item.product.storeId)
-        }
-        const vendorStoreIds = Array.from(vendorStores)
-        for (const storeId of vendorStoreIds) {
-          const store = await getPrisma().store.findUnique({
-            where: { id: storeId },
-            select: { userId: true }
+        // Notify vendors about new orders — one query for all vendor stores
+        // instead of one findUnique per store (N+1).
+        const vendorStoreIds = Array.from(new Set(cart.items.map((item) => item.product.storeId).filter(Boolean)))
+        if (vendorStoreIds.length > 0) {
+          const stores = await getPrisma().store.findMany({
+            where: { id: { in: vendorStoreIds } },
+            select: { userId: true },
           })
-          if (store?.userId) {
-            createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: GHS ${total.toFixed(2)}`).catch(err => {
-              console.error('Failed to create vendor notification:', err)
-            })
+          for (const store of stores) {
+            if (store.userId) {
+              createNotification(store.userId, 'ORDER_PLACED', 'New Order Received', `New order #${result.order.id.slice(0, 8)} received. Total: GHS ${total.toFixed(2)}`).catch(err => {
+                console.error('Failed to create vendor notification:', err)
+              })
+            }
           }
         }
 
@@ -451,9 +501,15 @@ export async function POST(request: NextRequest) {
         fullyCoveredByWallet: !!fullyCoveredByWallet,
       })
     } catch (paystackError) {
-      // If Paystack initialization fails, update payment status to FAILED
+      // If Paystack initialization fails, release any reserved stock and update payment status
       console.error('[Checkout API] Paystack initialization error:', paystackError)
       
+      if (orderType === 'NORMAL' && !fullyCoveredByWallet) {
+        releaseStock(result.order.id).catch(err => {
+          console.error('Failed to release stock for failed Paystack init:', err)
+        })
+      }
+
       await getPrisma().payment.update({
         where: { id: result.payment.id },
         data: { 

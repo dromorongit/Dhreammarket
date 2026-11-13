@@ -528,7 +528,7 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
                   )}
                   <span className="text-sm text-slate-600">{service.store?.name}</span>
                 </Link>
-                {badgeInfo && (
+                {badgeInfo && service.store?.isVerified && (
                   <span className={badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}>
                     <MdVerified className="w-4 h-4 inline" />
                   </span>
@@ -611,7 +611,7 @@ export default function ServiceDetail({ serviceId, vendorServices = [] }: Servic
                       <span className="font-semibold text-gray-900 text-sm md:text-base truncate">
                         {truncateVendorName(service.store?.name ?? 'Unknown Store')}
                       </span>
-                      {badgeInfo && (
+                      {badgeInfo && service.store?.isVerified && (
                         <span className={badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'}>
                           <MdVerified className="w-5 h-5" title={badgeInfo.displayLabel} />
                         </span>

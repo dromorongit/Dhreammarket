@@ -97,7 +97,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Service not found' }, { status: 404 })
     }
 
-    const response = NextResponse.json({ service })
+    const response = NextResponse.json({
+      service: {
+        ...service,
+        store: service.store
+          ? { ...service.store, badgeTier: service.store.isVerified ? service.store.badgeTier : null }
+          : service.store,
+      },
+    })
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
     perf.log()

@@ -59,6 +59,11 @@ export const COST_FIELD_ALLOWLIST: AllowlistEntry[] = [  {
       'The money math: it validates a cost price, it holds the cost snapshot of a sold line and it folds the delivery cost of a sale into the profit. Nothing here leaves the server.',
   },
   {
+    path: 'lib/daily-summary.ts',
+    reason:
+      'Vendor-facing daily summary. It folds the vendor\'s own delivery cost into the daily notification. Nothing here reaches a buyer.',
+  },
+  {
     path: 'lib/vendor-sales-data.ts',
     reason:
       'The vendor-scoped loader of the money view. Every read is scoped to one store, so a vendor only ever reads the cost of their own stock.',
@@ -229,9 +234,19 @@ export const RELATION_INCLUDE_ALLOWLIST: AllowlistEntry[] = [
       'Server-side stock math. It reads the whole product and variant to reserve and release stock. Nothing it reads is sent to a buyer.',
   },
   {
+    path: 'lib/late-payment.ts',
+    reason:
+      'Server-side late-payment detection. It reads the whole order and its items to compute lateness. Nothing reaches a buyer.',
+  },
+  {
     path: 'lib/webhooks/order-webhook-handler.ts',
     reason:
-      'Server-side webhook handler. It reads the whole product of a line to notify the vendor. Nothing it reads is sent to a buyer.',
+      'Server-side webhook handler. It reads the whole order and product of a line to notify the vendor. Nothing reaches a buyer.',
+  },
+  {
+    path: 'lib/webhooks/manual-order-webhook-handler.ts',
+    reason:
+      'Server-side webhook handler for manual orders. It reads the whole order to notify the vendor. Nothing reaches a buyer.',
   },
 ]
 
@@ -344,9 +359,24 @@ export const COST_MODEL_READ_ALLOWLIST: AllowlistEntry[] = [
       'Server-side stock math. It reads the whole product and variant to reserve and release stock. Nothing it reads is sent to a buyer.',
   },
   {
+    path: 'lib/late-payment.ts',
+    reason:
+      'Server-side late-payment detection. It reads the whole order and its items to compute lateness. Nothing reaches a buyer.',
+  },
+  {
     path: 'lib/webhooks/order-webhook-handler.ts',
     reason:
       'Server-side webhook handler. It reads the whole order and the whole product of a line to notify the vendor. Nothing it reads is sent to a buyer.',
+  },
+  {
+    path: 'lib/late-payment.ts',
+    reason:
+      'Server-side late-payment detection. It reads the whole order to compute lateness. Nothing reaches a buyer.',
+  },
+  {
+    path: 'lib/webhooks/manual-order-webhook-handler.ts',
+    reason:
+      'Server-side webhook handler for manual orders. It reads the whole orderItem to notify the vendor. Nothing reaches a buyer.',
   },
   {
     path: 'lib/ai/rule-based-engine.ts',

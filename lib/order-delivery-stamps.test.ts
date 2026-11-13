@@ -78,8 +78,12 @@ describe('stampOrderItems', () => {
       where: {
         id: { in: ['item_1', 'item_2'] },
         shippedAt: null,
+        expectedArrivalDate: null,
       },
-      data: { shippedAt: NOW },
+      data: {
+        shippedAt: NOW,
+        expectedArrivalDate: new Date(NOW.getTime() + 3 * 86400000),
+      },
     })
   })
 
@@ -126,6 +130,55 @@ describe('stampOrderItems', () => {
         shippedAt: null,
       },
       select: { id: true },
+    })
+  })
+
+  it('does not restamp items that already have an expectedArrivalDate', async () => {
+    txMock.orderItem.count.mockResolvedValue(0) // single-store
+    txMock.orderItem.findMany.mockResolvedValue([{ id: 'item_1', expectedArrivalDate: new Date() }])
+    txMock.orderItem.updateMany.mockResolvedValue({ count: 0 })
+
+    const count = await stampOrderItems({
+      orderId: ORDER_ID,
+      storeId: STORE_ID,
+      field: 'shippedAt',
+      now: NOW,
+      tx: txMock as unknown as PrismaClient,
+    })
+
+    expect(count).toBe(0)
+    expect(txMock.orderItem.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ['item_1'] },
+        shippedAt: null,
+        expectedArrivalDate: null,
+      },
+      data: {
+        shippedAt: NOW,
+        expectedArrivalDate: expect.any(Date),
+      },
+    })
+  })
+
+  it('deliveredAt stamp does not set expectedArrivalDate', async () => {
+    txMock.orderItem.count.mockResolvedValue(0) // single-store
+    txMock.orderItem.findMany.mockResolvedValue([{ id: 'item_1' }])
+    txMock.orderItem.updateMany.mockResolvedValue({ count: 1 })
+
+    await stampOrderItems({
+      orderId: ORDER_ID,
+      storeId: STORE_ID,
+      field: 'deliveredAt',
+      now: NOW,
+      tx: txMock as unknown as PrismaClient,
+    })
+
+    expect(txMock.orderItem.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ['item_1'] },
+        deliveredAt: null,
+      },
+      data: { deliveredAt: NOW, shippedAt: NOW },
     })
   })
 

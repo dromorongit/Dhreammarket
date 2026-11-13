@@ -49,6 +49,7 @@ interface CartItem {
       url: string
       alt: string | null
     }>
+    storeId?: string | null
   }
   productVariant?: ProductVariant | null
   effectivePrice?: number

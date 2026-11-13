@@ -257,15 +257,15 @@ const productIds = store.products?.map((p: { id: string }) => p.id) || []
 
     const productMetrics = await getPrisma().product.findMany({
       where: { storeId: store.id },
-      select: { id: true, stock: true, reservedQuantity: true },
+      select: { id: true, stock: true, reservedQuantity: true, lowStockThreshold: true },
     })
 
     const lowStockProducts = productMetrics
-      .filter((p) => (p.stock - p.reservedQuantity) <= 5)
-      .map((p) => ({
+      .filter((p: any) => p.stock - p.reservedQuantity <= (p.lowStockThreshold ?? 5))
+      .map((p: any) => ({
         productId: p.id,
         availableStock: p.stock - p.reservedQuantity,
-        threshold: 5,
+        threshold: p.lowStockThreshold ?? 5,
       }))
 
     const vendorAnalytics = await getVendorDemandAnalytics(payload.userId)

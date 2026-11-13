@@ -89,6 +89,12 @@ export async function GET(
         // The vendor's own rider cost. It is only shown when the order is
         // theirs alone: on a shared order it belongs to another vendor.
         deliveryCost: true,
+        source: true,
+        customerFirstName: true,
+        customerLastName: true,
+        customerPhone: true,
+        receiptToken: true,
+        channel: true,
         items: {
           where: {
             productId: { in: productIds },
@@ -113,6 +119,7 @@ export async function GET(
             reference: true,
             paystackRef: true,
             message: true,
+            authorizationUrl: true,
             createdAt: true,
           },
         },
@@ -157,11 +164,31 @@ export async function GET(
 
     // The delivery cost of a shared order belongs to whoever delivered it,
     // so it is only shown when the order holds this vendor's lines only.
-    const { deliveryCost, ...orderWithoutDeliveryCost } = order
+    const { deliveryCost, payment, ...orderWithoutDeliveryCost } = order
+    const payLinkSent = payment?.status === 'PENDING' && !!payment?.authorizationUrl
+    const paymentNeedsReview = payment?.status === 'PAID' && order.paymentStatus !== 'PAID'
+
+    const { buildReceiptUrl, orderDisplayNumber } = await import('@/lib/manual-orders')
 
     return NextResponse.json({
       order: {
         ...orderWithoutDeliveryCost,
+        displayNumber: orderDisplayNumber(order.id),
+        receiptUrl: order.receiptToken ? buildReceiptUrl(order.receiptToken) : null,
+        payment: payment
+          ? {
+              id: payment.id,
+              amount: payment.amount,
+              currency: payment.currency,
+              status: payment.status,
+              reference: payment.reference,
+              paystackRef: payment.paystackRef,
+              message: payment.message,
+              createdAt: payment.createdAt,
+            }
+          : null,
+        payLinkSent,
+        paymentNeedsReview,
         deliveryCost:
           hasOtherVendorItems || order.source !== 'MANUAL'
             ? null
@@ -525,7 +552,15 @@ export async function PATCH(
       if ((statusChanged && newStatus === 'DELIVERED') || (fulfillmentStatusChanged && newFulfillmentStatus === 'DELIVERED')) {
         await stampOrderItems({ orderId, storeId, field: 'deliveredAt', now, tx })
       }
-      // COMPLETED alone stamps nothing (but may have already stamped deliveredAt via transition)
+      // Stamp completedAt when transitioning to COMPLETED via either path.
+      // Only set when completedAt is currently NULL (idempotent: never overwrite).
+      if (((statusChanged && newStatus === 'COMPLETED') || (fulfillmentStatusChanged && newFulfillmentStatus === 'COMPLETED')) && existingOrder.completedAt == null) {
+        await tx.order.update({
+          where: { id: orderId },
+          data: { completedAt: now },
+        })
+      }
+      // COMPLETED alone stamps nothing else (but may have already stamped deliveredAt via transition)
     })
 
     // The status of the online order changed, so what the vendor sees in the

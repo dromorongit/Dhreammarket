@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-import { rateLimitByKey, RATE_LIMIT_CONFIGS, checkRateLimit } from '@/lib/rate-limit'
+import { rateLimitByKey, RATE_LIMIT_CONFIGS, checkRateLimit, rateLimit, logRateLimitStoreWarning, rateLimitStoreNeedsWarning } from '@/lib/rate-limit'
 
 describe('lib/rate-limit (rateLimitByKey)', () => {
   beforeEach(() => {
@@ -79,5 +79,72 @@ describe('lib/rate-limit (rateLimitByKey)', () => {
     const second = checkRateLimit('ck-key', config)
     expect(second.success).toBe(false)
     expect(second.remaining).toBe(0)
+  })
+})
+
+describe('rateLimit key selection', () => {
+  function request(ip: string): NextRequest {
+    return new NextRequest('http://localhost/api/checkout', {
+      headers: { 'x-forwarded-for': ip },
+    })
+  }
+
+  it('keys authenticated requests by userId:endpoint, ignoring IP', () => {
+    for (let i = 0; i < 10; i++) {
+      expect(rateLimit('checkout', 'user_a')(request('10.0.0.1')).success).toBe(true)
+    }
+    // The 11th request from the same user is blocked even from a different IP.
+    expect(rateLimit('checkout', 'user_a')(request('10.0.0.99')).success).toBe(false)
+    // A different user from that same IP is not blocked.
+    expect(rateLimit('checkout', 'user_b')(request('10.0.0.99')).success).toBe(true)
+  })
+
+  it('keys unauthenticated routes by IP:endpoint', () => {
+    const waitlist = (ip: string) => new NextRequest('http://localhost/api/waitlist', {
+      headers: { 'x-forwarded-for': ip },
+    })
+    for (let i = 0; i < 5; i++) {
+      expect(rateLimit('waitlist')(waitlist('10.0.0.1')).success).toBe(true)
+    }
+    expect(rateLimit('waitlist')(waitlist('10.0.0.1')).success).toBe(false)
+    expect(rateLimit('waitlist')(waitlist('10.0.0.2')).success).toBe(true)
+  })
+})
+
+describe('logRateLimitStoreWarning', () => {
+  it('flags production with an unset or memory store, nothing else', () => {
+    expect(rateLimitStoreNeedsWarning('production', 'memory')).toBe(true)
+    expect(rateLimitStoreNeedsWarning('production', 'redis')).toBe(false)
+    expect(rateLimitStoreNeedsWarning('development', 'memory')).toBe(false)
+    expect(rateLimitStoreNeedsWarning('test', 'memory')).toBe(false)
+    expect(rateLimitStoreNeedsWarning(undefined, 'memory')).toBe(false)
+  })
+
+  it('logs the warning when called with production and an unset or memory store', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const originalStore = process.env.RATE_LIMIT_STORE
+    try {
+      delete process.env.RATE_LIMIT_STORE
+      logRateLimitStoreWarning('production')
+      expect(warn).toHaveBeenCalledTimes(1)
+
+      process.env.RATE_LIMIT_STORE = 'memory'
+      logRateLimitStoreWarning('production')
+      expect(warn).toHaveBeenCalledTimes(2)
+
+      process.env.RATE_LIMIT_STORE = 'redis'
+      logRateLimitStoreWarning('production')
+      expect(warn).toHaveBeenCalledTimes(2)
+
+      logRateLimitStoreWarning('development')
+      expect(warn).toHaveBeenCalledTimes(2)
+    } finally {
+      if (originalStore === undefined) {
+        delete process.env.RATE_LIMIT_STORE
+      } else {
+        process.env.RATE_LIMIT_STORE = originalStore
+      }
+      warn.mockRestore()
+    }
   })
 })
