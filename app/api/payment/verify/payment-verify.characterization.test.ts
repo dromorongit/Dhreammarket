@@ -14,7 +14,7 @@ vi.mock('@/lib/email', () => ({
   sendPaymentConfirmationEmail: vi.fn(() => Promise.resolve()),
   sendPaymentFailedEmail: vi.fn(() => Promise.resolve()),
 }))
-vi.mock('@/lib/notifications', () => ({ createNotification: vi.fn() }))
+vi.mock('@/lib/notifications', () => ({ createNotification: vi.fn(() => Promise.resolve()) }))
 vi.mock('@/lib/rate-limit', () => ({ rateLimit: () => () => ({ success: true }) }))
 vi.mock('@/lib/revenue', () => ({
   calculateFinancialBreakdown: vi.fn(() => Promise.resolve({
@@ -32,6 +32,7 @@ import { verifyToken } from '@/lib/auth-middleware'
 import { verifyPaystackPayment } from '@/lib/paystack'
 import { createAuditLog } from '@/lib/audit-log'
 import { releaseStock } from '@/lib/stock-reservation'
+import { createNotification } from '@/lib/notifications'
 
 const mockGetPrisma = vi.mocked(getPrisma)
 const mockVerifyToken = vi.mocked(verifyToken)
@@ -101,7 +102,10 @@ function buildMockPrisma() {
     },
     user: {
       findUnique: vi.fn(async ({ where }: any) => users.find((x) => x.id === where.id) || null),
-      findMany: vi.fn(async () => []),
+      findMany: vi.fn(async ({ where }: any) => {
+        if (where?.role === 'SUPER_ADMIN') return users.filter((u: any) => u.role === 'SUPER_ADMIN')
+        return []
+      }),
     },
     store: {
       findUnique: vi.fn(async ({ where }: any) => stores.find((x) => x.id === where.id) || null),
@@ -187,17 +191,19 @@ describe('payment verify characterization', () => {
     expect(ctx.orders[0].status).toBe('CANCELLED')
   })
 
-  it('amount mismatch: still succeeds and writes audit log (CHARACTERIZATION: known gap? audit swallowed on some paths)', async () => {
+  it('amount mismatch: still succeeds (200), no audit log; super admins notified instead (audit call removed in 14a51f7)', async () => {
     mockVerifyPaystack.mockResolvedValue({ data: { status: 'success', amount: 10500 } } as any)
     ctx.payments.push({ id: 'p1', reference: 'DHV-1', userId: 'customer-1', orderId: 'o1', amount: 100, currency: 'GHS', status: 'PENDING' })
     ctx.orders.push({ id: 'o1', status: 'PENDING', paymentStatus: 'PENDING', orderType: 'NORMAL', userId: 'customer-1' })
     ctx.orderItems.push({ id: 'i1', orderId: 'o1', productId: 'prod1', productVariantId: null, quantity: 1, price: 100, availabilityType: 'IN_STOCK', product: { storeId: 'store1' } })
     ctx.users.push({ id: 'customer-1', email: 'c@test.com', profile: null })
+    ctx.users.push({ id: 'admin-1', email: 'admin@test.com', role: 'SUPER_ADMIN', profile: null })
 
     const { POST } = await import('@/app/api/payment/verify/route')
     const res = await POST(baseRequest({ reference: 'DHV-1' }))
     expect(res.status).toBe(200)
-    expect(createAuditLog).toHaveBeenCalled()
+    expect(createAuditLog).not.toHaveBeenCalled()
+    expect(createNotification).toHaveBeenCalled()
   })
 
   it('late success after CANCELLED: ignored (CHARACTERIZATION: known gap)', async () => {
