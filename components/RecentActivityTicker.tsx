@@ -21,13 +21,16 @@ import { Card } from '@/components/Card'
 interface RecentActivityTickerProps {
   variant?: 'default' | 'hero'
   label?: string
+  labelColor?: string
+  textTransform?: 'uppercase' | 'none'
+  dots?: number
 }
 
 const LIVE_GREEN = '#00A383'
 const DIVIDER = '#CBD5E1'
 const BUTTON_BLUE = '#00399C'
 
-export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVITY' }: RecentActivityTickerProps) {
+export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVITY', labelColor = LIVE_GREEN, textTransform = 'uppercase', dots = 5 }: RecentActivityTickerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isVisible, setIsVisible] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
@@ -196,10 +199,10 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
           <span
             className="hero-ticker-label"
             style={{
-              color: LIVE_GREEN,
+              color: labelColor,
               fontSize: 18,
               fontWeight: 600,
-              textTransform: 'uppercase',
+              textTransform,
               letterSpacing: '0.02em',
               whiteSpace: 'nowrap',
             }}
@@ -226,9 +229,9 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
             </p>
           </div>
         </div>
-        {activities.length > 1 && !prefersReducedMotion && (
-          <div className="hero-ticker-pagination" style={{ display: 'flex', gap: 6 }}>
-            {activities.slice(0, 5).map((_, idx) => (
+            {activities.length > 1 && !prefersReducedMotion && (
+              <div className="hero-ticker-pagination" style={{ display: 'flex', gap: 6 }}>
+                {activities.slice(0, dots).map((_, idx) => (
               <span
                 key={idx}
                 style={{
