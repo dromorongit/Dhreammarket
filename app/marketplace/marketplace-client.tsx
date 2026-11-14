@@ -15,6 +15,7 @@ import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { MdVerified } from 'react-icons/md'
+import { FaChevronDown } from 'react-icons/fa'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
@@ -28,6 +29,7 @@ import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, CARD_IMAGE_SIZ
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
 import MarketplaceHero from '@/components/marketplace/MarketplaceHero'
+import { FiltersBackdrop } from '@/components/marketplace/FiltersBackdrop'
 
 interface Product {
   id: string
@@ -686,56 +688,78 @@ function MarketplaceContent() {
       const productCount = products.filter(p =>
         matchingIds.includes(p.category?.id ?? '')
       ).length
+      const selected = selectedCategory === cat.id
 
       return (
         <Button
           key={cat.id}
-          variant={selectedCategory === cat.id ? 'primary' : 'ghost'}
+          variant="ghost"
           size="sm"
-          className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === cat.id ? '' : 'text-slate-700'}`}
+          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
           onClick={() => { setSelectedCategory(cat.id); syncFilterToUrl('category', cat.id) }}
         >
-          {cat.name}
-          <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-            {productCount}
-          </span>
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-bold">{cat.name}</span>
+            {selected ? (
+              <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{productCount}</span>
+            ) : (
+              <span className="text-xs text-slate-500">{productCount}</span>
+            )}
+          </div>
         </Button>
       )
     })
   }
 
   const renderVendorCategoryButtons = (cats: Category[]): React.ReactNode[] => {
-    return cats.map((vc) => (
-      <Button
-        key={vc.id}
-        variant={selectedVendorCategory === vc.id ? 'primary' : 'ghost'}
-        size="sm"
-        className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === vc.id ? '' : 'text-slate-700'}`}
-        onClick={() => { setSelectedVendorCategory(vc.id); syncFilterToUrl('vendorCategory', vc.id) }}
-      >
-        {vc.name}
-        <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-          {vc.productCount ?? vendors.filter(v => v.category?.id === vc.id).length}
-        </span>
-      </Button>
-    ))
+    return cats.map((vc) => {
+      const selected = selectedVendorCategory === vc.id
+      const count = vc.productCount ?? vendors.filter(v => v.category?.id === vc.id).length
+
+      return (
+        <Button
+          key={vc.id}
+          variant="ghost"
+          size="sm"
+          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+          onClick={() => { setSelectedVendorCategory(vc.id); syncFilterToUrl('vendorCategory', vc.id) }}
+        >
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-bold">{vc.name}</span>
+            {selected ? (
+              <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{count}</span>
+            ) : (
+              <span className="text-xs text-slate-500">{count}</span>
+            )}
+          </div>
+        </Button>
+      )
+    })
   }
 
   const renderServiceCategoryButtons = (cats: ServiceCategory[]): React.ReactNode[] => {
-    return cats.map((cat) => (
-      <Button
-        key={cat.id}
-        variant={selectedServiceCategory === cat.id ? 'primary' : 'ghost'}
-        size="sm"
-        className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedServiceCategory === cat.id ? '' : 'text-slate-700'}`}
-        onClick={() => { setSelectedServiceCategory(cat.id); syncFilterToUrl('serviceCategory', cat.id) }}
-      >
-        {cat.name}
-        <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-          {cat.serviceCount ?? 0}
-        </span>
-      </Button>
-    ))
+    return cats.map((cat) => {
+      const selected = selectedServiceCategory === cat.id
+
+      return (
+        <Button
+          key={cat.id}
+          variant="ghost"
+          size="sm"
+          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+          onClick={() => { setSelectedServiceCategory(cat.id); syncFilterToUrl('serviceCategory', cat.id) }}
+        >
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-bold">{cat.name}</span>
+            {selected ? (
+              <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{cat.serviceCount ?? 0}</span>
+            ) : (
+              <span className="text-xs text-slate-500">{cat.serviceCount ?? 0}</span>
+            )}
+          </div>
+        </Button>
+      )
+    })
   }
 
   const filteredVendors = vendors
@@ -782,147 +806,150 @@ function MarketplaceContent() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'products' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('products')}
-              >
-                Products
-                <span className="ml-2 text-xs opacity-70">({totalProductCount})</span>
-              </Button>
-              <Button
-                variant={viewMode === 'services' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('services')}
-              >
-                Services
-                <span className="ml-2 text-xs opacity-70">({totalServiceCount})</span>
-              </Button>
-              <Button
-                variant={viewMode === 'vendors' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('vendors')}
-              >
-                Vendors
-                <span className="ml-2 text-xs opacity-70">({totalVendorCount})</span>
-              </Button>
-            </div>
-          </div>
+        <div className="relative">
+          <FiltersBackdrop />
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {viewMode === 'products' && (
-              <>
+          <div className="relative z-10 space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 ${viewMode === 'products' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                  onClick={() => setViewMode('products')}
+                >
+                  Products
+                  <span className={`ml-2 text-xs ${viewMode === 'products' ? 'opacity-100' : 'text-slate-500 opacity-90'}`}>({totalProductCount})</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 ${viewMode === 'services' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                  onClick={() => setViewMode('services')}
+                >
+                  Services
+                  <span className={`ml-2 text-xs ${viewMode === 'services' ? 'opacity-100' : 'text-slate-500 opacity-90'}`}>({totalServiceCount})</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 ${viewMode === 'vendors' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                  onClick={() => setViewMode('vendors')}
+                >
+                  Vendors
+                  <span className={`ml-2 text-xs ${viewMode === 'vendors' ? 'opacity-100' : 'text-slate-500 opacity-90'}`}>({totalVendorCount})</span>
+                </Button>
+              </div>
+            </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8">
+              {viewMode === 'products' && (
                 <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
                   <Button
-                    variant={selectedCategory === '' ? 'primary' : 'ghost'}
+                    variant="ghost"
                     size="sm"
-                    className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedCategory === '' ? '' : 'text-slate-700'}`}
+                    className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selectedCategory === '' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
                     onClick={() => { setSelectedCategory(''); syncFilterToUrl('category', '') }}
                   >
-                    All Categories
-                    <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                      {totalProductCategoryCount}
-                    </span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-bold">All Categories</span>
+                      {selectedCategory === '' ? (
+                        <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs">{totalProductCategoryCount}</span>
+                      ) : (
+                        <span className="text-xs text-slate-500">{totalProductCategoryCount}</span>
+                      )}
+                    </div>
                   </Button>
                   {renderProductCategoryButtons(categories)}
                 </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <select
-                    value={productSortBy}
-                    onChange={(e) => { setProductSortBy(e.target.value); syncFilterToUrl('sort', e.target.value) }}
-                    className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50 bg-white"
-                  >
-                    <option value="newest">Newest</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="best-selling">Best Selling</option>
-                    <option value="top-rated">Top Rated</option>
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="Min price"
-                    value={productMinPrice}
-                    onChange={(e) => { setProductMinPrice(e.target.value); syncFilterToUrl('minPrice', e.target.value) }}
-                    className="w-28 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max price"
-                    value={productMaxPrice}
-                    onChange={(e) => { setProductMaxPrice(e.target.value); syncFilterToUrl('maxPrice', e.target.value) }}
-                    className="w-28 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50"
-                  />
-                  <select
-                    value={productAvailabilityType}
-                    onChange={(e) => { setProductAvailabilityType(e.target.value); syncFilterToUrl('availability', e.target.value) }}
-                    className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-royal-blue/50 bg-white"
-                  >
-                    <option value="">All Availability</option>
-                    <option value="IN_STOCK">In Stock</option>
-                    <option value="PREORDER">Pre-order</option>
-                    <option value="BACKORDER">Backorder</option>
-                  </select>
+              )}
+
+              {viewMode === 'vendors' && vendorCategories.length > 0 && (
+                <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                  <span className="text-sm font-bold text-deep-navy flex-shrink-0">Vendor Type:</span>
+                  {renderVendorCategoryButtons(vendorCategories)}
                 </div>
-              </>
-            )}
+              )}
 
-            {viewMode === 'vendors' && vendorCategories.length > 0 && (
-              <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
-                <span className="text-sm font-medium text-slate-700 flex-shrink-0">Vendor Type:</span>
-                <Button
-                  variant={selectedVendorCategory === '' ? 'primary' : 'ghost'}
-                  size="sm"
-                  className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedVendorCategory === '' ? '' : 'text-slate-700'}`}
-                  onClick={() => { setSelectedVendorCategory(''); syncFilterToUrl('vendorCategory', '') }}
-                >
-                  All
-                  <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                    {totalVendorCategoryCount}
-                  </span>
-                </Button>
-                {renderVendorCategoryButtons(vendorCategories)}
-              </div>
-            )}
+              {viewMode === 'services' && (
+                <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                  {renderServiceCategoryButtons(serviceCategories)}
+                </div>
+              )}
+            </div>
 
-            {viewMode === 'services' && (
-              <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
-                <Button
-                  variant={selectedServiceCategory === '' ? 'primary' : 'ghost'}
-                  size="sm"
-                  className={`rounded-2xl whitespace-nowrap min-h-[48px] px-6 py-3 font-semibold flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start ${selectedServiceCategory === '' ? '' : 'text-slate-700'}`}
-                  onClick={() => { setSelectedServiceCategory(''); syncFilterToUrl('serviceCategory', '') }}
-                >
-                  All Categories
-                  <span className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-xs">
-                    {totalServiceCategoryCount}
-                  </span>
-                </Button>
-                {renderServiceCategoryButtons(serviceCategories)}
+            {viewMode === 'products' && (
+              <div className="lg:col-span-4">
+                <div className="flex gap-3 flex-wrap lg:flex-col lg:flex-nowrap">
+                  <div className="relative group flex-1 min-w-[150px]">
+                    <select
+                      value={productSortBy}
+                      onChange={(e) => { setProductSortBy(e.target.value); syncFilterToUrl('sort', e.target.value) }}
+                      className="appearance-none w-full h-[52px] rounded-[22px] border border-slate-200 bg-white px-4 pr-10 text-deep-navy text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B5CFF] cursor-pointer"
+                    >
+                      <option value="newest">Newest</option>
+                      <option value="price-low">Price: Low to High</option>
+                      <option value="price-high">Price: High to Low</option>
+                      <option value="best-selling">Best Selling</option>
+                      <option value="top-rated">Top Rated</option>
+                    </select>
+                    <FaChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-deep-navy/60 pointer-events-none" />
+                  </div>
+                  <div className="relative group flex-1 min-w-[150px]">
+                    <input
+                      type="number"
+                      placeholder="Min price"
+                      value={productMinPrice}
+                      onChange={(e) => { setProductMinPrice(e.target.value); syncFilterToUrl('minPrice', e.target.value) }}
+                      className="w-full h-[52px] rounded-[22px] border border-slate-200 bg-white px-4 text-deep-navy text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B5CFF]"
+                    />
+                  </div>
+                  <div className="relative group flex-1 min-w-[150px]">
+                    <input
+                      type="number"
+                      placeholder="Max price"
+                      value={productMaxPrice}
+                      onChange={(e) => { setProductMaxPrice(e.target.value); syncFilterToUrl('maxPrice', e.target.value) }}
+                      className="w-full h-[52px] rounded-[22px] border border-slate-200 bg-white px-4 text-deep-navy text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B5CFF]"
+                    />
+                  </div>
+                  <div className="relative group flex-1 min-w-[150px]">
+                    <select
+                      value={productAvailabilityType}
+                      onChange={(e) => { setProductAvailabilityType(e.target.value); syncFilterToUrl('availability', e.target.value) }}
+                      className="appearance-none w-full h-[52px] rounded-[22px] border border-slate-200 bg-white px-4 pr-10 text-deep-navy text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B5CFF] cursor-pointer"
+                    >
+                      <option value="">All Availability</option>
+                      <option value="IN_STOCK">In Stock</option>
+                      <option value="PREORDER">Pre-order</option>
+                      <option value="BACKORDER">Backorder</option>
+                    </select>
+                    <FaChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-deep-navy/60 pointer-events-none" />
+                  </div>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex items-center gap-2 text-sm text-deep-navy">
           {viewMode === 'products' ? (
             <>
               <span>{sortedProducts.length} products</span>
-                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                <span>Verified sellers</span>
+                <span className="w-1 h-1 rounded-full bg-[#64748b]"></span>
+                <span className="font-semibold">Verified sellers</span>
               </>
             ) : viewMode === 'services' ? (
               <>
                 <span>{services.length} services</span>
-                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                <span>Verified vendors</span>
+                <span className="w-1 h-1 rounded-full bg-[#64748b]"></span>
+                <span className="font-semibold">Verified vendors</span>
               </>
             ) : (
               <>
                 <span>{filteredVendors.length} vendors</span>
-                <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                <span>Featured stores</span>
+                <span className="w-1 h-1 rounded-full bg-[#64748b]"></span>
+                <span className="font-semibold">Featured stores</span>
               </>
             )}
           </div>
@@ -1171,6 +1198,7 @@ function MarketplaceContent() {
           )}
         </div>
       </div>
+    </div>
     </div>
   )
 }
