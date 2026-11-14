@@ -812,7 +812,7 @@ function MarketplaceContent() {
 
           <div className="relative z-10 pt-6 space-y-8">
             <div className="flex items-center justify-between">
-              <ChipsScrollRow>
+              <ChipsScrollRow showArrows={false}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -956,7 +956,9 @@ function MarketplaceContent() {
           </div>
           </div>
       </div>
+      </div>
 
+          <div className="pt-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {viewMode === 'products' ? (
             sortedProducts.length === 0 ? (
               <EmptyState

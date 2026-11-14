@@ -5,9 +5,10 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 
 interface ChipsScrollRowProps {
   children: React.ReactNode
+  showArrows?: boolean
 }
 
-export function ChipsScrollRow({ children }: ChipsScrollRowProps) {
+export function ChipsScrollRow({ children, showArrows = true }: ChipsScrollRowProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
@@ -56,7 +57,7 @@ export function ChipsScrollRow({ children }: ChipsScrollRowProps) {
         {children}
       </div>
 
-      {canScrollLeft && (
+      {showArrows && canScrollLeft && (
         <button
           type="button"
           aria-label="Scroll categories left"
@@ -67,7 +68,7 @@ export function ChipsScrollRow({ children }: ChipsScrollRowProps) {
         </button>
       )}
 
-      {canScrollRight && (
+      {showArrows && canScrollRight && (
         <button
           type="button"
           aria-label="Scroll categories right"
