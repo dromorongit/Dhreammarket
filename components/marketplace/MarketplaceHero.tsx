@@ -18,7 +18,7 @@ const PILL_BG = '#FCE7BA'
 const SUBTEXT = '#1B2B4B'
 const DIVIDER = '#CBD5E1'
 const BG = 'linear-gradient(105deg,#FFFFFF 0%,#FDFDFE 40%,#EAEFFD 100%)'
-const OVERLAY = 'linear-gradient(to right, rgba(255,255,255,0.55), transparent)'
+const OVERLAY = 'linear-gradient(to right, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.45) 55%, rgba(255,255,255,0.15) 100%)'
 
 function Pill() {
   return (
@@ -85,12 +85,14 @@ function Subtext() {
         fontWeight: 400,
       }}
     >
-      Browse our curated selection of quality products from trusted vendors across Ghana.
+      Browse our curated selection of quality products{' '}
+      <br className="subtext-break" />
+      from trusted vendors across Ghana.
     </p>
   )
 }
 
-function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+function TrustItem({ icon, top, bottom }: { icon: React.ReactNode; top: string; bottom: string }) {
   return (
     <div className="hero-trust-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <div className="hero-trust-icon" style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
@@ -99,12 +101,12 @@ function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
           textAlign: 'center',
           color: '#14203C',
           fontSize: 'clamp(0.85rem, 1.4vw, 1rem)',
-          lineHeight: 1.3,
+          lineHeight: 1.25,
           fontWeight: 500,
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
         }}
       >
-        {label}
+        <span>{top}</span>{' '}<br className="trust-label-break" /><span>{bottom}</span>
       </div>
     </div>
   )
@@ -116,11 +118,11 @@ function TrustRow() {
   const headset = <MdSupportAgent size={36} color={BUTTON_BLUE} aria-hidden="true" />
   return (
     <div className="hero-trust-row" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-      <TrustItem icon={shield} label="Trusted Vendors" />
+      <TrustItem icon={shield} top="Trusted" bottom="Vendors" />
       <div className="hero-trust-divider" style={{ width: 1, height: 36, background: DIVIDER }} />
-      <TrustItem icon={truck} label="Fast &amp; Reliable Delivery" />
+      <TrustItem icon={truck} top="Fast &amp; Reliable" bottom="Delivery" />
       <div className="hero-trust-divider" style={{ width: 1, height: 36, background: DIVIDER }} />
-      <TrustItem icon={headset} label="Dedicated Support" />
+      <TrustItem icon={headset} top="Dedicated" bottom="Support" />
     </div>
   )
 }
@@ -176,20 +178,55 @@ function Buttons() {
 
 function HeroImage() {
   return (
-    <div className="hero-image-wrapper" style={{ position: 'relative', width: '100%', maxWidth: 780, marginLeft: 'auto' }}>
-      <Image
-        src="/images/marketimage.png"
-        alt="Marketplace products"
-        priority
-        sizes="(min-width: 1024px) 780px, 90vw"
+    <div className="hero-image-wrapper" style={{ position: 'relative', width: '100%', maxWidth: 860, marginLeft: 'auto' }}>
+      <svg
+        className="hero-gold-arc"
+        viewBox="0 0 170 170"
+        aria-hidden="true"
         style={{
-          width: '100%',
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          width: 'clamp(150px, 24vw, 240px)',
           height: 'auto',
-          display: 'block',
-          maskImage: 'linear-gradient(to right, transparent, #000 22%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent, #000 22%)',
+          maxWidth: '100%',
+          zIndex: 1,
+          pointerEvents: 'none',
         }}
-      />
+      >
+        <path d="M25 155 Q85 165 155 85" fill="none" stroke={HERO_GOLD} strokeWidth={6} strokeLinecap="round" />
+      </svg>
+      <svg
+        className="hero-sparkles"
+        viewBox="0 0 140 140"
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: 'clamp(110px, 18vw, 170px)',
+          height: 'auto',
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      >
+        <path fill="none" stroke={HERO_GOLD} strokeWidth={3} strokeLinecap="round" d="M16 16 l 10 10 M16 26 l 10 -10 M42 16 l -10 10 M42 26 l -10 -10 M78 24 l 7 7 M78 31 l 7 -7 M100 14 l 5 5 M100 19 l 5 -5" />
+      </svg>
+      <div style={{ position: 'relative', zIndex: 2, width: '100%' }}>
+        <Image
+          src="/images/marketimage.png"
+          alt="Marketplace products"
+          priority
+          sizes="(min-width: 1024px) 860px, 90vw"
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block',
+            maskImage: 'linear-gradient(to right, transparent, #000 22%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent, #000 22%)',
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -222,13 +259,13 @@ function BottomWave() {
 export default function MarketplaceHero() {
   return (
     <section className="relative overflow-hidden" style={{ background: BG }}>
-      <HeroVideo src="/videos/newvideo.mp4" />
+      <HeroVideo src="/videos/newvideo.mp4" blur={3} opacity={0.08} mobileOpacity={0.12} />
       <div
         className="hero-video-overlay"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1, background: OVERLAY }}
       />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 hero-content" style={{ zIndex: 10, position: 'relative', paddingBottom: 'clamp(2rem, 5vw, 3rem)' }}>
-        <div className="hero-grid" style={{ display: 'grid', gap: 'clamp(2rem, 5vw, 3rem)', marginTop: 'clamp(2rem, 5vw, 4rem)' }}>
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 hero-content pb-6 md:pb-28 lg:pb-32" style={{ zIndex: 10, position: 'relative' }}>
+        <div className="hero-grid grid gap-8 pt-12 lg:pt-14" style={{ position: 'relative', zIndex: 10 }}>
           <div className="min-w-0 flex flex-col" style={{ position: 'relative', zIndex: 10 }}>
             <Pill />
             <div style={{ marginTop: 24 }}>
@@ -248,56 +285,40 @@ export default function MarketplaceHero() {
         </div>
       </div>
       <BottomWave />
-      <div className="hero-ticker" style={{ width: 'clamp(280px, 80vw, 758px)', margin: '0 auto' }}>
-        <RecentActivityTicker variant="hero" label="Trending Now" />
+      <div className="hero-ticker" style={{ width: 'clamp(280px, 80vw, 758px)', margin: '0 auto', position: 'relative', zIndex: 3 }}>
+        <RecentActivityTicker variant="hero" label="Trending Now" labelColor="#16A34A" textTransform="none" dots={4} />
       </div>
       <style jsx>{`
         @media (min-width: 768px) {
           .hero-line {
             white-space: nowrap;
           }
-        }
-        @media (min-width: 1024px) {
-          .hero-grid {
-            grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) !important;
-            gap: 3rem !important;
-            align-items: center !important;
+          .subtext-break {
+            display: block !important;
           }
-          .hero-image-col {
-            margin-right: -32px !important;
+          .hero-trust-item {
+            flexDirection: row !important;
+            alignItems: center !important;
+            gap: 10px !important;
           }
-          .hero-ticker {
-            position: absolute !important;
-            left: 50% !important;
-            bottom: 20px !important;
-            transform: translateX(-50%) !important;
-            width: clamp(280px, 80vw, 758px) !important;
+          .hero-trust-label {
+            textAlign: left !important;
           }
-        }
-        @media (max-width: 1023px) {
-          .hero-grid {
-            grid-template-columns: 1fr !important;
-            gap: 2rem !important;
-            align-items: start !important;
+          .hero-trust-label br {
+            display: block !important;
           }
-          .hero-image-wrapper {
-            max-width: 520px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-          }
-          .hero-image-col {
-            margin-right: 0 !important;
-          }
-          .hero-ticker {
-            position: static !important;
-            left: auto !important;
-            bottom: auto !important;
-            transform: none !important;
-            width: calc(100% - 32px) !important;
-            margin: 16px auto 0 auto !important;
+          .hero-trust-divider {
+            width: 1px !important;
+            height: auto !important;
+            min-height: 40px !important;
+            margin: 0 16px !important;
+            background: #CBD5E1 !important;
           }
         }
         @media (max-width: 767px) {
+          .subtext-break {
+            display: none !important;
+          }
           .hero-content {
             padding-bottom: 1.5rem !important;
           }
@@ -328,8 +349,49 @@ export default function MarketplaceHero() {
             font-size: 0.8rem !important;
             line-height: 1.2 !important;
           }
+          .hero-trust-label br {
+            display: none !important;
+          }
           .hero-wave {
             max-height: 48px !important;
+          }
+          .hero-gold-arc,
+          .hero-sparkles {
+            display: none !important;
+          }
+        }
+        @media (max-width: 1023px) {
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+            align-items: start !important;
+          }
+          .hero-image-wrapper {
+            max-width: 520px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+          }
+          .hero-image-col {
+            margin-right: 0 !important;
+          }
+          .hero-ticker {
+            position: static !important;
+            left: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            width: calc(100% - 32px) !important;
+            margin: 16px auto 0 auto !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .hero-grid {
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) !important;
+            gap: 3rem !important;
+            align-items: start !important;
+          }
+          .hero-image-col {
+            align-self: end !important;
+            margin-right: -32px !important;
           }
         }
         @media (max-width: 639px) {
@@ -356,6 +418,12 @@ export default function MarketplaceHero() {
         }
         .hero-video-overlay {
           background: ${OVERLAY};
+        }
+        .hero-ticker {
+          width: clamp(280px, 80vw, 758px);
+          margin: 0 auto;
+          position: relative;
+          z-index: 3;
         }
       `}</style>
     </section>

@@ -6,9 +6,10 @@ interface HeroVideoProps {
   src: string
   opacity?: number
   mobileOpacity?: number
+  blur?: number
 }
 
-export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18 }: HeroVideoProps) {
+export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 }: HeroVideoProps) {
   const [mounted, setMounted] = React.useState(false)
   const videoRef = React.useRef<HTMLVideoElement>(null)
   const playRetried = React.useRef(false)
@@ -92,6 +93,8 @@ export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18 }: HeroVid
         pointerEvents: 'none',
         zIndex: 0,
         opacity,
+        filter: blur > 0 ? `blur(${blur}px)` : 'none',
+        transform: blur > 0 ? 'scale(1.06)' : 'none',
       }}
     >
       <source src={src} type="video/mp4" />
