@@ -22,16 +22,19 @@ const BG = 'linear-gradient(105deg,#FFFFFF 0%,#FDFDFE 40%,#EAEFFD 100%)'
 function Pill() {
   return (
     <div
+      className="hero-pill"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
+        alignSelf: 'flex-start',
+        width: 'fit-content',
         gap: 10,
         background: PILL_BG,
         borderRadius: 9999,
         paddingLeft: 14,
         paddingRight: 12,
         height: 54,
-        fontSize: 22,
+        fontSize: 'clamp(0.95rem, 4vw, 1.375rem)',
         fontWeight: 700,
         letterSpacing: '-0.01em',
         color: BUTTON_BLUE,
@@ -62,14 +65,16 @@ function HeroHeading() {
         Powering Digital Trade
       </span>
       <span className="hero-line" style={{ display: 'block', color: NAVY, position: 'relative' }}>
-        The <span style={{ color: HERO_GOLD }}>Smart Way</span>
+        The <span style={{ color: HERO_GOLD, position: 'relative', display: 'inline-block' }}>Smart</span> Way
         <svg
-          width="220"
-          height="44"
+          viewBox="0 0 220 44"
+          preserveAspectRatio="none"
           style={{
             position: 'absolute',
-            left: '3.2em',
-            bottom: -14,
+            left: 0,
+            bottom: '-0.2em',
+            width: '100%',
+            height: '0.3em',
             overflow: 'visible',
             pointerEvents: 'none',
           }}
@@ -110,9 +115,10 @@ function Subtext() {
 
 function Buttons() {
   return (
-    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10 }}>
+    <div className="hero-buttons" style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10 }}>
       <Link href="/register">
         <a
+          className="hero-btn"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -137,6 +143,7 @@ function Buttons() {
       </Link>
       <Link href="/marketplace">
         <a
+          className="hero-btn"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -165,8 +172,8 @@ function Buttons() {
 function TrustItem({ icon, label1, label2 }: { icon: React.ReactNode; label1: string; label2: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
-      <div
+      <div className="hero-trust-icon" style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
+      <div className="hero-trust-label"
         style={{
           textAlign: 'center',
           color: TRUST_TEXT,
@@ -178,7 +185,7 @@ function TrustItem({ icon, label1, label2 }: { icon: React.ReactNode; label1: st
       >
         {label1}
       </div>
-      <div
+      <div className="hero-trust-label"
         style={{
           textAlign: 'center',
           color: TRUST_TEXT,
@@ -199,11 +206,11 @@ function TrustRow() {
   const handshake = <FaHandshake size={40} color={BUTTON_BLUE} aria-hidden="true" />
   const truck = <TbTruckDelivery size={40} color={BUTTON_BLUE} aria-hidden="true" />
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="hero-trust-row" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
       <TrustItem icon={shield} label1="Secure" label2="Transactions" />
-      <div style={{ width: 1, height: 48, background: DIVIDER }} />
+      <div className="hero-trust-divider" style={{ width: 1, height: 48, background: DIVIDER }} />
       <TrustItem icon={handshake} label1="Trusted" label2="Vendors" />
-      <div style={{ width: 1, height: 48, background: DIVIDER }} />
+      <div className="hero-trust-divider" style={{ width: 1, height: 48, background: DIVIDER }} />
       <TrustItem icon={truck} label1="Fast &amp; Reliable" label2="Delivery" />
     </div>
   )
@@ -249,7 +256,7 @@ function HeroBackground() {
 function HeroImage() {
   return (
     <div
-      className="hero-image-wrapper"
+      className="hero-image-wrapper hero-image"
       style={{
         position: 'relative',
         width: '100%',
@@ -285,42 +292,44 @@ function HeroImage() {
           zIndex: 1,
         }}
       />
-      <div
-        style={{
-          position: 'absolute',
-          left: '6%',
-          top: '8%',
-          width: 80,
-          height: 80,
-          background: '#fff',
-          borderRadius: 18,
-          boxShadow: '0 10px 30px rgba(15,35,80,0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2,
-        }}
-      >
-        <LuShoppingCart size={40} color={NAVY} aria-hidden="true" />
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          right: '4%',
-          top: '18%',
-          width: 80,
-          height: 80,
-          background: '#fff',
-          borderRadius: 18,
-          boxShadow: '0 10px 30px rgba(15,35,80,0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2,
-        }}
-      >
-        <LuStore size={40} color={BUTTON_BLUE} aria-hidden="true" />
-      </div>
+          <div
+            className="hero-cart"
+            style={{
+              position: 'absolute',
+              left: '6%',
+              top: '8%',
+              width: 80,
+              height: 80,
+              background: '#fff',
+              borderRadius: 18,
+              boxShadow: '0 10px 30px rgba(15,35,80,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2,
+            }}
+          >
+            <LuShoppingCart className="hero-cart-icon" size={40} color={NAVY} aria-hidden="true" />
+          </div>
+          <div
+            className="hero-store"
+            style={{
+              position: 'absolute',
+              right: '4%',
+              top: '18%',
+              width: 80,
+              height: 80,
+              background: '#fff',
+              borderRadius: 18,
+              boxShadow: '0 10px 30px rgba(15,35,80,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2,
+            }}
+          >
+            <LuStore className="hero-store-icon" size={40} color={BUTTON_BLUE} aria-hidden="true" />
+          </div>
     </div>
   )
 }
@@ -328,6 +337,7 @@ function HeroImage() {
 function BottomWave() {
   return (
     <svg
+      className="hero-wave"
       viewBox="0 0 360 110"
       preserveAspectRatio="xMinYMax meet"
       style={{
@@ -371,13 +381,14 @@ export default function HeroSection() {
               <TrustRow />
             </div>
           </div>
-          <div className="min-w-0 flex justify-center lg:justify-end" style={{ zIndex: 1 }}>
+          <div className="min-w-0 flex justify-center lg:justify-end hero-image-col" style={{ zIndex: 1 }}>
             <HeroImage />
           </div>
         </div>
       </div>
       <BottomWave />
       <div
+        className="hero-ticker"
         style={{
           position: 'absolute',
           left: '50%',
@@ -407,6 +418,94 @@ export default function HeroSection() {
             max-width: 420px !important;
             margin-left: auto !important;
             margin-right: auto !important;
+          }
+          .hero-ticker {
+            position: static !important;
+            left: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            width: calc(100% - 32px) !important;
+            margin: 16px auto 0 auto !important;
+            z-index: auto !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+            text-overflow: ellipsis !important;
+          }
+        }
+        @media (max-width: 767px) {
+          .hero-image-wrapper {
+            max-width: 340px !important;
+          }
+          .hero-image-col {
+            margin-top: 8px !important;
+          }
+          .hero-trust-row {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 8px !important;
+            align-items: start !important;
+          }
+          .hero-trust-icon {
+            width: 32px !important;
+            height: 32px !important;
+          }
+          .hero-trust-icon svg {
+            width: 32px !important;
+            height: 32px !important;
+          }
+          .hero-trust-label {
+            font-size: 0.8rem !important;
+            line-height: 1.2 !important;
+          }
+          .hero-trust-divider {
+            width: 1px !important;
+            height: auto !important;
+            min-height: 32px !important;
+            margin: 0 4px !important;
+          }
+          .hero-cart {
+            left: 8px !important;
+            top: 8px !important;
+            width: 56px !important;
+            height: 56px !important;
+          }
+          .hero-cart-icon {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .hero-store {
+            right: 8px !important;
+            top: 16px !important;
+            width: 56px !important;
+            height: 56px !important;
+          }
+          .hero-store-icon {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .hero-wave {
+            max-height: 70px !important;
+          }
+        }
+        @media (max-width: 639px) {
+          .hero-buttons {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+          .hero-btn {
+            width: 100% !important;
+            height: 56px !important;
+            min-height: 56px !important;
+            font-size: 1rem !important;
+            justify-content: center !important;
+          }
+        }
+        @media (min-width: 640px) {
+          .hero-btn {
+            width: auto !important;
+            min-height: 0 !important;
+            height: auto !important;
           }
         }
       `}</style>
