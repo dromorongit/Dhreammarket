@@ -806,7 +806,7 @@ function MarketplaceContent() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="relative isolate overflow-hidden bg-[linear-gradient(180deg,#FFFFFF_0%,#EEF4FF_100%)]">
+        <div className="relative isolate overflow-hidden pb-8 bg-[linear-gradient(180deg,#FFFFFF_0%,#EEF4FF_100%)]">
           <FiltersBackdrop />
 
           <div className="relative z-10 space-y-8">
