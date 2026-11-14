@@ -20,13 +20,14 @@ import { Card } from '@/components/Card'
 
 interface RecentActivityTickerProps {
   variant?: 'default' | 'hero'
+  label?: string
 }
 
 const LIVE_GREEN = '#00A383'
 const DIVIDER = '#CBD5E1'
 const BUTTON_BLUE = '#00399C'
 
-export function RecentActivityTicker({ variant = 'default' }: RecentActivityTickerProps) {
+export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVITY' }: RecentActivityTickerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isVisible, setIsVisible] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
@@ -203,7 +204,7 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
               whiteSpace: 'nowrap',
             }}
           >
-            LIVE ACTIVITY
+            {label}
           </span>
           <span style={{ width: 1, height: 24, background: DIVIDER, display: 'inline-block', margin: '0 10px' }} />
           <div style={{ overflow: 'hidden', minWidth: 0 }}>

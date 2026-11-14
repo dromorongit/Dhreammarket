@@ -13,7 +13,7 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
-import { getOptimizedCloudinaryUrl, getOptimizedCloudinaryVideoUrl } from '@/lib/cloudinary-image'
+import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
 import { MdVerified } from 'react-icons/md'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
@@ -27,6 +27,7 @@ import { AITrending } from '@/components/ai'
 import { getBlurDataURL, CARD_IMAGE_SIZES, CARD_IMAGE_SIZES_4COL, CARD_IMAGE_SIZES_6COL, VENDOR_LOGO_SIZES } from '@/lib/image-utils'
 import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
+import MarketplaceHero from '@/components/marketplace/MarketplaceHero'
 
 interface Product {
   id: string
@@ -761,59 +762,7 @@ function MarketplaceContent() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <section className="relative bg-gradient-to-br from-deep-navy to-royal-blue py-20 overflow-hidden">
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          preload="metadata"
-        >
-          <source src={getOptimizedCloudinaryVideoUrl('https://res.cloudinary.com/doqfxvcy2/video/upload/v1789091406/dhream-market/videos/fukhhpfvd6e6zkjh2zws.mov')} type="video/mp4" />
-        </video>
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-royal-blue/20 to-transparent"></div>
-          <div className="absolute bottom-0 right-0 w-48 h-48 bg-premium-gold/10 rounded-full blur-2xl pointer-events-none"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-white">
-            <Badge variant="premium" className="mb-6">
-              Premium Marketplace
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Discover Premium Products
-            </h1>
-            <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-8">
-              Browse our curated selection of quality products from trusted vendors worldwide.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const input = (e.target as HTMLFormElement).querySelector('input') as HTMLInputElement
-                  const searchQuery = input.value.trim()
-                  if (searchQuery) {
-                    router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
-                  }
-                }}
-                className="relative flex-1"
-              >
-                <input
-                  type="text"
-                  placeholder="Search products, vendors, categories, brands..."
-                  className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-4 text-base text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                />
-                <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 hover:text-white transition-colors">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </section>
+      <MarketplaceHero />
 
       <AIRecommendations
         title="Recommended for You"
@@ -992,7 +941,7 @@ function MarketplaceContent() {
                 onAction={() => { setSelectedCategory(''); syncFilterToUrl('category', '') }}
               />
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div id="products" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" style={{ scrollMarginTop: '80px' }}>
                 {sortedProducts.map((product) => (
                   <MarketplaceProductCard
                     key={product.id}
