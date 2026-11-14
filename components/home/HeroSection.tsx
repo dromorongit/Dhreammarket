@@ -339,14 +339,15 @@ function HeroImage() {
 function HeroVideo() {
   const [mounted, setMounted] = React.useState(false)
   const videoRef = React.useRef<HTMLVideoElement>(null)
+  const playRetried = React.useRef(false)
+  const retryListener = React.useRef<(() => void) | null>(null)
 
   React.useEffect(() => {
-    const widthOk = window.matchMedia('(min-width: 768px)').matches
     const motionOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const nav = navigator as unknown as { connection?: { saveData?: boolean } }
     const saveData = !!nav.connection?.saveData
 
-    if (widthOk && motionOk && !saveData) {
+    if (motionOk && !saveData) {
       setMounted(true)
     }
   }, [])
@@ -358,7 +359,17 @@ function HeroVideo() {
     const playPromise = video.play()
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // Autoplay may be blocked by the browser; silent no-op.
+        if (playRetried.current) return
+        playRetried.current = true
+        const retry = () => {
+          window.removeEventListener('touchstart', retry)
+          document.removeEventListener('visibilitychange', retry)
+          retryListener.current = null
+          video.play().catch(() => {})
+        }
+        retryListener.current = retry
+        window.addEventListener('touchstart', retry)
+        document.addEventListener('visibilitychange', retry)
       })
     }
 
@@ -378,6 +389,11 @@ function HeroVideo() {
 
     return () => {
       observer.disconnect()
+      if (retryListener.current) {
+        window.removeEventListener('touchstart', retryListener.current)
+        document.removeEventListener('visibilitychange', retryListener.current)
+        retryListener.current = null
+      }
       video.pause()
     }
   }, [mounted])
@@ -387,6 +403,7 @@ function HeroVideo() {
   return (
     <video
       ref={videoRef}
+      className="hero-video"
       autoPlay
       muted
       loop
@@ -400,7 +417,6 @@ function HeroVideo() {
         width: '100%',
         height: '100%',
         objectFit: 'cover',
-        opacity: 0.14,
         pointerEvents: 'none',
         zIndex: 0,
       }}
@@ -440,13 +456,13 @@ export default function HeroSection() {
     <section className="relative overflow-hidden" style={{ background: BG }}>
       <HeroVideo />
       <div
+        className="hero-video-overlay"
         style={{
           position: 'absolute',
           inset: 0,
           width: '100%',
           height: '100%',
           zIndex: 0,
-          background: 'linear-gradient(to right, rgba(255,255,255,0.55), transparent)',
         }}
       />
       <HeroBackground />
@@ -612,6 +628,20 @@ export default function HeroSection() {
             min-height: 0 !important;
             height: auto !important;
           }
+        }
+        .hero-video {
+          opacity: 0.14;
+        }
+        @media (max-width: 767px) {
+          .hero-video {
+            opacity: 0.18 !important;
+          }
+          .hero-video-overlay {
+            background: rgba(255, 255, 255, 0.6) !important;
+          }
+        }
+        .hero-video-overlay {
+          background: linear-gradient(to right, rgba(255, 255, 255, 0.55), transparent);
         }
       `}</style>
     </section>
