@@ -213,8 +213,8 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
           })} />
         </div>
       </Link>
-      <div className="flex-1 flex flex-col space-y-1">
-        <h3 className="text-[0.9rem] sm:text-sm font-bold text-deep-navy line-clamp-2 leading-tight">
+      <div className="flex-1 flex flex-col space-y-1 mt-2.5">
+        <h3 className="text-[13px] sm:text-[13.5px] font-bold text-deep-navy line-clamp-2 leading-snug">
           {product.name}
         </h3>
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -229,8 +229,8 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
         </div>
         {product.store && (
           <div className="flex items-center gap-1 min-w-0">
-            <MdStore className="w-3 h-3 flex-shrink-0 text-deep-navy" />
-            <p className="text-[10px] font-medium text-deep-navy truncate">
+            <MdStore className="w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] flex-shrink-0 text-slate-600" />
+            <p className="text-[11px] sm:text-[12.5px] font-medium text-slate-600 truncate">
               {product.store.name}
             </p>
             {(() => {
@@ -238,12 +238,12 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
               if (badgeInfo) {
                 const iconColor = badgeInfo.tier === 'PLATINUM' ? 'text-slate-700' : badgeInfo.tier === 'PREMIUM' ? 'text-premium-gold' : 'text-sky-500'
                 return (
-                  <MdVerified className={`w-3 h-3 flex-shrink-0 inline-block ${iconColor}`} />
+                  <MdVerified className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] flex-shrink-0 inline-block ${iconColor}`} />
                 )
               }
               if (product.store.isVerified) {
                 return (
-                  <MdVerified className="w-3 h-3 text-sky-500 flex-shrink-0 inline-block" />
+                  <MdVerified className="w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] text-sky-500 flex-shrink-0 inline-block" />
                 )
               }
               return null
@@ -255,11 +255,11 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
         <Button
           size="sm"
           variant="primary"
-          className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed"
+          className="w-full h-[34px] sm:h-9 rounded-full text-[13px] sm:text-sm font-semibold px-3 py-0 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
           disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
           onClick={() => onAddToCart(product.id, product.name, product.price)}
         >
-          <FaShoppingCart className="w-4 h-4 mr-1.5" />
+          <FaShoppingCart className="w-[15px] h-[15px] flex-shrink-0" />
           {isAdding
             ? '...'
             : product.availabilityType === 'PREORDER'
@@ -271,8 +271,8 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
                   : 'Out of Stock'}
         </Button>
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
-          <Button variant="outline" size="sm" className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1 text-deep-navy border-deep-navy/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed">
-            <FaEye className="w-4 h-4 mr-1.5" />
+          <Button variant="outline" size="sm" className="w-full h-[34px] sm:h-9 rounded-full text-[13px] sm:text-sm font-semibold px-3 py-0 text-deep-navy border-deep-navy/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+            <FaEye className="w-[15px] h-[15px] flex-shrink-0" />
             View Details
           </Button>
         </Link>
