@@ -64,31 +64,33 @@ function HeroHeading() {
       <span className="hero-line" style={{ display: 'block', color: NAVY }}>
         Powering Digital Trade
       </span>
-      <span className="hero-line" style={{ display: 'block', color: NAVY, position: 'relative' }}>
-        The <span style={{ color: HERO_GOLD, position: 'relative', display: 'inline-block' }}>Smart</span> Way
-        <svg
-          viewBox="0 0 220 44"
-          preserveAspectRatio="none"
-          style={{
-            position: 'absolute',
-            left: 0,
-            bottom: '-0.2em',
-            width: '100%',
-            height: '0.3em',
-            overflow: 'visible',
-            pointerEvents: 'none',
-          }}
-          aria-hidden="true"
-        >
-          <path
-            d="M10 36 Q 70 12 210 38"
-            fill="none"
-            stroke={HERO_GOLD}
-            strokeWidth={5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+      <span className="hero-line" style={{ display: 'block', color: NAVY }}>
+        The <span style={{ color: HERO_GOLD, position: 'relative', display: 'inline-block' }}>Smart
+          <svg
+            viewBox="0 0 200 30"
+            preserveAspectRatio="none"
+            style={{
+              position: 'absolute',
+              left: 0,
+              bottom: '-0.18em',
+              width: '100%',
+              height: '0.35em',
+              overflow: 'visible',
+              pointerEvents: 'none',
+            }}
+            aria-hidden="true"
+          >
+            <path
+              d="M4 22 Q60 4 196 18"
+              fill="none"
+              stroke={HERO_GOLD}
+              strokeWidth={4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        </span> Way
       </span>
     </h1>
   )
@@ -244,7 +246,7 @@ function HeroBackground() {
           <path d="M740 840 L740 700 L760 700 L760 640 L780 640 L780 740 L800 740 L800 840 Z" />
         </g>
       </svg>
-      <div style={{ position: 'absolute', right: 30, top: 20, zIndex: 0 }}>
+      <div className="hero-sparkle" style={{ position: 'absolute', right: 30, top: 20, zIndex: 0 }}>
         <svg width="64" height="64" aria-hidden="true">
           <path d="M8 48 Q32 8 56 48" fill="none" stroke={HERO_GOLD} strokeWidth={5} strokeLinecap="round" />
         </svg>
@@ -363,7 +365,7 @@ export default function HeroSection() {
   return (
     <section className="relative overflow-hidden" style={{ background: BG }}>
       <HeroBackground />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-28 lg:pb-32" style={{ zIndex: 10 }}>
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-28 lg:pb-32 hero-content" style={{ zIndex: 10 }}>
         <div
           className="hero-grid grid items-start gap-8 pt-12 lg:pt-16"
           style={{ gridTemplateColumns: '1fr' }}
@@ -484,7 +486,22 @@ export default function HeroSection() {
             height: 28px !important;
           }
           .hero-wave {
-            max-height: 70px !important;
+            max-height: 48px !important;
+          }
+          .hero-ticker {
+            position: relative !important;
+            left: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            width: calc(100% - 32px) !important;
+            margin: 16px auto 0 auto !important;
+            z-index: 2 !important;
+          }
+          .hero-content {
+            padding-bottom: 1.5rem !important;
+          }
+          .hero-sparkle {
+            display: none !important;
           }
         }
         @media (max-width: 639px) {
@@ -499,6 +516,9 @@ export default function HeroSection() {
             min-height: 56px !important;
             font-size: 1rem !important;
             justify-content: center !important;
+          }
+          .hero-wave {
+            display: none !important;
           }
         }
         @media (min-width: 640px) {

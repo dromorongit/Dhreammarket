@@ -96,7 +96,10 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
       return (
         <div
           style={{
-            width: 758,
+            width: '100%',
+            maxWidth: 758,
+            boxSizing: 'border-box',
+            minWidth: 0,
             height: 57,
             background: '#fff',
             borderRadius: 9999,
@@ -120,6 +123,20 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
             }}
           />
           <span style={{ color: '#bbb', fontSize: 12 }}>{'·'.repeat(10)}</span>
+          <style jsx>{`
+            .hero-ticker-section {
+              width: 100% !important;
+              max-width: 758px !important;
+              box-sizing: border-box !important;
+              min-width: 0 !important;
+            }
+            @media (max-width: 767px) {
+              .hero-ticker-section {
+                height: 40px !important;
+                padding: 0 12px !important;
+              }
+            }
+          `}</style>
         </div>
       )
     }
@@ -142,10 +159,14 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
   if (variant === 'hero') {
     return (
       <section
+        className="hero-ticker-section"
         aria-live="polite"
         aria-atomic="true"
         style={{
-          width: 758,
+          width: '100%',
+          maxWidth: 758,
+          boxSizing: 'border-box',
+          minWidth: 0,
           height: 57,
           background: '#fff',
           borderRadius: 9999,
@@ -158,6 +179,7 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
           <span
+            className="hero-ticker-dot"
             style={{
               position: 'relative',
               display: 'inline-flex',
@@ -171,6 +193,7 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
             }}
           />
           <span
+            className="hero-ticker-label"
             style={{
               color: LIVE_GREEN,
               fontSize: 18,
@@ -185,6 +208,7 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
           <span style={{ width: 1, height: 24, background: DIVIDER, display: 'inline-block', margin: '0 10px' }} />
           <div style={{ overflow: 'hidden', minWidth: 0 }}>
             <p
+              className="hero-ticker-message"
               style={{
                 margin: 0,
                 fontSize: 21,
@@ -202,7 +226,7 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
           </div>
         </div>
         {activities.length > 1 && !prefersReducedMotion && (
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div className="hero-ticker-pagination" style={{ display: 'flex', gap: 6 }}>
             {activities.slice(0, 5).map((_, idx) => (
               <span
                 key={idx}
@@ -217,6 +241,41 @@ export function RecentActivityTicker({ variant = 'default' }: RecentActivityTick
             ))}
           </div>
         )}
+        <style jsx>{`
+          .hero-ticker-section {
+            width: 100% !important;
+            max-width: 758px !important;
+            box-sizing: border-box !important;
+            min-width: 0 !important;
+          }
+          @media (min-width: 768px) and (max-width: 1023px) {
+            .hero-ticker-section {
+              width: 100% !important;
+            }
+          }
+          @media (max-width: 767px) {
+            .hero-ticker-section {
+              height: 40px !important;
+              padding: 0 12px !important;
+            }
+            .hero-ticker-label {
+              font-size: 0.7rem !important;
+            }
+            .hero-ticker-dot {
+              width: 8px !important;
+              height: 8px !important;
+            }
+            .hero-ticker-message {
+              font-size: 0.8rem !important;
+              white-space: nowrap !important;
+              overflow: hidden !important;
+              text-overflow: ellipsis !important;
+            }
+            .hero-ticker-pagination {
+              display: none !important;
+            }
+          }
+        `}</style>
       </section>
     )
   }
