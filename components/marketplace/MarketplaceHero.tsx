@@ -272,10 +272,10 @@ export default function MarketplaceHero() {
               <HeroHeading />
               <Subtext />
             </div>
-            <div style={{ marginTop: 32 }}>
+            <div className="hero-buttons-wrap" style={{ marginTop: 32 }}>
               <Buttons />
             </div>
-            <div style={{ marginTop: 32 }}>
+            <div className="hero-trust-wrap" style={{ marginTop: 32 }}>
               <TrustRow />
             </div>
           </div>
@@ -315,9 +315,45 @@ export default function MarketplaceHero() {
             background: #CBD5E1 !important;
           }
         }
+        @media (max-width: 1023px) {
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+            align-items: start !important;
+          }
+          .hero-image-wrapper {
+            max-width: 520px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+          }
+          .hero-image-col {
+            margin-right: 0 !important;
+          }
+          .hero-ticker {
+            position: static !important;
+            left: auto !important;
+            bottom: auto !important;
+            transform: none !important;
+            width: calc(100% - 32px) !important;
+            margin: 16px auto 0 auto !important;
+          }
+        }
+        @media (min-width: 768px) and (max-width: 900px) {
+          .hero-buttons {
+            gap: 10px !important;
+          }
+        }
         @media (max-width: 767px) {
           .subtext-break {
             display: none !important;
+          }
+          .hero-buttons-wrap,
+          .hero-trust-wrap {
+            display: none !important;
+            margin-top: 0 !important;
+          }
+          .hero-grid {
+            gap: 1.5rem !important;
           }
           .hero-content {
             padding-bottom: 1.5rem !important;
@@ -358,29 +394,6 @@ export default function MarketplaceHero() {
           .hero-gold-arc,
           .hero-sparkles {
             display: none !important;
-          }
-        }
-        @media (max-width: 1023px) {
-          .hero-grid {
-            grid-template-columns: 1fr !important;
-            gap: 2rem !important;
-            align-items: start !important;
-          }
-          .hero-image-wrapper {
-            max-width: 520px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-          }
-          .hero-image-col {
-            margin-right: 0 !important;
-          }
-          .hero-ticker {
-            position: static !important;
-            left: auto !important;
-            bottom: auto !important;
-            transform: none !important;
-            width: calc(100% - 32px) !important;
-            margin: 16px auto 0 auto !important;
           }
         }
         @media (min-width: 1024px) {
