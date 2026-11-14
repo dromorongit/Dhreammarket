@@ -328,19 +328,23 @@ function HeroImage() {
 function BottomWave() {
   return (
     <svg
-      width="360"
-      height="130"
+      viewBox="0 0 360 110"
+      preserveAspectRatio="xMinYMax meet"
       style={{
         position: 'absolute',
         left: 0,
         bottom: 0,
-        zIndex: 30,
+        width: 'clamp(140px, 28vw, 360px)',
+        height: 'auto',
+        maxHeight: 110,
+        zIndex: 0,
         display: 'block',
+        pointerEvents: 'none',
       }}
       aria-hidden="true"
     >
-      <path d="M0 110 Q180 30 360 130 L360 130 L0 130 Z" fill={NAVY} />
-      <path d="M0 94 Q180 14 360 114 L360 130 L0 130 Z" fill="none" stroke={HERO_GOLD} strokeWidth={16} strokeLinecap="round" />
+      <path d="M0 0 Q120 60 360 110 L0 110 Z" fill={NAVY} />
+      <path d="M0 0 Q120 60 360 110" fill="none" stroke={HERO_GOLD} strokeWidth={6} strokeLinecap="round" />
     </svg>
   )
 }
@@ -349,9 +353,9 @@ export default function HeroSection() {
   return (
     <section className="relative overflow-hidden" style={{ background: BG }}>
       <HeroBackground />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" style={{ zIndex: 10 }}>
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-28 lg:pb-32" style={{ zIndex: 10 }}>
         <div
-          className="hero-grid grid items-start gap-8 py-12 lg:py-16"
+          className="hero-grid grid items-start gap-8 pt-12 lg:pt-16"
           style={{ gridTemplateColumns: '1fr' }}
         >
           <div className="min-w-0 flex flex-col" style={{ zIndex: 10 }}>
