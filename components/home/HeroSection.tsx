@@ -336,6 +336,80 @@ function HeroImage() {
   )
 }
 
+function HeroVideo() {
+  const [mounted, setMounted] = React.useState(false)
+  const videoRef = React.useRef<HTMLVideoElement>(null)
+
+  React.useEffect(() => {
+    const widthOk = window.matchMedia('(min-width: 768px)').matches
+    const motionOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const nav = navigator as unknown as { connection?: { saveData?: boolean } }
+    const saveData = !!nav.connection?.saveData
+
+    if (widthOk && motionOk && !saveData) {
+      setMounted(true)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (!mounted) return
+    const video = videoRef.current
+    if (!video) return
+    const playPromise = video.play()
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay may be blocked by the browser; silent no-op.
+      })
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry) return
+        if (entry.isIntersecting) {
+          video.play().catch(() => {})
+        } else {
+          video.pause()
+        }
+      },
+      { threshold: 0 }
+    )
+    observer.observe(video)
+
+    return () => {
+      observer.disconnect()
+      video.pause()
+    }
+  }, [mounted])
+
+  if (!mounted) return null
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      aria-hidden="true"
+      tabIndex={-1}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        opacity: 0.14,
+        pointerEvents: 'none',
+        zIndex: 0,
+      }}
+    >
+      <source src="/videos/homepage.mp4" type="video/mp4" />
+    </video>
+  )
+}
+
 function BottomWave() {
   return (
     <svg
@@ -364,6 +438,17 @@ function BottomWave() {
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden" style={{ background: BG }}>
+      <HeroVideo />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          background: 'linear-gradient(to right, rgba(255,255,255,0.55), transparent)',
+        }}
+      />
       <HeroBackground />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-28 lg:pb-32 hero-content" style={{ zIndex: 10 }}>
         <div
