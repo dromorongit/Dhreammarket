@@ -189,7 +189,7 @@ function V1Flow({ userRole }: { userRole?: string | null }) {
   }, [])
 
   return (
-    <div className="fixed bottom-24 right-5 z-[55]">
+    <div className="fixed right-4 z-[45] bottom-[calc(88px+env(safe-area-inset-bottom))] md:bottom-20">
       {isOpen && (
         <div className="mb-4 w-[360px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col max-h-[500px]">
           <div className="bg-gradient-to-r from-deep-navy to-royal-blue text-white p-4 rounded-t-2xl flex items-center justify-between">
@@ -838,7 +838,7 @@ function V2Flow({ userRole }: { userRole?: string | null }) {
   )
 
   return (
-    <div className="fixed bottom-24 right-5 z-[55]">
+    <div className="fixed right-4 z-[45] bottom-[calc(88px+env(safe-area-inset-bottom))] md:bottom-20">
       {isOpen && (
         <div className="mb-4 w-[360px] max-w-[calc(100vw-40px)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col max-h-[500px]">
           <div className="bg-gradient-to-r from-deep-navy to-royal-blue text-white p-4 rounded-t-2xl flex items-center justify-between">
