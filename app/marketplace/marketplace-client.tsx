@@ -30,6 +30,7 @@ import WhatsAppFloatButton from '@/components/WhatsAppFloatButton'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
 import MarketplaceHero from '@/components/marketplace/MarketplaceHero'
 import { FiltersBackdrop } from '@/components/marketplace/FiltersBackdrop'
+import { ChipsScrollRow } from '@/components/marketplace/ChipsScrollRow'
 
 interface Product {
   id: string
@@ -806,12 +807,12 @@ function MarketplaceContent() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="relative isolate overflow-hidden pb-8 bg-[linear-gradient(180deg,#FFFFFF_0%,#EEF4FF_100%)]">
+        <div className="relative isolate overflow-hidden pl-6 pb-8 bg-[linear-gradient(180deg,#FFFFFF_0%,#EEF4FF_100%)]">
           <FiltersBackdrop />
 
           <div className="relative z-10 space-y-8">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="relative z-10 flex items-center gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -842,10 +843,10 @@ function MarketplaceContent() {
               </div>
             </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-24">
+            <div>
               {viewMode === 'products' && (
-                <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                <ChipsScrollRow>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -862,26 +863,26 @@ function MarketplaceContent() {
                     </div>
                   </Button>
                   {renderProductCategoryButtons(categories)}
-                </div>
+                </ChipsScrollRow>
               )}
 
               {viewMode === 'vendors' && vendorCategories.length > 0 && (
-                <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                <ChipsScrollRow>
                   <span className="text-sm font-bold text-deep-navy flex-shrink-0">Vendor Type:</span>
                   {renderVendorCategoryButtons(vendorCategories)}
-                </div>
+                </ChipsScrollRow>
               )}
 
               {viewMode === 'services' && (
-                <div className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory">
+                <ChipsScrollRow>
                   {renderServiceCategoryButtons(serviceCategories)}
-                </div>
+                </ChipsScrollRow>
               )}
             </div>
 
             {viewMode === 'products' && (
-              <div className="lg:col-span-4">
-                <div className="flex gap-3 flex-wrap lg:flex-col lg:flex-nowrap">
+              <div>
+                <div className="flex gap-3 flex-wrap lg:grid lg:grid-cols-2 lg:gap-3">
                   <div className="relative group flex-1 min-w-[150px]">
                     <select
                       value={productSortBy}

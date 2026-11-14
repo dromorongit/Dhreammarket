@@ -7,10 +7,10 @@ export function FiltersBackdrop() {
       className="absolute inset-0 z-0 pointer-events-none select-none hidden md:block"
     >
       <svg
-        className="absolute top-0 left-0 w-[320px] h-[180px]"
-        width="320"
-        height="180"
-        viewBox="0 0 320 180"
+        className="absolute top-[-40px] left-[-60px] w-[220px] h-[120px]"
+        width="220"
+        height="120"
+        viewBox="0 0 220 120"
         preserveAspectRatio="xMinYMin meet"
       >
         <defs>
@@ -19,7 +19,7 @@ export function FiltersBackdrop() {
             <stop offset="1" stopColor="#1D4ED8" />
           </linearGradient>
         </defs>
-        <path fill="url(#waveTopGrad)" fillOpacity={0.9} d="M 0 0 L 200 0 Q 260 60 200 140 L 40 120 Q 0 100 0 40 Z" />
+        <path fill="url(#waveTopGrad)" fillOpacity={0.9} d="M 0 0 L 150 0 Q 200 40 150 100 L 30 90 Q 0 70 0 30 Z" />
       </svg>
 
       <svg
