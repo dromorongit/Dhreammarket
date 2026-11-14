@@ -4,7 +4,7 @@ export function FiltersBackdrop() {
   return (
     <div
       aria-hidden="true"
-      className="absolute inset-0 -z-10 pointer-events-none select-none hidden md:block"
+      className="absolute inset-0 z-0 pointer-events-none select-none hidden md:block"
     >
       <svg
         className="absolute top-0 left-0 w-full h-[40%]"
