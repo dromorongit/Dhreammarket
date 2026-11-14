@@ -696,7 +696,7 @@ function MarketplaceContent() {
           key={cat.id}
           variant="ghost"
           size="sm"
-          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
           onClick={() => { setSelectedCategory(cat.id); syncFilterToUrl('category', cat.id) }}
         >
           <div className="flex flex-col items-center gap-1">
@@ -722,7 +722,7 @@ function MarketplaceContent() {
           key={vc.id}
           variant="ghost"
           size="sm"
-          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
           onClick={() => { setSelectedVendorCategory(vc.id); syncFilterToUrl('vendorCategory', vc.id) }}
         >
           <div className="flex flex-col items-center gap-1">
@@ -747,7 +747,7 @@ function MarketplaceContent() {
           key={cat.id}
           variant="ghost"
           size="sm"
-          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+          className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] snap-start items-center ${selected ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
           onClick={() => { setSelectedServiceCategory(cat.id); syncFilterToUrl('serviceCategory', cat.id) }}
         >
           <div className="flex flex-col items-center gap-1">
@@ -810,13 +810,13 @@ function MarketplaceContent() {
         <div className="relative isolate overflow-hidden pl-6 pb-8 bg-[linear-gradient(180deg,#FFFFFF_0%,#EEF4FF_100%)]">
           <FiltersBackdrop />
 
-          <div className="relative z-10 space-y-8">
+          <div className="relative z-10 pt-6 space-y-8">
             <div className="flex items-center justify-between">
               <div className="relative z-10 flex items-center gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 ${viewMode === 'products' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] ${viewMode === 'products' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
                   onClick={() => setViewMode('products')}
                 >
                   Products
@@ -825,7 +825,7 @@ function MarketplaceContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 ${viewMode === 'services' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] ${viewMode === 'services' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
                   onClick={() => setViewMode('services')}
                 >
                   Services
@@ -834,7 +834,7 @@ function MarketplaceContent() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 ${viewMode === 'vendors' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                  className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] ${viewMode === 'vendors' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
                   onClick={() => setViewMode('vendors')}
                 >
                   Vendors
@@ -843,14 +843,14 @@ function MarketplaceContent() {
               </div>
             </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-24">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-24">
             <div>
               {viewMode === 'products' && (
                 <ChipsScrollRow>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 snap-start items-center ${selectedCategory === '' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white shadow-[0_0_12px_rgba(11,92,255,0.35)]' : 'bg-white text-deep-navy shadow-sm'}`}
+                    className={`rounded-[28px] whitespace-nowrap min-h-[52px] px-6 py-3 flex-shrink-0 shadow-sm hover:shadow-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] snap-start items-center ${selectedCategory === '' ? 'bg-gradient-to-r from-[#0B5CFF] to-[#0A3FB8] text-white' : 'bg-white text-deep-navy shadow-sm'}`}
                     onClick={() => { setSelectedCategory(''); syncFilterToUrl('category', '') }}
                   >
                     <div className="flex flex-col items-center gap-1">
@@ -881,7 +881,7 @@ function MarketplaceContent() {
             </div>
 
             {viewMode === 'products' && (
-              <div>
+              <div className="pr-4">
                 <div className="flex gap-3 flex-wrap lg:grid lg:grid-cols-2 lg:gap-3">
                   <div className="relative group flex-1 min-w-[150px]">
                     <select

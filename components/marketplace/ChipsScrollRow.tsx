@@ -79,11 +79,11 @@ export function ChipsScrollRow({ children }: ChipsScrollRowProps) {
       )}
 
       {canScrollLeft && (
-        <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[48px] pointer-events-none bg-gradient-to-r from-[#FFFFFF] to-transparent" />
+        <div className="hidden md:block absolute left-0 top-0 bottom-0 w-[56px] pointer-events-none bg-gradient-to-r from-[#F5F8FF] to-transparent" />
       )}
 
       {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-[48px] pointer-events-none bg-gradient-to-l from-[#FFFFFF] to-transparent" />
+        <div className="absolute right-0 top-0 bottom-0 w-[56px] pointer-events-none bg-gradient-to-l from-[#F5F8FF] to-transparent" />
       )}
     </div>
   )
