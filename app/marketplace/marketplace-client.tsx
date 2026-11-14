@@ -812,7 +812,7 @@ function MarketplaceContent() {
 
           <div className="relative z-10 pt-6 space-y-8">
             <div className="flex items-center justify-between">
-              <div className="relative z-10 flex items-center gap-3">
+              <ChipsScrollRow>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -840,7 +840,7 @@ function MarketplaceContent() {
                   Vendors
                   <span className={`ml-2 text-xs ${viewMode === 'vendors' ? 'opacity-100' : 'text-slate-500 opacity-90'}`}>({totalVendorCount})</span>
                 </Button>
-              </div>
+              </ChipsScrollRow>
             </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-24">
@@ -954,6 +954,8 @@ function MarketplaceContent() {
               </>
             )}
           </div>
+          </div>
+      </div>
 
           {viewMode === 'products' ? (
             sortedProducts.length === 0 ? (
@@ -1197,8 +1199,6 @@ function MarketplaceContent() {
               </div>
             </div>
           )}
-        </div>
-      </div>
     </div>
     </div>
   )
