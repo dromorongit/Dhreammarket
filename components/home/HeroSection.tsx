@@ -3,7 +3,10 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-import { FaShoppingCart, FaStore } from 'react-icons/fa'
+import { FaArrowRight, FaHandshake, FaShoppingBag } from 'react-icons/fa'
+import { LuShoppingCart, LuStore } from 'react-icons/lu'
+import { PiShieldCheckFill } from 'react-icons/pi'
+import { TbTruckDelivery } from 'react-icons/tb'
 import { RecentActivityTicker } from '@/components/RecentActivityTicker'
 
 const NAVY = '#001A40'
@@ -35,12 +38,7 @@ function Pill() {
         whiteSpace: 'nowrap',
       }}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ color: BUTTON_BLUE }}>
-        <path
-          fill="currentColor"
-          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-        />
-      </svg>
+      <FaShoppingBag size={20} color={BUTTON_BLUE} aria-hidden="true" />
       Buy &bull; Sell &bull; Grow
     </div>
   )
@@ -48,46 +46,46 @@ function Pill() {
 
 function HeroHeading() {
   return (
-    <div style={{ position: 'relative', display: 'inline-block', maxWidth: 900, marginBottom: 20 }}>
-      <h1
-        style={{
-          fontFamily: '"Source Serif 4", serif',
-          fontWeight: 800,
-          fontSize: 'clamp(2.5rem, 6vw, 5.5rem)',
-          lineHeight: 1.1,
-          letterSpacing: '-0.01em',
-          color: NAVY,
-          margin: 0,
-          display: 'block',
-        }}
-      >
+    <h1
+      style={{
+        fontFamily: '"Source Serif 4", serif',
+        fontWeight: 800,
+        fontSize: 'clamp(1.9rem, 4.6vw, 4.5rem)',
+        lineHeight: 1.1,
+        letterSpacing: '-0.01em',
+        color: NAVY,
+        margin: 0,
+        display: 'block',
+      }}
+    >
+      <span className="hero-line" style={{ display: 'block', color: NAVY }}>
         Powering Digital Trade
-        <br />
-        <span style={{ color: NAVY }}>The </span>
-        <span style={{ color: HERO_GOLD }}>Smart Way</span>
-      </h1>
-      <svg
-        width="220"
-        height="44"
-        style={{
-          position: 'absolute',
-          left: '52%',
-          bottom: -14,
-          transform: 'translateX(-50%)',
-          overflow: 'visible',
-        }}
-        aria-hidden="true"
-      >
-        <path
-          d="M10 36 Q 70 12 210 38"
-          fill="none"
-          stroke={HERO_GOLD}
-          strokeWidth={5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
+      </span>
+      <span className="hero-line" style={{ display: 'block', color: NAVY, position: 'relative' }}>
+        The <span style={{ color: HERO_GOLD }}>Smart Way</span>
+        <svg
+          width="220"
+          height="44"
+          style={{
+            position: 'absolute',
+            left: '3.2em',
+            bottom: -14,
+            overflow: 'visible',
+            pointerEvents: 'none',
+          }}
+          aria-hidden="true"
+        >
+          <path
+            d="M10 36 Q 70 12 210 38"
+            fill="none"
+            stroke={HERO_GOLD}
+            strokeWidth={5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    </h1>
   )
 }
 
@@ -100,6 +98,7 @@ function Subtext() {
         lineHeight: 1.5,
         color: SUBTEXT,
         margin: 0,
+        marginTop: '1.25rem',
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
         fontWeight: 400,
       }}
@@ -131,13 +130,9 @@ function Buttons() {
             boxShadow: '0 4px 12px rgba(0,57,156,0.35)',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 3h2l.4 2M7 13h10l4-8M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6M8 13H5l1.5-3M19 13l-1.5-3M17 13v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6" />
-          </svg>
+          <LuShoppingCart size={24} color="#fff" aria-hidden="true" />
           Start Selling
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 2 }}>
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
+          <FaArrowRight size={18} color="#fff" aria-hidden="true" style={{ marginLeft: 2 }} />
         </a>
       </Link>
       <Link href="/marketplace">
@@ -159,9 +154,7 @@ function Buttons() {
             fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 3v18h18V3H3zM3 9h18v3H3V9zM9 21V9h6v12H9z" />
-          </svg>
+          <LuStore size={24} color={BUTTON_BLUE} aria-hidden="true" />
           Shop Now
         </a>
       </Link>
@@ -173,36 +166,44 @@ function TrustItem({ icon, label1, label2 }: { icon: React.ReactNode; label1: st
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
-      <div style={{ textAlign: 'center', color: TRUST_TEXT, fontSize: 'clamp(0.85rem, 1.4vw, 1rem)', lineHeight: 1.3, fontWeight: 500, fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>{label1}</div>
-      <div style={{ textAlign: 'center', color: TRUST_TEXT, fontSize: 'clamp(0.85rem, 1.4vw, 1rem)', lineHeight: 1.3, fontWeight: 500, fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif' }}>{label2}</div>
+      <div
+        style={{
+          textAlign: 'center',
+          color: TRUST_TEXT,
+          fontSize: 'clamp(0.85rem, 1.4vw, 1rem)',
+          lineHeight: 1.3,
+          fontWeight: 500,
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        }}
+      >
+        {label1}
+      </div>
+      <div
+        style={{
+          textAlign: 'center',
+          color: TRUST_TEXT,
+          fontSize: 'clamp(0.85rem, 1.4vw, 1rem)',
+          lineHeight: 1.3,
+          fontWeight: 500,
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+        }}
+      >
+        {label2}
+      </div>
     </div>
   )
 }
 
 function TrustRow() {
-  const shield = (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={BUTTON_BLUE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l3.78 4.58c0.58 0.7 0.9 1.6 0.9 2.6V12c0 3.39-1.84 5.76-4.68 6.94A9.2 9.2 0 0 1 12 20c-2.43 0-4.64-0.97-6.22-2.6C5.84 17.76 4 15.39 4 12V9.18c0-1 0.32-1.9 0.9-2.6L12 2z" />
-    </svg>
-  )
-  const handshake = (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={BUTTON_BLUE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 9V5l-3-3-3 3v4M7 9l2 2 4-4m6 6l-2-2-4 4m0 0l2 2 4-4" />
-    </svg>
-  )
-  const truck = (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={BUTTON_BLUE} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 18V13H4v5M4 13V6h2l3-3h10l3 3h2M4 13h16v5H4z" />
-      <circle cx="7" cy="18" r="2" />
-      <circle cx="17" cy="18" r="2" />
-    </svg>
-  )
+  const shield = <PiShieldCheckFill size={40} color={BUTTON_BLUE} aria-hidden="true" />
+  const handshake = <FaHandshake size={40} color={BUTTON_BLUE} aria-hidden="true" />
+  const truck = <TbTruckDelivery size={40} color={BUTTON_BLUE} aria-hidden="true" />
   return (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
       <TrustItem icon={shield} label1="Secure" label2="Transactions" />
-      <div style={{ width: 1, height: 44, background: DIVIDER }} />
+      <div style={{ width: 1, height: 48, background: DIVIDER }} />
       <TrustItem icon={handshake} label1="Trusted" label2="Vendors" />
-      <div style={{ width: 1, height: 44, background: DIVIDER }} />
+      <div style={{ width: 1, height: 48, background: DIVIDER }} />
       <TrustItem icon={truck} label1="Fast &amp; Reliable" label2="Delivery" />
     </div>
   )
@@ -289,8 +290,8 @@ function HeroImage() {
           position: 'absolute',
           left: '6%',
           top: '8%',
-          width: 64,
-          height: 64,
+          width: 80,
+          height: 80,
           background: '#fff',
           borderRadius: 18,
           boxShadow: '0 10px 30px rgba(15,35,80,0.12)',
@@ -300,15 +301,15 @@ function HeroImage() {
           zIndex: 2,
         }}
       >
-        <FaShoppingCart size={32} color="#001A40" />
+        <LuShoppingCart size={40} color={NAVY} aria-hidden="true" />
       </div>
       <div
         style={{
           position: 'absolute',
           right: '4%',
           top: '18%',
-          width: 64,
-          height: 64,
+          width: 80,
+          height: 80,
           background: '#fff',
           borderRadius: 18,
           boxShadow: '0 10px 30px rgba(15,35,80,0.12)',
@@ -318,7 +319,7 @@ function HeroImage() {
           zIndex: 2,
         }}
       >
-        <FaStore size={32} color="#001A40" />
+        <LuStore size={40} color={BUTTON_BLUE} aria-hidden="true" />
       </div>
     </div>
   )
@@ -353,12 +354,18 @@ export default function HeroSection() {
           className="hero-grid grid items-start gap-8 py-12 lg:py-16"
           style={{ gridTemplateColumns: '1fr' }}
         >
-          <div className="min-w-0 flex flex-col gap-6" style={{ zIndex: 10 }}>
+          <div className="min-w-0 flex flex-col" style={{ zIndex: 10 }}>
             <Pill />
-            <HeroHeading />
-            <Subtext />
-            <Buttons />
-            <TrustRow />
+            <div style={{ marginTop: 24 }}>
+              <HeroHeading />
+              <Subtext />
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <Buttons />
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <TrustRow />
+            </div>
           </div>
           <div className="min-w-0 flex justify-center lg:justify-end" style={{ zIndex: 1 }}>
             <HeroImage />
@@ -379,9 +386,14 @@ export default function HeroSection() {
         <RecentActivityTicker variant="hero" />
       </div>
       <style jsx>{`
+        @media (min-width: 768px) {
+          .hero-line {
+            white-space: nowrap;
+          }
+        }
         @media (min-width: 1024px) {
           .hero-grid {
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) !important;
+            grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr) !important;
             gap: 3rem;
             align-items: center;
           }
