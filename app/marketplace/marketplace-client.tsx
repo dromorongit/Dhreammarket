@@ -173,7 +173,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
             productId={product.id}
             initialIsWishlisted={isWishlisted}
             size="sm"
-            className="absolute top-2 right-2 z-10 w-9 h-9"
+            className="absolute top-2 right-2 z-10 w-9 h-9 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2"
           />
           {(product.images?.length ?? 0) > 0 ? (
             <Image
@@ -255,7 +255,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
         <Button
           size="sm"
           variant="primary"
-          className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1"
+          className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed"
           disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
           onClick={() => onAddToCart(product.id, product.name, product.price)}
         >
@@ -271,7 +271,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
                   : 'Out of Stock'}
         </Button>
         <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
-          <Button variant="outline" size="sm" className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1 text-deep-navy border-deep-navy/50">
+          <Button variant="outline" size="sm" className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1 text-deep-navy border-deep-navy/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed">
             <FaEye className="w-4 h-4 mr-1.5" />
             View Details
           </Button>
