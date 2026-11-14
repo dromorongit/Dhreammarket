@@ -14,8 +14,8 @@ import { formatPrice } from '@/lib/currency'
 import { truncateVendorName } from '@/lib/utils'
 import { getVendorBadgeInfo } from '@/lib/vendor-badge'
 import { getOptimizedCloudinaryUrl } from '@/lib/cloudinary-image'
-import { MdVerified } from 'react-icons/md'
-import { FaChevronDown } from 'react-icons/fa'
+import { MdStore, MdVerified } from 'react-icons/md'
+import { FaChevronDown, FaEye, FaShoppingCart } from 'react-icons/fa'
 import { dispatchCartUpdate, handleAuthRedirect, logCartRequest } from '@/lib/CartContext'
 import { event } from '@/lib/gtag'
 import { ProductBadges, calculateProductBadges } from '@/components/ProductBadges'
@@ -164,41 +164,42 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
 
   return (
     <Card
-      variant="elevated"
-      className="group flex flex-col overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full p-0 border border-gold/20 hover:border-gold/50"
+      variant="default"
+      className="flex flex-col h-full bg-white border-none rounded-[22px] shadow-[0_8px_24px_rgba(15,35,80,0.08)] p-3 sm:p-3.5 hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
     >
       <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="block">
-        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden -m-px">
+        <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden rounded-[16px] -m-px">
           <WishlistButton
             productId={product.id}
             initialIsWishlisted={isWishlisted}
             size="sm"
-            className="absolute top-2 right-2 z-10"
+            className="absolute top-2 right-2 z-10 w-9 h-9"
           />
           {(product.images?.length ?? 0) > 0 ? (
             <Image
               src={getOptimizedCloudinaryUrl(product.images![0].url, 400)}
               alt={product.images![0].alt || product.name}
-               className="object-cover group-hover:scale-105 transition-transform duration-500"
+              className="absolute inset-0 w-full h-full object-cover rounded-[16px] group-hover:scale-105 transition-transform duration-500"
               fill
               loading="lazy"
-               sizes={CARD_IMAGE_SIZES_6COL}
+              sizes={CARD_IMAGE_SIZES_6COL}
               placeholder="blur"
               blurDataURL={getBlurDataURL()}
-             unoptimized />
+              unoptimized
+            />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-100 rounded-[16px]">
               <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-              <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors">
-                Quick View
-              </Link>
-            </div>
-            <ProductBadges product={calculateProductBadges({
+          )}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+            <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="inline-flex items-center justify-center bg-black/70 hover:bg-black/80 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-colors">
+              Quick View
+            </Link>
+          </div>
+          <ProductBadges product={calculateProductBadges({
             price: product.price,
             flashSalePrice: product.flashSalePrice,
             salesPrice: product.salesPrice,
@@ -212,12 +213,12 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
           })} />
         </div>
       </Link>
-      <div className="p-2 space-y-1 flex-1 flex flex-col">
-        <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-700 transition-colors leading-tight">
+      <div className="flex-1 flex flex-col space-y-1">
+        <h3 className="text-[0.9rem] sm:text-sm font-bold text-deep-navy line-clamp-2 leading-tight">
           {product.name}
         </h3>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-bold text-royal-blue">
+          <span className="text-[11px] font-bold text-[#0B5CFF]">
             {formatPrice(effectivePrice)}
           </span>
           {discountPercentage > 0 && (
@@ -228,7 +229,8 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
         </div>
         {product.store && (
           <div className="flex items-center gap-1 min-w-0">
-            <p className="text-[10px] text-slate-500 truncate">
+            <MdStore className="w-3 h-3 flex-shrink-0 text-deep-navy" />
+            <p className="text-[10px] font-medium text-deep-navy truncate">
               {product.store.name}
             </p>
             {(() => {
@@ -248,31 +250,34 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
             })()}
           </div>
         )}
-        <div className="flex flex-col gap-1 pt-0.5">
-          <Button
-            size="sm"
-            className="w-full h-7 text-[11px] px-2 py-1 rounded-lg"
-            disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
-            onClick={() => onAddToCart(product.id, product.name, product.price)}
-          >
-            {isAdding
-              ? '...'
-              : product.availabilityType === 'PREORDER'
-                ? 'Pre-order'
-                : product.availabilityType === 'BACKORDER'
-                  ? 'Backorder'
-                  : product.stock > 0
-                    ? 'Add to Cart'
-                    : 'Out of Stock'}
+      </div>
+      <div className="mt-auto flex flex-col gap-2 w-full">
+        <Button
+          size="sm"
+          variant="primary"
+          className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1"
+          disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
+          onClick={() => onAddToCart(product.id, product.name, product.price)}
+        >
+          <FaShoppingCart className="w-4 h-4 mr-1.5" />
+          {isAdding
+            ? '...'
+            : product.availabilityType === 'PREORDER'
+              ? 'Pre-order'
+              : product.availabilityType === 'BACKORDER'
+                ? 'Backorder'
+                : product.stock > 0
+                  ? 'Add to Cart'
+                  : 'Out of Stock'}
+        </Button>
+        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
+          <Button variant="outline" size="sm" className="w-full h-10 sm:h-[44px] rounded-full text-xs px-3 py-1 text-deep-navy border-deep-navy/50">
+            <FaEye className="w-4 h-4 mr-1.5" />
+            View Details
           </Button>
-          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
-            <Button variant="outline" size="sm" className="w-full h-7 text-[11px] px-2 py-1 rounded-lg">
-              View Details
-            </Button>
-          </Link>
-        </div>
-          <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
-          <NonReturnableBadge isReturnable={product.isReturnable} />
+        </Link>
+        <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
+        <NonReturnableBadge isReturnable={product.isReturnable} compact />
       </div>
     </Card>
   )
