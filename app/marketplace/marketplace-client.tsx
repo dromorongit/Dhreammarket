@@ -214,7 +214,7 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
         </div>
       </Link>
       <div className="flex-1 flex flex-col space-y-1 mt-2.5">
-        <h3 className="text-[13px] sm:text-[13.5px] font-bold text-deep-navy line-clamp-2 leading-snug">
+        <h3 className="text-[13px] sm:text-[13.5px] font-bold text-deep-navy line-clamp-2 leading-snug min-h-[2.7em]">
           {product.name}
         </h3>
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -251,33 +251,37 @@ const MarketplaceProductCard = memo(function MarketplaceProductCard({
           </div>
         )}
       </div>
-      <div className="mt-auto flex flex-col gap-2 w-full">
-        <Button
-          size="sm"
-          variant="primary"
-          className="w-full h-[34px] sm:h-9 rounded-full text-[13px] sm:text-sm font-semibold px-3 py-0 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-          disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
-          onClick={() => onAddToCart(product.id, product.name, product.price)}
-        >
-          <FaShoppingCart className="w-[15px] h-[15px] flex-shrink-0" />
-          {isAdding
-            ? '...'
-            : product.availabilityType === 'PREORDER'
-              ? 'Pre-order'
-              : product.availabilityType === 'BACKORDER'
-                ? 'Backorder'
-                : product.stock > 0
-                  ? 'Add to Cart'
-                  : 'Out of Stock'}
-        </Button>
-        <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
-          <Button variant="outline" size="sm" className="w-full h-[34px] sm:h-9 rounded-full text-[13px] sm:text-sm font-semibold px-3 py-0 text-deep-navy border-deep-navy/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
-            <FaEye className="w-[15px] h-[15px] flex-shrink-0" />
-            View Details
+      <div className="mt-auto w-full">
+        <div className="flex flex-col gap-2 w-full">
+          <Button
+            size="sm"
+            variant="primary"
+            className="w-full h-8 sm:h-9 rounded-full text-[12px] sm:text-[12.5px] font-semibold px-3 py-0 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
+            disabled={((product.stock - (product.reservedQuantity || 0)) <= 0 && product.availabilityType === 'IN_STOCK') || isAdding}
+            onClick={() => onAddToCart(product.id, product.name, product.price)}
+          >
+            <FaShoppingCart className="w-[15px] h-[15px] flex-shrink-0" />
+            {isAdding
+              ? '...'
+              : product.availabilityType === 'PREORDER'
+                ? 'Pre-order'
+                : product.availabilityType === 'BACKORDER'
+                  ? 'Backorder'
+                  : product.stock > 0
+                    ? 'Add to Cart'
+                    : 'Out of Stock'}
           </Button>
-        </Link>
-        <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
-        <NonReturnableBadge isReturnable={product.isReturnable} compact />
+          <Link href={`/marketplace/product/${product.slug ?? product.id}`} className="w-full">
+            <Button variant="outline" size="sm" className="w-full h-8 sm:h-9 rounded-full text-[12px] sm:text-[12.5px] font-semibold px-3 py-0 text-deep-navy border-deep-navy/50 focus:ring-0 focus-visible:ring-2 focus-visible:ring-[#0B5CFF] focus-visible:ring-offset-2 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+              <FaEye className="w-[15px] h-[15px] flex-shrink-0" />
+              View Details
+            </Button>
+          </Link>
+        </div>
+        <div className="mt-2 min-h-[44px] flex flex-col gap-0.5">
+          <ProductStockIndicator stock={product.stock} reservedQuantity={product.reservedQuantity} availabilityType={product.availabilityType} />
+          <NonReturnableBadge isReturnable={product.isReturnable} compact />
+        </div>
       </div>
     </Card>
   )
