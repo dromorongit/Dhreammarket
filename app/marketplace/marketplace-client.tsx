@@ -819,7 +819,7 @@ function MarketplaceContent() {
         <div className="relative isolate overflow-hidden pl-6 pb-8 bg-[linear-gradient(180deg,#FFFFFF_0%,#EEF4FF_100%)]">
           <FiltersBackdrop />
 
-          <div className="relative z-10 pt-6 space-y-8">
+          <div className="relative z-10 pt-6 space-y-4 md:space-y-8 pb-20">
             <div className="flex items-center justify-between">
               <ChipsScrollRow showArrows={false}>
                 <Button

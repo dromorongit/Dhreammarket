@@ -52,9 +52,12 @@ export function ChipsScrollRow({ children, showArrows = true }: ChipsScrollRowPr
     <div className="relative z-10">
       <div
         ref={scrollRef}
-        className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory"
+        className="flex items-center gap-4 pb-2 overflow-x-auto whitespace-nowrap flex-nowrap scrollbar-hide snap-x snap-mandatory touch-pan-x"
+        style={{ touchAction: 'pan-x' }}
       >
-        {children}
+        {React.Children.map(children, (child) =>
+          React.isValidElement(child) ? React.cloneElement(child, { className: `${child.props.className || ''} shrink-0 flex-shrink-0` }) : child
+        )}
       </div>
 
       {showArrows && canScrollLeft && (
