@@ -11,7 +11,7 @@ interface HeroVideoProps {
 
 const MOBILE_QUERY = '(max-width: 767px)'
 
-export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.3, blur = 0 }: HeroVideoProps) {
+export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.55, blur = 0 }: HeroVideoProps) {
   const [mounted, setMounted] = React.useState(false)
   const [preload, setPreload] = React.useState<'metadata' | 'auto'>('metadata')
   const videoRef = React.useRef<HTMLVideoElement>(null)

@@ -545,7 +545,7 @@ export default function HeroSection() {
         }
         @media (max-width: 767px) {
           .hero-video-overlay {
-            background: rgba(255, 255, 255, 0.35) !important;
+            background: rgba(255, 255, 255, 0.15) !important;
           }
         }
         .hero-video-overlay {
