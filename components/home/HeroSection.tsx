@@ -544,11 +544,8 @@ export default function HeroSection() {
           opacity: 0.14;
         }
         @media (max-width: 767px) {
-          .hero-video {
-            opacity: 0.18 !important;
-          }
           .hero-video-overlay {
-            background: rgba(255, 255, 255, 0.6) !important;
+            background: rgba(255, 255, 255, 0.35) !important;
           }
         }
         .hero-video-overlay {

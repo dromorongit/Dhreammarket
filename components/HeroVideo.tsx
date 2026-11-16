@@ -9,11 +9,12 @@ interface HeroVideoProps {
   blur?: number
 }
 
-export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 }: HeroVideoProps) {
+const MOBILE_QUERY = '(max-width: 767px)'
+
+export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.3, blur = 0 }: HeroVideoProps) {
   const [mounted, setMounted] = React.useState(false)
+  const [preload, setPreload] = React.useState<'metadata' | 'auto'>('metadata')
   const videoRef = React.useRef<HTMLVideoElement>(null)
-  const playRetried = React.useRef(false)
-  const retryListener = React.useRef<(() => void) | null>(null)
 
   React.useEffect(() => {
     const motionOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -21,6 +22,7 @@ export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 
     const saveData = !!nav.connection?.saveData
 
     if (motionOk && !saveData) {
+      setPreload(window.matchMedia(MOBILE_QUERY).matches ? 'auto' : 'metadata')
       setMounted(true)
     }
   }, [])
@@ -29,29 +31,55 @@ export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 
     if (!mounted) return
     const video = videoRef.current
     if (!video) return
-    const playPromise = video.play()
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        if (playRetried.current) return
-        playRetried.current = true
-        const retry = () => {
-          window.removeEventListener('touchstart', retry)
-          document.removeEventListener('visibilitychange', retry)
-          retryListener.current = null
-          video.play().catch(() => {})
-        }
-        retryListener.current = retry
-        window.addEventListener('touchstart', retry)
-        document.addEventListener('visibilitychange', retry)
-      })
+
+    let retryAttached = false
+
+    const detachRetry = () => {
+      if (!retryAttached) return
+      window.removeEventListener('touchstart', onRetry)
+      document.removeEventListener('visibilitychange', onRetry)
+      retryAttached = false
     }
+
+    const attachRetry = () => {
+      if (retryAttached) return
+      retryAttached = true
+      window.addEventListener('touchstart', onRetry)
+      document.addEventListener('visibilitychange', onRetry)
+    }
+
+    const attemptPlay = () => {
+      video.muted = true
+      video.defaultMuted = true
+      const playPromise = video.play()
+      if (playPromise === undefined) return
+      playPromise
+        .then(() => {
+          detachRetry()
+        })
+        .catch(() => {
+          attachRetry()
+        })
+    }
+
+    const onRetry = () => {
+      attemptPlay()
+    }
+
+    const onLoadedData = () => {
+      attemptPlay()
+    }
+
+    attemptPlay()
+    video.addEventListener('loadeddata', onLoadedData)
+    video.addEventListener('canplay', onLoadedData)
 
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0]
         if (!entry) return
         if (entry.isIntersecting) {
-          video.play().catch(() => {})
+          attemptPlay()
         } else {
           video.pause()
         }
@@ -62,11 +90,9 @@ export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 
 
     return () => {
       observer.disconnect()
-      if (retryListener.current) {
-        window.removeEventListener('touchstart', retryListener.current)
-        document.removeEventListener('visibilitychange', retryListener.current)
-        retryListener.current = null
-      }
+      detachRetry()
+      video.removeEventListener('loadeddata', onLoadedData)
+      video.removeEventListener('canplay', onLoadedData)
       video.pause()
     }
   }, [mounted])
@@ -81,7 +107,7 @@ export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 
       muted
       loop
       playsInline
-      preload="metadata"
+      preload={preload}
       aria-hidden="true"
       tabIndex={-1}
       style={{
@@ -102,6 +128,8 @@ export function HeroVideo({ src, opacity = 0.14, mobileOpacity = 0.18, blur = 0 
         @media (max-width: 767px) {
           .hero-video {
             opacity: ${mobileOpacity} !important;
+            filter: none !important;
+            transform: none !important;
           }
         }
       `}</style>

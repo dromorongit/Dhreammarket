@@ -259,7 +259,7 @@ function BottomWave() {
 export default function MarketplaceHero() {
   return (
     <section className="relative overflow-hidden" style={{ background: BG }}>
-      <HeroVideo src="/videos/newvideo.mp4" blur={3} opacity={0.08} mobileOpacity={0.12} />
+      <HeroVideo src="/videos/newvideo.mp4" blur={3} opacity={0.08} mobileOpacity={0.25} />
       <div
         className="hero-video-overlay"
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 1, background: OVERLAY }}
@@ -359,7 +359,7 @@ export default function MarketplaceHero() {
             padding-bottom: 1.5rem !important;
           }
           .hero-video-overlay {
-            background: rgba(255, 255, 255, 0.75) !important;
+            background: rgba(255, 255, 255, 0.35) !important;
           }
           .hero-trust-row {
             display: grid !important;
