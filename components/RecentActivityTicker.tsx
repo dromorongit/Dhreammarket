@@ -72,7 +72,7 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
   useEffect(() => {
     clearTimers()
 
-    if (activities.length <= 1 || prefersReducedMotion) {
+    if (activities.length <= 1) {
       setCurrentIndex(0)
       setIsVisible(true)
       return clearTimers
@@ -91,7 +91,7 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
     }, 30_000)
 
     return clearTimers
-  }, [activities.length, prefersReducedMotion, clearTimers])
+  }, [activities.length, clearTimers])
 
   const current = activities[currentIndex]
 
@@ -221,7 +221,7 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                transition: 'opacity 0.5s ease',
+                transition: prefersReducedMotion ? 'none' : 'opacity 0.5s ease',
                 opacity: isVisible ? 1 : 0,
               }}
             >
@@ -229,7 +229,7 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
             </p>
           </div>
         </div>
-            {activities.length > 1 && !prefersReducedMotion && (
+            {activities.length > 1 && (
               <div className="hero-ticker-pagination" style={{ display: 'flex', gap: 6 }}>
                 {activities.slice(0, dots).map((_, idx) => (
               <span
@@ -259,7 +259,7 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
           }
           @media (max-width: 767px) {
             .hero-ticker-section {
-              height: 40px !important;
+              height: 48px !important;
               padding: 0 12px !important;
             }
             .hero-ticker-label {
@@ -270,10 +270,14 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
               height: 8px !important;
             }
             .hero-ticker-message {
-              font-size: 0.8rem !important;
-              white-space: nowrap !important;
+              font-size: 0.75rem !important;
+              white-space: normal !important;
+              display: -webkit-box !important;
+              -webkit-line-clamp: 2 !important;
+              -webkit-box-orient: vertical !important;
               overflow: hidden !important;
               text-overflow: ellipsis !important;
+              line-height: 1.3 !important;
             }
             .hero-ticker-pagination {
               display: none !important;
@@ -302,14 +306,24 @@ export function RecentActivityTicker({ variant = 'default', label = 'LIVE ACTIVI
             <span className="h-3 w-px bg-slate-200 flex-shrink-0" aria-hidden="true" />
             <div className="overflow-hidden max-w-full">
               <p
-                className={`text-sm sm:text-base font-medium text-deep-navy truncate transition-opacity duration-500 ${
+                className={`text-sm sm:text-base font-medium text-deep-navy ${
                   isVisible ? 'opacity-100' : 'opacity-0'
                 }`}
+                style={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'normal',
+                  lineHeight: 1.3,
+                  transition: prefersReducedMotion ? 'none' : 'opacity 0.5s ease',
+                }}
               >
                 {current.message}
               </p>
             </div>
-            {activities.length > 1 && !prefersReducedMotion && (
+            {activities.length > 1 && (
               <div className="flex gap-1 flex-shrink-0 ml-1" aria-hidden="true">
                 {activities.slice(0, 5).map((_, idx) => (
                   <span
