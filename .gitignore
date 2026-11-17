@@ -67,3 +67,8 @@ Dhreamarket.zip
 /backups
 
 test_output.txt
+
+# env files
+.env
+.env.*
+!.env.example
