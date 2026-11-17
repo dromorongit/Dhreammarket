@@ -1,0 +1,58 @@
+npm notice run dhreammarket@1.0.0 npx
+npm notice run vitest run app/api/support-ai/config/route.test.ts components/support-ai/support-chat-widget.test.tsx app/api/support-ai/v2/escalate/route.test.ts
+
+ RUN  v4.1.10 C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market
+
+ ❯ components/support-ai/support-chat-widget.test.tsx (0 test)
+ ❯ app/api/support-ai/config/route.test.ts (0 test)
+ ❯ app/api/support-ai/v2/escalate/route.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/support-ai/support-chat-widget.test.tsx [ components/support-ai/support-chat-widget.test.tsx ]
+Error: Failed to parse source for import analysis because the content contains invalid JS syntax. If you use tsconfig.json, make sure to not set jsx to preserve.
+  Plugin: vite:import-analysis
+  File: C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/components/support-ai/support-chat-message.tsx:38:20
+  15 |                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  16 |                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9...
+  17 |                </svg>
+     |                      ^
+  18 |              </div>
+  19 |              <span className="text-[11px] font-semibold text-royal-blue">Dhream Market Support AI</span>
+ ❯ TransformPluginContext._formatLog ../../../../Dromor%20Narh/Desktop/GithubRepos/Dhream%20Market/node_modules/vite/dist/node/chunks/node.js:30416:39
+ ❯ TransformPluginContext.error ../../../../Dromor%20Narh/Desktop/GithubRepos/Dhream%20Market/node_modules/vite/dist/node/chunks/node.js:30413:14
+ ❯ TransformPluginContext.transform ../../../../Dromor%20Narh/Desktop/GithubRepos/Dhream%20Market/node_modules/vite/dist/node/chunks/node.js:27402:10
+ ❯ EnvironmentPluginContainer.transform ../../../../Dromor%20Narh/Desktop/GithubRepos/Dhream%20Market/node_modules/vite/dist/node/chunks/node.js:30201:14
+ ❯ loadAndTransform ../../../../Dromor%20Narh/Desktop/GithubRepos/Dhream%20Market/node_modules/vite/dist/node/chunks/node.js:20124:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  app/api/support-ai/config/route.test.ts [ app/api/support-ai/config/route.test.ts ]
+Error: Cannot find package 'next/server' imported from C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/app/api/support-ai/config/route.ts
+ ❯ app/api/support-ai/config/route.ts:1:1
+      1| import { NextRequest, NextResponse } from 'next/server'
+       | ^
+      2| import { getServerSession } from '@/lib/auth'
+      3| import { getPrisma } from '@/lib/prisma'
+ ❯ app/api/support-ai/config/route.test.ts:2:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  app/api/support-ai/v2/escalate/route.test.ts [ app/api/support-ai/v2/escalate/route.test.ts ]
+Error: Cannot find package 'next/server' imported from C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/app/api/support-ai/v2/escalate/route.ts
+ ❯ app/api/support-ai/v2/escalate/route.ts:1:1
+      1| import { NextRequest, NextResponse } from 'next/server'
+       | ^
+      2| import { rateLimit } from '@/lib/rate-limit'
+      3| import { getServerSession } from '@/lib/auth'
+ ❯ app/api/support-ai/v2/escalate/route.test.ts:2:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  no tests
+   Start at  23:27:00
+   Duration  25.86s (transform 2.83s, setup 0ms, import 0ms, tests 0ms, environment 1ms)
+
+EXIT:0 

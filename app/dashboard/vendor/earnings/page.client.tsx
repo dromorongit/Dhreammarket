@@ -283,9 +283,10 @@ export default function VendorEarningsPageClient() {
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Order</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Product</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Gross</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Commission</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Your Earnings</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Gross</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Payment fee</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Commission</th>
+                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Your Earnings</th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
                         </tr>
                       </thead>
@@ -298,12 +299,15 @@ export default function VendorEarningsPageClient() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <p className="text-slate-700">{item.product.name}</p>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <p className="text-slate-700">{formatPrice(item.grossAmount)}</p>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <p className="text-royal-blue">{formatPrice(item.platformCommission)}</p>
-                            </td>
+                             <td className="px-6 py-4 whitespace-nowrap">
+                               <p className="text-slate-700">{formatPrice(item.grossAmount)}</p>
+                             </td>
+                             <td className="px-6 py-4 whitespace-nowrap">
+                               <p className="text-slate-700">{formatPrice(item.processorFee ?? 0)}</p>
+                             </td>
+                             <td className="px-6 py-4 whitespace-nowrap">
+                               <p className="text-royal-blue">{formatPrice(item.platformCommission)} {item.commissionRate === 0 ? '(0% (WhatsApp/manual order))' : `(${(item.commissionRate * 100).toFixed(0)}%)`}</p>
+                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <p className="font-medium text-emerald-600">{formatPrice(item.vendorEarnings)}</p>
                             </td>

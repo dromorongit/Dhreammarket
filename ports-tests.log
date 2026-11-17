@@ -1,0 +1,17 @@
+﻿node.exe : npm notice run dhreammarket@1.0.0 npx
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Dromor Narh\AppData\Ro ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm notice run dhreammarket@1.0.0 npx:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm notice run vitest run lib/support-ai-v2/ports.test.ts
+
+ RUN  v4.1.10 C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  12:10:17
+   Duration  14.00s (transform 3.63s, setup 0ms, import 6.11s, tests 177ms, environment 0ms)
+

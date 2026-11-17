@@ -17,9 +17,21 @@ describe('PayLinkButton', () => {
   it('renders when payLinkEnabled prop is true even if NEXT_PUBLIC flag is unset', () => {
     const s = src()
     expect(s).toContain('payLinkEnabled?')
-    expect(s).toContain("process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'")
-    expect(s).toContain("const enabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'")
+    expect(s).toContain("process.env.NEXT_PUBLIC_PAYLINK_ENABLED !== 'false'")
+    expect(s).toContain("const enabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED !== 'false'")
     expect(s).toContain('Send pay link')
+  })
+
+  it('enabled when flag is unset (undefined !== false)', () => {
+    expect(src()).toContain("process.env.NEXT_PUBLIC_PAYLINK_ENABLED !== 'false'")
+  })
+
+  it("enabled when flag is 'true'", () => {
+    expect(src()).toContain("process.env.NEXT_PUBLIC_PAYLINK_ENABLED !== 'false'")
+  })
+
+  it("disabled when flag is 'false'", () => {
+    expect(src()).toContain("process.env.NEXT_PUBLIC_PAYLINK_ENABLED !== 'false'")
   })
 
   it('shows Resend pay link when payLinkSent is true', () => {
@@ -32,4 +44,3 @@ describe('PayLinkButton', () => {
     expect(s).toContain("status !== 'CANCELLED'")
   })
 })
-

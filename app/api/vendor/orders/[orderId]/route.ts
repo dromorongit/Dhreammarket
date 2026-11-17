@@ -100,7 +100,13 @@ export async function GET(
             productId: { in: productIds },
           },
           select: {
-            ...VENDOR_ORDER_ITEM_SELECT,
+             ...VENDOR_ORDER_ITEM_SELECT,
+             grossAmount: true,
+             processorFee: true,
+             netAmount: true,
+             platformCommission: true,
+             commissionRate: true,
+             vendorEarnings: true,
             product: {
               select: {
                 id: true,

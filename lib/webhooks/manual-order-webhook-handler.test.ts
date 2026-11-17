@@ -281,4 +281,46 @@ describe('handleManualOrderWebhook', () => {
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
   })
+
+  it('records needs-review when the reference matches no payment row', async () => {
+    mocks.paymentFindUnique.mockResolvedValue(null)
+    mocks.verifyPaystackPayment.mockResolvedValue(paystackData({ data: { ...paystackData().data, metadata: {} } }))
+    const response = await handleManualOrderWebhook(bodyWith('MAN-ORPHAN'), sign(bodyWith('MAN-ORPHAN')))
+    const json = await response.json()
+    expect(response.status).toBe(200)
+    expect(json.needsAttention).toBe(true)
+    expect(json.reason).toBe('payment-not-found')
+    expect(mocks.orderUpdateMany).not.toHaveBeenCalled()
+  })
+
+  it('records needs-review for a cancelled order and notifies vendor and admin', async () => {
+    mocks.paymentFindUnique.mockResolvedValue({
+      ...paymentRow(),
+      order: orderRow({ status: 'CANCELLED', paymentStatus: 'PENDING' }),
+    })
+    const response = await handleManualOrderWebhook(bodyWith('MAN-REF'), sign(bodyWith('MAN-REF')))
+    const json = await response.json()
+    expect(response.status).toBe(200)
+    expect(json.reason).toBe('order-finalized')
+    expect(mocks.orderUpdateMany).not.toHaveBeenCalled()
+    expect(mocks.notificationCreate).toHaveBeenCalledWith(
+      'vendor_1',
+      'ORDER_STATUS_UPDATED',
+      expect.any(String),
+      expect.stringContaining('MAN-REF')
+    )
+  })
+
+  it('records needs-review when the order is already PAID under a different reference', async () => {
+    mocks.paymentFindUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ ...paymentRow({ reference: 'MAN-OTHER' }), order: orderRow({ paymentStatus: 'PAID' }) })
+    mocks.verifyPaystackPayment.mockResolvedValue(paystackData())
+    const response = await handleManualOrderWebhook(bodyWith('MAN-REF'), sign(bodyWith('MAN-REF')))
+    const json = await response.json()
+    expect(response.status).toBe(200)
+    expect(json.needsAttention).toBe(true)
+    expect(json.reason).toBe('replaced-reference')
+    expect(mocks.orderUpdateMany).not.toHaveBeenCalled()
+  })
 })

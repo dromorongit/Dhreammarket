@@ -1,0 +1,17 @@
+﻿node.exe : npm notice run dhreammarket@1.0.0 npx
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Dromor Narh\AppData\Ro ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm notice run dhreammarket@1.0.0 npx:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm notice run vitest run prisma/__tests__/support-seed-non-policy.test.ts
+
+ RUN  v4.1.10 C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  12:15:00
+   Duration  22.00s (transform 1.42s, setup 0ms, import 7.39s, tests 117ms, environment 0ms)
+

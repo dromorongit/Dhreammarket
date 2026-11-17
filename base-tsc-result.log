@@ -1,0 +1,1208 @@
+npm notice run dhreammarket@1.0.0 npx
+npm notice run tsc --noEmit
+app/about/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/admin/holidays/page.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/holidays/page.tsx(11,7): error TS18047: 'session' is possibly 'null'.
+app/admin/support-docs/[id]/edit/page.tsx(3,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/support-docs/[id]/edit/page.tsx(15,30): error TS18047: 'session' is possibly 'null'.
+app/admin/support-docs/create-form.tsx(3,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/support-docs/create/page.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/support-docs/create/page.tsx(12,30): error TS18047: 'session' is possibly 'null'.
+app/admin/support-docs/edit-form.tsx(3,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/support-docs/new-version-button.tsx(3,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/support-docs/page.tsx(3,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/support-docs/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/admin/support-docs/page.tsx(29,30): error TS18047: 'session' is possibly 'null'.
+app/admin/support-docs/TransitionButton.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/waitlist/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/admin/waitlist/page.tsx(2,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/api/account/avatar/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/account/change-password/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/account/deactivate/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/account/delete/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/account/logout-all/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/account/sessions/[id]/revoke/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/account/sessions/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/advertisements/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/advertisements/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/analytics/demand/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/analytics/fulfillment/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/analytics/restock/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/audit-logs/purge/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/audit-logs/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/cleanup-pending/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/emails/failed/[id]/retry/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/emails/failed/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/holidays/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/orders/[id]/items/[itemId]/confirm-delivery/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/orders/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/orders/cleanup-stale/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/orders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/payments/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/products/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/refund-requests/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/refunds/[id]/check-status/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/refunds/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/return-decisions/[returnId]/close/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/return-decisions/[returnId]/escalate/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/return-decisions/[returnId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/service-categories/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/service-categories/reorder/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/service-categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/service-requests/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/service-requests/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/services/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/services/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/stats/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/subscriptions/process-expired/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support-documents/[id]/new-version/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support-documents/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support-documents/[id]/transition/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support-documents/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support/[id]/messages/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support/[id]/stream/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support/cleanup-stale/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/support/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/trust-badges/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/trust-badges/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/upload/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/users/[id]/reset-password/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/users/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/users/create-admin/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/users/create-admin/route.ts(5,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/api/admin/users/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/vendor-categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/vendors/[id]/badge/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/vendors/[id]/payout-methods/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/vendors/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/vendors/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/verification-documents/[documentId]/url/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/verification/route.ts(2,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/waitlist/export/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/admin/waitlist/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/ai/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/analytics/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/campaigns/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/campaigns/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/homepage/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/notifications/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/payments/initiate/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/payments/verify/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/search/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/advertising/subscription/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ai/customer-insights/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ai/frequently-bought/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ai/recommendations/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ai/similar/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ai/trending/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ai/vendor-insights/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/analytics/super-admin/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/analytics/vendor/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/forgot-password/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/login/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/logout/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/me/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/me/route.ts(3,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/api/auth/register/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/resend-verification/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/reset-password/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/auth/update-activity/route.ts(1,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/api/auth/validate-session/route.ts(2,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/api/auth/verify-email/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/brands/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cart/items/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cart/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/checkout/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/collections/[collectionId]/items/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/collections/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/collections/summary/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/compare/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/coupons/apply/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/coupons/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/daily-sales-summary/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/influencer-trial-expiry/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/low-stock-alerts/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/pending-refund-alerts/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/release-expired-reservations/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/return-review-overdue/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/cron/vendor-completion-reminders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/dashboard/customer/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/dashboard/super-admin/marketplace-intelligence/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/dashboard/super-admin/subscription/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/dashboard/vendor/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/dashboard/vendor/subscription/route.ts(1,29): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/exit-intent/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/feedback/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/flash-deals/[id]/products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/flash-deals/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/flash-deals/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/health/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/brands/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/products/bulk-delete/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/products/reorder/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/services/bulk-delete/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/services/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/[id]/vendors/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/reorder/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage-sections/trending-settings/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage/enterprise/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage/public/route.ts(2,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage/random-products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/homepage/recent-activity/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/influencer/[code]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/influencer/perks/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/influencer/referrals/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/influencer/report/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/achievements/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/admin/achievements/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/admin/analytics/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/admin/campaigns/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/admin/config/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/admin/customers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/admin/tiers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/booking/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/collection/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/follow/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/login/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/profile/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/purchase/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/review/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/earn/wishlist/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/redeem/cashback/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/redeem/points/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/referral/complete/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/referral/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/tier/list/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/loyalty/tier/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/notification-preferences/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/notifications/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/[orderId]/cancel-preview/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/[orderId]/cancel/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/[orderId]/events/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/[orderId]/items/[itemId]/confirm-delivery/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/[orderId]/messages/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/[orderId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/orders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/payment/verify/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/payment/webhook/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/reviews/[reviewId]/like/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/reviews/[reviewId]/report/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/reviews/[reviewId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/reviews/[reviewId]/vendor-reply/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/reviews/images/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/reviews/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/by-ids/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/count/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/profile/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/public-stats/route.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/ready/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/receipt/[token]/pay/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/recently-sold/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/recently-viewed/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/recommendations/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/returns/[returnId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/returns/eligibility/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/returns/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/saved-searches/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/search-upgraded/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/search/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/seo/[entityType]/[entityId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/accept-quote/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/attachments/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/quotation/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/reject-quote/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/status/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/[id]/timeline/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/service-requests/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/services/[id]/reviews/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/services/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/services/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/addresses/[addressId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/addresses/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/admin/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/payment-methods/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/payment-methods/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/super-admin/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/tracking-preferences/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/vendor/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/settings/wishlist-preferences/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/shipping/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/sponsored/placements/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/sticky-buttons/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/store/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/subscription/admin/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/subscription/billing/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/subscription/vendor/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/advertising/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/advertising/vendors/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/brands/[id]/products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/brands/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/brands/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/cancellation-policy/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/influencer-referrals/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/influencers/[id]/link-user/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/influencers/[id]/referrals/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/influencers/[id]/report/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/influencers/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/influencers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/marketing-officers/[id]/referrals/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/marketing-officers/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/marketing-officers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/orders/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/reviews/product/[reviewId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/reviews/product/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/reviews/vendor/[reviewId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/reviews/vendor/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/upload/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/vendor-categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/vendor-referrals/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/super-admin/verification-settings/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support-ai/chat/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support-ai/v2/chat/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support-ai/v2/feedback/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support-tickets/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support/conversations/[conversationRef]/messages/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support/conversations/[conversationRef]/stream/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support/conversations/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/support/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/trending-products/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/trust/sellers/[storeId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/upload/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor-categories/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/advertising/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/analytics/demand/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/analytics/fulfillment/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/customers/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/customers/lookup/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/customers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/earnings/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/feed/[id]/comments/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/feed/[id]/like/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/feed/[id]/report/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/feed/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/feed/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/followers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/fulfillment/analytics/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/fulfillment/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/kyc-upload/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/manual-orders/[orderId]/confirm-payment/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/manual-orders/[orderId]/pay-link/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/manual-orders/[orderId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/manual-orders/[orderId]/status/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/manual-orders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/metrics/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/orders/[orderId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/orders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/payout-methods/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/payout-methods/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/payouts/[payoutId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/payouts/me/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/payouts/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/procurement/analytics/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/products/[id]/quick/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/products/missing-cost/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/purchase-orders/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/purchase-orders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/restock-orders/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/restock-orders/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/returns/[returnId]/respond/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/sales-summary/export/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/sales-summary/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/services/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/services/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/suppliers/[id]/documents/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/suppliers/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/suppliers/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/verification/apply/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/verification/me/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendor/verification/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/feed/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/follow/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/reviews/[reviewId]/report/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/reviews/[reviewId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/reviews/[reviewId]/vendor-reply/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/reviews/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/showcase/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/[id]/trust-badges/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/featured/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/following/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/vendors/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/verification-documents/download/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/verification-documents/download/route.ts(7,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/api/verification-payment/route.ts(2,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/verification-payment/verify/route.ts(2,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/verification-payment/webhook/route.ts(2,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/waitlist/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/webhook/paystack/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/wishlist/[productId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/wishlist/check/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/wishlist/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/api/wishlist/service/[serviceId]/route.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+app/app-waitlist/page.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/app-waitlist/page.tsx(2,52): error TS7016: Could not find a declaration file for module 'next/font/google'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/font/google/index.js' implicitly has an 'any' type.
+app/cart/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/cart/page.tsx(5,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/cart/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/checkout/CheckoutContent.tsx(4,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/checkout/CheckoutContent.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/checkout/CheckoutContent.tsx(6,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/compare/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/compare/page.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/compare/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/contact/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/coupons/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/dashboard/admin/advertisements/page.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/admin/audit-logs/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/categories/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/create-admin/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/admin/layout.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/admin/layout.tsx(5,11): error TS2786: 'AdminDashboardValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/admin/orders/[id]/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/admin/orders/[id]/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/orders/[id]/page.tsx(6,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/admin/orders/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/payments/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/products/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/refund-requests/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/returns/[returnId]/page.tsx(1,36): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/admin/returns/[returnId]/page.tsx(2,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/returns/[returnId]/page.tsx(67,15): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(67,51): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(71,44): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(73,42): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(78,18): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(94,21): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(95,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(96,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(97,21): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(99,21): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(100,21): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(101,22): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(102,27): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(102,63): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/[returnId]/page.tsx(104,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/admin/returns/page.tsx(1,36): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/admin/returns/page.tsx(2,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/support/page.tsx(10,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/users/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/admin/validation.tsx(10,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/admin/validation.tsx(23,50): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/admin/validation.tsx(27,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/admin/validation.tsx(28,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/admin/validation.tsx(34,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/admin/validation.tsx(34,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/admin/vendors/page.tsx(10,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/admin/verification-applications/page.tsx(10,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/collections/[slug]/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/collections/new/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/layout.tsx(9,6): error TS2786: 'CustomerDashboardValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/customer/loyalty/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/orders/[id]/page.tsx(4,38): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/orders/[id]/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/orders/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/orders/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/page.client.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/customer/page.client.tsx(7,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/page.client.tsx(11,21): error TS7016: Could not find a declaration file for module 'next/dynamic'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/dynamic.js' implicitly has an 'any' type.
+app/dashboard/customer/page.tsx(7,6): error TS2786: 'CustomerDashboardValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/customer/profile/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/profile/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/[returnId]/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/[returnId]/page.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/[returnId]/page.tsx(11,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/[returnId]/page.tsx(87,47): error TS18047: 'session' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(117,30): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(118,27): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(120,18): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(122,28): error TS18047: 'session' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(132,20): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(133,21): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(147,42): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(155,18): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(157,26): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(158,26): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(165,62): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(167,31): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(168,39): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(176,66): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(182,41): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/[returnId]/page.tsx(186,33): error TS18047: 'request' is possibly 'null'.
+app/dashboard/customer/returns/error.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/new/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/new/page.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/new/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/new/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/new/page.tsx(38,49): error TS18047: 'session' is possibly 'null'.
+app/dashboard/customer/returns/new/page.tsx(38,65): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/dashboard/customer/returns/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/page.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/returns/page.tsx(22,26): error TS18047: 'session' is possibly 'null'.
+app/dashboard/customer/service-requests/[id]/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/service-requests/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/customer/service-requests/page.tsx(6,6): error TS2786: 'CustomerServiceRequestsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/customer/service-requests/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/service-requests/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/customer/service-requests/validation.tsx(23,7): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/service-requests/validation.tsx(25,42): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/service-requests/validation.tsx(31,44): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/service-requests/validation.tsx(31,60): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/customer/validation.tsx(23,40): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/validation.tsx(29,22): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/validation.tsx(30,27): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/validation.tsx(30,43): error TS18047: 'payload' is possibly 'null'.
+app/dashboard/customer/wishlist/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/customer/wishlist/wishlist-client.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/customer/wishlist/wishlist-client.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/influencer/page.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/influencer/page.tsx(15,22): error TS18047: 'session' is possibly 'null'.
+app/dashboard/notifications/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/advertising/page.client.tsx(8,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/advertising/page.tsx(6,6): error TS2786: 'SuperAdminAdvertisingValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/super-admin/advertising/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/super-admin/advertising/validation.tsx(10,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/super-admin/advertising/validation.tsx(23,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/super-admin/advertising/validation.tsx(27,48): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/super-admin/analytics/page.tsx(6,6): error TS2786: 'SuperAdminAnalyticsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/super-admin/brands/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/brands/page.tsx(5,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/super-admin/coupons/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/dashboard/super-admin/flash-deals/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/dashboard/super-admin/homepage/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/homepage/page.tsx(5,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/super-admin/influencers/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/layout.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/super-admin/layout.tsx(5,11): error TS2786: 'SuperAdminDashboardValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/super-admin/marketing-officers/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/dashboard/super-admin/marketing-officers/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(5,21): error TS7016: Could not find a declaration file for module 'next/dynamic'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/dynamic.js' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(490,86): error TS7006: Parameter 'd' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(491,71): error TS7006: Parameter 'v' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(492,45): error TS7006: Parameter 'value' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(516,86): error TS7006: Parameter 'd' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(527,160): error TS7031: Binding element 'name' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(527,166): error TS7031: Binding element 'percent' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(532,45): error TS7006: Parameter 'value' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(541,85): error TS7006: Parameter 'v' implicitly has an 'any' type.
+app/dashboard/super-admin/page.client.tsx(543,45): error TS7006: Parameter 'value' implicitly has an 'any' type.
+app/dashboard/super-admin/product-categories/page.tsx(9,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/reviews/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/service-categories/page.client.tsx(10,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/service-requests/[id]/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/service-requests/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/settings/page.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/super-admin/subscription/page.tsx(6,6): error TS2786: 'SuperAdminSubscriptionValidation' cannot be used as a JSX component.
+  Its type '({ children }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/super-admin/subscription/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/super-admin/subscription/validation.tsx(5,31): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/super-admin/trust-badges/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/dashboard/super-admin/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/super-admin/validation.tsx(10,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/super-admin/validation.tsx(23,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/super-admin/validation.tsx(27,48): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/super-admin/verification-settings/page.tsx(8,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/advertising/page.client.tsx(8,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/advertising/page.tsx(6,6): error TS2786: 'VendorAdvertisingValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/advertising/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/advertising/validation.tsx(11,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/advertising/validation.tsx(24,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/advertising/validation.tsx(28,48): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/advertising/validation.tsx(33,53): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/analytics/page.tsx(6,6): error TS2786: 'VendorAnalyticsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/customers/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/customers/page.tsx(6,6): error TS2786: 'VendorCustomersValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/customers/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/customers/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/customers/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/customers/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/customers/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/customers/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/earnings/page.tsx(6,6): error TS2786: 'VendorEarningsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/earnings/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/earnings/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/earnings/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/earnings/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/earnings/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/earnings/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/feed/page.client.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/vendor/feed/page.client.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/feed/page.tsx(6,6): error TS2786: 'VendorFeedValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/feed/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/feed/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/feed/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/feed/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/feed/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/feed/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/fulfillment/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/fulfillment/page.tsx(6,6): error TS2786: 'VendorFulfillmentValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/fulfillment/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/fulfillment/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/fulfillment/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/fulfillment/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/fulfillment/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/fulfillment/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/layout.tsx(9,6): error TS2786: 'VendorDashboardValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/orders/[id]/page.client.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/[id]/page.client.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/[id]/page.tsx(7,6): error TS2786: 'VendorOrderDetailValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/orders/[id]/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/[id]/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/[id]/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/[id]/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/[id]/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/[id]/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/page.tsx(7,6): error TS2786: 'VendorOrdersValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/orders/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/orders/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/orders/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/page.client.tsx(5,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/page.client.tsx(13,21): error TS7016: Could not find a declaration file for module 'next/dynamic'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/dynamic.js' implicitly has an 'any' type.
+app/dashboard/vendor/page.tsx(6,6): error TS2786: 'VendorDashboardValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/products/[id]/edit/page.client.tsx(4,38): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/[id]/edit/page.client.tsx(11,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/[id]/edit/page.tsx(6,6): error TS2786: 'VendorEditProductValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/products/[id]/edit/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/[id]/edit/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/[id]/edit/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/[id]/edit/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/[id]/edit/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/[id]/edit/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/costs/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/costs/page.tsx(6,6): error TS2786: 'VendorProductCostsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/products/costs/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/costs/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/costs/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/costs/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/costs/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/costs/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/new/page.client.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/new/page.client.tsx(11,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/new/page.tsx(6,6): error TS2786: 'VendorNewProductValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/products/new/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/new/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/new/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/new/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/new/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/new/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/page.client.tsx(5,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/page.client.tsx(7,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/page.tsx(6,6): error TS2786: 'VendorProductsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/products/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/products/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/products/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/purchase-orders/page.client.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/purchase-orders/page.tsx(6,6): error TS2786: 'VendorPurchaseOrdersValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/purchase-orders/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/purchase-orders/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/purchase-orders/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/purchase-orders/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/purchase-orders/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/purchase-orders/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/quick-sale/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/quick-sale/page.client.tsx(5,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/quick-sale/page.tsx(7,6): error TS2786: 'VendorQuickSaleValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/quick-sale/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/quick-sale/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/quick-sale/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/quick-sale/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/quick-sale/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/quick-sale/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/restock/page.client.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/restock/page.client.tsx(5,33): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/restock/page.tsx(6,6): error TS2786: 'VendorRestockValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/restock/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/restock/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/restock/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/restock/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/restock/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/restock/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(1,36): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/returns/[returnId]/page.tsx(2,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/returns/[returnId]/page.tsx(31,22): error TS18047: 'session' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(69,36): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(70,44): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(72,42): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(81,7): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(84,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(85,17): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(86,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(88,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(89,19): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(90,20): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(91,18): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(114,72): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(115,42): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(118,28): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(118,53): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(118,76): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(132,29): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(140,14): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(144,29): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(154,14): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/[returnId]/page.tsx(158,20): error TS18047: 'request' is possibly 'null'.
+app/dashboard/vendor/returns/page.tsx(1,36): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/returns/page.tsx(2,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/returns/page.tsx(26,22): error TS18047: 'session' is possibly 'null'.
+app/dashboard/vendor/sales/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/sales/page.tsx(6,6): error TS2786: 'VendorSalesValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/sales/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/sales/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/sales/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/sales/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/sales/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/sales/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/[id]/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/service-requests/[id]/page.tsx(6,6): error TS2786: 'VendorServiceRequestDetailValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/service-requests/[id]/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/service-requests/[id]/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/service-requests/[id]/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/[id]/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/[id]/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/[id]/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/service-requests/page.tsx(6,6): error TS2786: 'VendorServiceRequestsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/service-requests/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/service-requests/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/service-requests/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/service-requests/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/[id]/edit/page.client.tsx(4,38): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/[id]/edit/page.client.tsx(9,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/[id]/edit/page.tsx(6,6): error TS2786: 'VendorEditServiceValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/services/[id]/edit/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/[id]/edit/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/[id]/edit/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/[id]/edit/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/[id]/edit/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/[id]/edit/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/new/page.client.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/new/page.client.tsx(9,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/new/page.tsx(6,6): error TS2786: 'VendorNewServiceValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/services/new/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/new/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/new/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/new/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/new/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/new/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/page.client.tsx(5,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/page.client.tsx(7,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/page.tsx(6,6): error TS2786: 'VendorServicesValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/services/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/services/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/services/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/settings/page.tsx(6,6): error TS2786: 'VendorSettingsValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/settings/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/settings/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/settings/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/settings/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/settings/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/settings/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/store/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/subscription/page.client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/subscription/page.tsx(6,6): error TS2786: 'VendorSubscriptionValidation' cannot be used as a JSX component.
+  Its type '({ children }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/subscription/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/subscription/validation.tsx(6,31): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/subscription/validation.tsx(17,50): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/subscription/validation.tsx(17,66): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/suppliers/page.client.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/dashboard/vendor/suppliers/page.tsx(6,6): error TS2786: 'VendorSuppliersValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/suppliers/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/suppliers/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/suppliers/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/suppliers/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/suppliers/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/suppliers/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/validation.tsx(10,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/validation.tsx(23,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/validation.tsx(36,45): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/verification/page.client.tsx(12,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/verification/page.tsx(6,6): error TS2786: 'VendorVerificationValidation' cannot be used as a JSX component.
+  Its type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not a valid JSX element type.
+    Type '({ children, }: { children: ReactNode; }) => Promise<Element>' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'Promise<Element>' is not assignable to type 'ReactNode'.
+app/dashboard/vendor/verification/validation.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/dashboard/vendor/verification/validation.tsx(9,37): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+app/dashboard/vendor/verification/validation.tsx(22,15): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/verification/validation.tsx(24,50): error TS2339: Property 'sessionId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'sessionId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/verification/validation.tsx(30,52): error TS2339: Property 'userId' does not exist on type 'VerifyTokenOutcome'.
+  Property 'userId' does not exist on type 'VerifyTokenFailure'.
+app/dashboard/vendor/verification/validation.tsx(30,68): error TS2339: Property 'role' does not exist on type 'VerifyTokenOutcome'.
+  Property 'role' does not exist on type 'VerifyTokenFailure'.
+app/faq/faq-client.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/faq/page.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/flash-deals/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/flash-deals/page.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/flash-deals/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/forgot-password/page.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/help-center/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/help/backorders/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/creating-account/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/creating-store/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/fulfillment-workflow/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/help-client.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/help-client.tsx(5,33): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/help/kyc-submission/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/making-payments/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/managing-inventory/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/managing-products/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/page.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/help/placing-orders/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/preorders/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/purchase-orders/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/refunds/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/restock-orders/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/returns/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/tracking-orders/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/help/vendor-verification/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/layout.tsx(1,41): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/login/page.tsx(4,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/login/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/marketplace/marketplace-client.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/marketplace/marketplace-client.tsx(5,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/marketplace/marketplace-client.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/marketplace/page.tsx(1,26): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/marketplace/product/[id]/page.tsx(1,41): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/marketplace/product/[id]/page.tsx(3,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/marketplace/product/[id]/product-client.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/marketplace/product/[id]/product-client.tsx(6,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/marketplace/product/[id]/product-client.tsx(7,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/page.tsx(1,26): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/payment-policy/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/payment/cancelled/PaymentCancelledContent.tsx(3,33): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/payment/cancelled/PaymentCancelledContent.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/payment/failed/PaymentFailedContent.tsx(3,33): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/payment/failed/PaymentFailedContent.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/payment/success/PaymentSuccessContent.tsx(4,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/payment/success/PaymentSuccessContent.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/privacy/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/receipt/[token]/not-found.tsx(1,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/receipt/[token]/page.tsx(1,26): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/receipt/[token]/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/receipt/[token]/page.tsx(6,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/receipt/[token]/page.tsx(10,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/receipt/[token]/page.tsx(40,25): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(40,61): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(44,5): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(45,5): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(55,14): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(56,27): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(56,51): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(59,73): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(62,67): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(63,14): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(64,53): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(69,17): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(78,52): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(86,43): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(93,19): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(95,24): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(95,54): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(99,26): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(99,56): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(106,43): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(123,16): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(144,61): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(146,12): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(149,63): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(154,79): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(161,71): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(168,32): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(171,22): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/page.tsx(184,73): error TS18047: 'receipt' is possibly 'null'.
+app/receipt/[token]/PaymentConfirmingNotice.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/recently-sold/layout.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/recently-sold/page.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/recently-sold/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/refund/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/register/page.tsx(4,33): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/register/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/reset-password/[selector]/[token]/page.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/reset-password/[selector]/[token]/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/robots.ts(1,36): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/search/page.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/search/page.tsx(5,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/search/page.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/services/[slug]/page.tsx(1,36): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/services/[slug]/page.tsx(3,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/services/[slug]/service-detail-client.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/services/[slug]/service-detail-client.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/services/[slug]/service-detail-client.tsx(6,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/services/category/[slug]/category-client.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/services/category/[slug]/page.tsx(1,26): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/services/page.tsx(1,26): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/services/request/page.tsx(1,26): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/services/request/service-request-form.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/services/request/service-request-form.tsx(5,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/services/services-client.tsx(4,33): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/services/services-client.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/sitemap.tsx(1,31): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/terms/page.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/vendor/[id]/page.tsx(1,36): error TS2307: Cannot find module 'next' or its corresponding type declarations.
+app/vendor/[id]/trust/page.tsx(1,26): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/vendor/[id]/trust/page.tsx(32,52): error TS18047: 'store' is possibly 'null'.
+app/vendor/[id]/trust/page.tsx(42,72): error TS18047: 'store' is possibly 'null'.
+app/vendor/[id]/trust/page.tsx(46,62): error TS18047: 'store' is possibly 'null'.
+app/vendor/[id]/vendor-client.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+app/vendor/[id]/vendor-client.tsx(6,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/vendor/[id]/vendor-client.tsx(7,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+app/verify-email/page.tsx(4,44): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+app/verify-email/page.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/advertising/homepage/DynamicRandomProductRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/advertising/homepage/DynamicRandomProductRail.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/advertising/homepage/PhoneRail.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/advertising/homepage/PhoneRail.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ai/ai-cross-selling.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ai/ai-cross-selling.tsx(10,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ai/ai-customer-insights.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ai/ai-recommendations.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ai/ai-recommendations.tsx(10,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ai/ai-similar.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ai/ai-similar.tsx(10,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ai/ai-trending.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ai/ai-trending.tsx(10,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ai/ai-vendor-insights.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ApplianceInfiniteBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ApplianceInfiniteBannerRail.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/BagInfiniteBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/BagInfiniteBannerRail.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/BeautyInfiniteBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/BeautyInfiniteBannerRail.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/BlogArticleModal.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/BlogTeaserSection.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/CarShowcaseCarousel.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/CollectionsGrid.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/DhreamSellerBadge.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/EmptyState.tsx(2,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/Footer.tsx(1,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/Footer.tsx(2,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/GoogleAnalytics.tsx(3,20): error TS2307: Cannot find module 'next/script' or its corresponding type declarations.
+components/GoogleAnalytics.tsx(4,46): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/home/AdSlot.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/home/AdSlot.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/home/CuratedCategories.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/home/CuratedCategories.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/home/HomeClient.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/home/HomeClient.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/home/OfficialStores.tsx(2,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/home/OfficialStores.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/home/WorthDiscovering.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/home/WorthDiscovering.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/homepage-enterprise-sections.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/homepage-enterprise-sections.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/homepage-sections.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/homepage-sections.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ImageUpload.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/InfiniteBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/InfiniteBannerRail.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/influencer/dashboard-view.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/LiveSupportWidget.tsx(4,29): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/Navbar.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/Navbar.tsx(6,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/Navbar.tsx(7,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/NeedHelpButton.tsx(3,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/NotificationBell.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/PromotionalFeatureImageStrip.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/RecentlyViewed.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/RecentlyViewed.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/RecentlyViewedSection.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/RecentlyViewedSection.tsx(6,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/RecommendationCard.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/RecommendationCard.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/RegistrationCTA.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/admin/AdminReturnDetail.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/admin/AdminReturnDetail.tsx(5,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/returns/admin/AdminReturnQueueRow.tsx(1,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/ReturnEmptyState.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/ReturnListItem.tsx(1,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/ReturnRequestForm.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/vendor/VendorReturnRespond.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/returns/vendor/VendorReturnRespond.tsx(5,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/returns/vendor/VendorReturnRow.tsx(1,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/ReviewImages.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/SearchDropdown.tsx(4,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/SearchDropdown.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/SearchDropdown.tsx(6,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/seo/MarketplaceHeroImage.tsx(1,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ServiceCard.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/ServiceCard.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/settings/AvatarUpload.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/settings/SettingsShell.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/settings/VendorSections.tsx(8,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/settings/VendorSections.tsx(10,27): error TS7016: Could not find a declaration file for module 'next/navigation'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/navigation.js' implicitly has an 'any' type.
+components/SneakerBrandCarousel.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/SneakerInfiniteBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/SneakerInfiniteBannerRail.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/StaticBannerCarousel.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/StaticBannerImage.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/StaticBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/TrendingNowSection.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/TrendingProductCard.tsx(3,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/TrendingProductCard.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/TVInfiniteBannerRail.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/TVInfiniteBannerRail.tsx(5,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/vendor/SalesSummaryCard.tsx(4,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/waitlist/Hero.tsx(3,18): error TS7016: Could not find a declaration file for module 'next/link'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/link.js' implicitly has an 'any' type.
+components/waitlist/PhoneMockup.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+components/WaitlistPromo.tsx(4,19): error TS7016: Could not find a declaration file for module 'next/image'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/image.js' implicitly has an 'any' type.
+lib/adminAuth.ts(2,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+lib/adminAuth.ts(3,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/auth.ts(3,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+lib/influencerAuth.ts(2,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+lib/influencerAuth.ts(3,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/rate-limit.ts(1,43): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/returns/ui/admin-session.ts(1,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+lib/returns/ui/server.ts(1,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+lib/returns/ui/vendor-session.ts(1,25): error TS7016: Could not find a declaration file for module 'next/headers'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/headers.js' implicitly has an 'any' type.
+lib/trust/cached-profile.ts(1,32): error TS7016: Could not find a declaration file for module 'next/cache'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/cache.js' implicitly has an 'any' type.
+lib/webhooks/advertising-webhook-handler.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/webhooks/manual-order-webhook-handler.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/webhooks/order-webhook-handler.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/webhooks/refund-webhook-handler.ts(18,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/webhooks/subscription-webhook-handler.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+lib/webhooks/verification-webhook-handler.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+middleware.ts(1,30): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+middleware.ts(2,34): error TS2307: Cannot find module 'next/server' or its corresponding type declarations.
+pages/_app.tsx(2,26): error TS7016: Could not find a declaration file for module 'next/app'. 'C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/node_modules/next/app.js' implicitly has an 'any' type.
+EXIT:0 

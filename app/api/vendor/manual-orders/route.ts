@@ -287,7 +287,9 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const receiptToken = generateReceiptToken()
 
-    const result = await prisma.$transaction(
+    let result: TxResult
+    try {
+      result = await prisma.$transaction(
       async (tx) => {
         // Advisory lock on the namespaced idempotency key, held for the whole transaction.
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${namespacedIdempotencyKey})::bigint)`
@@ -448,6 +450,18 @@ export async function POST(request: NextRequest) {
       },
       { maxWait: 10000, timeout: 20000 }
     )
+    } catch (e: any) {
+      if (e?.code === 'P2002') {
+        const existing = await prisma.order.findFirst({
+          where: { idempotencyKey: namespacedIdempotencyKey },
+          include: { items: { include: { product: { select: { id: true, name: true, storeId: true } } } } },
+        })
+        if (existing && (existing.items || []).some((i: any) => i.product.storeId === store.id)) {
+          return NextResponse.json({ order: buildOrderResponse(existing) }, { status: 200 })
+        }
+      }
+      throw e
+    }
 
     if (result.kind === 'replay') {
       return NextResponse.json({ order: buildOrderResponse(result.order) }, { status: 200 })

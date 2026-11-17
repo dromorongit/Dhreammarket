@@ -80,7 +80,11 @@ export async function handleManualOrderWebhook(
     }
 
     if (!payment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+      await notifySuperAdmins(
+        'Unmatched manual order payment',
+        `Customer payment received that could not be matched to an open order. Reference: ${reference}. Needs manual refund or reconciliation.`
+      )
+      return NextResponse.json({ received: true, needsAttention: true, reason: 'payment-not-found' })
     }
 
     if (!paystackResponse) {
@@ -147,8 +151,25 @@ export async function handleManualOrderWebhook(
     if (order.status === 'CANCELLED' || order.paymentStatus === 'PAID') {
       await notifySuperAdmins(
         'Manual order already finalized',
-        `Order ${order.id} is ${order.status} with paymentStatus ${order.paymentStatus}. Reference: ${reference}`
+        `Order ${order.id} is ${order.status} with paymentStatus ${order.paymentStatus}. Customer payment received that could not be matched to an open order. Reference: ${reference}. Needs manual refund or reconciliation.`
       )
+      try {
+        const si = await getPrisma().orderItem.findFirst({
+          where: { orderId: order.id },
+          select: { product: { select: { store: { select: { userId: true } } } } },
+        })
+        const ownerId = si?.product?.store?.userId
+        if (ownerId) {
+          await createNotification(
+            ownerId,
+            'ORDER_STATUS_UPDATED',
+            `Unmatched payment - ${order.id}`,
+            `Customer payment received that could not be matched to an open order. Reference: ${reference}. Needs manual refund or reconciliation.`
+          )
+        }
+      } catch {
+        // best-effort only
+      }
       return NextResponse.json({ received: true, needsAttention: true, reason: 'order-finalized' })
     }
 

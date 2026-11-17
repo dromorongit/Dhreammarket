@@ -1,0 +1,27 @@
+npm notice run dhreammarket@1.0.0 npx
+npm notice run vitest run lib/cost-field-guard.test.ts app/api/support-ai/v2/chat/route.test.ts
+
+ RUN  v4.1.10 C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market
+
+ ❯ app/api/support-ai/v2/chat/route.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  app/api/support-ai/v2/chat/route.test.ts [ app/api/support-ai/v2/chat/route.test.ts ]
+Error: Cannot find package 'next/server' imported from C:/Users/Dromor Narh/Desktop/GithubRepos/Dhream Market/app/api/support-ai/v2/chat/route.ts
+ ❯ app/api/support-ai/v2/chat/route.ts:1:1
+      1| import { NextRequest, NextResponse } from 'next/server'
+       | ^
+      2| import { rateLimit } from '@/lib/rate-limit'
+      3| import { getServerSession } from '@/lib/auth'
+ ❯ app/api/support-ai/v2/chat/route.test.ts:2:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  16 passed (16)
+   Start at  13:28:03
+   Duration  129.70s (transform 3.42s, setup 0ms, import 2.29s, tests 32.63s, environment 12ms)
+
+EXIT:0 

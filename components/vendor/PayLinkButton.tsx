@@ -2,13 +2,16 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/Button'
-import { buildWhatsAppShareLink, orderDisplayNumber } from '@/lib/manual-orders'
+import { buildWhatsAppShareLink, orderDisplayNumber, toPesewas, fromPesewas } from '@/lib/manual-orders'
+import { formatCurrency } from '@/lib/currency'
+import { PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 
 interface PayLinkButtonProps {
   orderId: string
   source: string
   paymentStatus: string
   status: string
+  total: number
   customerPhone?: string | null
   payLinkEnabled?: boolean
   payLinkSent?: boolean
@@ -21,6 +24,7 @@ export default function PayLinkButton({
   source,
   paymentStatus,
   status,
+  total,
   customerPhone,
   payLinkEnabled,
   payLinkSent,
@@ -29,10 +33,12 @@ export default function PayLinkButton({
   const [payLink, setPayLink] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const enabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'
+  const enabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED !== 'false'
   if (!enabled) return null
   const eligible = source === 'MANUAL' && paymentStatus !== 'PAID' && status !== 'CANCELLED'
   if (!eligible) return null
+
+  const sellerEstimate = fromPesewas(Math.round(toPesewas(total) * (1 - PAYSTACK_FEE_PERCENTAGE)))
 
   const handleCreate = async () => {
     setLoading(true)
@@ -89,6 +95,9 @@ export default function PayLinkButton({
 
   return (
     <div>
+      <p className="text-xs text-gray-600 mb-2">
+        Customer pays {formatCurrency(total)}. Paystack takes about {Math.round(PAYSTACK_FEE_PERCENTAGE * 10000) / 100}%, so you&apos;ll receive about {formatCurrency(sellerEstimate)} (estimate). No platform commission on this order.
+      </p>
       <Button
         variant="outline"
         size="sm"

@@ -38,7 +38,7 @@ export default async function ReceiptPage({
   const hasPaymentParams = Boolean(searchParams.trxref || searchParams.reference)
   const awaitingPayment =
     hasPaymentParams && receipt.paymentStatus !== 'PAID' && receipt.status !== 'CANCELLED'
-  const payLinkEnabled = process.env.PAYLINK_ENABLED === 'true'
+  const payLinkEnabled = process.env.PAYLINK_ENABLED !== 'false'
   const showPayNow =
     payLinkEnabled &&
     receipt.paymentStatus === 'UNPAID' &&

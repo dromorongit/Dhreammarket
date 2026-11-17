@@ -53,7 +53,7 @@ export async function PATCH(
     }
 
     if (product.storeId !== store.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
     let body: Record<string, any>

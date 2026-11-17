@@ -11,7 +11,7 @@ export async function POST(
   { params }: { params: { orderId: string } }
 ) {
   try {
-    if (process.env.PAYLINK_ENABLED !== 'true') {
+    if (process.env.PAYLINK_ENABLED === 'false') {
       return NextResponse.json({ error: 'Pay links are disabled' }, { status: 503 })
     }
 

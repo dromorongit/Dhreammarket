@@ -9,6 +9,8 @@ import { Skeleton, SkeletonCard } from '@/components/Skeleton'
 import { Badge } from '@/components/Badge'
 import PayLinkButton from '@/components/vendor/PayLinkButton'
 import { formatPrice } from '@/lib/currency'
+import { useOnlineStatus } from '@/lib/use-online-status'
+import { fetchWithRetry } from '@/lib/fetch-with-retry'
 import { cancelledOrderLabel } from '@/lib/order-sale-filter'
 
 interface OrderItem {
@@ -119,6 +121,7 @@ const MANUAL_STATUS_TRANSITIONS: Record<string, string[]> = {
 }
 
 export default function VendorOrdersPageClient({ payLinkEnabled }: { payLinkEnabled?: boolean }) {
+  const online = useOnlineStatus()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -378,7 +381,7 @@ export default function VendorOrdersPageClient({ payLinkEnabled }: { payLinkEnab
   const handleUpdateStatus = async (status: string) => {    if (!manualOrderId) return
     setUpdatingOrder(manualOrderId)
     try {
-      const res = await fetch(`/api/vendor/manual-orders/${manualOrderId}/status`, {
+      const res = await fetchWithRetry(`/api/vendor/manual-orders/${manualOrderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -388,7 +391,7 @@ export default function VendorOrdersPageClient({ payLinkEnabled }: { payLinkEnab
       setOrders((prev) => prev.map((o) => o.id === manualOrderId ? { ...o, status: data.order.status, fulfillmentStatus: data.order.fulfillmentStatus } : o))
       closeManualAction()
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update order')
+      alert('No connection. Status not saved. Tap to retry.')
       setUpdatingOrder(null)
     }
   }
@@ -467,6 +470,7 @@ export default function VendorOrdersPageClient({ payLinkEnabled }: { payLinkEnab
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {!online && <div className="bg-rose-600 text-white text-center text-sm py-2">You are offline. Changes may not save.</div>}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
@@ -702,6 +706,7 @@ export default function VendorOrdersPageClient({ payLinkEnabled }: { payLinkEnab
                               source={order.source}
                               paymentStatus={order.paymentStatus}
                               status={order.status}
+                              total={order.total}
                               customerPhone={order.customerPhone || undefined}
                               payLinkEnabled={payLinkEnabled}
                               payLinkSent={order.payLinkSent}

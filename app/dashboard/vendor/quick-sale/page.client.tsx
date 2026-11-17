@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { Input } from '@/components/Input'
 import { Badge } from '@/components/Badge'
 import { formatCurrency } from '@/lib/currency'
+import { PAYSTACK_FEE_PERCENTAGE } from '@/lib/site-config'
 import { toPesewas, fromPesewas, computeOrderTotals, buildWhatsAppShareLink, MANUAL_CHANNELS, type ManualChannel } from '@/lib/manual-orders'
 import { buildRepeatLines, type RepeatOrderItem } from '@/app/dashboard/vendor/quick-sale/repeat-prefill'
 
@@ -101,6 +102,9 @@ export default function VendorQuickSalePageClient({ payLinkEnabled }: { payLinkE
   const [payLinkUrl, setPayLinkUrl] = useState<string | null>(null)
   const [payLinkCopied, setPayLinkCopied] = useState(false)
   const effectivePayLinkEnabled = payLinkEnabled ?? process.env.NEXT_PUBLIC_PAYLINK_ENABLED === 'true'
+
+  // Estimate for seller: what they'll receive after Paystack fee
+  const sellerEstimate = sale ? fromPesewas(Math.round(toPesewas(sale.total) * (1 - PAYSTACK_FEE_PERCENTAGE))) : 0
 
   // Debounce ref
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -542,6 +546,9 @@ export default function VendorQuickSalePageClient({ payLinkEnabled }: { payLinkE
             </div>
             {sale && sale.paymentStatus !== 'PAID' && effectivePayLinkEnabled && (
               <div className="mb-4 space-y-2">
+                <p className="text-xs text-gray-600 text-left">
+                  Customer pays {formatCurrency(sale.total)}. Paystack takes about {Math.round(PAYSTACK_FEE_PERCENTAGE * 10000) / 100}%, so you&apos;ll receive about {formatCurrency(sellerEstimate)} (estimate). No platform commission on this order.
+                </p>
                 {customerPhone.trim() ? (
                   <Button
                     onClick={handleSendPayLinkWhatsApp}

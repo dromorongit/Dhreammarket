@@ -25,6 +25,11 @@ interface OrderItem {
     id: string
     name: string
   }
+  grossAmount?: number | null
+  processorFee?: number | null
+  platformCommission?: number | null
+  commissionRate?: number | null
+  vendorEarnings?: number | null
 }
 
 interface Payment {
@@ -57,6 +62,7 @@ interface Order {
   items: OrderItem[]
   payment: Payment | null
   vendorTotal: number
+  deliveryFee?: number | null
   customerFirstName?: string | null
   customerLastName?: string | null
   customerEmail?: string | null
@@ -893,6 +899,7 @@ export default function VendorOrderDetailPageClient({ payLinkEnabled }: { payLin
                   source={order.source}
                   paymentStatus={order.paymentStatus}
                   status={order.status}
+                  total={order.total}
                   customerPhone={order.customerPhone || undefined}
                   payLinkEnabled={payLinkEnabled}
                   payLinkSent={order.payLinkSent}
@@ -903,22 +910,27 @@ export default function VendorOrderDetailPageClient({ payLinkEnabled }: { payLin
               </div>
             )}
 
-            {/* Vendor Total */}
-            <div className="bg-slate-50 rounded-xl p-4 mb-4">
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-slate-600">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(order.vendorTotal)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Tax</span>
-                  <span>{formatPrice(0)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Delivery Fee</span>
-                  <span>{formatPrice(0)}</span>
-                </div>
+            {order.paymentStatus === 'PAID' && (order.items?.[0]?.grossAmount != null) && (
+              <div className="bg-slate-50 rounded-xl p-4 mb-4 text-sm space-y-1">
+                <div className="flex justify-between"><span>Amount received</span><span>{formatPrice(order.items[0].grossAmount)}</span></div>
+                <div className="flex justify-between"><span>Payment fee</span><span>{formatPrice(order.items[0].processorFee ?? 0)}</span></div>
+                <div className="flex justify-between"><span>Platform commission</span><span>{formatPrice(order.items[0].platformCommission ?? 0)} {order.items[0].commissionRate === 0 ? '(0% — WhatsApp/manual order)' : `(${((order.items[0].commissionRate ?? 0) * 100).toFixed(0)}%)`}</span></div>
+                <div className="flex justify-between font-semibold"><span>You earn</span><span>{formatPrice(order.items[0].vendorEarnings ?? 0)}</span></div>
               </div>
+            )}
+            <div className="bg-slate-50 rounded-xl p-4 mb-4">
+                <div className="space-y-2 mb-4">
+                  <div className="flex justify-between text-slate-600">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(order.vendorTotal)}</span>
+                  </div>
+                  {order.deliveryFee != null && (
+                    <div className="flex justify-between text-slate-600">
+                      <span>Delivery Fee</span>
+                      <span>{formatPrice(order.deliveryFee)}</span>
+                    </div>
+                  )}
+                </div>
               <div className="border-t border-slate-200 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-900">Your Items Total</span>

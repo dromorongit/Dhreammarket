@@ -13,7 +13,7 @@ export async function POST(
   { params }: { params: { token: string } }
 ) {
   try {
-    if (process.env.PAYLINK_ENABLED !== 'true') {
+    if (process.env.PAYLINK_ENABLED === 'false') {
       return NextResponse.json({ error: 'Pay links are not available yet' }, { status: 503 })
     }
 

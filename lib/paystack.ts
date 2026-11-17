@@ -127,6 +127,7 @@ const PAYSTACK_TIMEOUT_MS = 15000
       amount: Math.round(amount * 100), // Convert GHS to pesewas (smallest unit)
       reference,
       callback_url: callbackUrl,
+      channels: ['mobile_money', 'card'],
       metadata: metadata || {},
     }),
   })

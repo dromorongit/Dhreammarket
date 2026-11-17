@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "lib/support-ai-v2/**/*.ts",
+    "app/api/support-ai/v2/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next", "**/*.test.ts"]
+}

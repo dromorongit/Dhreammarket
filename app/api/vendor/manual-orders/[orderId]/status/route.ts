@@ -107,6 +107,19 @@ export async function PATCH(
     }
 
     const allowedNext = MANUAL_STATUS_TRANSITIONS[existingOrder.status]
+    // Repeating the current status is a safe no-op (idempotent retry).
+    if (status === existingOrder.status) {
+      return NextResponse.json({
+        order: {
+          id: existingOrder.id,
+          displayNumber: orderDisplayNumber(existingOrder.id),
+          status: existingOrder.status,
+          fulfillmentStatus: existingOrder.fulfillmentStatus,
+          paymentStatus: existingOrder.paymentStatus,
+        },
+      })
+    }
+
     if (!allowedNext || !allowedNext.includes(status)) {
       if (status === 'CANCELLED' && ['DELIVERED', 'COMPLETED'].includes(existingOrder.status)) {
         return NextResponse.json(

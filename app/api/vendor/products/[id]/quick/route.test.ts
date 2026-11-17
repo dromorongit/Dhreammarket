@@ -91,7 +91,7 @@ describe('PATCH /api/vendor/products/[id]/quick cost prices', () => {
       variants: [],
     })
     const response = await PATCH(buildRequest({ costPrice: 8 }), { params: { id: 'prod_1' } })
-    expect(response.status).toBe(403)
+    expect(response.status).toBe(404)
     expect(prismaMock.product.update).not.toHaveBeenCalled()
   })
 
