@@ -138,4 +138,14 @@ describe('POST /api/products/[id]/reviews', () => {
     const response = await invoke({ rating: 5, comment: 'x' })
     expect(response.status).toBe(400)
   })
+
+  it('sets isVerifiedPurchase to true when creating a review with eligible order', async () => {
+    const response = await invoke({ rating: 5, comment: 'Great product' })
+    const data = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(mockPrisma.productReview.create).toHaveBeenCalled()
+    const createCall = mockPrisma.productReview.create.mock.calls[0][0]
+    expect(createCall.data.isVerifiedPurchase).toBe(true)
+  })
 })

@@ -164,6 +164,8 @@ model Store {
   name                     String
   description              String?
   isVerified               Boolean                         @default(false)
+  verificationMethod       VerificationMethod              @default(NONE)
+  kycVerifiedAt            DateTime?
   isFeatured               Boolean                         @default(false)
   featuredUntil            DateTime?
   logo                     String?
@@ -544,6 +546,11 @@ model Order {
   completedAt           DateTime?
   completionReminder1At DateTime?   @map("completion_reminder_1_at")
   completionReminder2At DateTime?   @map("completion_reminder_2_at")
+  slaDeadline           DateTime?
+  slaPolicyDispatchDays Int?
+  slaPolicyDeliveryWindowDays Int?
+  deliveryConfirmedSource String?
+  slaExcusedReason      String?
   receiptToken          String?                @unique
   payToken              String?                @unique
   paymentRequestedAt    DateTime?
@@ -560,6 +567,7 @@ model Order {
   refunds               Refund[]
   productReviews        ProductReview[]
   vendorReviews         VendorReview[]
+  slaDeadlineAudits     SLADeadlineAudit[]
 
   @@index([idempotencyKey], map: "idx_orders_idempotencyKey")
   @@index([walletAmountApplied])
@@ -567,6 +575,24 @@ model Order {
   @@index([source, paymentStatus, createdAt])
   @@index([vendorCustomerId])
   @@map("orders")
+}
+
+model SLADeadlineAudit {
+  id                   String    @id @default(cuid())
+  orderId              String
+  previousDeadline     DateTime?
+  newDeadline          DateTime?
+  dispatchDays         Int?
+  deliveryWindowDays   Int?
+  source               String
+  reason               String?
+  metadata             Json?
+  createdAt            DateTime  @default(now())
+
+  order                Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("sla_deadline_audit")
 }
 
 model OrderItem {
@@ -647,19 +673,20 @@ model PaymentAttempt {
 }
 
 model ProductReview {
-  id         String   @id @default(cuid())
-  rating     Int
-  comment    String?
-  userId     String
-  productId  String
-  orderId    String?
-  isApproved Boolean  @default(true)
-  isHidden   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  order      Order?   @relation(fields: [orderId], references: [id])
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  rating            Int
+  comment           String?
+  userId            String
+  productId         String
+  orderId           String?
+  isVerifiedPurchase Boolean  @default(false)
+  isApproved        Boolean  @default(true)
+  isHidden          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  order             Order?   @relation(fields: [orderId], references: [id])
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([productId, isApproved, isHidden])
@@ -3008,6 +3035,13 @@ enum VerificationAction {
   VENDOR_RESUBMITTED
   PAYMENT_REINITIATED
   DOCUMENT_ACCESSED
+  ADMIN_VERIFIED
+}
+
+enum VerificationMethod {
+  NONE
+  KYC
+  ADMIN_FLAG
 }
 
 enum VendorBadgeTier {
