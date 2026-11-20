@@ -5,6 +5,13 @@ import {
   ROLLING_WINDOW_DAYS,
   RESPONSE_WINDOW_DAYS,
   DELIVERY_WINDOW_DAYS,
+  TIER_ESTABLISHED_MIN_ORDERS,
+  TIER_ESTABLISHED_MIN_FULFILMENT_PCT,
+  TIER_ESTABLISHED_MIN_ONTIME_PCT,
+  TIER_TRUSTED_MIN_FULFILMENT_PCT,
+  TIER_TRUSTED_MIN_ONTIME_PCT,
+  TIER_TRUSTED_MIN_RESPONSE_PCT,
+  TIER_TRUSTED_MIN_REVIEWS,
 } from './constants'
 import type {
   TrustProfileInput,
@@ -17,6 +24,7 @@ import type {
   IdentityStatus,
   DeliverySample,
   ResponseSample,
+  TrustTier,
 } from './types'
 
 function trunc(n: number): number {
@@ -152,10 +160,35 @@ export function composeProfile(input: TrustProfileInput): SellerTrustProfile {
     input.verificationStatus === 'VERIFIED' ? 'VERIFIED' : 'UNVERIFIED'
   const tenure = computeTenure(input.storeCreatedAt, input.firstSaleAt, input.now)
   const windowStart = new Date(input.now.getTime() - input.windowDays * 86400000)
-  return {
+
+  const fulfilment = computeFulfilmentSignal(
+    input.completedInWindow,
+    input.vendorCancelledInWindow,
+    MIN_ORDERS_FOR_RATES
+  )
+  const cancellation = computeCancellationSignal(
+    input.vendorCancelledInWindow,
+    input.completedInWindow,
+    MIN_ORDERS_FOR_RATES
+  )
+  const delivery = computeDeliverySignal(input.deliveries, MIN_ORDERS_FOR_RATES, input.deliveryPolicyDays)
+  const responseRate = computeResponseRateSignal(
+    input.responseSamples,
+    MIN_ORDERS_FOR_RATES,
+    RESPONSE_WINDOW_DAYS
+  )
+  const sellerFaultReturns = computeReturnSignal(
+    input.sellerFaultReturnsInWindow,
+    input.completedInWindow,
+    MIN_ORDERS_FOR_RATES
+  )
+  const ratings = computeRatingSignal(input.reviewCount, input.reviewSum, MIN_REVIEWS_FOR_RATING)
+
+  const profile: SellerTrustProfile = {
     identity: {
       status: verificationStatus,
       verifiedSince: input.verifiedSince ?? undefined,
+      verificationMethod: input.verificationMethod,
     },
     tenure: {
       daysOnPlatform: tenure.daysOnPlatform,
@@ -165,31 +198,86 @@ export function composeProfile(input: TrustProfileInput): SellerTrustProfile {
       completed: input.completedInWindow,
       lifetimeCompleted: input.completedLifetime,
     },
-    fulfilment: computeFulfilmentSignal(
-      input.completedInWindow,
-      input.vendorCancelledInWindow,
-      MIN_ORDERS_FOR_RATES
-    ),
-    cancellation: computeCancellationSignal(
-      input.vendorCancelledInWindow,
-      input.completedInWindow,
-      MIN_ORDERS_FOR_RATES
-    ),
-    delivery: computeDeliverySignal(input.deliveries, MIN_ORDERS_FOR_RATES, input.deliveryPolicyDays),
-    responseRate: computeResponseRateSignal(
-      input.responseSamples,
-      MIN_ORDERS_FOR_RATES,
-      RESPONSE_WINDOW_DAYS
-    ),
-    sellerFaultReturns: computeReturnSignal(
-      input.sellerFaultReturnsInWindow,
-      input.completedInWindow,
-      MIN_ORDERS_FOR_RATES
-    ),
-    ratings: computeRatingSignal(input.reviewCount, input.reviewSum, MIN_REVIEWS_FOR_RATING),
+    fulfilment,
+    cancellation,
+    delivery,
+    responseRate,
+    sellerFaultReturns,
+    openEscalatedReturns: input.openEscalatedReturnsInWindow ?? 0,
+    ratings,
     computedAt: input.now,
     window: { rollingDays: input.windowDays, from: windowStart, to: input.now },
+    trustTier: 'New',
+    trustTierCriteria: { met: [], missing: [] },
   }
+
+  // Compute trust tier and criteria
+  const { trustTier, trustTierCriteria } = computeTrustTier(profile)
+  profile.trustTier = trustTier
+  profile.trustTierCriteria = trustTierCriteria
+
+  return profile
 }
 
-export { ROLLING_WINDOW_DAYS }
+function computeTrustTier(profile: SellerTrustProfile): { trustTier: TrustTier; trustTierCriteria: TrustTierCriteria } {
+  const met: string[] = []
+  const missing: string[] = []
+
+  const completedLifetime = profile.orders?.lifetimeCompleted ?? 0
+  const fulfilmentPct = profile.fulfilment?.state === 'OK' ? (profile.fulfilment.value?.percentage ?? 0) : 0
+  const onTimePct = profile.delivery?.state === 'OK' ? (profile.delivery.value?.onTimePercentage ?? 0) : 0
+  const responsePct = profile.responseRate?.state === 'OK' ? (profile.responseRate.value?.percentage ?? 0) : 0
+  const reviewCount = profile.ratings?.state === 'OK' ? (profile.ratings.value?.count ?? 0) : 0
+  const returnsCount = profile.sellerFaultReturns?.counts?.numerator ?? 0
+  const returnsState = profile.sellerFaultReturns?.state
+  const openEscalatedCount = profile.openEscalatedReturns ?? 0
+  const hasOpenEscalatedReturns = openEscalatedCount > 0
+  const noOpenEscalatedReturns = openEscalatedCount === 0
+
+  const hasMinOrders = completedLifetime >= TIER_ESTABLISHED_MIN_ORDERS
+  const fulfilmentEstablished = fulfilmentPct >= TIER_ESTABLISHED_MIN_FULFILMENT_PCT
+  const onTimeEstablished = onTimePct >= TIER_ESTABLISHED_MIN_ONTIME_PCT
+
+  if (hasMinOrders) met.push(`${TIER_ESTABLISHED_MIN_ORDERS}+ lifetime orders`)
+  else missing.push(`${TIER_ESTABLISHED_MIN_ORDERS}+ lifetime orders`)
+  if (fulfilmentEstablished) met.push('Fulfilment rate >= threshold')
+  else missing.push('Fulfilment rate >= threshold')
+  if (onTimeEstablished) met.push('On-time rate >= threshold')
+  else missing.push('On-time rate >= threshold')
+
+  const isEstablished = hasMinOrders && fulfilmentEstablished && onTimeEstablished
+
+  // Trusted requires KYC only
+  const isKyc = profile.identity?.verificationMethod === 'KYC'
+  const isAdminVerified = profile.identity?.verificationMethod === 'ADMIN_FLAG'
+  const fulfilmentTrusted = fulfilmentPct >= TIER_TRUSTED_MIN_FULFILMENT_PCT
+  const onTimeTrusted = onTimePct >= TIER_TRUSTED_MIN_ONTIME_PCT
+  const responseTrusted = responsePct >= TIER_TRUSTED_MIN_RESPONSE_PCT
+  const enoughReviews = reviewCount >= TIER_TRUSTED_MIN_REVIEWS
+
+  if (isKyc) met.push('Verified identity (KYC)')
+  else missing.push('Verified identity (KYC)')
+  if (fulfilmentTrusted) met.push('Fulfilment rate >= 80%')
+  else missing.push('Fulfilment rate >= 80%')
+  if (onTimeTrusted) met.push('On-time rate >= 80%')
+  else missing.push('On-time rate >= 80%')
+  if (responseTrusted) met.push('Response rate >= 80%')
+  else missing.push('Response rate >= 80%')
+  if (enoughReviews) met.push(`Ratings available (${TIER_TRUSTED_MIN_REVIEWS}+ reviews)`)
+  else missing.push(`Ratings available (${TIER_TRUSTED_MIN_REVIEWS}+ reviews)`)
+  if (noOpenEscalatedReturns) met.push('No open escalated returns')
+  else missing.push('No open escalated returns')
+
+  const isTrusted = isEstablished && isKyc && fulfilmentTrusted && onTimeTrusted && responseTrusted && enoughReviews && noOpenEscalatedReturns
+
+  // Admin-verified badge separate; tracked via identity.verificationMethod but no tier credit.
+  void isAdminVerified
+
+  let trustTier: TrustTier = 'New'
+  if (isTrusted) trustTier = 'Trusted'
+  else if (isEstablished) trustTier = 'Established'
+
+  return { trustTier, trustTierCriteria: { met, missing } }
+}
+
+export { ROLLING_WINDOW_DAYS, MIN_ORDERS_FOR_RATES }

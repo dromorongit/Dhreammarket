@@ -39,13 +39,13 @@ describe('CompactSellerTrustSummary', () => {
     expect(html).toContain('data-testid="compact-trust-error"')
   })
 
-  it('handles insufficient data as New seller', () => {
+it('handles insufficient data with minimum orders message', () => {
     const profile = makeProfile({
       fulfilment: { state: 'INSUFFICIENT_DATA', counts: { numerator: 0, denominator: 2 } },
       orders: { completed: 2, lifetimeCompleted: 2 },
     })
     const html = reactDomServer.renderToString(React.createElement(CompactSellerTrustSummary, { profile }))
-    expect(html).toContain('New seller')
+    expect(html).toContain('Not enough data (minimum 10 orders)')
     expect(html).not.toContain('Fulfilment 0%')
   })
 

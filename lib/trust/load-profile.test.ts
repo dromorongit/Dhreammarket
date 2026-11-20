@@ -111,7 +111,7 @@ describe('loadSellerTrustProfile', () => {
     const writes = calls.filter((c) => /create|update|delete|upsert/.test(c.method))
     expect(writes.length).toBe(0)
     // store, completed window, completed lifetime, cancelled, delivery, policy, returns, firstSale, productAgg, vendorAgg, response orders = 11
-    expect(calls.length).toBe(11)
+    expect(calls.length).toBe(12)
   })
 
   it('response samples start at payment date and skip unpaid orders', async () => {

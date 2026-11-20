@@ -144,11 +144,17 @@ export default function AdminVendorsPage() {
     }
     
     const action = verify ? 'verify' : 'revoke'
-    
+    let justification: string | undefined
+    if (verify) {
+      justification = window.prompt('Justification required') || ''
+      if (!justification.trim()) return
+    }
+
     try {
       setActionLoading(vendorId)
       const body: any = { action, value: verify }
       if (badgeTier) body.badgeTier = badgeTier
+      if (justification !== undefined) body.justification = justification
       
       const response = await fetch(`/api/admin/vendors/${vendorId}`, {
         method: 'PATCH',

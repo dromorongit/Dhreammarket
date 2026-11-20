@@ -58,14 +58,14 @@ export async function GET(request: NextRequest) {
             }
           }
         },
-store: {
-           select: {
-             id: true,
-             name: true,
-             badgeTier: true,
-           }
-         },
-documents: {
+        store: {
+          select: {
+            id: true,
+            name: true,
+            badgeTier: true,
+          }
+        },
+        documents: {
           select: {
             id: true,
             documentType: true,
@@ -73,8 +73,8 @@ documents: {
             createdAt: true,
           },
         },
-         payments: true,
-          auditLogs: {
+        payments: true,
+        auditLogs: {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
@@ -85,7 +85,7 @@ documents: {
     })
 
     const total = await getPrisma().vendorVerificationApplication.count({ where })
- 
+  
     const sanitizedApplications = applications.map((app: any) => ({
       ...app,
       documents: Array.isArray(app.documents)
@@ -95,7 +95,7 @@ documents: {
           })
         : app.documents,
     }))
- 
+  
     return NextResponse.json({
       applications: sanitizedApplications,
       pagination: {
@@ -126,6 +126,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Application ID required' }, { status: 400 })
     }
 
+    if (action === 'verify' && (!note || !String(note).trim())) {
+      return NextResponse.json({ error: 'Justification required' }, { status: 400 })
+    }
+
     const application = await getPrisma().vendorVerificationApplication.findUnique({
       where: { id: applicationId },
       include: { store: true }
@@ -154,6 +158,10 @@ export async function PATCH(request: NextRequest) {
       case 'request_changes':
         newStatus = 'CHANGES_REQUESTED'
         auditAction = 'ADMIN_REQUESTED_CHANGES'
+        break
+      case 'verify':
+        newStatus = 'APPROVED'
+        auditAction = 'ADMIN_VERIFIED'
         break
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
@@ -197,15 +205,20 @@ export async function PATCH(request: NextRequest) {
     })
 
     // Update store verification status for APPROVED or REVOKE
-    if (action === 'approve') {
+    if (action === 'approve' || action === 'verify') {
+      const isKycApproval = action === 'approve'
       await getPrisma().store.update({
         where: { id: application.storeId },
-        data: { isVerified: true }
+        data: {
+          isVerified: true,
+          verificationMethod: isKycApproval ? 'KYC' : 'ADMIN_FLAG',
+          kycVerifiedAt: isKycApproval ? new Date() : null,
+        }
       })
     } else if (action === 'revoke') {
       await getPrisma().store.update({
         where: { id: application.storeId },
-        data: { isVerified: false, badgeTier: null }
+        data: { isVerified: false, badgeTier: null, verificationMethod: 'NONE', kycVerifiedAt: null }
       })
     }
 
@@ -213,11 +226,11 @@ export async function PATCH(request: NextRequest) {
     await createAuditLog({
       userId: authCheck.userId,
       userRole: authCheck.role,
-      action: action === 'approve' ? 'KYC_APPROVED' : action === 'revoke' ? 'KYC_REVOKED' : action === 'reject' ? 'KYC_REJECTED' : 'SUPPORT_TICKET_UPDATED',
+      action: action === 'approve' ? 'KYC_APPROVED' : action === 'verify' ? 'ADMIN_VERIFIED' : action === 'revoke' ? 'KYC_REVOKED' : action === 'reject' ? 'KYC_REJECTED' : 'SUPPORT_TICKET_UPDATED',
       entityType: 'KYC_APPLICATION',
       entityId: applicationId,
       beforeData: { status: application.status },
-      afterData: { status: newStatus, note },
+      afterData: { status: newStatus, note, verificationMethod: action === 'approve' ? 'KYC' : action === 'verify' ? 'ADMIN_FLAG' : undefined },
       ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null,
     })
 
@@ -266,6 +279,18 @@ export async function PATCH(request: NextRequest) {
           console.error('Failed to send verification revoked email:', err)
         })
       }
+    } else if (action === 'verify') {
+      await createNotification(
+        vendorId,
+        'VERIFICATION_APPROVED',
+        'Verification Approved',
+        `Your store "${storeName}" has been verified by an administrator.`
+      )
+      if (vendorEmail) {
+        sendVerificationStatusEmail(vendorEmail, vendorName, 'APPROVED', storeName).catch(err => {
+          console.error('Failed to send verification approved email:', err)
+        })
+      }
     } else {
       const notificationType = notificationTypeMap[newStatus]
       const notificationTitle = notificationTitleMap[newStatus]
@@ -290,7 +315,7 @@ export async function PATCH(request: NextRequest) {
           })
         : updatedApplication.documents,
     }
- 
+  
     return NextResponse.json({ application: sanitizedApplication })
   } catch (error) {
     console.error('Error updating verification application:', error)

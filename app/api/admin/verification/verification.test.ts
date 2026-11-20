@@ -263,7 +263,7 @@ describe('Admin verification API security', () => {
       expect(data.application.revokedAt).toBeDefined()
       expect(mockPrisma.store.update).toHaveBeenCalledWith({
         where: { id: 'store-1' },
-        data: { isVerified: false, badgeTier: null },
+        data: { isVerified: false, badgeTier: null, verificationMethod: 'NONE', kycVerifiedAt: null },
       })
       expect(mockPrisma.verificationAuditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ action: 'ADMIN_REVOKED' }) }),
@@ -300,7 +300,7 @@ describe('Admin verification API security', () => {
       expect(data.application.status).toBe('APPROVED')
       expect(mockPrisma.store.update).toHaveBeenCalledWith({
         where: { id: 'store-2' },
-        data: { isVerified: true },
+        data: { isVerified: true, verificationMethod: 'KYC', kycVerifiedAt: expect.any(Date) },
       })
     })
   })
