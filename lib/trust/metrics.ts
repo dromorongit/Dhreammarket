@@ -12,6 +12,8 @@ import {
   TIER_TRUSTED_MIN_ONTIME_PCT,
   TIER_TRUSTED_MIN_RESPONSE_PCT,
   TIER_TRUSTED_MIN_REVIEWS,
+  TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT,
+  TIER_TRUSTED_RETURN_RATE_MIN_RETURNS,
 } from './constants'
 import type {
   TrustProfileInput,
@@ -255,6 +257,16 @@ function computeTrustTier(profile: SellerTrustProfile): { trustTier: TrustTier; 
   const responseTrusted = responsePct >= TIER_TRUSTED_MIN_RESPONSE_PCT
   const enoughReviews = reviewCount >= TIER_TRUSTED_MIN_REVIEWS
 
+  // Seller-fault return ceiling: rate = sellerFaultReturns / completedInWindow
+  // (completed orders in the rolling window). Only enforced once there are
+  // at least TIER_TRUSTED_RETURN_RATE_MIN_RETURNS seller-fault returns; below
+  // that floor the rate is not counted against the seller.
+  const completedForReturns = profile.orders?.completed ?? 0
+  const hasEnoughReturnData = returnsCount >= TIER_TRUSTED_RETURN_RATE_MIN_RETURNS
+  const returnRatePct =
+    completedForReturns > 0 ? (returnsCount / completedForReturns) * 100 : 0
+  const returnRateOk = !hasEnoughReturnData || returnRatePct <= TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT
+
   if (isKyc) met.push('Verified identity (KYC)')
   else missing.push('Verified identity (KYC)')
   if (fulfilmentTrusted) met.push('Fulfilment rate >= 80%')
@@ -267,8 +279,17 @@ function computeTrustTier(profile: SellerTrustProfile): { trustTier: TrustTier; 
   else missing.push(`Ratings available (${TIER_TRUSTED_MIN_REVIEWS}+ reviews)`)
   if (noOpenEscalatedReturns) met.push('No open escalated returns')
   else missing.push('No open escalated returns')
+  if (returnRateOk) {
+    met.push(
+      hasEnoughReturnData
+        ? 'Seller-fault return rate 10% or less'
+        : 'Seller-fault return rate 10% or less (fewer than 5 returns - not counted)'
+    )
+  } else {
+    missing.push('Seller-fault return rate 10% or less')
+  }
 
-  const isTrusted = isEstablished && isKyc && fulfilmentTrusted && onTimeTrusted && responseTrusted && enoughReviews && noOpenEscalatedReturns
+  const isTrusted = isEstablished && isKyc && fulfilmentTrusted && onTimeTrusted && responseTrusted && enoughReviews && noOpenEscalatedReturns && returnRateOk
 
   // Admin-verified badge separate; tracked via identity.verificationMethod but no tier credit.
   void isAdminVerified

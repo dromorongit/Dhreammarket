@@ -71,6 +71,20 @@ describe('fulfilment/cancellation', () => {
   })
 })
 
+function makeDeliveries(n: number, onTime: number) {
+  const onTimeSamples = Array.from({ length: onTime }, () => ({
+    deliveredAt: new Date('2025-01-02T00:00:00Z'),
+    expectedAt: new Date('2025-01-03T00:00:00Z'),
+    orderDate: new Date('2025-01-01T00:00:00Z'),
+  }))
+  const lateSamples = Array.from({ length: n - onTime }, () => ({
+    deliveredAt: new Date('2025-01-04T00:00:00Z'),
+    expectedAt: new Date('2025-01-03T00:00:00Z'),
+    orderDate: new Date('2025-01-01T00:00:00Z'),
+  }))
+  return [...onTimeSamples, ...lateSamples]
+}
+
 describe('delivery', () => {
   const sample = (deliveredAt: string, expectedAt: string | null, orderDate: string) => ({
     deliveredAt: new Date(deliveredAt),
@@ -142,6 +156,24 @@ describe('delivery', () => {
     expect(computeDeliverySignal(Array(10).fill(null).map(() => sample('2025-01-02T00:00:00Z', null, '2025-01-01T00:00:00Z')), 10, 3).state).toBe('OK')
     expect(computeDeliverySignal(Array(11).fill(null).map(() => sample('2025-01-02T00:00:00Z', null, '2025-01-01T00:00:00Z')), 10, 3).state).toBe('OK')
   })
+  it('computeDeliverySignal at 69%', () => {
+    const d = computeDeliverySignal(makeDeliveries(100, 69), 10, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(69)
+    expect(d.counts).toEqual({ numerator: 69, denominator: 100 })
+  })
+  it('computeDeliverySignal at 70%', () => {
+    const d = computeDeliverySignal(makeDeliveries(100, 70), 10, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(70)
+    expect(d.counts).toEqual({ numerator: 70, denominator: 100 })
+  })
+  it('computeDeliverySignal at 71%', () => {
+    const d = computeDeliverySignal(makeDeliveries(100, 71), 10, 3)
+    expect(d.state).toBe('OK')
+    expect(d.value?.onTimePercentage).toBe(71)
+    expect(d.counts).toEqual({ numerator: 71, denominator: 100 })
+  })
   it('zero orders -> insufficient', () => {
     const d = computeDeliverySignal([], 10, 3)
     expect(d.state).toBe('INSUFFICIENT_DATA')
@@ -178,6 +210,13 @@ describe('response rate after payment', () => {
     const r = computeResponseRateSignal(samples, 1, RESPONSE_WINDOW_DAYS)
     expect(r.state).toBe('OK')
     expect(r.value?.percentage).toBe(50)
+  })
+  it('reply exactly at the 2-day window is responsive (inclusive)', () => {
+    const twoDaysMs = RESPONSE_WINDOW_DAYS * 86400000
+    const samples = [orderSample('2025-01-01T00:00:00Z', new Date(new Date('2025-01-01T00:00:00Z').getTime() + twoDaysMs).toISOString())]
+    const r = computeResponseRateSignal(samples, 1, RESPONSE_WINDOW_DAYS)
+    expect(r.state).toBe('OK')
+    expect(r.value?.percentage).toBe(100)
   })
   it('reply before payment date is not counted', () => {
     const samples = [orderSample('2025-01-02T00:00:00Z', '2025-01-01T00:00:00Z')]

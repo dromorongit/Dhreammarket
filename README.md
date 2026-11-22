@@ -143,3 +143,6 @@ ISC
 - Super Admin access: set a user's role to SUPER_ADMIN in the database (e.g., via Prisma Studio or admin tools).
 - Admin view: /dashboard/super-admin/waitlist (super admins only).
 - Export: /api/admin/waitlist/export or npm run export:waitlist.
+
+## Database safety
+Never put the production DATABASE_URL in the default .env on developer machines. Never run prisma migrate dev, db push, or reset against production.

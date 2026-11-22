@@ -1,5 +1,5 @@
 import type { Signal, SuppressedBand, RateValue, DeliveryValue, RatingValue, SignalState } from './types'
-import { MIN_ORDERS_FOR_RATES, MIN_REVIEWS_FOR_RATING, SUPPRESSION_THRESHOLD, RESPONSE_WINDOW_DAYS } from './constants'
+import { MIN_ORDERS_FOR_RATES, MIN_REVIEWS_FOR_RATING, SUPPRESSION_THRESHOLD, RESPONSE_WINDOW_DAYS, TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT, TIER_TRUSTED_RETURN_RATE_MIN_RETURNS } from './constants'
 
 export function signalStateLabel(state: SignalState): string {
   switch (state) {
@@ -58,7 +58,7 @@ export function formatReturns(signal: Signal<RateValue> | SuppressedBand): strin
     return 'Not available'
   }
   const { numerator, denominator } = s.counts
-  return `Seller-fault returns: ${numerator} of ${denominator} (${s.value.percentage.toFixed(1)}%)`
+  return `Seller-fault returns: ${numerator} of ${denominator} (${s.value.percentage.toFixed(1)}%) (Trusted requires <= ${TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT}% with ${TIER_TRUSTED_RETURN_RATE_MIN_RETURNS}+ returns)`
 }
 
 export function formatRating(signal: Signal<RatingValue>): string {

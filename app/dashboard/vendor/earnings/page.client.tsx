@@ -45,6 +45,10 @@ interface Payout {
 export default function VendorEarningsPageClient() {
   const [earnings, setEarnings] = useState<OrderItemEarnings[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
+  const [availableBalance, setAvailableBalance] = useState<number>(0)
+  const [deductions, setDeductions] = useState<any[]>([])
+  const [totalDeductions, setTotalDeductions] = useState<number>(0)
+  const [deductionMode, setDeductionMode] = useState<string>('off')
   const [payoutSummary, setPayoutSummary] = useState<{ totalPaid: number; totalPending: number; totalProcessing: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -71,6 +75,10 @@ export default function VendorEarningsPageClient() {
       if (response.ok) {
         const data = await response.json()
         setPayouts(data.payouts || [])
+        setAvailableBalance(data.availableBalance || 0)
+        setDeductions(data.openDeductions || [])
+        setTotalDeductions(data.totalOpenDeductions || 0)
+        setDeductionMode(data.mode || 'off')
         setPayoutSummary(data.summary || null)
       } else {
         setError('Failed to load payouts')
@@ -329,6 +337,24 @@ export default function VendorEarningsPageClient() {
         {activeTab === 'payouts' && (
           <Card variant="elevated">
             <CardContent className="p-0">
+              <div className="p-4 border-b">
+                <p>Available to pay out: {formatPrice(availableBalance)}</p>
+                <p>Deductions: {formatPrice(totalDeductions)}</p>
+                {deductions.length === 0 ? (
+                  <p>No deductions.</p>
+                ) : (
+                  deductions.map((d) => (
+                    <div key={d.id} className="text-sm">
+                      {new Date(d.createdAt).toLocaleDateString()} {d.orderNumber} {formatPrice(d.amount)} Refund
+                    </div>
+                  ))
+                )}
+                <p className="text-xs text-slate-500">
+                  {deductionMode === 'enforce'
+                    ? 'Deductions come from refunds you approved. They reduce your next payout.'
+                    : 'Deductions are recorded but your payouts are currently reviewed manually.'}
+                </p>
+              </div>
               {payouts.length === 0 ? (
                 <EmptyState
                   icon={

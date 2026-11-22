@@ -15,6 +15,7 @@ export type StoreBalance = {
   itemCount: number
   holdDays: number
   asOf: Date
+  eligibleItemIds: string[]
 }
 
 export type AvailableResult = {
@@ -171,6 +172,7 @@ export async function computeStoreBalance(
     itemCount: eligibleItems.length,
     holdDays,
     asOf,
+    eligibleItemIds: itemIds,
   }
 }
 
