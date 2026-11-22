@@ -1,18 +1,43 @@
 import { getPrisma } from '@/lib/prisma'
 
-function parseArgs(argv: string[]): { dryRun: boolean } {
-  let dryRun = false
+export function parseArgs(argv: string[]): { dryRun: boolean; allowHost: boolean; acceptUncertain: boolean } {
+  let dryRun = true
+  let allowHost = false
+  let acceptUncertain = false
   for (const arg of argv) {
-    if (arg === '--dry-run' || arg === '-n') {
+    if (arg === '--apply') {
+      dryRun = false
+    } else if (arg === '--dry-run' || arg === '-n') {
       dryRun = true
+    } else if (arg === '--allow-host') {
+      allowHost = true
+    } else if (arg === '--accept-uncertain') {
+      acceptUncertain = true
     }
   }
-  return { dryRun }
+  return { dryRun, allowHost, acceptUncertain }
 }
 
-async function backfillVerificationMethod() {
-  const { dryRun } = parseArgs(process.argv.slice(2))
+export async function backfillVerificationMethod() {
+  const { dryRun, allowHost, acceptUncertain } = parseArgs(process.argv.slice(2))
   const prisma = getPrisma()
+
+  const dbUrl = process.env.DATABASE_URL || ''
+  let host = ''
+  try {
+    host = new URL(dbUrl).hostname.toLowerCase()
+  } catch {
+    host = ''
+  }
+  console.log(`backfill: host=${host || '(unset)'}`)
+  if (host !== 'localhost' && host !== '127.0.0.1' && !allowHost) {
+    throw new Error('Refusing to run: DATABASE_URL host is not localhost (pass --allow-host to override)')
+  }
+
+  const dbCheck = await prisma.$queryRaw<Array<{ current_database: string }>>`SELECT current_database()`
+  if (dbCheck[0]?.current_database !== 'dhream_dev') {
+    throw new Error('Refusing to run: current_database is not dhream_dev')
+  }
 
   // Find all verified stores
   const verifiedStores = await prisma.store.findMany({
@@ -22,6 +47,13 @@ async function backfillVerificationMethod() {
         where: { status: 'APPROVED' },
         orderBy: { updatedAt: 'desc' },
         take: 1,
+        include: {
+          auditLogs: {
+            where: { action: 'ADMIN_APPROVED' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
       },
     },
   })
@@ -46,16 +78,29 @@ async function backfillVerificationMethod() {
     let verificationMethod: 'KYC' | 'ADMIN_FLAG'
     let kycVerifiedAt: Date | null = null
 
+    let uncertain = false
     if (hasApprovedApplication) {
       verificationMethod = 'KYC'
-      kycVerifiedAt = store.verificationApplications[0].updatedAt
+      // Use the createdAt of the audit row for the application's approve action.
+      const approvedAudit = store.verificationApplications[0].auditLogs?.[0]
+      if (approvedAudit) {
+        kycVerifiedAt = approvedAudit.createdAt
+      } else {
+        uncertain = true
+        kycVerifiedAt = store.verificationApplications[0].updatedAt
+      }
       kycCount++
     } else {
       verificationMethod = 'ADMIN_FLAG'
       adminFlagCount++
     }
 
-    if (store.verificationMethod === verificationMethod) {
+    if (uncertain && !acceptUncertain) {
+      console.log(`Uncertain: ${store.name} (${store.id}) has no APPROVED audit log; skipping (pass --accept-uncertain)`)
+      continue
+    }
+
+    if (store.verificationMethod === verificationMethod && !(uncertain)) {
       continue // no change needed
     }
 
@@ -106,11 +151,14 @@ async function backfillVerificationMethod() {
   }
 }
 
-backfillVerificationMethod()
-  .catch((err) => {
-    console.error('Backfill failed:', err)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await getPrisma().$disconnect()
-  })
+const invokedDirectly = (process.argv[1] || '').replace(/\\/g, '/').endsWith('scripts/backfill-verification-method.ts')
+if (invokedDirectly) {
+  backfillVerificationMethod()
+    .catch((err) => {
+      console.error('Backfill failed:', err)
+      process.exit(1)
+    })
+    .finally(async () => {
+      await getPrisma().$disconnect()
+    })
+}

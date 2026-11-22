@@ -37,22 +37,22 @@ describe('trust tier computation', () => {
     verificationMethod: 'NONE' as const,
     now: new Date('2025-06-01T00:00:00Z'),
     windowDays: 90,
-    completedInWindow: 10,
-    completedLifetime: 20,
+    completedInWindow: 20,
+    completedLifetime: 50,
     vendorCancelledInWindow: 1,
-    deliveries: Array(10).fill(null).map(() => ({
+    deliveries: Array(20).fill(null).map(() => ({
       deliveredAt: new Date('2025-01-03T00:00:00Z'),
       expectedAt: null,
       orderDate: new Date('2025-01-01T00:00:00Z'),
     })),
-    responseSamples: Array(10).fill(null).map(() => ({
+    responseSamples: Array(20).fill(null).map(() => ({
       orderDate: new Date('2025-01-01T00:00:00Z'),
       firstVendorReplyAt: new Date('2025-01-01T12:00:00Z'),
     })),
     deliveryPolicyDays: 3,
     sellerFaultReturnsInWindow: 0,
-    reviewCount: 5,
-    reviewSum: 25,
+    reviewCount: 20,
+    reviewSum: 95,
   }
 
   it('New tier when insufficient orders', () => {
@@ -152,6 +152,38 @@ describe('trust tier computation', () => {
     const profile = composeProfile(input)
     expect(profile.trustTier).toBe('Trusted')
     expect(profile.trustTierCriteria.met.some(m => m.includes('Seller-fault return rate'))).toBe(true)
+  })
+
+  it('Trusted with 7 seller-fault returns in 70 completed (exactly 10%, floating-point check)', () => {
+    const input = {
+      ...baseInput,
+      completedInWindow: 70,
+      completedLifetime: 20,
+      verificationStatus: 'VERIFIED' as const,
+      verifiedSince: new Date('2024-03-01T00:00:00Z'),
+      verificationMethod: 'KYC' as const,
+      sellerFaultReturnsInWindow: 7,
+      openEscalatedReturnsInWindow: 0,
+    }
+    const profile = composeProfile(input)
+    expect(profile.trustTier).toBe('Trusted')
+    expect(profile.trustTierCriteria.met.some(m => m.includes('Seller-fault return rate'))).toBe(true)
+  })
+
+  it('Established when completed is 0 but seller-fault returns >= 5 (rate fails)', () => {
+    const input = {
+      ...baseInput,
+      completedInWindow: 0,
+      completedLifetime: 20,
+      verificationStatus: 'VERIFIED' as const,
+      verifiedSince: new Date('2024-03-01T00:00:00Z'),
+      verificationMethod: 'KYC' as const,
+      sellerFaultReturnsInWindow: 5,
+      openEscalatedReturnsInWindow: 0,
+    }
+    const profile = composeProfile(input)
+    expect(profile.trustTier).toBe('New')
+    expect(profile.trustTierCriteria.missing.some(m => m.includes('Seller-fault return rate'))).toBe(true)
   })
 
   it('Established with 11 seller-fault returns in 100 completed (11%) - missing return-rate criterion', () => {

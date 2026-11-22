@@ -265,7 +265,11 @@ function computeTrustTier(profile: SellerTrustProfile): { trustTier: TrustTier; 
   const hasEnoughReturnData = returnsCount >= TIER_TRUSTED_RETURN_RATE_MIN_RETURNS
   const returnRatePct =
     completedForReturns > 0 ? (returnsCount / completedForReturns) * 100 : 0
-  const returnRateOk = !hasEnoughReturnData || returnRatePct <= TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT
+  const returnRateOk =
+    !hasEnoughReturnData ||
+    (completedForReturns > 0 &&
+      returnsCount * 100 <=
+        completedForReturns * TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT)
 
   if (isKyc) met.push('Verified identity (KYC)')
   else missing.push('Verified identity (KYC)')
@@ -282,11 +286,11 @@ function computeTrustTier(profile: SellerTrustProfile): { trustTier: TrustTier; 
   if (returnRateOk) {
     met.push(
       hasEnoughReturnData
-        ? 'Seller-fault return rate 10% or less'
-        : 'Seller-fault return rate 10% or less (fewer than 5 returns - not counted)'
+        ? `Seller-fault return rate ${TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT}% or less`
+        : `Seller-fault return rate ${TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT}% or less (fewer than ${TIER_TRUSTED_RETURN_RATE_MIN_RETURNS} returns - not counted)`
     )
   } else {
-    missing.push('Seller-fault return rate 10% or less')
+    missing.push(`Seller-fault return rate ${TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT}% or less`)
   }
 
   const isTrusted = isEstablished && isKyc && fulfilmentTrusted && onTimeTrusted && responseTrusted && enoughReviews && noOpenEscalatedReturns && returnRateOk

@@ -2,11 +2,18 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { getPrisma } from '@/lib/prisma'
 
 const dbUrl = process.env.DATABASE_URL || ''
-if (!dbUrl || /rlwy\.net|railway/i.test(dbUrl) || !/localhost|127\.0\.0\.1/.test(dbUrl)) {
+let host = ''
+try { host = new URL(dbUrl).hostname.toLowerCase() } catch { host = '' }
+if (!dbUrl || (host !== 'localhost' && host !== '127.0.0.1')) {
   throw new Error('Refusing to run DB tests against non-local DATABASE_URL')
 }
 
 const prisma = getPrisma()
+
+const slaDbCheck = await prisma.$queryRaw<Array<{ current_database: string }>>`SELECT current_database()`
+if (slaDbCheck[0]?.current_database !== 'dhream_dev') {
+  throw new Error('Refusing to run: current_database is not dhream_dev')
+}
 
 // LEGACY_CUTOFF mirrors the deploy-date cutoff read from
 // platform_policy.systemCutoverTimestamp by the trigger (shared with metric code).
