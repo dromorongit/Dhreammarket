@@ -57,18 +57,34 @@ function buildMockPrisma() {
         return payments[idx]
       }),
     },
-    order: {
-      findUnique: vi.fn(async ({ where }: any) => {
-        const o = orders.find((x) => x.id === where.id) || null
-        return o ? { ...o } : null
-      }),
-      update: vi.fn(async ({ where, data }: any) => {
-        const idx = orders.findIndex((x) => x.id === where.id)
-        if (idx === -1) return null
-        orders[idx] = { ...orders[idx], ...data }
-        return orders[idx]
-      }),
-    },
+     order: {
+       findUnique: vi.fn(async ({ where }: any) => {
+         const o = orders.find((x) => x.id === where.id) || null
+         return o ? { ...o } : null
+       }),
+       update: vi.fn(async ({ where, data }: any) => {
+         const idx = orders.findIndex((x) => x.id === where.id)
+         if (idx === -1) return null
+         orders[idx] = { ...orders[idx], ...data }
+         return orders[idx]
+       }),
+       updateMany: vi.fn(async ({ where, data }: any) => {
+         let count = 0
+         orders.forEach((o, idx) => {
+           let ok = true
+           if (where?.id !== undefined) ok = ok && o.id === where.id
+           if (where?.paymentConfirmedAt !== undefined) {
+             if (where.paymentConfirmedAt === null) ok = ok && (o.paymentConfirmedAt == null)
+             else ok = ok && o.paymentConfirmedAt === where.paymentConfirmedAt
+           }
+           if (ok) {
+             orders[idx] = { ...o, ...data }
+             count++
+           }
+         })
+         return { count }
+       }),
+     },
     orderItem: {
       findMany: vi.fn(async ({ where, include }: any) => {
         return orderItems.filter((x) => x.orderId === where.orderId).map((x) => ({ ...x }))
@@ -212,14 +228,14 @@ describe('order webhook characterization', () => {
     expect(res.status).toBe(200)
   })
 
-  it('Payment.userId null: completes but audit log receives null (CHARACTERIZATION: swallowed audit error)', async () => {
-    ctx.payments.push({ id: 'p1', reference: 'DHV-1', userId: null, orderId: 'o1', amount: 100, currency: 'GHS', status: 'PENDING' })
-    ctx.orders.push({ id: 'o1', status: 'PENDING', paymentStatus: 'PENDING', orderType: 'NORMAL', userId: null })
-    ctx.orderItems.push({ id: 'i1', orderId: 'o1', productId: 'prod1', productVariantId: null, quantity: 1, price: 100, availabilityType: 'IN_STOCK' })
+  it("webhook retry doesn't overwrite", async () => {
+    const paidAt = new Date('2026-01-01T00:00:00.000Z')
+    ctx.payments.push({ id: 'p1', reference: 'DHV-1', userId: 'customer-1', orderId: 'o1', amount: 100, currency: 'GHS', status: 'PAID' })
+    ctx.orders.push({ id: 'o1', status: 'PROCESSING', paymentStatus: 'PAID', paymentConfirmedAt: paidAt, orderType: 'NORMAL', userId: 'customer-1' })
     const body = makeBody('DHV-1')
     const res = await handleOrderWebhook(body, sign(body))
     expect(res.status).toBe(200)
-    // audit log called with null userId
-    expect(createAuditLog).toHaveBeenCalled()
+    expect((await res.json()).alreadyProcessed).toBe(true)
+    expect(ctx.orders[0].paymentConfirmedAt).toEqual(paidAt)
   })
 })

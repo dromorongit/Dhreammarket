@@ -76,13 +76,29 @@ function buildMockPrisma() {
         }
         return { ...o }
       }),
-      update: vi.fn(async ({ where, data }: any) => {
-        const idx = orders.findIndex((x) => x.id === where.id)
-        if (idx === -1) return null
-        orders[idx] = { ...orders[idx], ...data }
-        return orders[idx]
-      }),
-    },
+       update: vi.fn(async ({ where, data }: any) => {
+         const idx = orders.findIndex((x) => x.id === where.id)
+         if (idx === -1) return null
+         orders[idx] = { ...orders[idx], ...data }
+         return orders[idx]
+       }),
+       updateMany: vi.fn(async ({ where, data }: any) => {
+         let count = 0
+         orders.forEach((o, idx) => {
+           let ok = true
+           if (where?.id !== undefined) ok = ok && o.id === where.id
+           if (where?.paymentConfirmedAt !== undefined) {
+             if (where.paymentConfirmedAt === null) ok = ok && (o.paymentConfirmedAt == null)
+             else ok = ok && o.paymentConfirmedAt === where.paymentConfirmedAt
+           }
+           if (ok) {
+             orders[idx] = { ...o, ...data }
+             count++
+           }
+         })
+         return { count }
+       }),
+     },
     orderItem: {
       findMany: vi.fn(async ({ where }: any) => {
         return orderItems.filter((x) => x.orderId === where.orderId).map((x) => ({ ...x }))
@@ -230,12 +246,16 @@ describe('payment verify characterization', () => {
     expect(res.status).toBe(200)
   })
 
-  it('Payment.userId null: 404 for an authenticated user (payment belongs to no one)', async () => {
-    ctx.payments.push({ id: 'p1', reference: 'DHV-1', userId: null, orderId: 'o1', amount: 100, currency: 'GHS', status: 'PENDING' })
-    ctx.orders.push({ id: 'o1', status: 'PENDING', paymentStatus: 'PENDING', orderType: 'NORMAL', userId: 'customer-1' })
+  it('idempotent second call', async () => {
+    ctx.payments.push({ id: 'p1', reference: 'DHV-1', userId: 'customer-1', orderId: 'o1', amount: 100, currency: 'GHS', status: 'PAID' })
+    ctx.orders.push({ id: 'o1', status: 'PROCESSING', paymentStatus: 'PAID', orderType: 'NORMAL', userId: 'customer-1' })
 
     const { POST } = await import('@/app/api/payment/verify/route')
-    const res = await POST(baseRequest({ reference: 'DHV-1' }))
-    expect(res.status).toBe(404)
+    const res1 = await POST(baseRequest({ reference: 'DHV-1' }))
+    const res2 = await POST(baseRequest({ reference: 'DHV-1' }))
+    expect(res1.status).toBe(200)
+    expect((await res1.json()).alreadyProcessed).toBe(true)
+    expect(res2.status).toBe(200)
+    expect((await res2.json()).alreadyProcessed).toBe(true)
   })
 })

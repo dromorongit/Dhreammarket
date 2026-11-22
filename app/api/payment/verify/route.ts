@@ -12,6 +12,7 @@ import { createRefund } from '@/lib/refunds/refund-service'
 import { createNotification } from '@/lib/notifications'
 import { rateLimit } from '@/lib/rate-limit'
 import { createAuditLog } from '@/lib/audit-log'
+import { markOrderPaid } from '@/lib/orders/mark-order-paid'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -308,27 +309,23 @@ export async function POST(request: NextRequest) {
     // Payment was successful - update payment and order status, and calculate financials
     console.log('[Payment Verify API] Payment successful - processing order')
     
-    const transactionResult = await getPrisma().$transaction(async (prisma: any) => {
-        // Update payment status to PAID
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: 'PAID',
-            message: 'Payment successful',
-          },
-        })
+     const transactionResult = await getPrisma().$transaction(async (prisma: any) => {
+       const paid = await markOrderPaid(prisma, payment.orderId, { status: 'PROCESSING' })
+       if (!paid) {
+         return { paid: false, orderItems: [] }
+       }
 
-        // Update order status to PROCESSING (order is now active)
-        await prisma.order.update({
-          where: { id: payment.orderId },
-          data: {
-            status: 'PROCESSING',
-            paymentStatus: 'PAID',
-          },
-        })
+       // Update payment status to PAID
+       await prisma.payment.update({
+         where: { id: payment.id },
+         data: {
+           status: 'PAID',
+           message: 'Payment successful',
+         },
+       })
 
-        // Fetch order items to calculate financials
-        const orderItems = await prisma.orderItem.findMany({
+       // Fetch order items to calculate financials
+       const orderItems = await prisma.orderItem.findMany({
           where: { orderId: payment.orderId },
           // Every field is selected on purpose: an `include` would load every
           // column of the line and of its product, the cost price of the
@@ -406,14 +403,23 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        return { orderItems }
-      })
+          return { orderItems, paid: true }
+       })
 
     // Reserve stock for NORMAL orders only (outside transaction to avoid long locks)
     const order = await getPrisma().order.findUnique({
       where: { id: payment.orderId },
       select: { orderType: true, userId: true },
     })
+
+    if (!transactionResult.paid) {
+      return NextResponse.json({
+        success: true,
+        orderId: payment.orderId,
+        message: 'Payment already verified',
+        alreadyProcessed: true,
+      })
+    }
 
     if (order && order.orderType === 'NORMAL') {
       const reservationItems = transactionResult.orderItems
