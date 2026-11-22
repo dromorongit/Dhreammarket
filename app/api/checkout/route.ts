@@ -15,6 +15,7 @@ import { PUBLIC_VARIANT_SELECT } from '@/lib/public-selects'
 import { reserveStock, releaseStock } from '@/lib/stock-reservation'
 import { isValidGhanaRegion, normaliseGhanaRegion } from '@/lib/cancellation-policy'
 import { isRegionEnforcementEnabled } from '@/lib/feature-flags'
+import { markOrderPaid } from '@/lib/orders/mark-order-paid'
 
 // PRODUCTION RUNTIME HARDENING
 export const runtime = 'nodejs'
@@ -278,9 +279,8 @@ export async function POST(request: NextRequest) {
     const orderData: any = {
       userId: payload.userId,
       total,
-      status: fullyCoveredByWallet ? 'PROCESSING' : 'PENDING',
-      paymentStatus: fullyCoveredByWallet ? 'PAID' : 'PENDING',
-      orderType,
+       status: fullyCoveredByWallet ? 'PROCESSING' : 'PENDING',
+       orderType,
       fulfillmentStatus: fullyCoveredByWallet ? 'PROCESSING' : fulfillmentStatus,
       idempotencyKey: effectiveIdempotencyKey,
       walletAmountApplied: walletAmountApplied > 0 ? walletAmountApplied : undefined,
@@ -310,11 +310,18 @@ export async function POST(request: NextRequest) {
     let result: { order: any; payment: any }
     try {
       result = await getPrisma().$transaction(async (prisma: any) => {
-        const order = await prisma.order.create({
-          data: orderData,
-        })
+         const order = await prisma.order.create({
+           data: orderData,
+         })
 
-        // Create payment record
+         if (fullyCoveredByWallet) {
+           const paid = await markOrderPaid(prisma, order.id, { status: 'PROCESSING' })
+           if (!paid) {
+             throw new Error('Order already paid')
+           }
+         }
+
+         // Create payment record
         const payment = await prisma.payment.create({
           data: {
             userId: payload.userId,
@@ -366,8 +373,8 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        return { order, payment }
-      })
+         return { order, payment }
+       })
     } catch (dbError) {
       console.error('[Checkout API] Database error creating order:', dbError)
       return NextResponse.json({ 

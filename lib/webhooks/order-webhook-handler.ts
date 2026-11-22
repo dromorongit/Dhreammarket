@@ -9,6 +9,7 @@ import { checkPaystackAmount } from '@/lib/payment-checks'
 import { createRefund } from '@/lib/refunds/refund-service'
 import { createAuditLog } from '@/lib/audit-log'
 import { createNotification } from '@/lib/notifications'
+import { markOrderPaid } from '@/lib/orders/mark-order-paid'
 import { sendPaymentFailedEmail } from '@/lib/email'
 import crypto from 'crypto'
 
@@ -269,24 +270,21 @@ export async function handleOrderWebhook(body: string, signature: string | undef
       return NextResponse.json({ received: true })
     }
 
-    const transactionResult = await getPrisma().$transaction(async (prisma: any) => {
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: 'PAID',
-          message: 'Payment successful via webhook',
-        },
-      })
+     const transactionResult = await getPrisma().$transaction(async (prisma: any) => {
+       const paid = await markOrderPaid(prisma, payment.orderId, { status: 'PROCESSING' })
+       if (!paid) {
+         return { paid: false, orderItems: [] }
+       }
 
-      await prisma.order.update({
-        where: { id: payment.orderId },
-        data: {
-          status: 'PROCESSING',
-          paymentStatus: 'PAID',
-        },
-      })
+       await prisma.payment.update({
+         where: { id: payment.id },
+         data: {
+           status: 'PAID',
+           message: 'Payment successful via webhook',
+         },
+       })
 
-      const orderItems = await prisma.orderItem.findMany({
+       const orderItems = await prisma.orderItem.findMany({
         where: { orderId: payment.orderId },
         include: {
           product: {
@@ -350,8 +348,13 @@ export async function handleOrderWebhook(body: string, signature: string | undef
         })
       }
 
-      return { orderItems }
-    })
+        return { orderItems, paid: true }
+     })
+
+    const paid = transactionResult.paid
+    if (!paid) {
+      return NextResponse.json({ received: true, alreadyProcessed: true })
+    }
 
     const order = await getPrisma().order.findUnique({
       where: { id: payment.orderId },
