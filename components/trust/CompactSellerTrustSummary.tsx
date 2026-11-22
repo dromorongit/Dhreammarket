@@ -3,6 +3,7 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import type { SellerTrustProfile } from '@/lib/trust/types'
+import { MIN_ORDERS_FOR_RATES, MIN_REVIEWS_FOR_RATING } from '@/lib/trust/constants'
 
 export type CompactTrustVariant = 'compact' | 'line'
 
@@ -18,7 +19,18 @@ export interface CompactSellerTrustSummaryProps {
 
 function isInsufficient(profile: SellerTrustProfile | null): boolean {
   if (!profile) return true
-  return profile.fulfilment?.state === 'INSUFFICIENT_DATA' || (profile.orders?.lifetimeCompleted ?? 0) < 10
+  return profile.fulfilment?.state === 'INSUFFICIENT_DATA' || (profile.orders?.lifetimeCompleted ?? 0) < MIN_ORDERS_FOR_RATES
+}
+
+function getInsufficientReason(profile: SellerTrustProfile | null): string | null {
+  if (!profile) return 'No trust profile available'
+  if ((profile.orders?.lifetimeCompleted ?? 0) < MIN_ORDERS_FOR_RATES) {
+    return `Not enough data (minimum ${MIN_ORDERS_FOR_RATES} orders)`
+  }
+  if (profile.fulfilment?.state === 'INSUFFICIENT_DATA') {
+    return `Not enough data (minimum ${MIN_ORDERS_FOR_RATES} orders)`
+  }
+  return null
 }
 
 export function CompactSellerTrustSummary({
@@ -75,6 +87,7 @@ export function CompactSellerTrustSummary({
   const verified = data?.identity?.status === 'VERIFIED'
   const identityLabel = verified ? 'Verified seller' : 'Unverified seller'
   const insufficient = isInsufficient(data)
+  const insufficientReason = getInsufficientReason(data)
 
   const fulfilmentPct =
     data?.fulfilment?.state === 'OK' && data.fulfilment.value
@@ -146,7 +159,7 @@ export function CompactSellerTrustSummary({
       ),
       ' ... ',
       insufficient
-        ? 'New seller'
+        ? (insufficientReason ?? 'New seller')
         : fulfilmentPct != null
           ? `Fulfilment ${fulfilmentPct.toFixed(0)}%`
           : 'New seller'
@@ -165,7 +178,7 @@ export function CompactSellerTrustSummary({
     children.push(React.createElement('span', { className: 'text-slate-500', key: 'store' }, storeName))
   }
   if (insufficient) {
-    children.push(React.createElement('span', { className: 'font-medium text-amber-700', key: 'new' }, 'New seller'))
+    children.push(React.createElement('span', { className: 'font-medium text-amber-700', key: 'new' }, insufficientReason ?? 'Not enough data'))
   } else {
     if (fulfilmentPct != null) children.push(React.createElement('span', { className: 'text-slate-700', key: 'f' }, `Fulfilment ${fulfilmentPct.toFixed(0)}%`))
     if (onTimePct != null) children.push(React.createElement('span', { className: 'text-slate-700', key: 'o' }, `On-time ${onTimePct.toFixed(0)}%`))
@@ -173,7 +186,7 @@ export function CompactSellerTrustSummary({
     if (rating) {
       children.push(React.createElement('span', { className: 'text-slate-700', key: 'rt' }, `Rating ${rating.average.toFixed(1)} (${rating.count} verified purchases)`))
     } else {
-      children.push(React.createElement('span', { className: 'text-slate-500', key: 'nr' }, 'Not enough reviews'))
+      children.push(React.createElement('span', { className: 'text-slate-500', key: 'nr' }, `Not enough reviews (minimum ${MIN_REVIEWS_FOR_RATING})`))
     }
   }
   if (daysOnPlatform != null) {

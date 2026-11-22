@@ -13,6 +13,8 @@ export async function loadSellerTrustProfile(
     createdAt: true,
     userId: true,
     isVerified: true,
+    verificationMethod: true,
+    kycVerifiedAt: true,
     updatedAt: true,
     verificationApplications: {
       where: { status: 'APPROVED' },
@@ -34,8 +36,9 @@ export async function loadSellerTrustProfile(
   const approvedApp = Array.isArray(store.verificationApplications)
     ? store.verificationApplications[0]
     : null
-  const verificationStatus = store.isVerified || approvedApp ? 'VERIFIED' : 'UNVERIFIED'
-  const verifiedSince = approvedApp?.updatedAt ?? (store.isVerified ? store.updatedAt : null)
+  const verificationStatus = approvedApp || store.verificationMethod === 'KYC' || store.verificationMethod === 'ADMIN_FLAG' ? 'VERIFIED' : 'UNVERIFIED'
+  const verifiedSince = approvedApp?.updatedAt ?? (store.verificationMethod === 'KYC' || store.verificationMethod === 'ADMIN_FLAG' ? store.kycVerifiedAt ?? store.updatedAt : null)
+  const verificationMethod = store.verificationMethod ?? 'NONE'
 
   const completedBase = {
     paymentStatus: 'PAID',
@@ -135,6 +138,14 @@ export async function loadSellerTrustProfile(
     },
   })
 
+  const openEscalatedReturnsInWindow = await client.returnRequest.count({
+    where: {
+      status: 'ESCALATED',
+      createdAt: { gte: windowStart },
+      orderItem: { product: { storeId: actualId } },
+    },
+  })
+
   const firstOrder = await client.order.findFirst({
     where: {
       paymentStatus: 'PAID',
@@ -180,6 +191,7 @@ export async function loadSellerTrustProfile(
     firstSaleAt,
     verificationStatus: verificationStatus as any,
     verifiedSince,
+    verificationMethod: verificationMethod as any,
     now,
     windowDays: ROLLING_WINDOW_DAYS,
     completedInWindow,
@@ -189,6 +201,7 @@ export async function loadSellerTrustProfile(
     responseSamples,
     deliveryPolicyDays,
     sellerFaultReturnsInWindow,
+    openEscalatedReturnsInWindow,
     reviewCount,
     reviewSum,
   }

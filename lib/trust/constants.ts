@@ -14,3 +14,14 @@ export const RESPONSE_WINDOW_DAYS = 2
 // Delivery window (days) after dispatch used as the fallback deadline when an
 // OrderItem has no expectedArrivalDate. Combined with dispatchTargetDaysAfterPayment.
 export const DELIVERY_WINDOW_DAYS = 3
+
+// Trust tier thresholds.
+export const TIER_ESTABLISHED_MIN_ORDERS = 10
+export const TIER_ESTABLISHED_MIN_FULFILMENT_PCT = 70
+export const TIER_ESTABLISHED_MIN_ONTIME_PCT = 70
+export const TIER_TRUSTED_MIN_FULFILMENT_PCT = 80
+export const TIER_TRUSTED_MIN_ONTIME_PCT = 80
+export const TIER_TRUSTED_MIN_RESPONSE_PCT = 80
+export const TIER_TRUSTED_MIN_REVIEWS = 5
+export const TIER_TRUSTED_MAX_SELLER_FAULT_RETURN_PCT = 10
+export const TIER_TRUSTED_RETURN_RATE_MIN_RETURNS = 5

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPrisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth-middleware'
 import { isVendorOnboarded } from '@/lib/onboarding'
+import { getVendorDeductionSummary } from '@/lib/ledger/vendor-deductions'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +38,10 @@ export async function GET(request: NextRequest) {
           totalPaid: 0,
           totalPending: 0,
           totalProcessing: 0,
-        }
+        },
+        availableBalance: 0,
+        openDeductions: [],
+        totalOpenDeductions: 0,
       })
     }
 
@@ -73,6 +77,8 @@ export async function GET(request: NextRequest) {
       totalProcessing: allPayouts.filter((p: { status: string; amount: number }) => p.status === 'PROCESSING').reduce((sum: number, p: { amount: number }) => sum + p.amount, 0),
     }
 
+    const summaryDed = await getVendorDeductionSummary(getPrisma(), store.id)
+
     return NextResponse.json({
       payouts,
       summary,
@@ -81,7 +87,11 @@ export async function GET(request: NextRequest) {
         limit,
         offset,
         hasMore: offset + limit < total
-      }
+      },
+      availableBalance: summaryDed.available,
+      openDeductions: summaryDed.deductions,
+      totalOpenDeductions: summaryDed.totalDeductions,
+      mode: summaryDed.mode,
     })
   } catch (error) {
     console.error('Error fetching vendor payouts:', error)

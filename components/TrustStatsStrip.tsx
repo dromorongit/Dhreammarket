@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 interface StatItem {
@@ -72,17 +72,10 @@ function AnimatedNumber({ endValue, suffix }: AnimatedNumberProps) {
   )
 }
 
-const FALLBACK_STATS: StatItem[] = [
-  { label: 'Vendors', endValue: 0, suffix: '+' },
-  { label: 'Products', endValue: 0, suffix: '+' },
-  { label: 'Happy Customers', endValue: 5000, suffix: '+' },
-  { label: 'Orders Delivered', endValue: 500, suffix: '+' },
-]
-
 export default function TrustStatsStrip() {
   const ref = useRef<HTMLDivElement>(null)
 
-  const { data } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['public-stats'],
     queryFn: async () => {
       const response = await fetch('/api/public-stats')
@@ -97,11 +90,15 @@ export default function TrustStatsStrip() {
     staleTime: 60_000,
   })
 
+  if (isLoading || isError || !data) {
+    return null
+  }
+
   const stats: StatItem[] = [
-    { label: 'Vendors', endValue: data?.vendors ?? 0, suffix: '+' },
-    { label: 'Products', endValue: data?.products ?? 0, suffix: '+' },
-    { label: 'Happy Customers', endValue: data?.happyCustomers ?? 5000, suffix: '+' },
-    { label: 'Orders Delivered', endValue: data?.ordersDelivered ?? 500, suffix: '+' },
+    { label: 'Vendors', endValue: data.vendors, suffix: '+' },
+    { label: 'Products', endValue: data.products, suffix: '+' },
+    { label: 'Customers served', endValue: data.happyCustomers, suffix: '+' },
+    { label: 'Orders Delivered', endValue: data.ordersDelivered, suffix: '+' },
   ]
 
   return (

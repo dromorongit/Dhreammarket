@@ -1,5 +1,26 @@
 import type { SellerTrustProfile } from '@/lib/trust/types'
 import { formatRate, formatDelivery, formatReturns, formatRating } from '@/lib/trust/copy'
+import { MIN_ORDERS_FOR_RATES, MIN_REVIEWS_FOR_RATING, SUPPRESSION_THRESHOLD } from '@/lib/trust/constants'
+
+function isSignalInsufficient(signal: { state: string } | null | undefined): boolean {
+  return !signal || signal.state === 'INSUFFICIENT_DATA'
+}
+
+function getInsufficientLabel(signalType: string): string {
+  switch (signalType) {
+    case 'fulfilment':
+    case 'cancellation':
+    case 'responseRate':
+    case 'delivery':
+      return `Not enough data (minimum ${MIN_ORDERS_FOR_RATES} orders)`
+    case 'sellerFaultReturns':
+      return `Fewer than ${SUPPRESSION_THRESHOLD} seller-fault returns`
+    case 'ratings':
+      return `Not enough reviews (minimum ${MIN_REVIEWS_FOR_RATING})`
+    default:
+      return 'Not enough data'
+  }
+}
 
 export function SellerTrustProfileCard({
   profile,
@@ -9,12 +30,20 @@ export function SellerTrustProfileCard({
   storeName: string
 }) {
   const identityLabel = profile.identity.status === 'VERIFIED' ? 'Identity verified' : 'Identity not verified'
+  const verificationMethodLabel = profile.identity.verificationMethod
+    ? profile.identity.verificationMethod === 'KYC'
+      ? 'Verified via KYC'
+      : profile.identity.verificationMethod === 'ADMIN_FLAG'
+      ? 'Verified by admin'
+      : 'Not verified'
+    : 'Not verified'
 
   return (
     <section className="mt-6 space-y-6">
       <div className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-slate-900">Identity</h2>
         <p className="mt-1 text-slate-700">{identityLabel}</p>
+        <p className="mt-1 text-sm text-slate-500">Method: {verificationMethodLabel}</p>
         {profile.identity.verifiedSince ? (
           <p className="text-sm text-slate-500">
             Verified since {profile.identity.verifiedSince.toISOString().slice(0, 10)}
@@ -44,15 +73,29 @@ export function SellerTrustProfileCard({
         <h2 className="text-lg font-semibold text-slate-900">Signals</h2>
         <ul className="mt-3 space-y-3">
           <li className="text-sm text-slate-700">
-            {formatRate(profile.fulfilment, 'Orders fulfilled')}
+            {isSignalInsufficient(profile.fulfilment)
+              ? getInsufficientLabel('fulfilment')
+              : formatRate(profile.fulfilment, 'Orders fulfilled')}
           </li>
           <li className="text-sm text-slate-700">
-            {formatRate(profile.cancellation, 'Orders cancelled by seller')}
+            {isSignalInsufficient(profile.cancellation)
+              ? getInsufficientLabel('cancellation')
+              : formatRate(profile.cancellation, 'Orders cancelled by seller')}
           </li>
-          <li className="text-sm text-slate-700">{formatDelivery(profile.delivery)}</li>
-          <li className="text-sm text-slate-700">{formatReturns(profile.sellerFaultReturns)}</li>
           <li className="text-sm text-slate-700">
-            Rating: {formatRating(profile.ratings)}
+            {isSignalInsufficient(profile.delivery)
+              ? getInsufficientLabel('delivery')
+              : formatDelivery(profile.delivery)}
+          </li>
+          <li className="text-sm text-slate-700">
+            {isSignalInsufficient(profile.sellerFaultReturns as any)
+              ? getInsufficientLabel('sellerFaultReturns')
+              : formatReturns(profile.sellerFaultReturns)}
+          </li>
+          <li className="text-sm text-slate-700">
+            Rating: {isSignalInsufficient(profile.ratings)
+              ? getInsufficientLabel('ratings')
+              : formatRating(profile.ratings)}
           </li>
         </ul>
       </div>

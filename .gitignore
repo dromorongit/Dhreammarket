@@ -72,3 +72,5 @@ test_output.txt
 .env
 .env.*
 !.env.example
+schema.sql
+migrations.sql

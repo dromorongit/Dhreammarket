@@ -47,8 +47,17 @@ export interface RatingValue {
 
 export type IdentityStatus = 'VERIFIED' | 'UNVERIFIED'
 
+export type VerificationMethod = 'NONE' | 'KYC' | 'ADMIN_FLAG'
+
+export type TrustTier = 'New' | 'Established' | 'Trusted'
+
+export interface TrustTierCriteria {
+  met: string[]
+  missing: string[]
+}
+
 export interface SellerTrustProfile {
-  identity: { status: IdentityStatus; verifiedSince?: Date }
+  identity: { status: IdentityStatus; verifiedSince?: Date; verificationMethod?: VerificationMethod }
   tenure: { daysOnPlatform: number; firstSaleAt?: Date }
   orders: { completed: number; lifetimeCompleted: number }
   fulfilment: Signal<RateValue>
@@ -56,9 +65,12 @@ export interface SellerTrustProfile {
   delivery: Signal<DeliveryValue>
   responseRate: Signal<RateValue>
   sellerFaultReturns: Signal<RateValue> | SuppressedBand
+  openEscalatedReturns: number
   ratings: Signal<RatingValue>
   computedAt: Date
   window: { rollingDays: number; from: Date; to: Date }
+  trustTier: TrustTier
+  trustTierCriteria: TrustTierCriteria
 }
 
 export interface TrustProfileInput {
@@ -66,6 +78,7 @@ export interface TrustProfileInput {
   firstSaleAt?: Date | null
   verificationStatus: IdentityStatus
   verifiedSince?: Date | null
+  verificationMethod?: VerificationMethod
   now: Date
   windowDays: number
   completedInWindow: number
@@ -80,6 +93,7 @@ export interface TrustProfileInput {
   // PlatformPolicy.dispatchTargetDaysAfterPayment, used when expectedAt is absent.
   deliveryPolicyDays: number
   sellerFaultReturnsInWindow: number
+  openEscalatedReturnsInWindow: number
   reviewCount: number
   reviewSum: number
 }

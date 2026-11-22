@@ -27,7 +27,8 @@ import { getTelLink, formatGhanaPhoneNumber } from '@/lib/phone'
 import { addRecentlyViewed } from '@/lib/recently-viewed'
 import DhreamSellerBadge from '@/components/DhreamSellerBadge'
 import CompactSellerTrustSummary from '@/components/trust/CompactSellerTrustSummary'
-interface ProductImage {
+import { TrustTierBadge } from '@/components/trust/TrustTierBadge'
+import type { SellerTrustProfile } from '@/lib/trust/types'
   id: string
   url: string
   alt: string | null
@@ -238,6 +239,7 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
     isNewSeller: boolean
     verifiedPurchaseReviewCount: number
   } | null>(null)
+  const [trustProfile, setTrustProfile] = useState<SellerTrustProfile | null>(null)
 
   const addToCartButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -316,6 +318,25 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
       cancelled = true
     }
   }, [product?.store?.slug, product?.store?.id])
+
+  useEffect(() => {
+    const storeId = product?.store?.id
+    if (!storeId) return
+    let cancelled = false
+    fetch(`/api/trust/sellers/${encodeURIComponent(storeId)}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error('not found')
+        return res.json()
+      })
+      .then((json) => {
+        if (cancelled) return
+        setTrustProfile(json as SellerTrustProfile)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [product?.store?.id])
 
   const { data: wishlistData } = useQuery({
     queryKey: ['wishlist', 'status', productId],
@@ -889,7 +910,14 @@ export default function ProductClient({ vendorProducts = [], relatedProducts = [
                         <span className="font-semibold text-gray-900 text-sm md:text-base truncate">
                           {truncateVendorName(product.store?.name ?? 'Unknown Store')}
                         </span>
-                        {(() => {
+                        {trustProfile?.trustTier && trustProfile?.trustTierCriteria && (
+                          <TrustTierBadge
+                            tier={trustProfile.trustTier}
+                            criteria={trustProfile.trustTierCriteria}
+                            className="ml-1"
+                          />
+                        )}
+                        {(!trustProfile?.trustTier || trustProfile.trustTier === 'New') && (() => {
                           const badge = product.store?.badgeTier || (product.store?.isVerified ? 'TRUSTED' : null)
                           const badgeInfo = getVendorBadgeColor(product.store?.badgeTier, product.store?.isVerified ?? false)
                           if (!badgeInfo) return null

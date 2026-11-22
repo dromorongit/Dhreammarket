@@ -170,7 +170,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       rating: review.rating,
       comment: review.comment,
       createdAt: review.createdAt,
-      isVerifiedPurchase: review.order !== null,
+      isVerifiedPurchase: review.isVerifiedPurchase,
       reviewer: review.user.profile?.firstName ||
                 review.user.email.split('@')[0] + '***',
     }))
@@ -317,6 +317,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         productId: actualProductId,
         userId: payload.userId,
         orderId: eligibleOrder.id,
+        isVerifiedPurchase: true,
         rating,
         comment: sanitizedComment,
       },
