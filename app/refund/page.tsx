@@ -1,6 +1,10 @@
 import Image from 'next/image'
 import { Card, CardContent } from '@/components/Card'
 import { Badge } from '@/components/Badge'
+import {
+  POLICY_EFFECTIVE_DATE_DISPLAY,
+  CANCELLATION_PARAGRAPH,
+} from '@/lib/policy-copy'
 
 export const metadata = {
   title: 'Refund and Return Policy - Dhream Market',
@@ -75,8 +79,7 @@ export default function RefundPolicyPage() {
                   </li>
                 </ul>
                 <p className="text-slate-600 mt-4">
-                  Returns must be initiated within <strong>3 days</strong> of receiving the product. 
-                  The product must be in its original condition with all packaging and tags intact.
+                  Returns must be started within <strong>1 day</strong> of the vendor marking the order completed if your delivery address is in the Greater Accra Region (for example Accra or Tema), and within <strong>3 days</strong> otherwise. Manual orders always use the 3-day return window. The product must be in its original condition with all packaging and tags intact.
                 </p>
               </section>
 
@@ -105,7 +108,7 @@ export default function RefundPolicyPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">Items returned after the 3-day window</span>
+                    <span className="text-slate-600">Items returned outside the applicable return window (1 day Greater Accra / 3 days otherwise, from when the vendor marks the order completed)</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
@@ -126,8 +129,7 @@ export default function RefundPolicyPage() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 2: Return Approval</h3>
                 <p className="text-slate-600 mb-4">
-                  The vendor will review your request and approve or reject it within 3 business days. 
-                  Approved returns will include instructions for returning the item.
+                  The vendor will review your request and approve or reject it within <strong>1 business day</strong>. Approved returns will include instructions for returning the item.
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 3: Ship the Item</h3>
                 <p className="text-slate-600 mb-4">
@@ -136,9 +138,7 @@ export default function RefundPolicyPage() {
                 </p>
                 <h3 className="text-xl font-medium text-deep-navy mb-3">Step 4: Refund Processing</h3>
                 <p className="text-slate-600 mb-4">
-                  Once the vendor receives and inspects the returned item, the refund will be 
-                   processed within 3-5 business days. The refund will be credited to your 
-                  original payment method.
+                  Once your return is approved, Dhream Market processes the refund within 24 hours. How long the money takes to appear in your bank or mobile money account depends on your payment provider.
                 </p>
               </section>
 
@@ -150,15 +150,15 @@ export default function RefundPolicyPage() {
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600"><strong>Return Review:</strong> 3 business days after vendor receives the item</span>
+                    <span className="text-slate-600"><strong>Return Review:</strong> 1 business day after you submit your request</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>
-                     <span className="text-slate-600"><strong>Refund Processing:</strong> 3-5 business days after approval</span>
+                    <span className="text-slate-600"><strong>Refund Processing:</strong> within 24 hours after approval</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600"><strong>Credit to Account:</strong> Depending on your bank, may take 10-14 business days</span>
+                    <span className="text-slate-600"><strong>Credit to Account:</strong> depends on your payment provider (bank or mobile money)</span>
                   </li>
                 </ul>
               </section>
@@ -198,10 +198,6 @@ export default function RefundPolicyPage() {
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
                     <span className="text-slate-600"><strong>Wrong Item Received:</strong> Vendor covers return shipping costs</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600"><strong>Change of Mind:</strong> Customer is responsible for return shipping costs</span>
                   </li>
                 </ul>
               </section>
@@ -251,17 +247,10 @@ export default function RefundPolicyPage() {
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">Orders can be cancelled before they are shipped without penalty</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">Once an order is shipped, standard return policies apply</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span>
-                    <span className="text-slate-600">To cancel an order, contact the vendor immediately with your order number</span>
+                    <span className="text-slate-600">{CANCELLATION_PARAGRAPH}</span>
                   </li>
                 </ul>
+                <p className="text-slate-600 mt-4">{POLICY_EFFECTIVE_DATE_DISPLAY}</p>
               </section>
 
               <section className="mb-8">
@@ -271,7 +260,7 @@ export default function RefundPolicyPage() {
                 </h2>
                 <p className="text-slate-600">
                   If you have questions about returns or refunds, please contact us through our 
-                  Contact page or email support@dhreammarket.com. We are here to help resolve
+                  Contact page or email support@dhreamarket.com. We are here to help resolve
                   any issues fairly and quickly.
                 </p>
               </section>
