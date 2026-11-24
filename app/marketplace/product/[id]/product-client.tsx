@@ -29,6 +29,8 @@ import DhreamSellerBadge from '@/components/DhreamSellerBadge'
 import CompactSellerTrustSummary from '@/components/trust/CompactSellerTrustSummary'
 import { TrustTierBadge } from '@/components/trust/TrustTierBadge'
 import type { SellerTrustProfile } from '@/lib/trust/types'
+
+interface ProductImage {
   id: string
   url: string
   alt: string | null
