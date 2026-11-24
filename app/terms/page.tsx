@@ -222,9 +222,7 @@ export default function TermsAndConditionsPage() {
                   Returns and Refunds
                 </h2>
                 <p className="text-slate-600 mb-4">
-                  Return and refund policies are determined by individual vendors. Please review the 
-                  specific return policy before making a purchase. We provide a dispute resolution 
-                  process for issues that cannot be resolved directly between customers and vendors.
+                  Dhream Market operates a platform-wide return and refund policy. Returns are eligible when the item is not as described, damaged or defective on arrival, or the wrong item was received. The return window is 1 day for deliveries in the Greater Accra Region (for example Accra or Tema) and 3 days elsewhere, counted from when the vendor marks the order COMPLETED. The vendor reviews a return request within 1 business day of submission, and Dhream Market processes an approved refund within 24 hours. If you and the vendor cannot agree, the platform decides the dispute within 7 business days and its decision is binding. A vendor may offer more customer-friendly return terms than this platform policy, and any such vendor supplement will be stated on the vendor&apos;s product listings.
                 </p>
               </section>
 
@@ -389,7 +387,7 @@ export default function TermsAndConditionsPage() {
                    </li>
                    <li className="flex items-start gap-3">
                      <span className="w-2 h-2 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></span>
-                      <span className="text-slate-600">Paystack transaction charges/fees are deducted by Paystack before payout settlement.</span>
+                       <span className="text-slate-600">Paystack processing fees are added to the customer&apos;s payment and are not deducted from the vendor&apos;s payout.</span>
                    </li>
                  </ul>
                  
