@@ -270,7 +270,7 @@ function RegisterContent() {
                 <p className="text-sm text-blue-800">
                   {role === 'CUSTOMER'
                     ? 'Place orders and pay only through the verified centralized Dhream Market Paystack.'
-                    : 'Vendors pay a 1% platform commission on all completed orders. Manual orders: 0% commission. Payouts are processed after 2 business days.'}
+                    : 'Vendors pay a 1% platform commission on the product price (not shipping). Manual orders: 0% commission, and the vendor pays the Paystack fee. Payouts are released within 2 business days after the vendor marks the order completed, if there are no open returns or disputes.'}
                 </p>
               </div>
                {role === 'VENDOR' && (

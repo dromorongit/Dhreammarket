@@ -5,7 +5,6 @@ import {
   POLICY_EFFECTIVE_DATE_DISPLAY,
   CANCELLATION_PARAGRAPH,
 } from '@/lib/policy-copy'
-
 export const metadata = {
   title: 'Preorders - Help Center - Dhream Market',
   description: 'Understanding preorder products on Dhream Market. Learn how preorders work, payment timelines, and delivery expectations.',
@@ -78,7 +77,7 @@ export default function PreordersGuide() {
                 <ul className="space-y-2">
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Preorder items are clearly labeled on product listings</span></li>
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Estimated delivery dates are provided before purchase</span></li>
-                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">You can cancel preorders before shipment if needed</span></li>
+                  <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">{CANCELLATION_PARAGRAPH}</span></li>
                   <li className="flex items-start gap-3"><span className="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></span><span className="text-slate-600">Refunds follow standard refund policy if you cancel</span></li>
                 </ul>
               </section>

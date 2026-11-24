@@ -65,7 +65,7 @@ export default function PaymentPolicyPage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></span>
-                      <span className="text-slate-600">Paystack transaction charges/fees are deducted by Paystack before payout settlement.</span>
+                      <span className="text-slate-600">Paystack processing fees are added to the customer&apos;s payment and are not deducted from the vendor&apos;s payout.</span>
                   </li>
                 </ul>
               </section>

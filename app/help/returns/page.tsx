@@ -96,7 +96,7 @@ export default function ReturnsGuide() {
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">Who pays return shipping?</h3>
-                <p className="text-slate-600">Vendor covers shipping for defective/damaged items. Customer covers shipping for change of mind.</p>
+                <p className="text-slate-600">Vendor covers return shipping for defective, damaged, or wrong items. Contact the vendor to confirm return-shipping arrangements for your return.</p>
               </div>
               <div>
                 <h3 className="text-lg font-medium text-deep-navy mb-2">What if vendor doesn&apos;t respond?</h3>

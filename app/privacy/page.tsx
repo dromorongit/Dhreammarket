@@ -299,7 +299,7 @@ export default function PrivacyPolicyPage() {
                 </h2>
                 <p className="text-slate-600">
                   If you have questions or concerns about this Privacy Policy or our data practices, 
-                  please contact us through our Contact page or email us at support@dhreammarket.com.
+                  please contact us through our Contact page or email us at support@dhreamarket.com.
                 </p>
               </section>
             </div>

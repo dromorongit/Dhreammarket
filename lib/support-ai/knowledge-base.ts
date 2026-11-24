@@ -29,7 +29,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     isDynamic: false,
     sourceFile: 'app/refund/page.tsx (Sections 2-7)',
     response:
-      `${RETURNS_RULE} The product must be in its original condition with all packaging and tags intact. Returns must be initiated by contacting the vendor through your order. ${RETURN_REVIEW} ${REFUND_TIMING} For returns of manual orders, the vendor refunds the buyer directly. The vendor covers return shipping for defective or wrong items; change-of-mind returns are the customer\'s responsibility. ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
+      `${RETURNS_RULE} The product must be in its original condition with all packaging and tags intact. Returns must be initiated by contacting the vendor through your order. ${RETURN_REVIEW} ${REFUND_TIMING} For returns of manual orders, the vendor refunds the buyer directly. The vendor covers return shipping for defective, damaged, or wrong items. ${POLICY_EFFECTIVE_DATE_DISPLAY}`,
   },
   {
     id: 'delivery-shipping',
@@ -80,7 +80,7 @@ export const supportKnowledgeBase: SupportIntent[] = [
     requiresAuth: false,
     isDynamic: false,
     sourceFile: 'app/terms/page.tsx (Section 17: Contact Information) and app/faq/faq-client.tsx',
-    response: 'You can reach our support team via WhatsApp at https://wa.me/447869840464/ for immediate assistance. You can also visit our Contact page or email us at support@dhreamarket.com. For FAQ answers, browse our Help Centre at /faq.',
+    response: 'You can reach our support team via WhatsApp (text messages only, not a call line) at https://wa.me/447869840464/. You can also visit our Contact page or email us at support@dhreamarket.com. For FAQ answers, browse our Help Centre at /faq.',
   },
   {
     id: 'how-to-reset-password',
