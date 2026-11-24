@@ -27,6 +27,7 @@ import type {
   DeliverySample,
   ResponseSample,
   TrustTier,
+  TrustTierCriteria,
 } from './types'
 
 function trunc(n: number): number {
@@ -230,7 +231,7 @@ function computeTrustTier(profile: SellerTrustProfile): { trustTier: TrustTier; 
   const onTimePct = profile.delivery?.state === 'OK' ? (profile.delivery.value?.onTimePercentage ?? 0) : 0
   const responsePct = profile.responseRate?.state === 'OK' ? (profile.responseRate.value?.percentage ?? 0) : 0
   const reviewCount = profile.ratings?.state === 'OK' ? (profile.ratings.value?.count ?? 0) : 0
-  const returnsCount = profile.sellerFaultReturns?.counts?.numerator ?? 0
+  const returnsCount = (profile.sellerFaultReturns as { counts?: { numerator?: number } })?.counts?.numerator ?? 0
   const returnsState = profile.sellerFaultReturns?.state
   const openEscalatedCount = profile.openEscalatedReturns ?? 0
   const hasOpenEscalatedReturns = openEscalatedCount > 0

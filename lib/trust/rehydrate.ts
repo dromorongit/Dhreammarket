@@ -31,6 +31,7 @@ export function rehydrateProfileInput(cached: CachedSellerTrustProfileData): Tru
     ),
     deliveryPolicyDays: cached.deliveryPolicyDays,
     sellerFaultReturnsInWindow: cached.sellerFaultReturnsInWindow,
+    openEscalatedReturnsInWindow: cached.openEscalatedReturnsInWindow,
     reviewCount: cached.reviewCount,
     reviewSum: cached.reviewSum,
   }

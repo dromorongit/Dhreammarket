@@ -44,7 +44,7 @@ export function TrustTierBadge({ tier, criteria, className = '' }: TrustTierBadg
           <ul className="space-y-1">
             {allItems.map((item, index) => (
               <li key={index} className="flex items-start gap-1.5">
-                <span className={item.met ? 'text-emerald-400' : 'text-rose-400'} flex-shrink-0 mt-0.5">
+                <span className={item.met ? 'text-emerald-400 flex-shrink-0 mt-0.5' : 'text-rose-400 flex-shrink-0 mt-0.5'}>
                   {item.met ? '✓' : '✗'}
                 </span>
                 <span className={item.met ? 'text-slate-100' : 'text-slate-300'}>{item.text}</span>

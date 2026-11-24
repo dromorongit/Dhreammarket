@@ -19,6 +19,7 @@ export interface CachedSellerTrustProfileData {
   responseSamples: Array<{ orderDate: string; firstVendorReplyAt: string | null }>
   deliveryPolicyDays: number
   sellerFaultReturnsInWindow: number
+  openEscalatedReturnsInWindow: number
   reviewCount: number
   reviewSum: number
 }
@@ -45,6 +46,7 @@ function serialize(data: any): CachedSellerTrustProfileData {
     })),
     deliveryPolicyDays: data.deliveryPolicyDays,
     sellerFaultReturnsInWindow: data.sellerFaultReturnsInWindow,
+    openEscalatedReturnsInWindow: data.openEscalatedReturnsInWindow,
     reviewCount: data.reviewCount,
     reviewSum: data.reviewSum,
   }
